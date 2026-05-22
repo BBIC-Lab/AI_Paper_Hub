@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   privacy-guard:
+    if: github.repository == 'Jurio0304/AI_Daily_Paper_Reader'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
