@@ -1665,6 +1665,15 @@ def update_sidebar(
             lines = f.readlines()
     # 模板文件可能没有末尾换行；先规整，避免新日期被拼到 Daily Papers 同一行。
     lines = [line if line.endswith("\n") else f"{line}\n" for line in lines]
+    repaired_lines: List[str] = []
+    for line in lines:
+        match = re.match(r"^(\s*\*\s+Daily Papers)\s+(\*\s+.+)$", line.rstrip("\n"))
+        if match:
+            repaired_lines.append(f"{match.group(1).rstrip()}\n")
+            repaired_lines.append(f"  {match.group(2).strip()}\n")
+        else:
+            repaired_lines.append(line)
+    lines = repaired_lines
 
     daily_idx = -1
     for i, line in enumerate(lines):
@@ -1694,6 +1703,8 @@ def update_sidebar(
     if day_idx != -1:
         end = day_idx + 1
         while end < len(lines):
+            if lines[end].startswith("* "):
+                break
             if lines[end].startswith("  * ") and not lines[end].startswith("    * "):
                 break
             end += 1
