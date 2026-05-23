@@ -94,7 +94,11 @@ window.$docsify.plugins[0](hooks, {
   route: { file: '202605/22/example.md', path: '/202605/22/example' },
 });
 
-const { normalizeMarkdownMathDelimiters } = window.DPRMarkdown;
+const {
+  normalizeMarkdownMathDelimiters,
+  protectMarkdownMathForDocsify,
+  restoreMarkdownMathPlaceholders,
+} = window.DPRMarkdown;
 
 function testFullwidthCommaInsideInlineMath() {
   const input = `$k_{t'} = \\tilde{x}{m,t'}W^K + p(t')\uFF0Cv{t'} = \\tilde{x}_{m,t'}W^V + p(t')$`;
@@ -127,9 +131,31 @@ function testLatexTextCommandContentStaysInMath() {
   assert.equal(normalizeMarkdownMathDelimiters(input), input);
 }
 
+function testDocsifyMathProtectionPreservesSubscriptMath() {
+  const input =
+    `\u5bf9 $\\mathbf{Z}_{\\text{non}}$ \u8ba1\u7b97 ` +
+    `$\\mathbf{A}_{\\text{non}}=\\text{softmax}(\\mathbf{Z}_{\\text{non}}\\mathbf{Z}_{\\text{non}}^\\top/\\sqrt{d})$` +
+    `\uff0c\u4fdd\u7559\u5b9e\u4f8b\u7279\u5b9a\u7684\u7ed3\u6784\u4ea4\u4e92\u3002`;
+
+  const protectedText = protectMarkdownMathForDocsify(input);
+  assert.ok(protectedText.includes('@@DPRDOCSIFYMATH'));
+  assert.ok(!protectedText.includes('\\mathbf{Z}_{\\text{non}}'));
+  assert.ok(!protectedText.includes('\\mathbf{A}_{\\text{non}}'));
+
+  const restored = restoreMarkdownMathPlaceholders(`<p>${protectedText}</p>`);
+  assert.ok(restored.includes('$\\mathbf{Z}_{\\text{non}}$'));
+  assert.ok(
+    restored.includes(
+      '$\\mathbf{A}_{\\text{non}}=\\text{softmax}(\\mathbf{Z}_{\\text{non}}\\mathbf{Z}_{\\text{non}}^\\top/\\sqrt{d})$',
+    ),
+  );
+  assert.ok(!restored.includes('\\mathbf{Z}{\\text{non}}'));
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
 testLatexTextCommandContentStaysInMath();
+testDocsifyMathProtectionPreservesSubscriptMath();
 
 console.log('docsify markdown math tests passed');

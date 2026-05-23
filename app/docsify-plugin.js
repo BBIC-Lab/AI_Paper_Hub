@@ -1070,6 +1070,87 @@ window.$docsify = {
         return text;
       };
 
+      let docsifyMathPlaceholderRun = 0;
+      let docsifyMathPlaceholderPrefix = '';
+      const docsifyMathPlaceholders = [];
+
+      const escapeMathPlaceholderHtml = (value) =>
+        String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+
+      const protectMarkdownMathForDocsify = (markdown) => {
+        let text = String(markdown || '');
+        docsifyMathPlaceholders.length = 0;
+        docsifyMathPlaceholderRun += 1;
+        docsifyMathPlaceholderPrefix =
+          `@@DPRDOCSIFYMATH${docsifyMathPlaceholderRun}X`;
+
+        const codeBlocks = [];
+        text = text.replace(
+          /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g,
+          (match) => {
+            const idx = codeBlocks.length;
+            codeBlocks.push(match);
+            return `@@DPRDOCSIFYCODE${idx}@@`;
+          },
+        );
+
+        const inlineCodes = [];
+        text = text.replace(/`[^`\n]*`/g, (match) => {
+          const idx = inlineCodes.length;
+          inlineCodes.push(match);
+          return `@@DPRDOCSIFYINLINE${idx}@@`;
+        });
+
+        const stashMath = (match) => {
+          const idx = docsifyMathPlaceholders.length;
+          docsifyMathPlaceholders.push(match);
+          return `${docsifyMathPlaceholderPrefix}${idx}@@`;
+        };
+
+        text = text.replace(/\$\$([\s\S]*?)\$\$/g, stashMath);
+        text = text.replace(/\$([^\$\n]+?)\$/g, stashMath);
+
+        text = text.replace(
+          /@@DPRDOCSIFYINLINE(\d+)@@/g,
+          (_match, idx) => inlineCodes[Number(idx)] || '',
+        );
+        text = text.replace(
+          /@@DPRDOCSIFYCODE(\d+)@@/g,
+          (_match, idx) => codeBlocks[Number(idx)] || '',
+        );
+        return text;
+      };
+
+      const restoreMarkdownMathPlaceholders = (html) => {
+        if (!docsifyMathPlaceholders.length || !docsifyMathPlaceholderPrefix) {
+          return String(html || '');
+        }
+        const pattern = new RegExp(
+          `${escapeRegExp(docsifyMathPlaceholderPrefix)}(\\d+)@@`,
+          'g',
+        );
+        return String(html || '').replace(pattern, (match, idx) => {
+          const math = docsifyMathPlaceholders[Number(idx)];
+          return typeof math === 'string'
+            ? escapeMathPlaceholderHtml(math)
+            : match;
+        });
+      };
+
+      const restoreMarkdownMathPlaceholdersInEl = (el) => {
+        if (!el || !docsifyMathPlaceholders.length) return;
+        const html = el.innerHTML || '';
+        const restored = restoreMarkdownMathPlaceholders(html);
+        if (restored !== html) {
+          el.innerHTML = restored;
+        }
+      };
+
       // 公共工具：简单表格 + 标记修正：
       // 1）移除协议标记 [ANS]/[THINK]
       // 2）移除表格行之间多余空行，避免把同一张表拆成两块
@@ -1263,6 +1344,8 @@ window.$docsify = {
       window.DPRMarkdown = {
         normalizeTables,
         normalizeMarkdownMathDelimiters,
+        protectMarkdownMathForDocsify,
+        restoreMarkdownMathPlaceholders,
         renderMarkdownWithTables,
         renderMathInEl,
       };
@@ -4082,18 +4165,18 @@ window.$docsify = {
         // 只对论文页面处理
         if (!isPaperRouteFile(file)) {
           latestPaperRawMarkdown = '';
-          return normalizedContent;
+          return protectMarkdownMathForDocsify(normalizedContent);
         }
         latestPaperRawMarkdown = normalizedContent || '';
 
         const { meta, body } = parseFrontMatter(normalizedContent);
         if (!meta) {
-          return normalizedContent;
+          return protectMarkdownMathForDocsify(normalizedContent);
         }
 
         // 生成论文页面 HTML + 正文
         const paperHtml = renderPaperFromMeta(meta);
-        return paperHtml + body;
+        return protectMarkdownMathForDocsify(paperHtml + body);
       });
 
       // --- Docsify 生命周期钩子 ---
@@ -4134,7 +4217,9 @@ window.$docsify = {
         if (mainContent) {
           // 先创建正文包装层，避免后续切页动画影响聊天浮层
           const root = isPaperPage ? ensurePageContentRoot() : null;
-          renderMathInEl(root || mainContent);
+          const mathRoot = root || mainContent;
+          restoreMarkdownMathPlaceholdersInEl(mathRoot);
+          renderMathInEl(mathRoot);
         }
 
         // 论文页标题条排版（只对 docs/YYYYMM/DD/*.md 生效）
