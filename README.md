@@ -122,13 +122,7 @@ https://<你的用户名>.github.io/AI\_Daily\_Paper\_Reader
 可以。它很适合做实验室公共论文面板，或者作为团队内部的论文发现与阅读入口。
 
 
-## 🧾 TODO
 
-详见 [TODO LIST](TODO.md)：
-
-- [x] Codex Skills 封装
-- [ ] 多源论文推荐接入
-- [ ] 扩展日报-周报-月报科研动态工作流
 
 
 ## 📌 参考
