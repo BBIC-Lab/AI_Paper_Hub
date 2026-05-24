@@ -186,7 +186,11 @@ function Invoke-PublicPrivacyGuard {
 
 function Normalize-RepoPath {
   param([string]$PathText)
-  return (($PathText -replace "\\", "/").TrimStart("./"))
+  $normalized = ($PathText -replace "\\", "/").Trim()
+  while ($normalized.StartsWith("./")) {
+    $normalized = $normalized.Substring(2)
+  }
+  return $normalized.TrimStart("/")
 }
 
 function Is-HardDeniedPath {

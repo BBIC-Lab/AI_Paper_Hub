@@ -85,6 +85,16 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         self.assertIn('FETCH_DAYS="9"', text)
         self.assertIn('ARGS=(--fetch-days "$FETCH_DAYS")', text)
 
+    def test_daily_workflow_defaults_fetch_days_to_three(self):
+        root = pathlib.Path(__file__).resolve().parents[1]
+        workflow_path = root / ".github" / "workflows" / "daily-paper-reader.yml"
+        text = workflow_path.read_text(encoding="utf-8")
+        workflow = yaml.safe_load(text) or {}
+        on_block = workflow.get("on") or workflow.get(True) or {}
+        inputs = (((on_block.get("workflow_dispatch") or {}).get("inputs")) or {})
+        fetch_days = (inputs.get("fetch_days") or {})
+        self.assertEqual(fetch_days.get("default"), "3")
+
     def test_deduplicate_rows_by_id(self):
         rows = [
             {"id": "A", "title": "x"},

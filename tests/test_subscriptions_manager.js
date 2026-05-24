@@ -8,7 +8,11 @@ global.document = global.document || {
 
 require('../app/subscriptions.manager.js');
 
-const { normalizeSubscriptions } = global.window.SubscriptionsManager.__test;
+const {
+  normalizeSubscriptions,
+  resolvePaperWindows,
+  getWindowWarningText,
+} = global.window.SubscriptionsManager.__test;
 
 function buildBaseConfig() {
   return {
@@ -131,6 +135,42 @@ function testNormalizeSubscriptionsDefaultsDailyPaperLimits() {
   assert.equal(profile.quick_daily_paper_limit, 10);
 }
 
+function testNormalizeSubscriptionsDefaultsPaperWindowsToThreeDays() {
+  const normalized = normalizeSubscriptions(buildBaseConfig());
+
+  assert.equal(normalized.arxiv_paper_setting.days_window, 3);
+  assert.equal(normalized.arxiv_paper_setting.carryover_days, 3);
+}
+
+function testResolvePaperWindowsKeepsSeparateCarryoverWindow() {
+  const windows = resolvePaperWindows({
+    arxiv_paper_setting: {
+      days_window: 5,
+      carryover_days: 2,
+    },
+  });
+
+  assert.deepEqual(windows, { daysWindow: 5, carryoverDays: 2 });
+}
+
+function testResolvePaperWindowsFallsBackCarryoverToLegacyDaysWindow() {
+  const windows = resolvePaperWindows({
+    arxiv_paper_setting: {
+      days_window: 8,
+    },
+  });
+
+  assert.deepEqual(windows, { daysWindow: 8, carryoverDays: 8 });
+}
+
+function testWindowWarningOnlyAppearsForLongWindow() {
+  assert.equal(getWindowWarningText(7), '');
+  assert.equal(
+    getWindowWarningText(8),
+    '窗口较长，可能增加旧论文反复进入候选池的概率，提高token消耗。',
+  );
+}
+
 function testRunProfileQuickFetchPassesProfileTagToWorkflow() {
   const calls = [];
   global.window.DPRWorkflowRunner = {
@@ -155,6 +195,10 @@ testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
 testNormalizeSubscriptionsKeepsSectionDailyPaperLimits();
 testNormalizeSubscriptionsDefaultsDailyPaperLimits();
+testNormalizeSubscriptionsDefaultsPaperWindowsToThreeDays();
+testResolvePaperWindowsKeepsSeparateCarryoverWindow();
+testResolvePaperWindowsFallsBackCarryoverToLegacyDaysWindow();
+testWindowWarningOnlyAppearsForLongWindow();
 testRunProfileQuickFetchPassesProfileTagToWorkflow();
 
 console.log('subscriptions manager tests passed');

@@ -1633,11 +1633,15 @@ window.SubscriptionsSmartQuery = (function () {
           <div class="${cardClass}" data-profile-id="${profileId}">
             <div class="dpr-entry-top">
               <div class="dpr-entry-headline">
-                <span class="dpr-entry-title">${escapeHtml(p.tag || '')}</span>
-                ${pausedBadge}
-                <span class="dpr-entry-desc-inline">${escapeHtml(p.description || '（无描述）')}</span>
-                <span class="dpr-entry-source-inline">${renderProfileSourceChips(p.paper_sources)}</span>
-                <span class="dpr-entry-source-inline">${renderProfileDailyLimitChip(p)}</span>
+                <div class="dpr-entry-title-row">
+                  <span class="dpr-entry-title">${escapeHtml(p.tag || '')}</span>
+                  ${pausedBadge}
+                  <span class="dpr-entry-desc-inline">${escapeHtml(p.description || '（无描述）')}</span>
+                </div>
+                <div class="dpr-entry-chip-row">
+                  ${renderProfileSourceChips(p.paper_sources)}
+                  ${renderProfileDailyLimitChip(p)}
+                </div>
               </div>
               <div class="dpr-entry-actions">
                 <button class="arxiv-tool-btn dpr-entry-edit-btn" data-action="edit-profile" data-profile-id="${profileId}">修改</button>

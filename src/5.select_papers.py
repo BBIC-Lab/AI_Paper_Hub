@@ -48,7 +48,7 @@ MODES = {
     },
 }
 
-CARRYOVER_DAYS = 5
+CARRYOVER_DAYS = 3
 CARRYOVER_RATIO = 0.5
 SOURCE_FRESH_FETCH = "fresh_fetch"
 SOURCE_CARRYOVER_CACHE = "carryover_cache"
@@ -61,6 +61,21 @@ ARXIV_VERSIONED_ID_RE = re.compile(r"^(\d{4}\.\d{4,5})(?:v(\d+))?$", re.IGNORECA
 def log(message: str) -> None:
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] {message}", flush=True)
+
+
+def resolve_positive_int(value: Any, fallback: int) -> int:
+    try:
+        parsed = int(value)
+    except Exception:
+        return max(int(fallback or 1), 1)
+    return parsed if parsed > 0 else max(int(fallback or 1), 1)
+
+
+def resolve_carryover_days(setting: Dict[str, Any]) -> int:
+    safe_setting = setting if isinstance(setting, dict) else {}
+    days_window = resolve_positive_int(safe_setting.get("days_window"), CARRYOVER_DAYS)
+    return resolve_positive_int(safe_setting.get("carryover_days"), days_window)
+
 
 def log_substep(code: str, name: str, phase: str) -> None:
     """
@@ -1242,7 +1257,8 @@ def main() -> None:
         output_dir = os.path.abspath(os.path.join(ROOT_DIR, output_dir))
 
     setting = load_arxiv_paper_setting()
-    carryover_days = int(setting.get("days_window") or CARRYOVER_DAYS)
+    lookback_days = resolve_positive_int(setting.get("days_window"), CARRYOVER_DAYS)
+    carryover_days = resolve_carryover_days(setting)
     mode_text = args.modes
     if not mode_text:
         mode_text = setting.get("mode") or "standard,extend,spark"
@@ -1285,7 +1301,7 @@ def main() -> None:
     active_carryover_tags = [normalize_carryover_tag(tag) for tag in tag_list if normalize_carryover_tag(tag)]
     log(f"[INFO] config tags={tag_count} | {tag_list}")
     log(f"[INFO] profile daily paper limits={profile_daily_limits}")
-    log(f"[INFO] arxiv_paper_setting mode={mode_text} days_window={carryover_days}")
+    log(f"[INFO] arxiv_paper_setting mode={mode_text} days_window={lookback_days} carryover_days={carryover_days}")
 
     group_start(f"Step 5 - select {os.path.basename(input_path)}")
     log_substep("5.2", "构建评分论文列表", "START")

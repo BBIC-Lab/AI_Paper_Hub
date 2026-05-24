@@ -10,9 +10,9 @@ on:
         required: false
         default: "false"
       fetch_days:
-        description: "回溯抓取天数（例如 30）；留空则使用默认配置"
+        description: "回溯抓取天数（例如 3 或 30）；留空则使用默认配置"
         required: false
-        default: "10"
+        default: "3"
       fetch_mode:
         description: "抓取模式：auto/standard/skims（auto 按 fetch-days 阈值决定，standard/ skims 强制）"
         required: false

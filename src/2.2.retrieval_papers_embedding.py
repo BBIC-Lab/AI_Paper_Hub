@@ -108,9 +108,9 @@ def resolve_multi_source_vector_backend(config: Dict[str, Any], queries: List[di
 def resolve_supabase_recall_window(config: Dict[str, Any], end_dt: datetime | None = None) -> tuple[datetime, datetime]:
   paper_setting = (config or {}).get("arxiv_paper_setting") or {}
   try:
-    days = int(paper_setting.get("days_window") or 9)
+    days = int(paper_setting.get("days_window") or 3)
   except Exception:
-    days = 9
+    days = 3
   safe_days = max(days, 1)
 
   anchor = end_dt or datetime.now(timezone.utc)

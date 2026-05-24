@@ -8,6 +8,10 @@ window.SubscriptionsManager = (function () {
   const MAX_KEYWORDS_PER_PROFILE = 6;
   const MAX_INTENT_QUERIES_PER_PROFILE = 4;
   const DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10;
+  const DEFAULT_DAILY_RECALL_WINDOW_DAYS = 3;
+  const DEFAULT_CARRYOVER_WINDOW_DAYS = 3;
+  const LONG_WINDOW_WARNING_THRESHOLD_DAYS = 7;
+  const LONG_WINDOW_WARNING_TEXT = '窗口较长，可能增加旧论文反复进入候选池的概率，提高token消耗。';
   let overlay = null;
   let panel = null;
   let saveBtn = null;
@@ -234,6 +238,28 @@ window.SubscriptionsManager = (function () {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_DAILY_SECTION_PAPER_LIMIT;
   };
+
+  const normalizeWindowDays = (value, fallback = DEFAULT_DAILY_RECALL_WINDOW_DAYS) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  const resolvePaperWindows = (config) => {
+    const cfg = isPlainObject(config) ? config : {};
+    const setting = isPlainObject(cfg.arxiv_paper_setting) ? cfg.arxiv_paper_setting : {};
+    const daysWindow = normalizeWindowDays(setting.days_window, DEFAULT_DAILY_RECALL_WINDOW_DAYS);
+    const fallbackCarryover = Object.prototype.hasOwnProperty.call(setting, 'days_window')
+      ? daysWindow
+      : DEFAULT_CARRYOVER_WINDOW_DAYS;
+    const carryoverDays = normalizeWindowDays(setting.carryover_days, fallbackCarryover);
+    return { daysWindow, carryoverDays };
+  };
+
+  const getWindowWarningText = (value) => (
+    normalizeWindowDays(value, DEFAULT_DAILY_RECALL_WINDOW_DAYS) > LONG_WINDOW_WARNING_THRESHOLD_DAYS
+      ? LONG_WINDOW_WARNING_TEXT
+      : ''
+  );
 
   const resolveDailyPaperLimits = (profile) => {
     const p = isPlainObject(profile) ? profile : {};
@@ -481,6 +507,27 @@ window.SubscriptionsManager = (function () {
     const profileCountEl = document.getElementById('dpr-settings-profile-count');
     const sourceCountEl = document.getElementById('dpr-settings-source-count');
     const accessModeEl = document.getElementById('dpr-settings-access-mode');
+    const windows = resolvePaperWindows(cfg);
+    const syncWindowField = (inputId, value) => {
+      const inputEl = document.getElementById(inputId);
+      if (inputEl && document.activeElement !== inputEl) {
+        inputEl.value = String(value);
+      }
+    };
+    const windowWarningEl = document.getElementById('dpr-settings-window-warning');
+
+    syncWindowField('dpr-settings-days-window-input', windows.daysWindow);
+    syncWindowField('dpr-settings-carryover-window-input', windows.carryoverDays);
+    if (windowWarningEl) {
+      const warningText = getWindowWarningText(
+        Math.max(windows.daysWindow, windows.carryoverDays),
+      );
+      windowWarningEl.textContent = warningText;
+      windowWarningEl.hidden = !warningText;
+    }
+    panel.querySelectorAll('[data-dpr-default-window-days]').forEach((el) => {
+      el.textContent = String(windows.daysWindow);
+    });
 
     if (profileCountEl) {
       profileCountEl.textContent = String(profiles.length);
@@ -812,7 +859,15 @@ window.SubscriptionsManager = (function () {
     const subs = next.subscriptions;
 
     migrateLegacyToProfilesIfNeeded(subs);
-      subs.intent_profiles = normalizeProfiles(subs, getAvailablePaperSources(next));
+    subs.intent_profiles = normalizeProfiles(subs, getAvailablePaperSources(next));
+
+    const paperSetting = isPlainObject(next.arxiv_paper_setting)
+      ? cloneDeep(next.arxiv_paper_setting)
+      : {};
+    const windows = resolvePaperWindows({ arxiv_paper_setting: paperSetting });
+    paperSetting.days_window = windows.daysWindow;
+    paperSetting.carryover_days = windows.carryoverDays;
+    next.arxiv_paper_setting = paperSetting;
 
     if (!subs.schema_migration || typeof subs.schema_migration !== 'object') {
       subs.schema_migration = {};
@@ -911,18 +966,46 @@ window.SubscriptionsManager = (function () {
 
           <main id="arxiv-search-panel-main">
             <section class="dpr-settings-page dpr-settings-page-with-save is-active" data-settings-page-panel="search">
-              <div class="dpr-settings-page-head">
-                <div>
-                  <div class="dpr-settings-page-kicker">General / Search</div>
-                  <h2>检索配置</h2>
-                  <p>用自然语言或手动规则维护检索词条，保存后写入 config.yaml。</p>
-                </div>
-                <button id="dpr-sq-open-chat-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">新增检索</button>
-              </div>
+              <div class="dpr-search-config-layout">
+                <div class="dpr-settings-card dpr-search-profiles-card">
+                  <div class="dpr-settings-page-head dpr-search-profiles-head">
+                    <div>
+                      <div class="dpr-settings-page-kicker">General / Search</div>
+                      <h2>检索配置</h2>
+                      <p>用自然语言或手动规则维护检索词条，保存后写入 config.yaml。</p>
+                    </div>
+                    <button id="dpr-sq-open-chat-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">新增检索</button>
+                  </div>
 
-              <div id="dpr-smart-query-section" class="arxiv-pane dpr-smart-pane dpr-settings-card">
-                <div class="dpr-display-card">
-                  <div id="dpr-sq-display" class="dpr-sq-display"></div>
+                  <div id="dpr-smart-query-section" class="arxiv-pane dpr-smart-pane dpr-smart-query-card">
+                    <div id="dpr-sq-display" class="dpr-sq-display"></div>
+                  </div>
+                </div>
+
+                <div class="dpr-settings-card dpr-window-settings-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>窗口设置</h3>
+                      <p>日报默认使用这些窗口；快速使用里的 10 / 30 天按钮仍会临时覆盖。Tips：建议顺延窗口&gt;=回溯窗口。</p>
+                    </div>
+                  </div>
+                  <div class="dpr-window-settings-grid">
+                    <label class="dpr-window-field" for="dpr-settings-days-window-input">
+                      <span>回溯窗口：</span>
+                      <div class="dpr-window-input-wrap">
+                        <input id="dpr-settings-days-window-input" type="number" min="1" step="1" inputmode="numeric" />
+                        <em>天</em>
+                      </div>
+                    </label>
+                    <label class="dpr-window-field" for="dpr-settings-carryover-window-input">
+                      <span>顺延窗口：</span>
+                      <div class="dpr-window-input-wrap">
+                        <input id="dpr-settings-carryover-window-input" type="number" min="1" step="1" inputmode="numeric" />
+                        <em>天</em>
+                      </div>
+                    </label>
+                  </div>
+                  <div id="dpr-settings-window-warning" class="dpr-window-warning" hidden></div>
                 </div>
               </div>
 
@@ -949,8 +1032,8 @@ window.SubscriptionsManager = (function () {
                 </div>
                 <div class="dpr-quick-run-grid">
                   <button id="arxiv-admin-quick-run-today-btn" class="chat-quick-run-item" type="button">
-                    <span>今日日报</span>
-                    <small>1 天标准抓取，适合日常更新</small>
+                    <span>默认日报</span>
+                    <small>使用检索配置回溯 <b data-dpr-default-window-days>3</b> 天，标准抓取</small>
                   </button>
                   <button id="arxiv-admin-quick-run-10d-btn" class="chat-quick-run-item" type="button">
                     <span>十天内论文</span>
@@ -1300,6 +1383,33 @@ window.SubscriptionsManager = (function () {
     }
   };
 
+  const updatePaperWindowSetting = (field, rawValue) => {
+    if (!draftConfig) return;
+    const fallback = field === 'carryover_days'
+      ? DEFAULT_CARRYOVER_WINDOW_DAYS
+      : DEFAULT_DAILY_RECALL_WINDOW_DAYS;
+    const value = normalizeWindowDays(rawValue, fallback);
+    const next = cloneDeep(draftConfig || {});
+    const setting = isPlainObject(next.arxiv_paper_setting) ? next.arxiv_paper_setting : {};
+    setting[field] = value;
+    next.arxiv_paper_setting = setting;
+    draftConfig = normalizeSubscriptions(next);
+    hasUnsavedChanges = true;
+    refreshQuickRunButtons();
+  };
+
+  const bindWindowInput = (inputId, field) => {
+    const inputEl = document.getElementById(inputId);
+    if (!inputEl || inputEl._dprWindowBound) return;
+    inputEl._dprWindowBound = true;
+    inputEl.addEventListener('input', () => {
+      updatePaperWindowSetting(field, inputEl.value);
+    });
+    inputEl.addEventListener('blur', () => {
+      renderSettingsSnapshot();
+    });
+  };
+
   const bindBaseEvents = () => {
     if (closeBtn && !closeBtn._bound) {
       closeBtn._bound = true;
@@ -1326,6 +1436,9 @@ window.SubscriptionsManager = (function () {
         });
       });
     }
+
+    bindWindowInput('dpr-settings-days-window-input', 'days_window');
+    bindWindowInput('dpr-settings-carryover-window-input', 'carryover_days');
 
     const reloadConfigBtn = document.getElementById('dpr-settings-reload-config-btn');
     if (reloadConfigBtn && !reloadConfigBtn._bound) {
@@ -1389,10 +1502,11 @@ window.SubscriptionsManager = (function () {
     if (quickRunTodayBtn && !quickRunTodayBtn._bound) {
       quickRunTodayBtn._bound = true;
       quickRunTodayBtn.addEventListener('click', () => {
+        const days = resolvePaperWindows(draftConfig || {}).daysWindow;
         runQuickFetch(
-          1,
+          days,
           quickRunMsgEl,
-          '已发起今日日报任务（1 天标准抓取）。',
+          `已发起默认日报任务（${days} 天标准抓取）。`,
           {
             fetchMode: 'standard',
             dispatchInputs: {
@@ -1519,6 +1633,9 @@ window.SubscriptionsManager = (function () {
       ensureSourceBackendsForProfiles: (config) => ensureSourceBackendsForProfiles(cloneDeep(config || {})),
       buildDefaultSourceBackend: (sourceKey, config) => buildDefaultSourceBackend(sourceKey, cloneDeep(config || {})),
       normalizePaperSources: (values, options) => normalizePaperSources(values, options),
+      normalizeWindowDays: (value, fallback) => normalizeWindowDays(value, fallback),
+      resolvePaperWindows: (config) => resolvePaperWindows(cloneDeep(config || {})),
+      getWindowWarningText: (value) => getWindowWarningText(value),
     },
   };
 })();
