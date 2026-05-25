@@ -2570,7 +2570,7 @@ article.markdown-section {
 }
 
 .sidebar::-webkit-scrollbar {
-  width: 10px;
+  width: var(--dpr-sidebar-active-rail-width);
 }
 
 .sidebar::-webkit-scrollbar-track {
@@ -2579,9 +2579,7 @@ article.markdown-section {
 
 .sidebar::-webkit-scrollbar-thumb {
   background: rgba(18, 62, 90, 0.18);
-  border: 3px solid transparent;
   border-radius: 999px;
-  background-clip: content-box;
 }
 
 .sidebar:hover::-webkit-scrollbar-thumb {
@@ -2864,7 +2862,7 @@ article.markdown-section {
   color: #355062 !important;
   background: transparent !important;
   font-size: 0.95rem;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.25;
   text-decoration: none !important;
 }
@@ -2883,7 +2881,7 @@ article.markdown-section {
 
 .sidebar-nav a.dpr-sidebar-root-link::after,
 .sidebar-nav a.dpr-sidebar-brief-link::after,
-.sidebar-nav li.sidebar-paper-item > a.dpr-sidebar-item-link::after {
+.sidebar-nav li.sidebar-paper-item::after {
   content: '';
   position: absolute;
   top: 6px;
@@ -2893,6 +2891,8 @@ article.markdown-section {
   border-radius: 999px;
   background: var(--dpr-accent-color);
   opacity: 0;
+  pointer-events: none;
+  z-index: 4;
   transition: opacity 120ms ease, width 120ms ease;
 }
 
@@ -2902,8 +2902,8 @@ article.markdown-section {
 .sidebar-nav a.dpr-sidebar-brief-link.active::after,
 .sidebar-nav a.dpr-sidebar-brief-link.router-link-active::after,
 .sidebar-nav a.dpr-sidebar-brief-link.dpr-sidebar-static-active::after,
-.sidebar-nav li.active.sidebar-paper-item > a.dpr-sidebar-item-link::after,
-.sidebar-nav li.sidebar-paper-item > a.dpr-sidebar-item-link.active::after {
+.sidebar-nav li.active.sidebar-paper-item::after,
+.sidebar-nav li.sidebar-paper-item:has(> a.dpr-sidebar-item-link.active)::after {
   width: var(--dpr-sidebar-active-rail-width);
   opacity: 1;
 }
