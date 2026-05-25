@@ -6,7 +6,7 @@ Publishes one scoped change to both repository roles:
    from a disposable worktree, then push it.
 
 The script is intentionally conservative:
-- It never stages ignored/unrelated private runtime paths or root README files.
+- It never stages ignored/unrelated private runtime paths.
 - It aborts if the public worktree is dirty.
 - It uses per-command proxy overrides for pushes.
 - Use -UseApiPushFallback to recover from GitHub HTTPS push resets after fast-forward checks.
@@ -464,17 +464,6 @@ function Is-AutoExcludedPath {
   return $false
 }
 
-function Is-SyncExcludedPath {
-  param([string]$RepoPath)
-  $patterns = @(
-    "^README(\.[^/]+)?\.md$"
-  )
-  foreach ($pattern in $patterns) {
-    if ($RepoPath -match $pattern) { return $true }
-  }
-  return $false
-}
-
 $rootResult = Invoke-GitRead -GitArgs @("rev-parse", "--show-toplevel")
 $Root = ($rootResult.Output | Select-Object -First 1).ToString().Trim()
 if (-not $Root) { throw "Could not resolve repository root." }
@@ -534,10 +523,6 @@ if ($explicitPaths) {
 $publishFiles = New-Object System.Collections.Generic.List[string]
 $excludedFiles = New-Object System.Collections.Generic.List[string]
 foreach ($file in $candidateFiles) {
-  if (Is-SyncExcludedPath $file) {
-    $excludedFiles.Add($file) | Out-Null
-    continue
-  }
   if ((-not $explicitPaths) -and (Is-AutoExcludedPath $file)) {
     $excludedFiles.Add($file) | Out-Null
     continue
