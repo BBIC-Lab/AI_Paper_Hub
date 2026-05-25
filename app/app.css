@@ -3066,10 +3066,13 @@ article.markdown-section {
   display: block;
 }
 
-body.dpr-paper-actions-popover-open .markdown-section .dpr-page-content,
-body.dpr-paper-actions-popover-open #paper-chat-container {
+body.dpr-paper-actions-popover-open .markdown-section .dpr-page-content {
   filter: blur(2px);
   transition: filter 140ms ease-out;
+}
+
+body.dpr-paper-actions-popover-open #paper-chat-container {
+  filter: none;
 }
 
 #dpr-paper-actions {
@@ -6954,6 +6957,10 @@ body.dpr-resizing.dpr-chat-drawer-open .content {
   z-index: 1800;
   font-size: 1rem !important;
   line-height: 1.5 !important;
+}
+
+body.dpr-chat-drawer-open.dpr-paper-actions-popover-open #paper-chat-container {
+  z-index: 10020;
 }
 
 #paper-chat-container::before,
