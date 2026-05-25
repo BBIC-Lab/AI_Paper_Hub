@@ -9,6 +9,7 @@ The script is intentionally conservative:
 - It never stages ignored/unrelated private runtime paths or root README files.
 - It aborts if the public worktree is dirty.
 - It uses per-command proxy overrides for pushes.
+- Use -UseApiPushFallback to recover from GitHub HTTPS push resets after fast-forward checks.
 - Use -DryRun to inspect the plan without staging, committing, or pushing.
 - For multiple explicit paths, use PowerShell array syntax:
   -Paths scripts/publish-dual.ps1,app/app.css
@@ -30,7 +31,8 @@ param(
 
   [switch]$DryRun,
   [switch]$SkipValidation,
-  [switch]$NoPush
+  [switch]$NoPush,
+  [switch]$UseApiPushFallback
 )
 
 $ErrorActionPreference = "Stop"
@@ -96,6 +98,237 @@ function Invoke-External {
     }
   } finally {
     Pop-Location
+  }
+}
+
+function Quote-ProcessArgument {
+  param([string]$Text)
+  if ($Text -eq "") { return '""' }
+  if ($Text -notmatch '[\s"]') { return $Text }
+  return '"' + ($Text -replace '"', '\"') + '"'
+}
+
+function Invoke-GitBytes {
+  param(
+    [Parameter(Mandatory = $true)][string[]]$GitArgs,
+    [string]$Cwd = (Get-Location).Path
+  )
+  $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+  $startInfo.FileName = "git"
+  $startInfo.Arguments = (($GitArgs | ForEach-Object { Quote-ProcessArgument $_ }) -join " ")
+  $startInfo.WorkingDirectory = $Cwd
+  $startInfo.UseShellExecute = $false
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
+  $process = [System.Diagnostics.Process]::Start($startInfo)
+  $stdout = New-Object System.IO.MemoryStream
+  $process.StandardOutput.BaseStream.CopyTo($stdout)
+  $stderr = $process.StandardError.ReadToEnd()
+  $process.WaitForExit()
+  if ($process.ExitCode -ne 0) {
+    throw "git $($GitArgs -join ' ') failed with exit code $($process.ExitCode): $stderr"
+  }
+  return $stdout.ToArray()
+}
+
+function Get-GitHubHeaders {
+  $gh = Get-Command gh -ErrorAction SilentlyContinue
+  if (-not $gh) {
+    throw "GitHub API fallback requires GitHub CLI (`gh`) for auth token lookup."
+  }
+  $oldPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $tokenOutput = & $gh.Source auth token 2>&1
+    $code = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $oldPreference
+  }
+  if ($code -ne 0) {
+    throw "gh auth token failed with exit code ${code}: $($tokenOutput -join [Environment]::NewLine)"
+  }
+  $token = ($tokenOutput | Select-Object -First 1).ToString().Trim()
+  if (-not $token) { throw "gh auth token returned an empty token." }
+  return @{
+    Authorization = "Bearer $token"
+    Accept = "application/vnd.github+json"
+    "X-GitHub-Api-Version" = "2022-11-28"
+    "User-Agent" = "publish-dual.ps1"
+  }
+}
+
+function Invoke-GitHubJson {
+  param(
+    [Parameter(Mandatory = $true)][string]$Method,
+    [Parameter(Mandatory = $true)][string]$Uri,
+    [Parameter(Mandatory = $true)][hashtable]$Headers,
+    [hashtable]$Body = $null
+  )
+  if ($Body) {
+    $json = $Body | ConvertTo-Json -Depth 20 -Compress
+    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers -Body $json -ContentType "application/json" -TimeoutSec 60
+  }
+  return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers -TimeoutSec 60
+}
+
+function Resolve-GitHubRepoSlug {
+  param([string]$Remote, [string]$Cwd)
+  $remoteUrl = (Invoke-GitRead -GitArgs @("remote", "get-url", $Remote) -Cwd $Cwd).Output[0].ToString().Trim()
+  if ($remoteUrl -match "github\.com[:/](?<owner>[^/]+)/(?<repo>[^/]+?)(?:\.git)?/?$") {
+    return "$($Matches.owner)/$($Matches.repo)"
+  }
+  throw "Cannot derive GitHub owner/repo from remote '$Remote': $remoteUrl"
+}
+
+function Get-CommitMessageExact {
+  param([string]$CommitSha, [string]$Cwd)
+  $bytes = Invoke-GitBytes -GitArgs @("cat-file", "commit", $CommitSha) -Cwd $Cwd
+  $start = -1
+  for ($i = 0; $i -lt ($bytes.Length - 1); $i++) {
+    if ($bytes[$i] -eq 10 -and $bytes[$i + 1] -eq 10) {
+      $start = $i + 2
+      break
+    }
+  }
+  if ($start -lt 0) { throw "Could not find commit message boundary for $CommitSha" }
+  $messageBytes = New-Object byte[] ($bytes.Length - $start)
+  [Array]::Copy($bytes, $start, $messageBytes, 0, $messageBytes.Length)
+  return [System.Text.Encoding]::UTF8.GetString($messageBytes)
+}
+
+function Get-CommitMetadata {
+  param([string]$CommitSha, [string]$Cwd)
+  $raw = (Invoke-GitRead -GitArgs @("show", "-s", "--format=%an%x00%ae%x00%aI%x00%cn%x00%ce%x00%cI", $CommitSha) -Cwd $Cwd).Output -join "`n"
+  $parts = $raw.Split([char]0)
+  if ($parts.Count -lt 6) { throw "Could not parse commit metadata for $CommitSha" }
+  return @{
+    Message = Get-CommitMessageExact -CommitSha $CommitSha -Cwd $Cwd
+    Author = @{ name = $parts[0]; email = $parts[1]; date = $parts[2] }
+    Committer = @{ name = $parts[3]; email = $parts[4]; date = $parts[5] }
+  }
+}
+
+function New-GitHubBlobFromCommitPath {
+  param(
+    [string]$RepoSlug,
+    [string]$CommitSha,
+    [string]$RepoPath,
+    [hashtable]$Headers,
+    [string]$Cwd
+  )
+  $bytes = Invoke-GitBytes -GitArgs @("cat-file", "blob", "${CommitSha}:$RepoPath") -Cwd $Cwd
+  $blob = Invoke-GitHubJson -Method "Post" -Uri "https://api.github.com/repos/$RepoSlug/git/blobs" -Headers $Headers -Body @{
+    content = [Convert]::ToBase64String($bytes)
+    encoding = "base64"
+  }
+  return $blob.sha
+}
+
+function Ensure-GitHubCommitObject {
+  param(
+    [string]$RepoSlug,
+    [string]$RemoteSha,
+    [string]$CommitSha,
+    [hashtable]$Headers,
+    [string]$Cwd
+  )
+  $parents = @(((Invoke-GitRead -GitArgs @("rev-list", "--parents", "-n", "1", $CommitSha) -Cwd $Cwd).Output[0] -split " ") | Select-Object -Skip 1)
+  if ($parents.Count -ne 1 -or $parents[0] -ne $RemoteSha) {
+    throw "API fallback only supports a single fast-forward commit from $RemoteSha to $CommitSha."
+  }
+
+  $baseTree = (Invoke-GitRead -GitArgs @("rev-parse", "$RemoteSha^{tree}") -Cwd $Cwd).Output[0].Trim()
+  $treeItems = New-Object System.Collections.Generic.List[object]
+  $changes = (Invoke-GitRead -GitArgs @("diff", "--name-status", "--no-renames", "$RemoteSha..$CommitSha") -Cwd $Cwd).Output
+  foreach ($change in $changes) {
+    if (-not $change) { continue }
+    $columns = $change -split "`t"
+    $status = $columns[0]
+    $repoPath = $columns[1]
+    if ($status -eq "D") {
+      $treeItems.Add(@{ path = $repoPath; sha = $null }) | Out-Null
+      continue
+    }
+    $lsTree = (Invoke-GitRead -GitArgs @("ls-tree", $CommitSha, "--", $repoPath) -Cwd $Cwd).Output[0]
+    if ($lsTree -notmatch "^(?<mode>\d+)\s+(?<type>\S+)\s+(?<sha>[0-9a-f]{40})\t") {
+      throw "Could not parse tree entry for $repoPath at $CommitSha"
+    }
+    $blobSha = New-GitHubBlobFromCommitPath -RepoSlug $RepoSlug -CommitSha $CommitSha -RepoPath $repoPath -Headers $Headers -Cwd $Cwd
+    if ($blobSha -ne $Matches.sha) {
+      throw "Uploaded blob SHA mismatch for ${repoPath}: expected $($Matches.sha), got $blobSha"
+    }
+    $treeItems.Add(@{
+      path = $repoPath
+      mode = $Matches.mode
+      type = $Matches.type
+      sha = $blobSha
+    }) | Out-Null
+  }
+
+  $tree = Invoke-GitHubJson -Method "Post" -Uri "https://api.github.com/repos/$RepoSlug/git/trees" -Headers $Headers -Body @{
+    base_tree = $baseTree
+    tree = @($treeItems)
+  }
+  $localTree = (Invoke-GitRead -GitArgs @("rev-parse", "$CommitSha^{tree}") -Cwd $Cwd).Output[0].Trim()
+  if ($tree.sha -ne $localTree) {
+    throw "API fallback tree mismatch: expected $localTree, got $($tree.sha)"
+  }
+
+  $metadata = Get-CommitMetadata -CommitSha $CommitSha -Cwd $Cwd
+  $commit = Invoke-GitHubJson -Method "Post" -Uri "https://api.github.com/repos/$RepoSlug/git/commits" -Headers $Headers -Body @{
+    message = $metadata.Message
+    tree = $tree.sha
+    parents = @($RemoteSha)
+    author = $metadata.Author
+    committer = $metadata.Committer
+  }
+  if ($commit.sha -ne $CommitSha) {
+    throw "API fallback commit mismatch: expected $CommitSha, got $($commit.sha)"
+  }
+}
+
+function Invoke-GitHubApiPushFallback {
+  param(
+    [string]$Remote,
+    [string]$Branch,
+    [string]$Cwd
+  )
+  Write-Step "GitHub API push fallback"
+  Invoke-GitWrite -GitArgs @("fetch", $Remote, $Branch) -Cwd $Cwd
+  $remoteSha = (Invoke-GitRead -GitArgs @("rev-parse", "$Remote/$Branch") -Cwd $Cwd).Output[0].Trim()
+  $localSha = (Invoke-GitRead -GitArgs @("rev-parse", "HEAD") -Cwd $Cwd).Output[0].Trim()
+  $fastForward = Invoke-GitRead -GitArgs @("merge-base", "--is-ancestor", $remoteSha, $localSha) -Cwd $Cwd -AllowFail
+  if ($fastForward.Code -ne 0) {
+    throw "Refusing API fallback because $Remote/$Branch is not an ancestor of HEAD."
+  }
+
+  $repoSlug = Resolve-GitHubRepoSlug -Remote $Remote -Cwd $Cwd
+  $headers = Get-GitHubHeaders
+  Ensure-GitHubCommitObject -RepoSlug $repoSlug -RemoteSha $remoteSha -CommitSha $localSha -Headers $headers -Cwd $Cwd
+  $update = Invoke-GitHubJson -Method "Patch" -Uri "https://api.github.com/repos/$repoSlug/git/refs/heads/$Branch" -Headers $headers -Body @{
+    sha = $localSha
+    force = $false
+  }
+  if ($update.object.sha -ne $localSha) {
+    throw "API fallback updated $Remote/$Branch to $($update.object.sha), expected $localSha"
+  }
+  Write-Host "API fallback updated $Remote/$Branch to $($localSha.Substring(0, 7))"
+}
+
+function Invoke-GitPush {
+  param(
+    [string]$Remote,
+    [string]$Branch,
+    [string]$RefSpec,
+    [string]$Cwd
+  )
+  try {
+    Invoke-GitWrite -GitArgs @("-c", "http.proxy=", "-c", "https.proxy=", "push", $Remote, $RefSpec) -Cwd $Cwd
+  } catch {
+    if (-not $UseApiPushFallback) { throw }
+    Write-Host "WARN: git push failed; trying fast-forward GitHub API fallback." -ForegroundColor Yellow
+    Write-Host $_.Exception.Message -ForegroundColor Yellow
+    Invoke-GitHubApiPushFallback -Remote $Remote -Branch $Branch -Cwd $Cwd
   }
 }
 
@@ -256,6 +489,7 @@ Write-Host "Private remote: $PrivateRemote/$Branch"
 Write-Host "Public remote:  $PublicRemote/$Branch"
 Write-Host "Public worktree: $PublicWorktree"
 if ($DryRun) { Write-Host "Mode: dry-run (no staging, commits, worktree writes, or pushes)" -ForegroundColor Yellow }
+if ($UseApiPushFallback) { Write-Host "GitHub API push fallback: enabled" -ForegroundColor Yellow }
 
 $currentBranch = (Invoke-GitRead -GitArgs @("branch", "--show-current") -Cwd $Root).Output[0].Trim()
 if ($currentBranch -ne $Branch) {
@@ -345,7 +579,7 @@ Write-Host "Private commit: $privateCommit"
 
 if (-not $NoPush) {
   Write-Step "Push private"
-  Invoke-GitWrite -GitArgs @("-c", "http.proxy=", "-c", "https.proxy=", "push", $PrivateRemote, $Branch) -Cwd $Root
+  Invoke-GitPush -Remote $PrivateRemote -Branch $Branch -RefSpec $Branch -Cwd $Root
 } else {
   Write-Host "Private push skipped by -NoPush." -ForegroundColor Yellow
 }
@@ -377,7 +611,7 @@ Invoke-PublicPrivacyGuard -Cwd $PublicWorktree
 
 if (-not $NoPush) {
   Write-Step "Push public"
-  Invoke-GitWrite -GitArgs @("-c", "http.proxy=", "-c", "https.proxy=", "push", $PublicRemote, "HEAD:$Branch") -Cwd $PublicWorktree
+  Invoke-GitPush -Remote $PublicRemote -Branch $Branch -RefSpec "HEAD:$Branch" -Cwd $PublicWorktree
 } else {
   Write-Host "Public push skipped by -NoPush." -ForegroundColor Yellow
 }
