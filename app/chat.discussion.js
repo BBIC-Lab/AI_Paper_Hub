@@ -10,6 +10,14 @@ window.PrivateDiscussionChat = (function () {
   const QUESTION_PINNED_KEY = 'dpr_chat_pinned_questions_v1';
   const MAX_RECENT_QUESTIONS = 10; // 展示与保存都只保留最近 10 个（用户诉求）
   const MAX_PINNED_QUESTIONS = 50; // 防止无限增长
+  const QUICK_QUESTIONS_KEY = 'dpr_chat_quick_questions_v1';
+  const MAX_QUICK_QUESTIONS = 8;
+  const DEFAULT_QUICK_QUESTIONS = Object.freeze([
+    '这篇论文的核心贡献是什么？',
+    '方法相比已有工作新在哪里？',
+    '对我的研究有什么启发？',
+    '你认为存在哪些局限性和改进方向？',
+  ]);
 
   // 读取用户偏好的 Chat 模型名称（跨页面生效）
   const loadPreferredModelName = () => {
@@ -32,6 +40,55 @@ window.PrivateDiscussionChat = (function () {
     } catch {
       // ignore
     }
+  };
+
+  const normalizeQuickQuestions = (items) => {
+    const seen = new Set();
+    const normalized = [];
+    (Array.isArray(items) ? items : []).forEach((item) => {
+      const q = String(item || '').trim();
+      if (!q || seen.has(q)) return;
+      seen.add(q);
+      normalized.push(q);
+    });
+    return normalized.slice(0, MAX_QUICK_QUESTIONS);
+  };
+
+  const getQuickQuestions = () => {
+    try {
+      if (!window.localStorage) return DEFAULT_QUICK_QUESTIONS.slice();
+      const raw = window.localStorage.getItem(QUICK_QUESTIONS_KEY);
+      if (!raw) return DEFAULT_QUICK_QUESTIONS.slice();
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeQuickQuestions(parsed);
+      return normalized.length ? normalized : DEFAULT_QUICK_QUESTIONS.slice();
+    } catch {
+      return DEFAULT_QUICK_QUESTIONS.slice();
+    }
+  };
+
+  const saveQuickQuestions = (items) => {
+    const normalized = normalizeQuickQuestions(items);
+    const value = normalized.length ? normalized : DEFAULT_QUICK_QUESTIONS.slice();
+    try {
+      if (window.localStorage) {
+        window.localStorage.setItem(QUICK_QUESTIONS_KEY, JSON.stringify(value));
+      }
+    } catch {
+      // ignore
+    }
+    return value;
+  };
+
+  const resetQuickQuestions = () => {
+    try {
+      if (window.localStorage) {
+        window.localStorage.removeItem(QUICK_QUESTIONS_KEY);
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_QUICK_QUESTIONS.slice();
   };
 
   // 从 secret.private 解密结果中生成可用的 Chat 模型列表
@@ -207,24 +264,24 @@ window.PrivateDiscussionChat = (function () {
         </button>
         <aside id="paper-chat-panel" class="paper-chat-panel" aria-hidden="true" aria-label="\u8bba\u6587 AI \u95ee\u7b54">
           <div class="paper-chat-panel-head">
-            <div class="paper-chat-title">Paper Copilot</div>
+            <div class="paper-chat-title"><span class="paper-chat-title-icon" aria-hidden="true">✦</span><span>Paper Copilot</span></div>
             <button id="paper-chat-close-btn" class="paper-chat-close-btn" type="button" aria-label="\u5173\u95ed AI \u95ee\u7b54">&times;</button>
           </div>
           <div class="paper-chat-panel-body">
-            <div id="chat-history">
-                <div style="text-align:center; color:#999">\u6682\u65e0\u8ba8\u8bba\uff0c\u8f93\u5165\u4f60\u7684\u60f3\u6cd5\u5f00\u59cb\u5bf9\u8bdd\uff08\u4ec5\u4fdd\u5b58\u5728\u672c\u673a\uff09</div>
-            </div>
+            <div id="chat-history"></div>
             <div class="input-area">
-              <textarea id="user-input" rows="3" placeholder="\u9488\u5bf9\u8fd9\u7bc7\u8bba\u6587\u63d0\u95ee\uff0c\u4ec5\u81ea\u5df1\u53ef\u89c1..."></textarea>
+              <textarea id="user-input" rows="1" placeholder="\u9488\u5bf9\u8fd9\u7bc7\u8bba\u6587\u63d0\u95ee\uff0c\u4ec5\u81ea\u5df1\u53ef\u89c1..."></textarea>
               <div class="chat-input-toolbar">
                 <select id="chat-llm-model-select" class="chat-model-select"></select>
                 <div class="chat-input-actions">
+                  <button id="chat-quick-questions-toggle-btn" class="chat-quick-questions-toggle-btn" type="button" title="\u5feb\u6377\u95ee\u9898">\u5feb\u6377</button>
                   <button id="chat-questions-toggle-btn" class="chat-questions-toggle-btn" type="button" title="\u6700\u8fd1\u63d0\u95ee">\u5386\u53f2</button>
                   <button id="send-btn">\u53d1\u9001</button>
                 </div>
               </div>
               <span id="chat-status" class="chat-status" aria-live="polite"></span>
             </div>
+            <div id="chat-quick-questions-panel" class="chat-quick-questions-panel" style="display:none"></div>
             <div id="chat-questions-panel" class="chat-questions-panel" style="display:none"></div>
             <div id="chat-quick-run-modal" class="chat-quick-run-modal" aria-hidden="true">
               <div class="chat-quick-run-modal-panel">
@@ -450,6 +507,10 @@ window.PrivateDiscussionChat = (function () {
     const panel = root.querySelector('#paper-chat-panel');
     if (panel) {
       panel.setAttribute('aria-hidden', nextOpen ? 'false' : 'true');
+      panel.style.opacity = nextOpen ? '1' : '0';
+      panel.style.transform = nextOpen
+        ? 'translateX(0)'
+        : 'translateX(calc(100% + 48px))';
     }
 
     const toggleBtn = root.querySelector('#paper-chat-toggle-btn');
@@ -460,6 +521,7 @@ window.PrivateDiscussionChat = (function () {
 
     if (!nextOpen) {
       closeQuestionsPanel(root);
+      closeQuickQuestionsPanel(root);
       return;
     }
 
@@ -518,14 +580,210 @@ window.PrivateDiscussionChat = (function () {
 
   const closeQuestionsPanel = (root) => {
     const panel = getQuestionsPanel(root);
-    if (!panel) return;
-    panel.style.display = 'none';
+    if (panel) panel.style.display = 'none';
+    syncChatPopoverBackdrop(root);
+  };
+
+  const getQuickQuestionsPanel = (root) => {
+    const r = root || getChatRoot();
+    if (!r) return null;
+    return r.querySelector('#chat-quick-questions-panel');
+  };
+
+  const closeQuickQuestionsPanel = (root) => {
+    const panel = getQuickQuestionsPanel(root);
+    if (panel) panel.style.display = 'none';
+    syncChatPopoverBackdrop(root);
+  };
+
+  const syncChatPopoverBackdrop = (root) => {
+    const r = root || getChatRoot();
+    if (!r || !r.classList) return;
+    const questionsPanel = getQuestionsPanel(r);
+    const quickPanel = getQuickQuestionsPanel(r);
+    const hasOpenPopover =
+      (questionsPanel && questionsPanel.style.display !== 'none') ||
+      (quickPanel && quickPanel.style.display !== 'none');
+    r.classList.toggle('is-popover-open', !!hasOpenPopover);
   };
 
   const isQuestionsPanelOpen = (root) => {
     const panel = getQuestionsPanel(root);
     if (!panel) return false;
     return panel.style.display !== 'none';
+  };
+
+  const isQuickQuestionsPanelOpen = (root) => {
+    const panel = getQuickQuestionsPanel(root);
+    if (!panel) return false;
+    return panel.style.display !== 'none';
+  };
+
+  const sendQuickQuestion = (paperId, question) => {
+    const q = normalizeQuestion(question);
+    if (!q) return;
+
+    const root = getChatRoot();
+    const input = root ? root.querySelector('#user-input') : document.getElementById('user-input');
+    const btn = root ? root.querySelector('#send-btn') : document.getElementById('send-btn');
+    if (btn && btn.disabled && btn.innerText === '思考中...') return;
+
+    if (input) {
+      input.value = q;
+      try {
+        resizeChatInput(input);
+      } catch {
+        // ignore
+      }
+    }
+    closeQuickQuestionsPanel(root);
+    closeQuestionsPanel(root);
+    sendMessage(paperId);
+  };
+
+  const clearEmptyChatState = (historyDiv) => {
+    if (!historyDiv || !historyDiv.querySelectorAll) return;
+    historyDiv.querySelectorAll('.chat-empty-state').forEach((el) => {
+      try {
+        el.remove();
+      } catch {
+        // ignore
+      }
+    });
+  };
+
+  const renderEmptyChatState = (historyDiv, paperId) => {
+    if (!historyDiv) return;
+    historyDiv.innerHTML = '';
+
+    const empty = document.createElement('div');
+    empty.className = 'chat-empty-state';
+
+    const mark = document.createElement('div');
+    mark.className = 'chat-empty-mark';
+    mark.textContent = '✦';
+
+    const title = document.createElement('div');
+    title.className = 'chat-empty-title';
+    title.textContent = '从一个问题开始阅读';
+
+    const list = document.createElement('div');
+    list.className = 'chat-empty-suggestions';
+    getQuickQuestions()
+      .slice(0, 4)
+      .forEach((q) => {
+        const btn = document.createElement('button');
+        btn.className = 'chat-empty-suggestion-btn';
+        btn.type = 'button';
+        btn.textContent = q;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          sendQuickQuestion(paperId, q);
+        });
+        list.appendChild(btn);
+      });
+
+    empty.appendChild(mark);
+    empty.appendChild(title);
+    empty.appendChild(list);
+    historyDiv.appendChild(empty);
+  };
+
+  const renderQuickQuestionsPanel = (root, options = {}) => {
+    const panel = getQuickQuestionsPanel(root);
+    if (!panel) return;
+    const editMode = !!options.editMode;
+    panel.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'chat-quick-q-header';
+
+    const title = document.createElement('div');
+    title.className = 'chat-quick-q-title';
+    title.textContent = '快捷问题';
+    header.appendChild(title);
+
+    const actions = document.createElement('div');
+    actions.className = 'chat-quick-q-actions';
+
+    if (!editMode) {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'chat-quick-q-edit';
+      editBtn.type = 'button';
+      editBtn.textContent = '编辑';
+      actions.appendChild(editBtn);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'chat-quick-q-close';
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', '关闭快捷问题');
+    closeBtn.textContent = '✕';
+    actions.appendChild(closeBtn);
+
+    header.appendChild(actions);
+    panel.appendChild(header);
+
+    if (editMode) {
+      const textarea = document.createElement('textarea');
+      textarea.className = 'chat-quick-q-editor';
+      textarea.rows = 6;
+      textarea.value = getQuickQuestions().join('\n');
+      panel.appendChild(textarea);
+
+      const note = document.createElement('div');
+      note.className = 'chat-quick-q-note';
+      note.textContent = '每行一个问题，最多保留 8 条。';
+      panel.appendChild(note);
+
+      const footer = document.createElement('div');
+      footer.className = 'chat-quick-q-footer';
+      [
+        ['重置默认', 'chat-quick-q-reset'],
+        ['取消', 'chat-quick-q-cancel'],
+        ['保存', 'chat-quick-q-save'],
+      ].forEach(([label, className]) => {
+        const btn = document.createElement('button');
+        btn.className = className;
+        btn.type = 'button';
+        btn.textContent = label;
+        footer.appendChild(btn);
+      });
+      panel.appendChild(footer);
+      textarea.focus();
+      return;
+    }
+
+    const desc = document.createElement('div');
+    desc.className = 'chat-quick-q-desc';
+    desc.textContent = '点击后会自动发送给当前论文。';
+    panel.appendChild(desc);
+
+    const list = document.createElement('div');
+    list.className = 'chat-quick-q-list';
+    getQuickQuestions().forEach((q) => {
+      const btn = document.createElement('button');
+      btn.className = 'chat-quick-q-use';
+      btn.type = 'button';
+      btn.dataset.q = q;
+      btn.textContent = q;
+      list.appendChild(btn);
+    });
+    panel.appendChild(list);
+  };
+
+  const openQuickQuestionsPanel = (root) => {
+    const panel = getQuickQuestionsPanel(root);
+    if (!panel) return;
+    closeQuestionsPanel(root);
+    renderQuickQuestionsPanel(root);
+    panel.style.display = 'block';
+    syncChatPopoverBackdrop(root);
+  };
+
+  const toggleQuickQuestionsPanel = (root) => {
+    if (isQuickQuestionsPanelOpen(root)) closeQuickQuestionsPanel(root);
+    else openQuickQuestionsPanel(root);
   };
 
   const renderQuestionsPanel = (root) => {
@@ -608,8 +866,10 @@ window.PrivateDiscussionChat = (function () {
   const openQuestionsPanel = (root) => {
     const panel = getQuestionsPanel(root);
     if (!panel) return;
+    closeQuickQuestionsPanel(root);
     renderQuestionsPanel(root);
     panel.style.display = 'block';
+    syncChatPopoverBackdrop(root);
   };
 
   const toggleQuestionsPanel = (root) => {
@@ -618,9 +878,19 @@ window.PrivateDiscussionChat = (function () {
   };
 
   let questionsGlobalBound = false;
-  const bindQuestionsPanelEventsOnce = () => {
+  const bindQuestionsPanelEventsOnce = (paperId) => {
     const root = getChatRoot();
     if (!root) return;
+
+    const quickBtn = root.querySelector('#chat-quick-questions-toggle-btn');
+    if (quickBtn && !quickBtn._boundQuickQToggle) {
+      quickBtn._boundQuickQToggle = true;
+      quickBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleQuickQuestionsPanel(root);
+      });
+    }
 
     const btn = root.querySelector('#chat-questions-toggle-btn');
     if (btn && !btn._boundQToggle) {
@@ -637,7 +907,87 @@ window.PrivateDiscussionChat = (function () {
       root._boundQPanelClick = true;
       root.addEventListener('click', (e) => {
         const panel = getQuestionsPanel(root);
-        if (!panel || panel.style.display === 'none') return;
+        const quickPanel = getQuickQuestionsPanel(root);
+        const panelOpen = panel && panel.style.display !== 'none';
+        const quickPanelOpen = quickPanel && quickPanel.style.display !== 'none';
+        if (!panelOpen && !quickPanelOpen) return;
+
+        if (quickPanelOpen) {
+          const quickClose =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-close')
+              : null;
+          if (quickClose) {
+            e.preventDefault();
+            closeQuickQuestionsPanel(root);
+            return;
+          }
+
+          const quickEdit =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-edit')
+              : null;
+          if (quickEdit) {
+            e.preventDefault();
+            renderQuickQuestionsPanel(root, { editMode: true });
+            return;
+          }
+
+          const quickCancel =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-cancel')
+              : null;
+          if (quickCancel) {
+            e.preventDefault();
+            renderQuickQuestionsPanel(root);
+            return;
+          }
+
+          const quickReset =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-reset')
+              : null;
+          if (quickReset) {
+            e.preventDefault();
+            resetQuickQuestions();
+            renderQuickQuestionsPanel(root);
+            const historyDiv = root.querySelector('#chat-history');
+            if (historyDiv && historyDiv.querySelector('.chat-empty-state')) {
+              renderEmptyChatState(historyDiv, paperId);
+            }
+            return;
+          }
+
+          const quickSave =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-save')
+              : null;
+          if (quickSave) {
+            e.preventDefault();
+            const editor = quickPanel.querySelector('.chat-quick-q-editor');
+            const lines = editor ? editor.value.split(/\r?\n/) : [];
+            saveQuickQuestions(lines);
+            renderQuickQuestionsPanel(root);
+            const historyDiv = root.querySelector('#chat-history');
+            if (historyDiv && historyDiv.querySelector('.chat-empty-state')) {
+              renderEmptyChatState(historyDiv, paperId);
+            }
+            return;
+          }
+
+          const quickUse =
+            e.target && e.target.closest
+              ? e.target.closest('.chat-quick-q-use')
+              : null;
+          if (quickUse) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendQuickQuestion(paperId, quickUse.dataset.q || quickUse.textContent || '');
+            return;
+          }
+        }
+
+        if (!panelOpen) return;
 
         const closeBtn =
           e.target && e.target.closest ? e.target.closest('#chat-q-close') : null;
@@ -689,7 +1039,9 @@ window.PrivateDiscussionChat = (function () {
       (e) => {
         // 可能存在重复渲染导致的多个 chat 容器，这里对“所有打开的面板”做统一处理
         const panels = Array.from(
-          document.querySelectorAll('#paper-chat-container .chat-questions-panel'),
+          document.querySelectorAll(
+            '#paper-chat-container .chat-questions-panel, #paper-chat-container .chat-quick-questions-panel',
+          ),
         );
         const openPanels = panels.filter((p) => p && p.style.display !== 'none');
         if (!openPanels.length) return;
@@ -711,6 +1063,9 @@ window.PrivateDiscussionChat = (function () {
               // ignore
             }
           });
+          document
+            .querySelectorAll('#paper-chat-container')
+            .forEach((el) => syncChatPopoverBackdrop(el));
         }
       },
       true,
@@ -718,7 +1073,10 @@ window.PrivateDiscussionChat = (function () {
 
     // ESC 关闭
     document.addEventListener('keydown', (e) => {
-      if (e && e.key === 'Escape') closeQuestionsPanel(null);
+      if (e && e.key === 'Escape') {
+        closeQuestionsPanel(null);
+        closeQuickQuestionsPanel(null);
+      }
     });
   };
 
@@ -728,8 +1086,7 @@ window.PrivateDiscussionChat = (function () {
 
     const data = await loadChatHistory(paperId);
     if (!data || !data.length) {
-      historyDiv.innerHTML =
-        '<div style="text-align:center; color:#999">暂无讨论，输入上方问题开始提问。</div>';
+      renderEmptyChatState(historyDiv, paperId);
       return;
     }
 
@@ -959,6 +1316,7 @@ window.PrivateDiscussionChat = (function () {
     btn.innerText = '思考中...';
 
     const historyDiv = document.getElementById('chat-history');
+    clearEmptyChatState(historyDiv);
     const nowStr = new Date().toLocaleString();
     // 立刻用“气泡样式”渲染用户消息（避免等刷新后才套上 msg-content-user）
     try {
@@ -1536,7 +1894,7 @@ window.PrivateDiscussionChat = (function () {
     bindChatDrawerEventsOnce(root);
 
     // 最近提问按钮/面板
-    bindQuestionsPanelEventsOnce();
+    bindQuestionsPanelEventsOnce(paperId);
 
     const sendBtnEl = document.getElementById('send-btn');
     const inputEl = document.getElementById('user-input');
