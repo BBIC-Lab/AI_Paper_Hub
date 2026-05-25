@@ -12,6 +12,9 @@ window.SubscriptionsManager = (function () {
   const DEFAULT_CARRYOVER_WINDOW_DAYS = 3;
   const LONG_WINDOW_WARNING_THRESHOLD_DAYS = 7;
   const LONG_WINDOW_WARNING_TEXT = '窗口较长，可能增加旧论文反复进入候选池的概率，提高token消耗。';
+  const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
+  const DEFAULT_EMAIL_PUSH_TIME = '08:30';
+  const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
   let overlay = null;
   let panel = null;
   let saveBtn = null;
@@ -28,6 +31,9 @@ window.SubscriptionsManager = (function () {
   let quickRunMsgEl = null;
   let resetContentBtn = null;
   let resetContentMsgEl = null;
+  let emailSaveBtn = null;
+  let emailTestBtn = null;
+  let emailMsgEl = null;
   let settingsDirtyBadge = null;
   let activeSettingsPage = 'search';
   let lastConfigSource = '';
@@ -99,6 +105,30 @@ window.SubscriptionsManager = (function () {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+  const isLikelyEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeText(value));
+  const normalizeDailyPushTime = (value) => {
+    const text = normalizeText(value);
+    const match = text.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return DEFAULT_EMAIL_PUSH_TIME;
+    const hour = Math.max(0, Math.min(23, parseInt(match[1], 10)));
+    const minute = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  };
+  const normalizeEmailTimezone = (value) => (
+    normalizeText(value) === 'UTC' ? 'UTC' : DEFAULT_EMAIL_TIMEZONE
+  );
+  const buildEmailWorkflowCron = (timeValue, timezoneValue) => {
+    const timeText = normalizeDailyPushTime(timeValue);
+    const timezone = normalizeEmailTimezone(timezoneValue);
+    const parts = timeText.split(':').map((item) => parseInt(item, 10));
+    const offsetHours = timezone === DEFAULT_EMAIL_TIMEZONE ? 8 : 0;
+    const utcHour = (parts[0] - offsetHours + 24) % 24;
+    return {
+      cron: `${parts[1]} ${utcHour} * * *`,
+      time: timeText,
+      timezone,
+    };
+  };
   const toStableId = (value) => {
     const text = normalizeText(value).toLowerCase();
     const slug = text
@@ -528,6 +558,7 @@ window.SubscriptionsManager = (function () {
     panel.querySelectorAll('[data-dpr-default-window-days]').forEach((el) => {
       el.textContent = String(windows.daysWindow);
     });
+    syncEmailSettingsFields();
 
     if (profileCountEl) {
       profileCountEl.textContent = String(profiles.length);
@@ -721,6 +752,201 @@ window.SubscriptionsManager = (function () {
       msgEl.textContent = '已发起删除并重置任务，已触发工作流。';
       msgEl.style.color = '#080';
     }
+  };
+
+  const setEmailMessage = (text, color) => {
+    if (emailMsgEl) {
+      emailMsgEl.textContent = text || '';
+      emailMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const getEmailDeliveryDraft = () => {
+    const secret = window.decoded_secret_private || {};
+    const email = isPlainObject(secret.emailDelivery) ? secret.emailDelivery : {};
+    return {
+      enabled: Object.prototype.hasOwnProperty.call(email, 'enabled')
+        ? email.enabled !== false
+        : false,
+      to: normalizeText(email.to || ''),
+      from: normalizeText(email.from || ''),
+      smtpHost: normalizeText(email.smtpHost || ''),
+      smtpPort: normalizeText(email.smtpPort || '587'),
+      smtpUser: normalizeText(email.smtpUser || ''),
+      siteUrl: normalizeText(email.siteUrl || ''),
+      time: normalizeDailyPushTime(email.time || DEFAULT_EMAIL_PUSH_TIME),
+      timezone: normalizeEmailTimezone(email.timezone || DEFAULT_EMAIL_TIMEZONE),
+    };
+  };
+
+  const syncEmailSettingsFields = () => {
+    if (!panel) return;
+    const draft = getEmailDeliveryDraft();
+    const setValue = (id, value) => {
+      const input = document.getElementById(id);
+      if (input && document.activeElement !== input) {
+        input.value = value;
+      }
+    };
+    const enabledEl = document.getElementById('dpr-email-enabled-select');
+    if (enabledEl && document.activeElement !== enabledEl) {
+      enabledEl.value = draft.enabled ? 'true' : 'false';
+    }
+    setValue('dpr-email-to-input', draft.to);
+    setValue('dpr-email-from-input', draft.from);
+    setValue('dpr-email-smtp-host-input', draft.smtpHost);
+    setValue('dpr-email-smtp-port-input', draft.smtpPort);
+    setValue('dpr-email-smtp-user-input', draft.smtpUser);
+    setValue('dpr-email-site-url-input', draft.siteUrl);
+    setValue('dpr-email-time-input', draft.time);
+    const timezoneEl = document.getElementById('dpr-email-timezone-select');
+    if (timezoneEl && document.activeElement !== timezoneEl) {
+      timezoneEl.value = draft.timezone;
+    }
+  };
+
+  const collectEmailSettingsDraft = () => {
+    const getValue = (id) => normalizeText((document.getElementById(id) || {}).value || '');
+    const enabled = getValue('dpr-email-enabled-select') !== 'false';
+    const to = getValue('dpr-email-to-input');
+    const from = getValue('dpr-email-from-input');
+    const smtpHost = getValue('dpr-email-smtp-host-input');
+    const smtpPort = getValue('dpr-email-smtp-port-input') || '587';
+    const smtpUser = getValue('dpr-email-smtp-user-input');
+    const smtpPassword = getValue('dpr-email-smtp-password-input');
+    const siteUrl = getValue('dpr-email-site-url-input');
+    const time = normalizeDailyPushTime(getValue('dpr-email-time-input'));
+    const timezone = normalizeEmailTimezone(getValue('dpr-email-timezone-select'));
+    const portNumber = parseInt(smtpPort, 10);
+
+    if (enabled) {
+      if (!isLikelyEmail(to)) throw new Error('请填写有效的收件邮箱。');
+      if (!isLikelyEmail(from)) throw new Error('请填写有效的发件邮箱。');
+      if (!smtpHost) throw new Error('请填写 SMTP Host。');
+      if (!Number.isFinite(portNumber) || portNumber <= 0 || portNumber > 65535) {
+        throw new Error('SMTP Port 必须是 1-65535 之间的数字。');
+      }
+      if (!smtpUser) throw new Error('请填写 SMTP 用户名。');
+      if (!smtpPassword) throw new Error('请填写 SMTP 密码或应用专用密码。');
+    }
+
+    return {
+      enabled,
+      to,
+      from,
+      smtpHost,
+      smtpPort: String(portNumber || 587),
+      smtpUser,
+      smtpPassword,
+      siteUrl,
+      time,
+      timezone,
+    };
+  };
+
+  const updateEmailWorkflowSchedule = async (time, timezone) => {
+    const schedule = buildEmailWorkflowCron(time, timezone);
+    const nextLine = `    - cron: "${schedule.cron}" # DPR_EMAIL_SCHEDULE ${schedule.timezone} ${schedule.time}`;
+    const updateWorkflow = (content) => {
+      const text = String(content || '');
+      if (text.includes('# DPR_EMAIL_SCHEDULE')) {
+        return text.replace(/^    - cron: ".*" # DPR_EMAIL_SCHEDULE .*$/m, nextLine);
+      }
+      return text.replace(/^    - cron: ".*".*$/m, nextLine);
+    };
+    await window.SubscriptionsGithubToken.updateRepoTextFile(
+      EMAIL_WORKFLOW_PATH,
+      updateWorkflow,
+      `[chore] update email brief schedule ${schedule.timezone} ${schedule.time}`,
+      { requireWorkflow: true },
+    );
+    return schedule;
+  };
+
+  const saveEmailPushSettings = async () => {
+    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
+      setEmailMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+      return;
+    }
+    if (typeof window.SubscriptionsGithubToken.updateRepoTextFile !== 'function') {
+      setEmailMessage('当前无法更新邮件工作流，请刷新页面后重试。', '#c00');
+      return;
+    }
+
+    let settings = null;
+    try {
+      settings = collectEmailSettingsDraft();
+    } catch (e) {
+      setEmailMessage(e.message || '邮件配置不完整。', '#c00');
+      return;
+    }
+
+    try {
+      if (emailSaveBtn) emailSaveBtn.disabled = true;
+      if (emailTestBtn) emailTestBtn.disabled = true;
+      setEmailMessage('正在写入 GitHub Secrets...', '#666');
+      const secrets = {
+        DPR_EMAIL_ENABLED: settings.enabled ? 'true' : 'false',
+        DPR_EMAIL_TIME: settings.time,
+        DPR_EMAIL_TIMEZONE: settings.timezone,
+      };
+      if (settings.enabled) {
+        Object.assign(secrets, {
+          DPR_EMAIL_TO: settings.to,
+          DPR_EMAIL_FROM: settings.from,
+          DPR_SMTP_HOST: settings.smtpHost,
+          DPR_SMTP_PORT: settings.smtpPort,
+          DPR_SMTP_USER: settings.smtpUser,
+          DPR_SMTP_PASSWORD: settings.smtpPassword,
+        });
+        if (settings.siteUrl) {
+          secrets.DPR_EMAIL_SITE_URL = settings.siteUrl;
+        }
+      }
+      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+        setEmailMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      });
+      setEmailMessage('Secrets 已保存，正在更新邮件工作流定时...', '#666');
+      const schedule = await updateEmailWorkflowSchedule(settings.time, settings.timezone);
+      const secret = isPlainObject(window.decoded_secret_private)
+        ? window.decoded_secret_private
+        : {};
+      secret.emailDelivery = {
+        enabled: settings.enabled,
+        to: settings.to,
+        from: settings.from,
+        smtpHost: settings.smtpHost,
+        smtpPort: settings.smtpPort,
+        smtpUser: settings.smtpUser,
+        siteUrl: settings.siteUrl,
+        time: settings.time,
+        timezone: settings.timezone,
+      };
+      window.decoded_secret_private = secret;
+      const passwordInput = document.getElementById('dpr-email-smtp-password-input');
+      if (passwordInput) {
+        passwordInput.value = '';
+      }
+      setEmailMessage(`邮件推送已保存；GitHub Actions 将按 ${schedule.timezone} ${schedule.time} 运行。`, '#080');
+    } catch (e) {
+      console.error(e);
+      setEmailMessage(`保存邮件推送失败：${(e && e.message) || e}`.slice(0, 220), '#c00');
+    } finally {
+      if (emailSaveBtn) emailSaveBtn.disabled = false;
+      if (emailTestBtn) emailTestBtn.disabled = false;
+    }
+  };
+
+  const sendEmailTest = () => {
+    if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runWorkflowByKey !== 'function') {
+      setEmailMessage('工作流触发器未加载到当前页面。', '#c00');
+      return;
+    }
+    window.DPRWorkflowRunner.runWorkflowByKey('email-brief', {
+      force_send: 'true',
+      dry_run: 'false',
+    });
+    setEmailMessage('已触发测试邮件工作流，请到 Actions 面板查看发送结果。', '#080');
   };
 
   const normalizeProfiles = (subs, availableSources) => {
@@ -943,6 +1169,10 @@ window.SubscriptionsManager = (function () {
                 <span class="dpr-settings-nav-icon">🔐</span>
                 <span class="dpr-settings-nav-text">密钥配置</span>
               </button>
+              <button class="dpr-settings-nav-btn dpr-settings-nav-btn-privacy" type="button" data-settings-page="email" aria-selected="false">
+                <span class="dpr-settings-nav-icon">✉️</span>
+                <span class="dpr-settings-nav-text">邮件推送</span>
+              </button>
             </div>
             <div class="dpr-settings-nav-group">
               <div class="dpr-settings-nav-label">危险</div>
@@ -1158,6 +1388,79 @@ window.SubscriptionsManager = (function () {
                 <div class="dpr-settings-card dpr-secret-info-card">
                   <span>聊天模型</span>
                   <strong>可复用工作流 API 或单独配置</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="dpr-settings-page" data-settings-page-panel="email" hidden>
+              <div class="dpr-settings-page-head">
+                <div>
+                  <div class="dpr-settings-page-kicker">Privacy / Email</div>
+                  <h2>邮件推送</h2>
+                  <p>通过 GitHub Secrets 保存邮箱与 SMTP 凭证，GitHub Actions 按每日定时发送最新日报正文。</p>
+                </div>
+              </div>
+              <div class="dpr-settings-card">
+                <div class="dpr-settings-card-head">
+                  <div>
+                    <h3>每日简报邮件</h3>
+                    <p>邮件正文直接转换最新日报 Markdown，不重新调用 LLM；保存时会同步更新邮件工作流定时。</p>
+                  </div>
+                </div>
+                <div class="dpr-settings-form-grid dpr-email-settings-grid">
+                  <label class="chat-quick-run-row" for="dpr-email-enabled-select">
+                    <span>启用状态</span>
+                    <select id="dpr-email-enabled-select">
+                      <option value="true">启用邮件推送</option>
+                      <option value="false">暂停邮件推送</option>
+                    </select>
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-to-input">
+                    <span>收件邮箱</span>
+                    <input id="dpr-email-to-input" type="email" autocomplete="email" placeholder="you@example.com" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-from-input">
+                    <span>发件邮箱</span>
+                    <input id="dpr-email-from-input" type="email" autocomplete="email" placeholder="bot@example.com" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-time-input">
+                    <span>每日推送时间</span>
+                    <input id="dpr-email-time-input" type="time" value="${DEFAULT_EMAIL_PUSH_TIME}" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-timezone-select">
+                    <span>时区</span>
+                    <select id="dpr-email-timezone-select">
+                      <option value="Asia/Shanghai">Asia/Shanghai</option>
+                      <option value="UTC">UTC</option>
+                    </select>
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-site-url-input">
+                    <span>详情链接基础地址（可选）</span>
+                    <input id="dpr-email-site-url-input" type="url" placeholder="https://user.github.io/AI_Daily_Paper_Reader" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-smtp-host-input">
+                    <span>SMTP Host</span>
+                    <input id="dpr-email-smtp-host-input" type="text" autocomplete="off" placeholder="smtp.example.com" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-smtp-port-input">
+                    <span>SMTP Port</span>
+                    <input id="dpr-email-smtp-port-input" type="number" min="1" max="65535" step="1" value="587" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-smtp-user-input">
+                    <span>SMTP 用户名</span>
+                    <input id="dpr-email-smtp-user-input" type="text" autocomplete="username" placeholder="通常为发件邮箱或服务用户名" />
+                  </label>
+                  <label class="chat-quick-run-row" for="dpr-email-smtp-password-input">
+                    <span>SMTP 密码 / 应用专用密码</span>
+                    <input id="dpr-email-smtp-password-input" type="password" autocomplete="new-password" placeholder="保存后不会明文回显" />
+                  </label>
+                </div>
+                <div class="dpr-settings-message" id="dpr-email-settings-msg">
+                  邮箱、SMTP 用户名与密码只写入 GitHub Secrets；不会写入 config.yaml 或 docs/config.yaml。
+                </div>
+                <div class="dpr-settings-save-row dpr-email-actions-row">
+                  <button id="dpr-email-save-btn" class="arxiv-tool-btn dpr-settings-save-btn" type="button">保存邮件推送</button>
+                  <button id="dpr-email-test-btn" class="arxiv-tool-btn dpr-email-test-btn" type="button">发送测试邮件</button>
                 </div>
               </div>
             </section>
@@ -1465,6 +1768,10 @@ window.SubscriptionsManager = (function () {
     quickRunMsgEl = document.getElementById('arxiv-admin-quick-run-msg');
     resetContentBtn = document.getElementById('arxiv-admin-reset-content-btn');
     resetContentMsgEl = document.getElementById('arxiv-admin-reset-content-msg');
+    emailSaveBtn = document.getElementById('dpr-email-save-btn');
+    emailTestBtn = document.getElementById('dpr-email-test-btn');
+    emailMsgEl = document.getElementById('dpr-email-settings-msg');
+    syncEmailSettingsFields();
     if (quickRunYearSelect) {
       quickRunYearSelect.disabled = true;
     }
@@ -1570,6 +1877,16 @@ window.SubscriptionsManager = (function () {
       });
     }
 
+    if (emailSaveBtn && !emailSaveBtn._bound) {
+      emailSaveBtn._bound = true;
+      emailSaveBtn.addEventListener('click', saveEmailPushSettings);
+    }
+
+    if (emailTestBtn && !emailTestBtn._bound) {
+      emailTestBtn._bound = true;
+      emailTestBtn.addEventListener('click', sendEmailTest);
+    }
+
   };
 
   const init = () => {
@@ -1622,6 +1939,7 @@ window.SubscriptionsManager = (function () {
       normalizeWindowDays: (value, fallback) => normalizeWindowDays(value, fallback),
       resolvePaperWindows: (config) => resolvePaperWindows(cloneDeep(config || {})),
       getWindowWarningText: (value) => getWindowWarningText(value),
+      buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
     },
   };
 })();

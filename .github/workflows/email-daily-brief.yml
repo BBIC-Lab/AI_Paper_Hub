@@ -1,0 +1,85 @@
+name: email-daily-brief
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # DPR_EMAIL_SCHEDULE Asia/Shanghai 08:30
+  workflow_dispatch:
+    inputs:
+      force_send:
+        description: "Force send even when the latest report hash was already sent"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Build the email body without sending"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: email-daily-brief
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DPR_EMAIL_ENABLED: ${{ secrets.DPR_EMAIL_ENABLED }}
+      DPR_EMAIL_TO: ${{ secrets.DPR_EMAIL_TO }}
+      DPR_EMAIL_FROM: ${{ secrets.DPR_EMAIL_FROM }}
+      DPR_EMAIL_SITE_URL: ${{ secrets.DPR_EMAIL_SITE_URL }}
+      DPR_EMAIL_SUBJECT_PREFIX: ${{ secrets.DPR_EMAIL_SUBJECT_PREFIX }}
+      DPR_SMTP_HOST: ${{ secrets.DPR_SMTP_HOST }}
+      DPR_SMTP_PORT: ${{ secrets.DPR_SMTP_PORT }}
+      DPR_SMTP_USER: ${{ secrets.DPR_SMTP_USER }}
+      DPR_SMTP_PASSWORD: ${{ secrets.DPR_SMTP_PASSWORD }}
+      DPR_SMTP_USE_SSL: ${{ secrets.DPR_SMTP_USE_SSL }}
+      DPR_SMTP_STARTTLS: ${{ secrets.DPR_SMTP_STARTTLS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Send latest daily report email
+        run: |
+          set -euo pipefail
+          FORCE_SEND="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_send || 'false' }}"
+          DRY_RUN="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false' }}"
+          ARGS=()
+          if [ "${FORCE_SEND:-false}" = "true" ]; then
+            ARGS+=(--force)
+          fi
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python src/email_daily_brief.py "${ARGS[@]}"
+
+      - name: Commit email send state
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        run: |
+          set -euo pipefail
+          if [ ! -f archive/email_state.json ]; then
+            echo "No email state to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="${GITHUB_REF_NAME:-main}"
+          git add archive/email_state.json
+          if git diff --cached --quiet; then
+            echo "No email state changes."
+            exit 0
+          fi
+          git commit -m "[chore] email daily brief state"
+          git fetch origin "$branch"
+          git rebase -X theirs "origin/$branch"
+          git push origin HEAD:"$branch"

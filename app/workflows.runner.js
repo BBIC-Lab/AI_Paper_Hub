@@ -19,6 +19,16 @@ window.DPRWorkflowRunner = (function () {
       desc: '触发 Upstream Sync 工作流（合并上游 main 到当前仓库）。',
     },
     {
+      key: 'email-brief',
+      id: 'email-daily-brief.yml',
+      name: '发送邮件日报',
+      desc: '读取最新日报正文，通过已配置的邮件通道发送给收件邮箱。',
+      dispatchInputs: {
+        force_send: 'true',
+        dry_run: 'false',
+      },
+    },
+    {
       key: 'reset-content',
       id: 'reset-content.yml',
       name: '重置 content（docs + archive）',

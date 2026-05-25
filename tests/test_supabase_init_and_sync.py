@@ -95,6 +95,18 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         fetch_days = (inputs.get("fetch_days") or {})
         self.assertEqual(fetch_days.get("default"), "3")
 
+    def test_email_workflow_has_schedule_marker_and_manual_dispatch(self):
+        root = pathlib.Path(__file__).resolve().parents[1]
+        workflow_path = root / ".github" / "workflows" / "email-daily-brief.yml"
+        text = workflow_path.read_text(encoding="utf-8")
+        workflow = yaml.safe_load(text) or {}
+        on_block = workflow.get("on") or workflow.get(True) or {}
+        inputs = (((on_block.get("workflow_dispatch") or {}).get("inputs")) or {})
+        self.assertIn("# DPR_EMAIL_SCHEDULE Asia/Shanghai 08:30", text)
+        self.assertIn("schedule", on_block)
+        self.assertIn("force_send", inputs)
+        self.assertIn("DPR_EMAIL_TO", text)
+
     def test_deduplicate_rows_by_id(self):
         rows = [
             {"id": "A", "title": "x"},

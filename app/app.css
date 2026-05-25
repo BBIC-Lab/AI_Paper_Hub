@@ -3817,6 +3817,21 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   background: linear-gradient(135deg, #0f766e, #14b8a6);
 }
 
+#arxiv-search-panel .dpr-email-test-btn {
+  border: 1px solid rgba(37, 99, 235, 0.24);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font-weight: 700;
+  padding: 8px 14px;
+  box-shadow: none;
+}
+
+#arxiv-search-panel .dpr-email-test-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(37, 99, 235, 0.15);
+}
+
 .dpr-settings-close-btn {
   width: 32px;
   height: 32px;
@@ -4033,6 +4048,11 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   justify-content: flex-end;
   margin-top: auto;
   padding-top: 18px;
+}
+
+.dpr-email-actions-row {
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 @keyframes dpr-settings-page-in {
@@ -4370,6 +4390,8 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
 }
 
 #arxiv-search-panel .chat-quick-run-row select,
+#arxiv-search-panel .chat-quick-run-row input,
+#arxiv-search-panel .chat-quick-run-row textarea,
 #arxiv-search-panel .chat-quick-run-run-btn {
   border-radius: 14px;
   border: 1px solid rgba(23, 32, 51, 0.1);
@@ -4380,6 +4402,17 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+#arxiv-search-panel .chat-quick-run-row input::placeholder {
+  color: #98a2b3;
+}
+
+#dpr-email-time-input,
+#dpr-email-smtp-port-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 #arxiv-search-panel .chat-quick-run-run-btn {

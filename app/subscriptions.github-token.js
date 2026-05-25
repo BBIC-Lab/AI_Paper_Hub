@@ -214,6 +214,192 @@ window.SubscriptionsGithubToken = (function () {
     return { owner, repo, token };
   };
 
+  const encodeRepoPath = (path) => String(path || '')
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+
+  const decodeBase64Utf8 = (rawBase64) => {
+    const binary = atob(String(rawBase64 || '').replace(/\n/g, ''));
+    if (window.TextDecoder) {
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    // eslint-disable-next-line no-escape
+    return decodeURIComponent(escape(binary));
+  };
+
+  const encodeUtf8Base64 = (text) => btoa(unescape(encodeURIComponent(String(text || ''))));
+
+  const ensureSodiumReady = async () => {
+    if (
+      window.sodium &&
+      window.sodium.ready &&
+      typeof window.sodium.ready.then === 'function'
+    ) {
+      await window.sodium.ready;
+    }
+    if (!window.sodium) {
+      throw new Error('浏览器缺少 libsodium，无法写入 GitHub Secrets。');
+    }
+    return window.sodium;
+  };
+
+  const loadRepoTextFile = async (path, options = {}) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, options.requireWorkflow !== false);
+    const res = await fetch(
+      `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${encodeRepoPath(path)}`,
+      {
+        headers: {
+          Authorization: `token ${info.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`无法读取 ${path}：HTTP ${res.status} ${res.statusText} - ${text}`);
+    }
+    const data = await res.json();
+    return {
+      content: decodeBase64Utf8(data.content || ''),
+      sha: data.sha,
+      owner: info.owner,
+      repo: info.repo,
+      token: info.token,
+    };
+  };
+
+  const saveRepoTextFile = async (path, content, commitMessage, options = {}) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, options.requireWorkflow !== false);
+    let sha = options.sha || '';
+    if (!sha) {
+      try {
+        const current = await loadRepoTextFile(path, options);
+        sha = current.sha || '';
+      } catch (e) {
+        if (!String(e.message || '').includes('HTTP 404')) {
+          throw e;
+        }
+      }
+    }
+    const body = {
+      message: commitMessage || `chore: update ${path}`,
+      content: encodeUtf8Base64(content),
+    };
+    if (sha) {
+      body.sha = sha;
+    }
+    const res = await fetch(
+      `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${encodeRepoPath(path)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${info.token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`写入 ${path} 失败：HTTP ${res.status} ${res.statusText} - ${text}`);
+    }
+    return res.json();
+  };
+
+  const updateRepoTextFile = async (path, updater, commitMessage, options = {}) => {
+    const current = await loadRepoTextFile(path, options);
+    const nextContent = typeof updater === 'function'
+      ? updater(current.content, current)
+      : current.content;
+    if (nextContent === current.content) {
+      return { skipped: true, sha: current.sha };
+    }
+    return saveRepoTextFile(path, nextContent, commitMessage, {
+      ...options,
+      sha: current.sha,
+    });
+  };
+
+  const saveSecrets = async (secretValues, progress) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, true);
+    const sodium = await ensureSodiumReady();
+    const pkRes = await fetch(
+      `https://api.github.com/repos/${info.owner}/${info.repo}/actions/secrets/public-key`,
+      {
+        headers: {
+          Authorization: `token ${info.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      },
+    );
+    if (!pkRes.ok) {
+      throw new Error(`获取仓库 Public Key 失败（HTTP ${pkRes.status}），请确认 Token 权限。`);
+    }
+    const pkData = await pkRes.json();
+    const publicKey = pkData.key;
+    const keyId = pkData.key_id;
+    if (!publicKey || !keyId) {
+      throw new Error('Public Key 数据不完整，无法写入 Secrets。');
+    }
+
+    const binkey = sodium.from_base64(publicKey, sodium.base64_variants.ORIGINAL);
+    const encryptValue = (value) => {
+      const binsec = sodium.from_string(String(value == null ? '' : value));
+      const encBytes = sodium.crypto_box_seal(binsec, binkey);
+      return sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
+    };
+    const entries = Array.isArray(secretValues)
+      ? secretValues
+      : Object.entries(secretValues || {}).map(([name, value]) => ({ name, value }));
+
+    for (let i = 0; i < entries.length; i += 1) {
+      const item = entries[i] || {};
+      const name = String(item.name || '').trim();
+      if (!name) continue;
+      if (typeof progress === 'function') {
+        progress(i + 1, entries.length, name);
+      }
+      const res = await fetch(
+        `https://api.github.com/repos/${info.owner}/${info.repo}/actions/secrets/${encodeURIComponent(name)}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `token ${info.token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            encrypted_value: encryptValue(item.value),
+            key_id: keyId,
+          }),
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`写入 GitHub Secret ${name} 失败：HTTP ${res.status} ${res.statusText} - ${text}`);
+      }
+    }
+    return true;
+  };
+
   // 通过 GitHub API 读取 config.yaml（用于保存时获取最新 sha）
   const loadConfigFromGithub = async () => {
     const token = getTokenForConfig();
@@ -570,5 +756,9 @@ window.SubscriptionsGithubToken = (function () {
     loadConfig,
     updateConfig,
     saveConfig,
+    loadRepoTextFile,
+    saveRepoTextFile,
+    updateRepoTextFile,
+    saveSecrets,
   };
 })();

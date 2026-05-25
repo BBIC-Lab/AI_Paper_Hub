@@ -12,6 +12,7 @@ const {
   normalizeSubscriptions,
   resolvePaperWindows,
   getWindowWarningText,
+  buildEmailWorkflowCron,
 } = global.window.SubscriptionsManager.__test;
 
 function buildBaseConfig() {
@@ -190,6 +191,21 @@ function testRunProfileQuickFetchPassesProfileTagToWorkflow() {
   assert.equal(calls[0].options.dispatchInputs.profile_tag, 'GENE');
 }
 
+function testEmailWorkflowCronConvertsShanghaiTimeToUtc() {
+  const schedule = buildEmailWorkflowCron('08:30', 'Asia/Shanghai');
+
+  assert.equal(schedule.cron, '30 0 * * *');
+  assert.equal(schedule.time, '08:30');
+  assert.equal(schedule.timezone, 'Asia/Shanghai');
+}
+
+function testEmailWorkflowCronKeepsUtcTime() {
+  const schedule = buildEmailWorkflowCron('08:30', 'UTC');
+
+  assert.equal(schedule.cron, '30 8 * * *');
+  assert.equal(schedule.timezone, 'UTC');
+}
+
 testNormalizeSubscriptionsAddsBiorxivBackend();
 testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
@@ -200,5 +216,7 @@ testResolvePaperWindowsKeepsSeparateCarryoverWindow();
 testResolvePaperWindowsFallsBackCarryoverToLegacyDaysWindow();
 testWindowWarningOnlyAppearsForLongWindow();
 testRunProfileQuickFetchPassesProfileTagToWorkflow();
+testEmailWorkflowCronConvertsShanghaiTimeToUtc();
+testEmailWorkflowCronKeepsUtcTime();
 
 console.log('subscriptions manager tests passed');
