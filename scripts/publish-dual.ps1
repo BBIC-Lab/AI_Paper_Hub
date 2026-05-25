@@ -128,7 +128,7 @@ function Invoke-GitBytes {
   if ($process.ExitCode -ne 0) {
     throw "git $($GitArgs -join ' ') failed with exit code $($process.ExitCode): $stderr"
   }
-  return $stdout.ToArray()
+  return ,([byte[]]$stdout.ToArray())
 }
 
 function Get-GitHubHeaders {
@@ -234,7 +234,7 @@ function Ensure-GitHubCommitObject {
   )
   $parents = @(((Invoke-GitRead -GitArgs @("rev-list", "--parents", "-n", "1", $CommitSha) -Cwd $Cwd).Output[0] -split " ") | Select-Object -Skip 1)
   if ($parents.Count -ne 1 -or $parents[0] -ne $RemoteSha) {
-    throw "API fallback only supports a single fast-forward commit from $RemoteSha to $CommitSha."
+    throw "API fallback only supports single-parent commits; $CommitSha is not based on $RemoteSha."
   }
 
   $baseTree = (Invoke-GitRead -GitArgs @("rev-parse", "$RemoteSha^{tree}") -Cwd $Cwd).Output[0].Trim()
@@ -304,7 +304,11 @@ function Invoke-GitHubApiPushFallback {
 
   $repoSlug = Resolve-GitHubRepoSlug -Remote $Remote -Cwd $Cwd
   $headers = Get-GitHubHeaders
-  Ensure-GitHubCommitObject -RepoSlug $repoSlug -RemoteSha $remoteSha -CommitSha $localSha -Headers $headers -Cwd $Cwd
+  $commits = @((Invoke-GitRead -GitArgs @("rev-list", "--reverse", "$remoteSha..$localSha") -Cwd $Cwd).Output | Where-Object { $_ })
+  foreach ($commitToCreate in $commits) {
+    $parentSha = @(((Invoke-GitRead -GitArgs @("rev-list", "--parents", "-n", "1", $commitToCreate) -Cwd $Cwd).Output[0] -split " ") | Select-Object -Skip 1)[0]
+    Ensure-GitHubCommitObject -RepoSlug $repoSlug -RemoteSha $parentSha -CommitSha $commitToCreate -Headers $headers -Cwd $Cwd
+  }
   $update = Invoke-GitHubJson -Method "Patch" -Uri "https://api.github.com/repos/$repoSlug/git/refs/heads/$Branch" -Headers $headers -Body @{
     sha = $localSha
     force = $false
@@ -513,6 +517,7 @@ if ($behind -gt 0) {
   Write-Step "Fast-forward private branch"
   Invoke-GitWrite -GitArgs @("pull", "--ff-only", $PrivateRemote, $Branch) -Cwd $Root
 }
+$privateBaseForPublish = (Invoke-GitRead -GitArgs @("rev-parse", "$PrivateRemote/$Branch") -Cwd $Root).Output[0].Trim()
 
 Write-Step "Select files"
 $explicitPaths = $Paths.Count -gt 0
@@ -602,7 +607,13 @@ if (-not (Test-Path $PublicWorktree)) {
 }
 
 Write-Step "Apply commit to public"
-Invoke-GitWrite -GitArgs @("cherry-pick", $privateCommitFull) -Cwd $PublicWorktree
+$commitsForPublic = @((Invoke-GitRead -GitArgs @("rev-list", "--reverse", "$privateBaseForPublish..$privateCommitFull") -Cwd $Root).Output | Where-Object { $_ })
+if ($commitsForPublic.Count -eq 0) {
+  throw "No private commits found to apply to public from $privateBaseForPublish to $privateCommitFull."
+}
+foreach ($commitForPublic in $commitsForPublic) {
+  Invoke-GitWrite -GitArgs @("cherry-pick", $commitForPublic) -Cwd $PublicWorktree
+}
 $publicCommit = (Invoke-GitRead -GitArgs @("rev-parse", "--short", "HEAD") -Cwd $PublicWorktree).Output[0].Trim()
 Write-Host "Public commit: $publicCommit"
 
