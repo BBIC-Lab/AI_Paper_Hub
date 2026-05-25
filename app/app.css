@@ -17,8 +17,8 @@
   --dpr-sidebar-control-hover-bg: rgba(15, 23, 42, 0.035);
   --dpr-sidebar-control-focus: rgba(15, 118, 110, 0.42);
   --dpr-sidebar-active-rail-width: 5px;
-  --dpr-sidebar-footer-height: 64px;
-  --dpr-sidebar-footer-reserve: 78px;
+  --dpr-sidebar-footer-height: 42px;
+  --dpr-sidebar-footer-reserve: 56px;
 }
 
 /* 全局缩放重置为1 */
