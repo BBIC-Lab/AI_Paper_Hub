@@ -2413,26 +2413,54 @@ window.$docsify = {
 
       // 4. 论文“已阅读”状态管理（存储在 localStorage）
       const READ_STORAGE_KEY = 'dpr_read_papers_v1';
+      const PAPER_REACTION_STORAGE_KEY = 'dpr_paper_reactions_v1';
+      const MARKER_LABEL_STORAGE_KEY = 'dpr_paper_marker_labels_v1';
+      const COLOR_MARKERS = [
+        { key: 'good', label: 'Core', color: '#52c41a' },
+        { key: 'blue', label: 'Novel', color: '#1890ff' },
+        { key: 'orange', label: 'Useful', color: '#8a63d2' },
+        { key: 'bad', label: 'Skim', color: '#f5222d' },
+      ];
+      const COLOR_MARKER_KEYS = COLOR_MARKERS.map((item) => item.key);
+      const DEFAULT_MARKER_LABELS = COLOR_MARKERS.reduce((acc, item) => {
+        acc[item.key] = item.label;
+        return acc;
+      }, {});
+
+      const isColorMarkerKey = (value) => COLOR_MARKER_KEYS.includes(value);
+
+      const normalizeReadStateObject = (obj) => {
+        const normalized = {};
+        if (!obj || typeof obj !== 'object') return normalized;
+        Object.keys(obj).forEach((k) => {
+          const v = obj[k];
+          if (v === true || v === 'read') {
+            normalized[k] = 'read';
+          } else if (isColorMarkerKey(v)) {
+            normalized[k] = v;
+          }
+        });
+        return normalized;
+      };
+
+      const normalizePaperReactionState = (obj) => {
+        const normalized = {};
+        if (!obj || typeof obj !== 'object') return normalized;
+        Object.keys(obj).forEach((k) => {
+          const v = obj[k];
+          if (v === 'favorite' || v === 'dislike') {
+            normalized[k] = v;
+          }
+        });
+        return normalized;
+      };
 
       const loadReadState = () => {
         try {
           if (!window.localStorage) return {};
           const raw = window.localStorage.getItem(READ_STORAGE_KEY);
           if (!raw) return {};
-          const obj = JSON.parse(raw);
-          if (!obj || typeof obj !== 'object') return {};
-
-          // 兼容旧版本（值为 true 的情况）
-          const normalized = {};
-          Object.keys(obj).forEach((k) => {
-            const v = obj[k];
-            if (v === true || v === 'read') {
-              normalized[k] = 'read';
-            } else if (v === 'good' || v === 'bad' || v === 'blue' || v === 'orange') {
-              normalized[k] = v;
-            }
-          });
-          return normalized;
+          return normalizeReadStateObject(JSON.parse(raw));
         } catch {
           return {};
         }
@@ -2441,11 +2469,130 @@ window.$docsify = {
       const saveReadState = (state) => {
         try {
           if (!window.localStorage) return;
-          window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(state));
+          window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(state || {}));
         } catch {
           // ignore
         }
       };
+
+      const loadPaperReactionState = () => {
+        try {
+          if (!window.localStorage) return {};
+          const raw = window.localStorage.getItem(PAPER_REACTION_STORAGE_KEY);
+          if (!raw) return {};
+          return normalizePaperReactionState(JSON.parse(raw));
+        } catch {
+          return {};
+        }
+      };
+
+      const savePaperReactionState = (state) => {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(
+            PAPER_REACTION_STORAGE_KEY,
+            JSON.stringify(normalizePaperReactionState(state || {})),
+          );
+        } catch {
+          // ignore
+        }
+      };
+
+      const sanitizeMarkerLabel = (value, fallback) => {
+        const text = String(value || '').trim();
+        if (!text) return fallback;
+        return text.split(/\s+/)[0].slice(0, 18) || fallback;
+      };
+
+      const getDefaultMarkerLabels = () => Object.assign({}, DEFAULT_MARKER_LABELS);
+
+      const normalizeMarkerLabels = (labels) => {
+        const normalized = getDefaultMarkerLabels();
+        if (!labels || typeof labels !== 'object') return normalized;
+        COLOR_MARKERS.forEach((item) => {
+          normalized[item.key] = sanitizeMarkerLabel(labels[item.key], item.label);
+        });
+        return normalized;
+      };
+
+      const loadMarkerLabels = () => {
+        try {
+          if (!window.localStorage) return getDefaultMarkerLabels();
+          const raw = window.localStorage.getItem(MARKER_LABEL_STORAGE_KEY);
+          if (!raw) return getDefaultMarkerLabels();
+          return normalizeMarkerLabels(JSON.parse(raw));
+        } catch {
+          return getDefaultMarkerLabels();
+        }
+      };
+
+      const saveMarkerLabels = (labels) => {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(
+            MARKER_LABEL_STORAGE_KEY,
+            JSON.stringify(normalizeMarkerLabels(labels)),
+          );
+        } catch {
+          // ignore
+        }
+      };
+
+      const togglePaperReactionState = (state, paperId, reaction) => {
+        const next = normalizePaperReactionState(state || {});
+        const id = String(paperId || '').trim();
+        if (!id || (reaction !== 'favorite' && reaction !== 'dislike')) return next;
+        if (next[id] === reaction) {
+          delete next[id];
+        } else {
+          next[id] = reaction;
+        }
+        return next;
+      };
+
+      const setPaperColorMarkerState = (state, paperId, marker) => {
+        const next = normalizeReadStateObject(state || {});
+        const id = String(paperId || '').trim();
+        if (!id || !isColorMarkerKey(marker)) return next;
+        next[id] = next[id] === marker ? 'read' : marker;
+        return next;
+      };
+
+      const buildPaperStateBadges = (status, reaction, labels) => {
+        const badges = [];
+        if (reaction === 'favorite' || reaction === 'dislike') {
+          badges.push({
+            type: 'reaction',
+            key: reaction,
+            className: reaction,
+            title: reaction === 'favorite' ? 'Favorite' : 'Dislike',
+          });
+        }
+        if (isColorMarkerKey(status)) {
+          const marker = COLOR_MARKERS.find((item) => item.key === status);
+          const markerLabels = normalizeMarkerLabels(labels || {});
+          badges.push({
+            type: 'marker',
+            key: status,
+            className: status,
+            color: marker ? marker.color : '',
+            label: markerLabels[status] || (marker ? marker.label : status),
+            title: markerLabels[status] || (marker ? marker.label : status),
+          });
+        }
+        return badges;
+      };
+
+      window.DPRPaperActions = Object.assign({}, window.DPRPaperActions || {}, {
+        COLOR_MARKERS,
+        buildPaperStateBadges,
+        getDefaultMarkerLabels,
+        normalizeMarkerLabels,
+        normalizePaperReactionState,
+        normalizeReadStateObject,
+        setPaperColorMarkerState,
+        togglePaperReactionState,
+      });
 
       // ---------- Share to GitHub Gist ----------
       const loadGithubTokenForGist = () => {
@@ -2751,11 +2898,430 @@ window.$docsify = {
         showShareModal(url, preview ? `精美预览：${preview}` : '');
       };
 
-	      const markSidebarReadState = (currentPaperId) => {
-	        const nav = document.querySelector('.sidebar-nav');
-	        if (!nav) return;
+      const PAPER_ACTIONS_STATE = {
+        paperId: '',
+        popover: '',
+        editingMarkers: false,
+      };
 
-	        const state = loadReadState();
+      const clearNode = (node) => {
+        if (!node) return;
+        while (node.firstChild) node.removeChild(node.firstChild);
+      };
+
+      const getDirectChildByClass = (parent, className) => {
+        if (!parent || !parent.children) return null;
+        return Array.from(parent.children).find(
+          (child) => child.classList && child.classList.contains(className),
+        ) || null;
+      };
+
+      const ensurePaperActionBackdrop = () => {
+        let backdrop = document.getElementById('dpr-paper-actions-backdrop');
+        if (!backdrop) {
+          backdrop = document.createElement('div');
+          backdrop.id = 'dpr-paper-actions-backdrop';
+          backdrop.setAttribute('aria-hidden', 'true');
+          backdrop.addEventListener('click', () => closePaperActionPopover());
+          document.body.appendChild(backdrop);
+        }
+        return backdrop;
+      };
+
+      const getCurrentPaperPdfUrl = () => {
+        try {
+          let link = document.querySelector('a[href*="arxiv.org/pdf"]');
+          if (!link) link = document.querySelector('a[href$=".pdf"]');
+          if (!link || !link.href) return '';
+          return new URL(link.href, window.location.href).href;
+        } catch {
+          return '';
+        }
+      };
+
+      const getDailyReportIdForPaper = (paperId) => {
+        const id = String(paperId || '').replace(/^\/+|\/+$/g, '');
+        const dayMatch = id.match(/^(\d{6}\/\d{2})\//);
+        if (dayMatch) return `${dayMatch[1]}/README`;
+        const rangeMatch = id.match(/^(\d{8}-\d{8})\//);
+        if (rangeMatch) return `${rangeMatch[1]}/README`;
+        return '';
+      };
+
+      const downloadTextAsFile = (filename, content) => {
+        const blob = new Blob([content || ''], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || 'paper.md';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      };
+
+      const openDownloadUrl = (url) => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      };
+
+      const setPaperActionPopoverHint = (text) => {
+        const popover = document.querySelector('#dpr-paper-actions .dpr-paper-actions-popover');
+        const hint = popover ? popover.querySelector('.dpr-paper-actions-popover-hint') : null;
+        if (hint) hint.textContent = text || '';
+      };
+
+      const closePaperActionPopover = () => {
+        const toolbar = document.getElementById('dpr-paper-actions');
+        const backdrop = document.getElementById('dpr-paper-actions-backdrop');
+        PAPER_ACTIONS_STATE.popover = '';
+        PAPER_ACTIONS_STATE.editingMarkers = false;
+        if (toolbar) {
+          toolbar.classList.remove('is-popover-open');
+          const popover = toolbar.querySelector('.dpr-paper-actions-popover');
+          if (popover) {
+            popover.classList.remove('is-open');
+            popover.setAttribute('aria-hidden', 'true');
+            clearNode(popover);
+          }
+        }
+        if (backdrop) backdrop.classList.remove('is-open');
+        document.body.classList.remove('dpr-paper-actions-popover-open');
+      };
+
+      const refreshPaperActionToolbarState = (paperId = PAPER_ACTIONS_STATE.paperId) => {
+        const toolbar = document.getElementById('dpr-paper-actions');
+        if (!toolbar || !paperId) return;
+        const readState = loadReadState();
+        const reactions = loadPaperReactionState();
+        const marker = isColorMarkerKey(readState[paperId]) ? readState[paperId] : '';
+        const reaction = reactions[paperId] || '';
+        const labels = loadMarkerLabels();
+
+        const favoriteBtn = toolbar.querySelector('[data-paper-action="favorite"]');
+        const dislikeBtn = toolbar.querySelector('[data-paper-action="dislike"]');
+        const markerBtn = toolbar.querySelector('[data-paper-action="marker"]');
+        if (favoriteBtn) {
+          favoriteBtn.classList.toggle('is-active', reaction === 'favorite');
+          favoriteBtn.setAttribute('aria-pressed', reaction === 'favorite' ? 'true' : 'false');
+          favoriteBtn.title = reaction === 'favorite' ? 'Unfavorite' : 'Favorite';
+        }
+        if (dislikeBtn) {
+          dislikeBtn.classList.toggle('is-active', reaction === 'dislike');
+          dislikeBtn.setAttribute('aria-pressed', reaction === 'dislike' ? 'true' : 'false');
+          dislikeBtn.title = reaction === 'dislike' ? 'Remove dislike' : 'Dislike';
+        }
+        if (markerBtn) {
+          COLOR_MARKER_KEYS.forEach((key) => markerBtn.classList.remove(`marker-${key}`));
+          markerBtn.classList.toggle('is-active', !!marker);
+          markerBtn.setAttribute('aria-pressed', marker ? 'true' : 'false');
+          markerBtn.title = marker ? `Color mark: ${labels[marker] || marker}` : 'Color mark';
+          if (marker) markerBtn.classList.add(`marker-${marker}`);
+        }
+      };
+
+      const syncPaperStateDisplays = (paperId) => {
+        refreshPaperActionToolbarState(paperId);
+        markSidebarReadState(null);
+        requestAnimationFrame(() => {
+          syncSidebarActiveIndicator({ animate: false });
+        });
+      };
+
+      const renderMarkerPopover = (popover) => {
+        const paperId = PAPER_ACTIONS_STATE.paperId;
+        const readState = loadReadState();
+        const activeMarker = readState[paperId] || '';
+        const labels = loadMarkerLabels();
+        clearNode(popover);
+
+        const header = document.createElement('div');
+        header.className = 'dpr-paper-actions-popover-header';
+        const title = document.createElement('div');
+        title.className = 'dpr-paper-actions-popover-title';
+        title.textContent = 'Color mark';
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'dpr-paper-actions-edit-btn';
+        editBtn.textContent = PAPER_ACTIONS_STATE.editingMarkers ? 'Save' : 'Edit';
+        editBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (PAPER_ACTIONS_STATE.editingMarkers) {
+            const nextLabels = {};
+            popover.querySelectorAll('.dpr-marker-label-input').forEach((input) => {
+              nextLabels[input.dataset.markerKey] = input.value;
+            });
+            saveMarkerLabels(nextLabels);
+            PAPER_ACTIONS_STATE.editingMarkers = false;
+            renderMarkerPopover(popover);
+            syncPaperStateDisplays(paperId);
+          } else {
+            PAPER_ACTIONS_STATE.editingMarkers = true;
+            renderMarkerPopover(popover);
+          }
+        });
+        header.appendChild(title);
+        header.appendChild(editBtn);
+        popover.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'dpr-paper-marker-list';
+        COLOR_MARKERS.forEach((marker) => {
+          const row = document.createElement(PAPER_ACTIONS_STATE.editingMarkers ? 'label' : 'button');
+          row.className = `dpr-paper-marker-option marker-${marker.key}`;
+          if (!PAPER_ACTIONS_STATE.editingMarkers) row.type = 'button';
+          row.style.setProperty('--dpr-marker-color', marker.color);
+
+          const swatch = document.createElement('span');
+          swatch.className = 'dpr-paper-marker-swatch';
+          row.appendChild(swatch);
+
+          if (PAPER_ACTIONS_STATE.editingMarkers) {
+            const input = document.createElement('input');
+            input.className = 'dpr-marker-label-input';
+            input.dataset.markerKey = marker.key;
+            input.value = labels[marker.key] || marker.label;
+            input.maxLength = 18;
+            row.appendChild(input);
+          } else {
+            const text = document.createElement('span');
+            text.className = 'dpr-paper-marker-label';
+            text.textContent = labels[marker.key] || marker.label;
+            row.appendChild(text);
+            row.classList.toggle('is-active', activeMarker === marker.key);
+            row.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              saveReadState(setPaperColorMarkerState(loadReadState(), paperId, marker.key));
+              closePaperActionPopover();
+              syncPaperStateDisplays(paperId);
+            });
+          }
+          list.appendChild(row);
+        });
+        popover.appendChild(list);
+      };
+
+      const addDownloadOption = (list, { label, detail, disabled, onClick }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dpr-paper-download-option';
+        btn.disabled = !!disabled;
+        const labelEl = document.createElement('span');
+        labelEl.className = 'dpr-paper-download-label';
+        labelEl.textContent = label;
+        const detailEl = document.createElement('span');
+        detailEl.className = 'dpr-paper-download-detail';
+        detailEl.textContent = detail || '';
+        btn.appendChild(labelEl);
+        btn.appendChild(detailEl);
+        if (typeof onClick === 'function') {
+          btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (btn.disabled) return;
+            btn.disabled = true;
+            try {
+              await onClick();
+            } catch (err) {
+              const msg = String(err && err.message ? err.message : err || 'Action failed');
+              setPaperActionPopoverHint(msg);
+            } finally {
+              btn.disabled = false;
+            }
+          });
+        }
+        list.appendChild(btn);
+      };
+
+      const renderDownloadPopover = (popover) => {
+        const paperId = PAPER_ACTIONS_STATE.paperId;
+        const pdfUrl = getCurrentPaperPdfUrl();
+        clearNode(popover);
+        const header = document.createElement('div');
+        header.className = 'dpr-paper-actions-popover-header';
+        const title = document.createElement('div');
+        title.className = 'dpr-paper-actions-popover-title';
+        title.textContent = 'Downloads';
+        header.appendChild(title);
+        popover.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'dpr-paper-download-list';
+        addDownloadOption(list, {
+          label: 'Gist Link',
+          detail: '生成 Gist 分享链接',
+          onClick: async () => {
+            closePaperActionPopover();
+            try {
+              await sharePaperToGist(paperId);
+            } catch (err) {
+              const msg = String(err && err.message ? err.message : err);
+              showShareModal('', `Upload failed: ${msg}`);
+            }
+          },
+        });
+        addDownloadOption(list, {
+          label: 'Daily MD',
+          detail: '下载当日日报 Markdown',
+          onClick: async () => {
+            const reportId = getDailyReportIdForPaper(paperId);
+            if (!reportId) throw new Error('未找到当日日报路径。');
+            const content = await fetchPaperMarkdownById(reportId);
+            const slug = reportId.replace(/\//g, '-').replace(/-README$/i, '') || 'daily-report';
+            downloadTextAsFile(`${slug}.md`, content || '');
+            setPaperActionPopoverHint('已开始下载当日日报。');
+          },
+        });
+        addDownloadOption(list, {
+          label: 'Paper MD',
+          detail: '下载当前论文 Markdown',
+          onClick: async () => {
+            const content = await fetchPaperMarkdownById(paperId);
+            const slug = String(paperId || 'paper').split('/').slice(-1)[0] || 'paper';
+            downloadTextAsFile(`${slug}.md`, content || '');
+            setPaperActionPopoverHint('已开始下载当前论文。');
+          },
+        });
+        addDownloadOption(list, {
+          label: 'PDF',
+          detail: pdfUrl ? '打开论文 PDF 链接' : '未找到 PDF 链接',
+          disabled: !pdfUrl,
+          onClick: async () => {
+            openDownloadUrl(pdfUrl);
+            setPaperActionPopoverHint('已打开 PDF 链接。');
+          },
+        });
+        popover.appendChild(list);
+        const hint = document.createElement('div');
+        hint.className = 'dpr-paper-actions-popover-hint';
+        popover.appendChild(hint);
+      };
+
+      const openPaperActionPopover = (type) => {
+        const toolbar = document.getElementById('dpr-paper-actions');
+        if (!toolbar || toolbar.hidden) return;
+        const popover = toolbar.querySelector('.dpr-paper-actions-popover');
+        const backdrop = ensurePaperActionBackdrop();
+        if (!popover) return;
+        PAPER_ACTIONS_STATE.popover = type;
+        PAPER_ACTIONS_STATE.editingMarkers = false;
+        if (type === 'marker') renderMarkerPopover(popover);
+        if (type === 'download') renderDownloadPopover(popover);
+        popover.classList.add('is-open');
+        popover.setAttribute('aria-hidden', 'false');
+        toolbar.classList.add('is-popover-open');
+        backdrop.classList.add('is-open');
+        document.body.classList.add('dpr-paper-actions-popover-open');
+      };
+
+      const togglePaperActionPopover = (type) => {
+        if (PAPER_ACTIONS_STATE.popover === type) {
+          closePaperActionPopover();
+        } else {
+          openPaperActionPopover(type);
+        }
+      };
+
+      const ensurePaperActionToolbar = (paperId, isPaperPage) => {
+        let toolbar = document.getElementById('dpr-paper-actions');
+        if (!isPaperPage || !paperId) {
+          closePaperActionPopover();
+          if (toolbar) toolbar.hidden = true;
+          return;
+        }
+        if (PAPER_ACTIONS_STATE.paperId && PAPER_ACTIONS_STATE.paperId !== paperId) {
+          closePaperActionPopover();
+        }
+        if (!toolbar) {
+          toolbar = document.createElement('div');
+          toolbar.id = 'dpr-paper-actions';
+          toolbar.innerHTML = `
+            <div class="dpr-paper-actions-stack" role="toolbar" aria-label="Paper actions">
+              <button type="button" class="dpr-paper-action-btn" data-paper-action="favorite" aria-label="Favorite" title="Favorite" aria-pressed="false"><svg class="dpr-paper-action-icon dpr-icon-favorite" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4l2.65 5.36 5.92.86-4.28 4.17 1.01 5.9L12 16.9l-5.3 2.79 1.01-5.9-4.28-4.17 5.92-.86L12 3.4z"/></svg></button>
+              <button type="button" class="dpr-paper-action-btn" data-paper-action="dislike" aria-label="Dislike" title="Dislike" aria-pressed="false"><svg class="dpr-paper-action-icon dpr-icon-dislike" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.4C7.8 16.62 5 14.07 5 10.95 5 8.4 6.98 6.5 9.52 6.5c1.43 0 2.81.67 3.48 1.72.67-1.05 2.05-1.72 3.48-1.72C19.02 6.5 21 8.4 21 10.95c0 3.12-2.8 5.67-9 9.45z"/><line x1="4.25" y1="20.25" x2="20.25" y2="4.25"/></svg></button>
+              <button type="button" class="dpr-paper-action-btn" data-paper-action="marker" aria-label="Color mark" title="Color mark" aria-pressed="false"><span class="dpr-paper-action-icon dpr-icon-marker-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
+              <button type="button" class="dpr-paper-action-btn" data-paper-action="download" aria-label="Downloads" title="Downloads"><svg class="dpr-paper-action-icon dpr-icon-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75v10.2"/><path d="M7.9 10.05 12 14.15l4.1-4.1"/><path d="M5.25 15.75v2.6c0 .9.73 1.63 1.63 1.63h10.24c.9 0 1.63-.73 1.63-1.63v-2.6"/></svg></button>
+            </div>
+            <div class="dpr-paper-actions-popover" role="dialog" aria-hidden="true"></div>
+          `;
+          toolbar.addEventListener('click', (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest('[data-paper-action]') : null;
+            if (!btn || !toolbar.contains(btn)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const action = btn.getAttribute('data-paper-action');
+            const currentPaperId = PAPER_ACTIONS_STATE.paperId;
+            if (!currentPaperId) return;
+            if (action === 'favorite' || action === 'dislike') {
+              closePaperActionPopover();
+              const next = togglePaperReactionState(
+                loadPaperReactionState(),
+                currentPaperId,
+                action,
+              );
+              savePaperReactionState(next);
+              syncPaperStateDisplays(currentPaperId);
+              return;
+            }
+            if (action === 'marker') {
+              togglePaperActionPopover('marker');
+              return;
+            }
+            if (action === 'download') {
+              togglePaperActionPopover('download');
+            }
+          });
+          document.body.appendChild(toolbar);
+        }
+        PAPER_ACTIONS_STATE.paperId = paperId;
+        toolbar.hidden = false;
+        refreshPaperActionToolbarState(paperId);
+      };
+
+      const updateSidebarStateBadges = (li, status, reaction, labels) => {
+        if (!li) return;
+        const badges = buildPaperStateBadges(status, reaction, labels);
+        li.classList.toggle('sidebar-paper-has-user-state', badges.length > 0);
+        const staleWrap = getDirectChildByClass(li, 'sidebar-paper-state-badges');
+        if (staleWrap && staleWrap.remove) staleWrap.remove();
+        const metaLine = li.querySelector('.dpr-sidebar-meta-line');
+        const metaTags = li.querySelector('.dpr-sidebar-meta-tags');
+        const host = metaLine || metaTags || li;
+        let wrap = getDirectChildByClass(host, 'sidebar-paper-state-badges');
+        if (!badges.length) {
+          if (wrap && wrap.remove) wrap.remove();
+          return;
+        }
+        if (!wrap) {
+          wrap = document.createElement('span');
+          wrap.className = 'sidebar-paper-state-badges';
+          host.appendChild(wrap);
+        }
+        clearNode(wrap);
+        badges.forEach((badge) => {
+          const el = document.createElement('span');
+          el.className = `sidebar-paper-state-badge ${badge.type} ${badge.className}`;
+          el.title = badge.title || '';
+          el.setAttribute('aria-hidden', 'true');
+          if (badge.color) el.style.setProperty('--dpr-sidebar-marker-color', badge.color);
+          wrap.appendChild(el);
+        });
+      };
+
+      const markSidebarReadState = (currentPaperId) => {
+        const nav = document.querySelector('.sidebar-nav');
+        if (!nav) return;
+
+        const state = loadReadState();
+        const reactions = loadPaperReactionState();
+        const markerLabels = loadMarkerLabels();
         if (currentPaperId) {
           if (!state[currentPaperId]) {
             state[currentPaperId] = 'read';
@@ -2772,192 +3338,51 @@ window.$docsify = {
             'sidebar-paper-blue',
             'sidebar-paper-orange',
           );
-          if (status === 'good') {
-            li.classList.add('sidebar-paper-good');
-          } else if (status === 'bad') {
-            li.classList.add('sidebar-paper-bad');
-          } else if (status === 'blue') {
-            li.classList.add('sidebar-paper-blue');
-          } else if (status === 'orange') {
-            li.classList.add('sidebar-paper-orange');
-          } else if (status) {
+          if (status === 'read') {
             li.classList.add('sidebar-paper-read');
           }
         };
 
-	        const links = nav.querySelectorAll('a[href*="#/"]');
-	        links.forEach((a) => {
-	          const href = a.getAttribute('href') || '';
-	          const m = href.match(/#\/(.+)$/);
-	          if (!m) return;
-	          const paperIdFromHref = m[1].replace(/\/$/, '');
-	          const li = a.closest('li');
-	          if (!li) return;
+        const links = nav.querySelectorAll('a[href*="#/"]');
+        links.forEach((a) => {
+          const href = a.getAttribute('href') || '';
+          const m = href.match(/#\/(.+)$/);
+          if (!m) return;
+          const paperIdFromHref = m[1].replace(/\/$/, '');
+          const li = a.closest('li');
+          if (!li) return;
           if (
             a.classList.contains('dpr-sidebar-brief-link') ||
             /\/README$/i.test(paperIdFromHref) ||
             !/^(\d{6}\/\d{2}|\d{8}-\d{8})\/(?!README$).+/i.test(paperIdFromHref)
           ) {
-            li.classList.remove('sidebar-paper-item');
+            li.classList.remove('sidebar-paper-item', 'sidebar-paper-has-user-state');
             const strayActions = li.querySelector('.sidebar-paper-rating-icons');
+            const strayLeftActions = li.querySelector('.sidebar-paper-left-actions');
+            const strayBadges = getDirectChildByClass(li, 'sidebar-paper-state-badges');
+            const strayMetaBadges = li.querySelector('.dpr-sidebar-meta-tags > .sidebar-paper-state-badges, .dpr-sidebar-meta-line > .sidebar-paper-state-badges');
             if (strayActions && strayActions.remove) strayActions.remove();
+            if (strayLeftActions && strayLeftActions.remove) strayLeftActions.remove();
+            if (strayBadges && strayBadges.remove) strayBadges.remove();
+            if (strayMetaBadges && strayMetaBadges.remove) strayMetaBadges.remove();
             return;
           }
-	          // 标记这是一个具体论文条目，方便样式细化（避免整天标题一起高亮）
-	          li.classList.add('sidebar-paper-item');
+          li.classList.add('sidebar-paper-item');
 
-          // 为侧边栏条目追加"书签标记"按钮（绿/蓝/橙/红）
-	          let actionWrapper = li.querySelector('.sidebar-paper-rating-icons');
-	          let goodIcon = actionWrapper
-	            ? actionWrapper.querySelector('.sidebar-paper-rating-icon.good')
-	            : null;
-            let blueIcon = actionWrapper
-              ? actionWrapper.querySelector('.sidebar-paper-rating-icon.blue')
-              : null;
-            let orangeIcon = actionWrapper
-              ? actionWrapper.querySelector('.sidebar-paper-rating-icon.orange')
-              : null;
-	          let badIcon = actionWrapper
-	            ? actionWrapper.querySelector('.sidebar-paper-rating-icon.bad')
-	            : null;
+          const oldRatingActions = li.querySelector('.sidebar-paper-rating-icons');
+          const oldLeftActions = li.querySelector('.sidebar-paper-left-actions');
+          if (oldRatingActions && oldRatingActions.remove) oldRatingActions.remove();
+          if (oldLeftActions && oldLeftActions.remove) oldLeftActions.remove();
 
-          // 左侧按钮容器（分享 + 收藏）
-          let leftActions = li.querySelector('.sidebar-paper-left-actions');
-	          if (!actionWrapper) {
-	            actionWrapper = document.createElement('span');
-	            actionWrapper.className = 'sidebar-paper-rating-icons';
-
-	            goodIcon = document.createElement('button');
-	            goodIcon.className = 'sidebar-paper-rating-icon good';
-	            goodIcon.title = '标记为「绿色书签」';
-	            goodIcon.setAttribute('aria-label', '绿色书签');
-	            goodIcon.innerHTML = '';
-
-              blueIcon = document.createElement('button');
-              blueIcon.className = 'sidebar-paper-rating-icon blue';
-              blueIcon.title = '标记为「蓝色书签」';
-              blueIcon.setAttribute('aria-label', '蓝色书签');
-              blueIcon.innerHTML = '';
-
-              orangeIcon = document.createElement('button');
-              orangeIcon.className = 'sidebar-paper-rating-icon orange';
-              orangeIcon.title = '标记为「橙色书签」';
-              orangeIcon.setAttribute('aria-label', '橙色书签');
-              orangeIcon.innerHTML = '';
-
-	            badIcon = document.createElement('button');
-	            badIcon.className = 'sidebar-paper-rating-icon bad';
-	            badIcon.title = '标记为「红色书签」';
-	            badIcon.setAttribute('aria-label', '红色书签');
-	            badIcon.innerHTML = '';
-
-              // 创建左侧按钮容器
-              leftActions = document.createElement('span');
-              leftActions.className = 'sidebar-paper-left-actions';
-
-              const favoriteIcon = document.createElement('button');
-              favoriteIcon.className = 'sidebar-paper-favorite-icon';
-              favoriteIcon.title = '收藏';
-              favoriteIcon.setAttribute('aria-label', '收藏');
-              favoriteIcon.textContent = '☆';
-              favoriteIcon.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // 切换收藏状态（功能待实现）
-                const isActive = favoriteIcon.classList.toggle('active');
-                favoriteIcon.textContent = isActive ? '★' : '☆';
-              });
-
-              const shareIcon = document.createElement('button');
-              shareIcon.className = 'sidebar-paper-share-icon';
-              shareIcon.title = '分享（生成 GitHub Gist 链接）';
-              shareIcon.setAttribute('aria-label', '分享');
-              shareIcon.textContent = '⤴';
-
-              const setStateAndRefresh = (value) => {
-                const latestState = loadReadState();
-                const current = latestState[paperIdFromHref];
-                if (current === value) {
-                  latestState[paperIdFromHref] = 'read';
-                } else {
-                  latestState[paperIdFromHref] = value;
-                }
-                saveReadState(latestState);
-                markSidebarReadState(null);
-                requestAnimationFrame(() => {
-                  syncSidebarActiveIndicator({ animate: false });
-                });
-              };
-
-	            goodIcon.addEventListener('click', (e) => {
-	              e.preventDefault();
-	              e.stopPropagation();
-	              setStateAndRefresh('good');
-	            });
-
-              blueIcon.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setStateAndRefresh('blue');
-              });
-
-              orangeIcon.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setStateAndRefresh('orange');
-              });
-
-              shareIcon.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (shareIcon.disabled) return;
-                const old = shareIcon.textContent;
-                shareIcon.disabled = true;
-                shareIcon.textContent = '...';
-                try {
-                  await sharePaperToGist(paperIdFromHref);
-                } catch (err) {
-                  const msg = String(err && err.message ? err.message : err);
-                  showShareModal('', `上传失败：${msg}`);
-                } finally {
-                  shareIcon.disabled = false;
-                  shareIcon.textContent = old || '⤴';
-                }
-              });
-
-	            badIcon.addEventListener('click', (e) => {
-	              e.preventDefault();
-	              e.stopPropagation();
-	              setStateAndRefresh('bad');
-	            });
-
-              // 左侧容器添加收藏和分享按钮
-              leftActions.appendChild(favoriteIcon);
-              leftActions.appendChild(shareIcon);
-              a.parentNode.insertBefore(leftActions, a);
-
-              // 右侧容器添加书签按钮
-	            actionWrapper.appendChild(goodIcon);
-              actionWrapper.appendChild(blueIcon);
-              actionWrapper.appendChild(orangeIcon);
-	            actionWrapper.appendChild(badIcon);
-	            a.parentNode.insertBefore(actionWrapper, a.nextSibling);
-	          }
-
-	          // 无论按钮是否刚创建，都要基于“最新 state”刷新激活态（支持空格键切换）
-	          try {
-	            const s = state[paperIdFromHref];
-	            if (goodIcon) goodIcon.classList.toggle('active', s === 'good');
-              if (blueIcon) blueIcon.classList.toggle('active', s === 'blue');
-              if (orangeIcon) orangeIcon.classList.toggle('active', s === 'orange');
-	            if (badIcon) badIcon.classList.toggle('active', s === 'bad');
-	          } catch {
-	            // ignore
-	          }
-
-	          applyLiState(li, paperIdFromHref);
-	        });
-	      };
+          applyLiState(li, paperIdFromHref);
+          updateSidebarStateBadges(
+            li,
+            state[paperIdFromHref],
+            reactions[paperIdFromHref],
+            markerLabels,
+          );
+        });
+      };
 
       const scoreToStarRating = (scoreValue) => {
         const score = Number(scoreValue);
@@ -3365,8 +3790,6 @@ window.$docsify = {
         const ensured = ensureSidebarActiveIndicator();
         if (!ensured || !ensured.el) return;
         const indicator = ensured.el;
-        // 避免后续复用时残留 good/bad 配色
-        indicator.classList.remove('is-good', 'is-bad', 'is-blue', 'is-orange');
         indicator.style.opacity = '0';
         indicator.style.width = '0';
         indicator.style.height = '0';
@@ -3398,13 +3821,6 @@ window.$docsify = {
         const indicator = ensured.el;
         const newlyCreated = ensured.newlyCreated;
 
-        // 先清空上一条目的配色状态，避免出现“取消勾选/叉选后仍残留底色”
-        try {
-          indicator.classList.remove('is-good', 'is-bad', 'is-blue', 'is-orange');
-        } catch {
-          // ignore
-        }
-
         // 只对论文条目启用（避免日期分组标题等）
         if (!li.classList || !li.classList.contains('sidebar-paper-item')) return;
         // 若该条目在“折叠的日期”之下：隐藏高亮层，避免折叠后仍残留选中背景
@@ -3426,26 +3842,6 @@ window.$docsify = {
         }
 
         showSidebarActiveIndicator();
-
-        // 选中高亮层配色：根据 good/bad 状态切换（用于“已打勾/打叉”的选中底色）
-        try {
-          const isGood =
-            li.classList && li.classList.contains('sidebar-paper-good');
-          const isBad = li.classList && li.classList.contains('sidebar-paper-bad');
-          const isBlue =
-            li.classList && li.classList.contains('sidebar-paper-blue');
-          const isOrange =
-            li.classList && li.classList.contains('sidebar-paper-orange');
-
-          // 单选：如果同时存在（理论上不应发生），按优先级取第一个
-          const any = isGood || isBad || isBlue || isOrange;
-          indicator.classList.toggle('is-good', !!isGood && any && !isBad && !isBlue && !isOrange);
-          indicator.classList.toggle('is-bad', !!isBad && any && !isGood && !isBlue && !isOrange);
-          indicator.classList.toggle('is-blue', !!isBlue && any && !isGood && !isBad && !isOrange);
-          indicator.classList.toggle('is-orange', !!isOrange && any && !isGood && !isBad && !isBlue);
-        } catch {
-          // ignore
-        }
 
         // 不能用 offsetTop/offsetLeft：
         // 侧边栏是多层嵌套 li/ul，offset* 参照系会落在中间层，导致越往下选中偏移越明显。
@@ -3951,51 +4347,24 @@ window.$docsify = {
           const m = current.match(/^#\/(.+)$/);
           if (!m) return;
           const paperId = m[1];
+          saveReadState(setPaperColorMarkerState(loadReadState(), paperId, 'good'));
+          syncPaperStateDisplays(paperId);
+        };
 
-          const state = loadReadState();
-          const cur = state[paperId];
-          // 空格：在 good 与 read 之间切换
-          if (cur === 'good') {
-            state[paperId] = 'read';
-          } else {
-            state[paperId] = 'good';
-          }
-	          saveReadState(state);
-	          markSidebarReadState(null);
-	          // 同步选中高亮层颜色（good <-> read 切换时避免残留绿色底）
-	          requestAnimationFrame(() => {
-	            syncSidebarActiveIndicator({ animate: false });
-	          });
-	        };
-
-        // 通用书签切换函数：数字键 1234 对应 绿蓝紫红
+        // Number keys 1-4 toggle color markers.
         const toggleBookmarkForCurrent = (bookmarkType) => {
           const current = DPR_NAV_STATE.currentHref || '';
           if (!current) return;
           const m = current.match(/^#\/(.+)$/);
           if (!m) return;
           const paperId = m[1];
-
-          const state = loadReadState();
-          const cur = state[paperId];
-          // 切换：如果当前已是该状态则取消（变为 read），否则设置为该状态
-          if (cur === bookmarkType) {
-            state[paperId] = 'read';
-          } else {
-            state[paperId] = bookmarkType;
-          }
-          saveReadState(state);
-          markSidebarReadState(null);
-          requestAnimationFrame(() => {
-            syncSidebarActiveIndicator({ animate: false });
-          });
-          // 移除所有按钮焦点，避免数字键触发按钮
+          saveReadState(setPaperColorMarkerState(loadReadState(), paperId, bookmarkType));
+          syncPaperStateDisplays(paperId);
           if (document.activeElement && document.activeElement.blur) {
             document.activeElement.blur();
           }
         };
 
-        // 键盘：左右方向键 + 数字键 1234
         window.addEventListener('keydown', (e) => {
           const key = e.key || '';
           if (shouldIgnoreKeyNav(e)) return;
@@ -4629,6 +4998,8 @@ window.$docsify = {
           // 首页也需要应用已有的“已读高亮”，但不新增记录
           markSidebarReadState(null);
         }
+
+        ensurePaperActionToolbar(paperId, isPaperPage);
 
         // 让滑动高亮层跟随当前 active 项（点击、路由变化后会更新 active 类）
         try {
