@@ -6,12 +6,12 @@ Publishes one scoped change to both repository roles:
    from a disposable worktree, then push it.
 
 The script is intentionally conservative:
-- It never stages ignored/unrelated private runtime paths in auto mode.
+- It never stages ignored/unrelated private runtime paths or root README files.
 - It aborts if the public worktree is dirty.
 - It uses per-command proxy overrides for pushes.
 - Use -DryRun to inspect the plan without staging, committing, or pushing.
 - For multiple explicit paths, use PowerShell array syntax:
-  -Paths README.md,scripts/publish-dual.ps1
+  -Paths scripts/publish-dual.ps1,app/app.css
 #>
 
 [CmdletBinding(PositionalBinding = $false)]
@@ -211,7 +211,6 @@ function Is-HardDeniedPath {
 function Is-AutoExcludedPath {
   param([string]$RepoPath)
   $patterns = @(
-    "^TODO\.md$",
     "^AGENTS\.md$",
     "^docs/config\.yaml$",
     "^codex-httpserver\.(out|err)\.log$",
@@ -221,6 +220,17 @@ function Is-AutoExcludedPath {
     "(^|/)\.venv/",
     "(^|/)tmp/",
     "(^|/)temp/"
+  )
+  foreach ($pattern in $patterns) {
+    if ($RepoPath -match $pattern) { return $true }
+  }
+  return $false
+}
+
+function Is-SyncExcludedPath {
+  param([string]$RepoPath)
+  $patterns = @(
+    "^README(\.[^/]+)?\.md$"
   )
   foreach ($pattern in $patterns) {
     if ($RepoPath -match $pattern) { return $true }
@@ -285,6 +295,10 @@ if ($explicitPaths) {
 $publishFiles = New-Object System.Collections.Generic.List[string]
 $excludedFiles = New-Object System.Collections.Generic.List[string]
 foreach ($file in $candidateFiles) {
+  if (Is-SyncExcludedPath $file) {
+    $excludedFiles.Add($file) | Out-Null
+    continue
+  }
   if ((-not $explicitPaths) -and (Is-AutoExcludedPath $file)) {
     $excludedFiles.Add($file) | Out-Null
     continue
@@ -307,7 +321,7 @@ if ($publishFiles.Count -eq 0) {
 Write-Host "Files to publish:"
 $publishFiles | ForEach-Object { Write-Host "  $_" }
 if ($excludedFiles.Count -gt 0) {
-  Write-Host "Excluded from auto mode:" -ForegroundColor Yellow
+  Write-Host "Excluded from publish scope:" -ForegroundColor Yellow
   $excludedFiles | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
 }
 
