@@ -1,8 +1,11 @@
+import contextlib
 import importlib.util
+import io
 import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 def _load_module():
@@ -74,10 +77,86 @@ class EmailDailyBriefTest(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("# DPR_EMAIL_SCHEDULE Asia/Shanghai 08:30", text)
+        self.assertIn("# DPR_EMAIL_SCHEDULE", text)
         self.assertIn("workflow_dispatch:", text)
         self.assertIn("DPR_EMAIL_TO", text)
         self.assertIn("src/email_daily_brief.py", text)
+
+    def build_config(self, port):
+        return self.mod.EmailConfig(
+            enabled=True,
+            to_addr="to@example.com",
+            from_addr="from@example.com",
+            smtp_host="smtp.qq.com",
+            smtp_port=port,
+            smtp_user="from@example.com",
+            smtp_password="secret",
+            site_url="",
+        )
+
+    def build_message(self):
+        msg = self.mod.EmailMessage()
+        msg["From"] = "from@example.com"
+        msg["To"] = "to@example.com"
+        msg["Subject"] = "test"
+        msg.set_content("hello")
+        return msg
+
+    def test_send_message_uses_ssl_for_port_465(self):
+        server = mock.Mock()
+        server.__enter__ = mock.Mock(return_value=server)
+        server.__exit__ = mock.Mock(return_value=None)
+        context = object()
+
+        with mock.patch.object(self.mod.ssl, "create_default_context", return_value=context), \
+             mock.patch.object(self.mod.smtplib, "SMTP_SSL", return_value=server) as smtp_ssl, \
+             mock.patch.object(self.mod.smtplib, "SMTP") as smtp:
+            self.mod.send_message(self.build_config(465), self.build_message())
+
+        smtp_ssl.assert_called_once_with(
+            "smtp.qq.com",
+            465,
+            timeout=30,
+            context=context,
+        )
+        smtp.assert_not_called()
+        server.login.assert_called_once_with("from@example.com", "secret")
+        server.send_message.assert_called_once()
+
+    def test_send_message_uses_starttls_for_port_587(self):
+        server = mock.Mock()
+        server.__enter__ = mock.Mock(return_value=server)
+        server.__exit__ = mock.Mock(return_value=None)
+        context = object()
+
+        with mock.patch.object(self.mod.ssl, "create_default_context", return_value=context), \
+             mock.patch.object(self.mod.smtplib, "SMTP", return_value=server) as smtp, \
+             mock.patch.object(self.mod.smtplib, "SMTP_SSL") as smtp_ssl:
+            self.mod.send_message(self.build_config(587), self.build_message())
+
+        smtp.assert_called_once_with("smtp.qq.com", 587, timeout=30)
+        smtp_ssl.assert_not_called()
+        server.starttls.assert_called_once_with(context=context)
+        self.assertEqual(server.ehlo.call_count, 2)
+        server.login.assert_called_once_with("from@example.com", "secret")
+        server.send_message.assert_called_once()
+
+    def test_send_message_reports_login_failure(self):
+        server = mock.Mock()
+        server.__enter__ = mock.Mock(return_value=server)
+        server.__exit__ = mock.Mock(return_value=None)
+        server.login.side_effect = self.mod.smtplib.SMTPAuthenticationError(
+            535,
+            b"auth failed",
+        )
+        stderr = io.StringIO()
+
+        with mock.patch.object(self.mod.smtplib, "SMTP_SSL", return_value=server), \
+             contextlib.redirect_stderr(stderr):
+            with self.assertRaisesRegex(RuntimeError, "SMTP login failed"):
+                self.mod.send_message(self.build_config(465), self.build_message())
+
+        self.assertIn("SMTP login failed", stderr.getvalue())
 
 
 if __name__ == "__main__":

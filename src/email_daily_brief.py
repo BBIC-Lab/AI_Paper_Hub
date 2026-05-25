@@ -14,6 +14,7 @@ import os
 import re
 import smtplib
 import ssl
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.message import EmailMessage
@@ -44,6 +45,10 @@ class EmailConfig:
     smtp_password: str
     site_url: str
     subject_prefix: str = "AI Daily Paper Reader"
+
+    @property
+    def smtp_pass(self) -> str:
+        return self.smtp_password
 
 
 @dataclass
@@ -285,21 +290,68 @@ def build_message(config: EmailConfig, report: DailyReport) -> EmailMessage:
 
 
 def send_message(config: EmailConfig, message: EmailMessage) -> None:
-    use_ssl = is_truthy(_env("DPR_SMTP_USE_SSL", "true" if config.smtp_port == 465 else "false"))
-    use_starttls = is_truthy(_env("DPR_SMTP_STARTTLS", "true" if not use_ssl else "false"))
-    if use_ssl:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, context=context, timeout=30) as server:
-            server.login(config.smtp_user, config.smtp_password)
-            server.send_message(message)
+    context = ssl.create_default_context()
+    password = getattr(config, "smtp_pass", None) or config.smtp_password
+
+    def log_error(stage: str, exc: Exception) -> None:
+        print(
+            f"[ERROR] SMTP {stage}: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+
+    if config.smtp_port == 465:
+        try:
+            server = smtplib.SMTP_SSL(
+                config.smtp_host,
+                config.smtp_port,
+                timeout=30,
+                context=context,
+            )
+        except Exception as exc:
+            log_error("connection failed (implicit SSL, port 465)", exc)
+            raise RuntimeError(
+                f"SMTP connection failed for {config.smtp_host}:{config.smtp_port} using SSL."
+            ) from exc
+
+        with server:
+            try:
+                server.login(config.smtp_user, password)
+            except Exception as exc:
+                log_error("login failed", exc)
+                raise RuntimeError("SMTP login failed; check user/password or app password.") from exc
+            try:
+                server.send_message(message)
+            except Exception as exc:
+                log_error("send failed", exc)
+                raise RuntimeError("SMTP send failed after login.") from exc
         return
-    with smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=30) as server:
-        server.ehlo()
-        if use_starttls:
-            server.starttls(context=ssl.create_default_context())
+
+    try:
+        server = smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=30)
+    except Exception as exc:
+        log_error("connection failed (STARTTLS)", exc)
+        raise RuntimeError(
+            f"SMTP connection failed for {config.smtp_host}:{config.smtp_port} using STARTTLS."
+        ) from exc
+
+    with server:
+        try:
             server.ehlo()
-        server.login(config.smtp_user, config.smtp_password)
-        server.send_message(message)
+            server.starttls(context=context)
+            server.ehlo()
+        except Exception as exc:
+            log_error("STARTTLS negotiation failed", exc)
+            raise RuntimeError("SMTP STARTTLS negotiation failed.") from exc
+        try:
+            server.login(config.smtp_user, password)
+        except Exception as exc:
+            log_error("login failed", exc)
+            raise RuntimeError("SMTP login failed; check user/password or app password.") from exc
+        try:
+            server.send_message(message)
+        except Exception as exc:
+            log_error("send failed", exc)
+            raise RuntimeError("SMTP send failed after login.") from exc
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
