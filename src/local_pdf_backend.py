@@ -1,0 +1,387 @@
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import os
+import re
+import shutil
+import threading
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict
+
+import fitz
+
+from paper_figures import ensure_paper_figures_from_file
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT_DIR / "src"
+_GEN6_PATH = SRC_DIR / "6.generate_docs.py"
+_GEN6_SPEC = importlib.util.spec_from_file_location("dpr_generate_docs", _GEN6_PATH)
+if not _GEN6_SPEC or not _GEN6_SPEC.loader:
+    raise RuntimeError(f"无法加载 Step6 模块：{_GEN6_PATH}")
+gen6 = importlib.util.module_from_spec(_GEN6_SPEC)
+_GEN6_SPEC.loader.exec_module(gen6)
+
+_GENERATION_LOCK = threading.Lock()
+
+
+def _clean_line(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _safe_asset_key(value: str) -> str:
+    text = re.sub(r"[^A-Za-z0-9._-]+", "-", str(value or "").strip())
+    text = text.strip("-._").lower()
+    return text or "local-paper"
+
+
+def _first_meaningful_line(text: str) -> str:
+    for raw in str(text or "").splitlines():
+        line = _clean_line(raw)
+        if 8 <= len(line) <= 220 and re.search(r"[A-Za-z]{3,}", line):
+            if re.match(r"^(abstract|keywords?|introduction|references)\b", line, re.I):
+                continue
+            return line
+    return ""
+
+
+def _extract_abstract(text: str) -> str:
+    source = str(text or "").replace("\r\n", "\n")
+    match = re.search(r"\babstract\b[\s:.\-]*([\s\S]{80,2600})", source, re.I)
+    if not match:
+        return ""
+    body = match.group(1) or ""
+    stops = [
+        r"\n\s*(?:1\.?\s+)?introduction\b",
+        r"\n\s*keywords?\b",
+        r"\n\s*index terms?\b",
+        r"\n\s*(?:2\.?\s+)?related work\b",
+    ]
+    end = len(body)
+    for pattern in stops:
+        m = re.search(pattern, body, re.I)
+        if m:
+            end = min(end, m.start())
+    return _clean_line(body[:end])
+
+
+def _pdf_metadata(pdf_path: str, text: str, fallback_name: str) -> Dict[str, str]:
+    title = ""
+    authors = ""
+    try:
+        with fitz.open(pdf_path) as doc:
+            meta = doc.metadata or {}
+            title = _clean_line(meta.get("title") or "")
+            authors = _clean_line(meta.get("author") or "")
+    except Exception:
+        pass
+    if not title or title.lower() == "untitled":
+        title = _first_meaningful_line(text)
+    if not title:
+        title = Path(fallback_name or "local-paper.pdf").stem
+    return {
+        "title": title,
+        "authors": authors,
+        "abstract": _extract_abstract(text),
+    }
+
+
+def _configure_temporary_llm(llm_config: Dict[str, Any] | None):
+    if not llm_config:
+        return None
+    api_key = _clean_line(llm_config.get("apiKey") or llm_config.get("api_key"))
+    base_url = _clean_line(llm_config.get("baseUrl") or llm_config.get("base_url"))
+    model = _clean_line(llm_config.get("model"))
+    if not api_key or not base_url or not model:
+        return None
+    return gen6.make_task_client("summary", api_key=api_key, base_url=base_url, model=model)
+
+
+def _render_pdf_page_previews(
+    pdf_path: str,
+    *,
+    docs_dir: str,
+    source_key: str,
+    asset_key: str,
+    limit: int = 3,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    asset_dir = Path(docs_dir) / "assets" / "figures" / source_key / _safe_asset_key(asset_key)
+    rel_prefix = "/".join(["assets", "figures", source_key, _safe_asset_key(asset_key)])
+    asset_dir.mkdir(parents=True, exist_ok=True)
+    try:
+      doc = fitz.open(pdf_path)
+    except Exception:
+      return out
+    try:
+        count = min(len(doc), max(int(limit or 0), 0))
+        for i in range(count):
+            page = doc[i]
+            rect = page.rect
+            scale = max(min(720 / max(float(rect.width or 1), 1.0), 1.2), 0.45)
+            pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+            name = f"page-preview-{i + 1:03d}.webp"
+            path = asset_dir / name
+            pix.pil_save(str(path), format="WEBP", quality=78, method=6)
+            out.append(
+                {
+                    "url": "/".join([rel_prefix, name]),
+                    "caption": f"Page {i + 1} preview generated from uploaded PDF.",
+                    "page": i + 1,
+                    "index": i + 1,
+                    "width": int(pix.width),
+                    "height": int(pix.height),
+                }
+            )
+    finally:
+        doc.close()
+    return out
+
+
+def _parse_llm_config(raw: str | None) -> Dict[str, Any] | None:
+    if not raw:
+        return None
+    try:
+        obj = json.loads(raw)
+    except Exception:
+        return None
+    return obj if isinstance(obj, dict) else None
+
+
+def _insert_local_sidebar_entry(sidebar_path: str, paper_id: str, title: str, evidence: str = "") -> None:
+    path = Path(sidebar_path)
+    lines = path.read_text(encoding="utf-8").splitlines(True) if path.exists() else []
+    root_line = "* 本地 PDF 解析\n"
+    upload_line = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n'
+    daily_line = "* Daily Papers\n"
+
+    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* Daily Papers")), -1)
+    root_idx = next(
+        (
+            i
+            for i, line in enumerate(lines)
+            if line.strip() == "* 本地 PDF 解析" or (line.startswith("* ") and 'href="#/local-pdf"' in line)
+        ),
+        -1,
+    )
+    if root_idx == -1:
+        insert_at = daily_idx if daily_idx >= 0 else len(lines)
+        lines.insert(insert_at, root_line)
+        lines.insert(insert_at + 1, upload_line)
+        root_idx = insert_at
+        if daily_idx >= 0:
+            daily_idx += 2
+    elif 'href="#/local-pdf"' in lines[root_idx]:
+        lines[root_idx] = root_line
+    if daily_idx == -1:
+        lines.append(daily_line)
+        daily_idx = len(lines) - 1
+
+    next_top = next((i for i in range(root_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
+    has_upload = any('href="#/local-pdf"' in line for line in lines[root_idx + 1:next_top])
+    if not has_upload:
+        lines.insert(root_idx + 1, upload_line)
+        next_top += 1
+    upload_idx = next(
+        (i for i in range(root_idx + 1, next_top) if 'href="#/local-pdf"' in lines[i]),
+        -1,
+    )
+    section_idx = next(
+        (i for i in range(root_idx + 1, next_top) if lines[i].strip() == "* 精读区"),
+        -1,
+    )
+    if section_idx == -1:
+        insert_at = upload_idx + 1 if upload_idx >= 0 else root_idx + 1
+        lines.insert(insert_at, "  * 精读区\n")
+        section_idx = insert_at
+        next_top += 1
+
+    href = f"#/{paper_id}"
+    if any(href in line for line in lines[root_idx + 1:next_top]):
+        return
+    safe_title = gen6.html.escape(_clean_line(title) or paper_id)
+    payload = {
+        "title": title,
+        "link": href,
+        "score": "local",
+        "tags": [{"kind": "paper", "label": "本地PDF"}],
+        "evidence": _clean_line(evidence) or "本地上传 PDF，使用后端精读流程生成。",
+    }
+    entry = (
+        '    * '
+        f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" '
+        f'data-sidebar-item="{gen6.html.escape(json.dumps(payload, ensure_ascii=False), quote=True)}">{safe_title}</a>\n'
+    )
+    insert_at = section_idx + 1
+    while insert_at < len(lines) and lines[insert_at].startswith("    * "):
+        insert_at += 1
+    lines.insert(section_idx + 1, entry)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(lines), encoding="utf-8")
+
+
+def generate_local_pdf_deep_doc(
+    *,
+    pdf_bytes: bytes,
+    filename: str,
+    llm_config_json: str | None = None,
+    docs_dir: str | None = None,
+    date_str: str | None = None,
+) -> Dict[str, Any]:
+    if not pdf_bytes:
+        raise ValueError("上传的 PDF 为空。")
+    docs_path = Path(docs_dir or gen6.resolve_docs_dir()).resolve()
+    docs_path.mkdir(parents=True, exist_ok=True)
+    day = (date_str or datetime.now(timezone.utc).strftime("%Y%m%d")).strip()
+    upload_stamp = datetime.now(timezone.utc).strftime("%H%M%S")
+    llm_config = _parse_llm_config(llm_config_json)
+
+    tmp_dir = docs_path / "assets" / "local_pdfs"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    safe_original = _safe_asset_key(Path(filename or "local-paper.pdf").stem)
+    asset_key = _safe_asset_key(f"local-{day}-{upload_stamp}-{safe_original}")
+    pdf_asset_rel = f"assets/local_pdfs/{asset_key}.pdf"
+    pdf_asset_path = docs_path / pdf_asset_rel
+    pdf_asset_path.write_bytes(pdf_bytes)
+
+    text = gen6.extract_pdf_text(str(pdf_asset_path))
+    meta = _pdf_metadata(str(pdf_asset_path), text, filename)
+    title = meta["title"]
+    abstract = meta["abstract"] or _clean_line(text[:1200])
+    slug = gen6.slugify(title)
+    paper_basename = f"{asset_key}-{slug}"
+    paper_id = f"local-pdf/{day}/{paper_basename}"
+    paper_dir = docs_path / "local-pdf" / day
+    md_path = paper_dir / f"{paper_basename}.md"
+    txt_path = paper_dir / f"{paper_basename}.txt"
+    paper_dir.mkdir(parents=True, exist_ok=True)
+    txt_path.write_text(text or "", encoding="utf-8")
+
+    figures = ensure_paper_figures_from_file(
+        pdf_path=str(pdf_asset_path),
+        docs_dir=str(docs_path),
+        source_key="local-pdf",
+        asset_key=asset_key,
+    )
+    if not figures:
+        figures = _render_pdf_page_previews(
+            str(pdf_asset_path),
+            docs_dir=str(docs_path),
+            source_key="local-pdf",
+            asset_key=asset_key,
+        )
+
+    paper = {
+        "id": asset_key,
+        "title": title,
+        "authors": [meta["authors"]] if meta["authors"] else [],
+        "published": f"{day[:4]}-{day[4:6]}-{day[6:8]}",
+        "link": pdf_asset_rel,
+        "pdf_url": pdf_asset_rel,
+        "abstract": abstract,
+        "source": "local-pdf",
+        "selection_source": "local_upload",
+        "llm_score": "local",
+        "canonical_evidence": "本地上传 PDF，使用后端精读流程生成。",
+        "llm_tldr_cn": abstract[:260],
+        "llm_tags": ["paper:本地PDF", "query:local-pdf"],
+        "_figure_assets": figures,
+    }
+
+    zh_title = ""
+    glance: dict[str, str] = {}
+    with _GENERATION_LOCK:
+        old_client = gen6.LLM_CLIENT
+        old_error = gen6.LLM_INIT_ERROR
+        try:
+            temporary_client = _configure_temporary_llm(llm_config)
+            if temporary_client is not None:
+                gen6.LLM_CLIENT = temporary_client
+                gen6.LLM_INIT_ERROR = ""
+            zh_title, zh_abstract = gen6.translate_title_and_abstract_to_zh(title, abstract)
+            glance = gen6.generate_glance_overview(title, abstract) or gen6.build_glance_fallback(paper)
+            if glance:
+                paper["_glance_overview"] = glance
+            content = gen6.build_markdown_content(
+                paper,
+                "deep",
+                zh_title,
+                zh_abstract,
+                gen6.build_tags_list("deep", paper.get("llm_tags") or []),
+            )
+            md_path.write_text(content, encoding="utf-8")
+            summary = gen6.generate_deep_summary(str(md_path), str(txt_path))
+            if summary:
+                gen6.upsert_auto_block(str(md_path), "论文详细总结（自动生成）", summary)
+        finally:
+            if llm_config:
+                gen6.LLM_CLIENT = old_client
+                gen6.LLM_INIT_ERROR = old_error
+
+    sidebar_evidence = str(
+        zh_title
+        or (paper.get("_glance_overview") or {}).get("motivation")
+        or paper.get("canonical_evidence")
+        or "本地上传 PDF，使用后端精读流程生成。"
+    ).strip()
+    _insert_local_sidebar_entry(str(docs_path / "_sidebar.md"), paper_id, title, sidebar_evidence)
+    return {
+        "ok": True,
+        "title": title,
+        "paper_id": paper_id,
+        "route": f"#/{paper_id}",
+        "md_path": str(md_path),
+        "txt_path": str(txt_path),
+        "pdf_path": str(pdf_asset_path),
+        "figures_count": len(figures),
+    }
+
+
+def generate_local_pdf_deep_doc_from_file(
+    *,
+    pdf_path: str,
+    filename: str | None = None,
+    llm_config_json: str | None = None,
+    docs_dir: str | None = None,
+    date_str: str | None = None,
+) -> Dict[str, Any]:
+    path = Path(pdf_path).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"PDF 文件不存在：{path}")
+    return generate_local_pdf_deep_doc(
+        pdf_bytes=path.read_bytes(),
+        filename=filename or path.name,
+        llm_config_json=llm_config_json,
+        docs_dir=docs_dir,
+        date_str=date_str,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Generate a Daily Paper style deep-read page from a local PDF.")
+    parser.add_argument("--pdf-path", required=True, help="Path to the uploaded PDF file.")
+    parser.add_argument("--filename", default="", help="Original filename shown in generated metadata.")
+    parser.add_argument("--docs-dir", default=str(ROOT_DIR / "docs"), help="Docs directory to update.")
+    parser.add_argument("--date", default="", help="Optional YYYYMMDD date folder.")
+    parser.add_argument(
+        "--llm-config-json",
+        default="",
+        help="Optional temporary LLM JSON. GitHub Actions should prefer DPR_LLM_* secrets instead.",
+    )
+    args = parser.parse_args(argv)
+    result = generate_local_pdf_deep_doc_from_file(
+        pdf_path=args.pdf_path,
+        filename=args.filename or None,
+        llm_config_json=args.llm_config_json or None,
+        docs_dir=args.docs_dir,
+        date_str=args.date or None,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

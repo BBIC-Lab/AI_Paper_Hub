@@ -8,6 +8,10 @@ docs/_home_promo.md merge=ours
 docs/[0-9]*/** merge=ours
 docs/assets/figures/** merge=ours
 
+# 生成的论文原文与抽图资源按二进制处理，避免 diff/check 把 PDF/WEBP 当文本扫描。
+*.pdf binary
+*.webp binary
+
 # 推荐结果、运行状态和缓存属于用户数据，避免上游更新覆盖用户历史。
 archive/** merge=ours
 

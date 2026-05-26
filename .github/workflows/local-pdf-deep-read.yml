@@ -1,0 +1,134 @@
+name: local-pdf-deep-read
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_path:
+        description: "Path to uploaded PDF under docs/assets/local_pdfs/uploads"
+        required: true
+      original_filename:
+        description: "Original PDF filename"
+        required: false
+        default: ""
+      cleanup_upload:
+        description: "Remove temporary upload after generation"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: local-pdf-deep-read
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DPR_LLM_PROVIDER: ${{ secrets.DPR_LLM_PROVIDER }}
+      DPR_LLM_API_KEY: ${{ secrets.DPR_LLM_API_KEY }}
+      DPR_LLM_BASE_URL: ${{ secrets.DPR_LLM_BASE_URL }}
+      DPR_LLM_MODEL: ${{ secrets.DPR_LLM_MODEL }}
+      DPR_LLM_SUMMARY_MODEL: ${{ secrets.DPR_LLM_SUMMARY_MODEL }}
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache deps
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/uv
+            ~/.cache/dpr-tools/pdffigures2
+            ~/.cache/coursier
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-dpr-local-pdf-v1-${{ hashFiles('requirements.txt') }}
+
+      - name: Install deps
+        run: |
+          python - <<'PY'
+          import re
+          lines = open("requirements.txt", "r", encoding="utf-8").read().splitlines()
+          lines = [l for l in lines if l.strip() and not re.match(r"^sqlite3\\b", l)]
+          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(lines))
+          PY
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          uv pip install --system -r /tmp/req.txt
+
+      - name: Prepare pdffigures2
+        run: |
+          set -euo pipefail
+          TOOL_DIR="$HOME/.cache/dpr-tools/pdffigures2"
+          SRC_DIR="$TOOL_DIR/src"
+          JAR_PATH="$TOOL_DIR/pdffigures2.jar"
+          mkdir -p "$TOOL_DIR"
+          if [ ! -f "$JAR_PATH" ]; then
+            rm -rf "$SRC_DIR"
+            git clone --depth 1 https://github.com/allenai/pdffigures2 "$SRC_DIR"
+            cd "$SRC_DIR"
+            curl -fsSL -o sbt.tgz https://github.com/sbt/sbt/releases/download/v1.10.1/sbt-1.10.1.tgz
+            tar -xzf sbt.tgz
+            ./sbt/bin/sbt assembly
+            cp pdffigures2.jar "$JAR_PATH"
+          fi
+          echo "PDFFIGURES2_JAR=$JAR_PATH" >> "$GITHUB_ENV"
+
+      - name: Generate local PDF deep-read page
+        env:
+          UPLOAD_PATH: ${{ inputs.upload_path }}
+          ORIGINAL_FILENAME: ${{ inputs.original_filename }}
+          CLEANUP_UPLOAD: ${{ inputs.cleanup_upload }}
+        run: |
+          set -euo pipefail
+          if [[ "$UPLOAD_PATH" != docs/assets/local_pdfs/uploads/*.pdf ]]; then
+            echo "Refusing unexpected upload_path: $UPLOAD_PATH" >&2
+            exit 1
+          fi
+          if [ ! -f "$UPLOAD_PATH" ]; then
+            echo "Uploaded PDF not found: $UPLOAD_PATH" >&2
+            exit 1
+          fi
+          python src/local_pdf_backend.py \
+            --pdf-path "$UPLOAD_PATH" \
+            --filename "${ORIGINAL_FILENAME:-$(basename "$UPLOAD_PATH")}" \
+            --docs-dir docs
+          if [ "$CLEANUP_UPLOAD" = "true" ]; then
+            rm -f "$UPLOAD_PATH"
+          fi
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="${GITHUB_REF_NAME:-main}"
+
+          git add docs
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "[chore] local PDF deep read"
+          git fetch origin "$branch"
+          git rebase -X theirs "origin/$branch"
+          git push origin HEAD:"$branch"

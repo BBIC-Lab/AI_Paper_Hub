@@ -1420,6 +1420,7 @@ window.$docsify = {
         const getSidebarEmoji = (type, text) => {
           const value = stripSidebarEmoji(text);
           if (type === 'daily-root' || value === 'Daily Papers') return '🗂️';
+          if (type === 'local-root' || value === '本地 PDF 解析') return '📄';
           if (type === 'day') return '📅';
           if (value === '精读区') return '🔬';
           if (value === '速读区') return '⚡';
@@ -2232,6 +2233,7 @@ window.$docsify = {
         const getGroupType = (text) => {
           const value = stripSidebarEmoji(text);
           if (value === 'Daily Papers') return 'daily-root';
+          if (value === '本地 PDF 解析') return 'local-root';
           if (value === '精读区' || value === '速读区') return 'section';
           return '';
         };
@@ -2318,7 +2320,9 @@ window.$docsify = {
           const storageKey =
             groupType === 'daily-root'
               ? '__dailyRoot'
-              : `section:${getAncestorDayKey(li) || 'unknown'}:${rawText}`;
+              : groupType === 'local-root'
+                ? '__localPdfRoot'
+                : `section:${getAncestorDayKey(li) || 'unknown'}:${rawText}`;
           let wrapper = li.querySelector(':scope > .dpr-sidebar-group-toggle');
           if (!wrapper) {
             wrapper = document.createElement('div');
@@ -2350,6 +2354,7 @@ window.$docsify = {
           }
 
           li.classList.toggle('dpr-sidebar-daily-root', groupType === 'daily-root');
+          li.classList.toggle('dpr-sidebar-local-root', groupType === 'local-root');
           li.classList.toggle('dpr-sidebar-section', groupType === 'section');
           childUl.classList.add('dpr-sidebar-fold-content');
 
@@ -3354,7 +3359,7 @@ window.$docsify = {
           if (
             a.classList.contains('dpr-sidebar-brief-link') ||
             /\/README$/i.test(paperIdFromHref) ||
-            !/^(\d{6}\/\d{2}|\d{8}-\d{8})\/(?!README$).+/i.test(paperIdFromHref)
+            !/^(?:\d{6}\/\d{2}|\d{8}-\d{8}|local-pdf\/\d{8})\/(?!README$).+/i.test(paperIdFromHref)
           ) {
             li.classList.remove('sidebar-paper-item', 'sidebar-paper-has-user-state');
             const strayActions = li.querySelector('.sidebar-paper-rating-icons');
@@ -3467,7 +3472,11 @@ window.$docsify = {
           const title = String(payload.title || a.textContent || '').trim();
           const link = String(payload.link || fallbackLink || href || '').trim();
           const score = String(payload.score || '').trim();
-          const evidence = String((payload && payload.evidence) || '').trim();
+          const isLocalPdfItem = /^#\/local-pdf\/\d{8}\//i.test(href);
+          const evidence = String(
+            (payload && payload.evidence) ||
+              (isLocalPdfItem ? '本地上传 PDF，使用后端精读流程生成。' : ''),
+          ).trim();
           const tags = Array.isArray(payload.tags) ? payload.tags : [];
 
           const scoreHtml =
@@ -3592,7 +3601,7 @@ window.$docsify = {
       // 侧边栏/正文的论文页标题条：英文右侧，中文左侧，中间竖线
       const isPaperRouteFile = (file) => {
         const f = String(file || '');
-        return /^(?:\d{6}\/\d{2}|\d{8}-\d{8})\/(?!README\.md$).+\.md$/i.test(f);
+        return /^(?:\d{6}\/\d{2}|\d{8}-\d{8}|local-pdf\/\d{8})\/(?!README\.md$).+\.md$/i.test(f);
       };
 
       const isReportRouteFile = (file) => {
@@ -4924,7 +4933,9 @@ window.$docsify = {
         const isTutorialPage = /^tutorial(?:\/|$)/i.test(
           String(file || routePath || paperId || '').replace(/^\/+/, ''),
         );
-        const isLandingLikePage = isHomePage || isReportPage || isTutorialPage;
+        const normalizedLandingFile = String(file || routePath || paperId || '').replace(/^\/+/, '');
+        const isLocalPdfToolPage = /^local-pdf(?:\.md)?$/i.test(normalizedLandingFile);
+        const isLandingLikePage = isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage;
         syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage });
 
         // A. 对正文区域进行一次全局公式渲染（支持 $...$ / $$...$$）

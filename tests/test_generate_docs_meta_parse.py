@@ -37,14 +37,33 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         spec.loader.exec_module(cls.mod)
 
     def test_parse_meta_from_front_matter(self):
-        md_path = Path("docs_init/201706/12/1706.03762v1-attention-is-all-you-need.md")
-        item = self.mod._parse_generated_md_to_meta(str(md_path), "pid", "quick")
-        self.assertEqual(item["title_en"], "Attention Is All You Need")
-        self.assertTrue(item["authors"].startswith("Ashish Vaswani"))
-        self.assertIn("query:transformer", item["tags"])
-        self.assertEqual(item["date"], "20170612")
-        self.assertIn("https://arxiv.org/pdf", item["pdf"])
-        self.assertEqual(item["selection_source"], "fresh_fetch")
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "paper.md"
+            path.write_text(
+                "\n".join(
+                    [
+                        "---",
+                        'title: "Attention Is All You Need"',
+                        "authors: Ashish Vaswani, Noam Shazeer",
+                        'tags: ["query:transformer", "paper:attention"]',
+                        "date: 20170612",
+                        "pdf: https://arxiv.org/pdf/1706.03762",
+                        "selection_source: fresh_fetch",
+                        "---",
+                        "",
+                        "## Abstract",
+                        "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks.",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            item = self.mod._parse_generated_md_to_meta(str(path), "pid", "quick")
+            self.assertEqual(item["title_en"], "Attention Is All You Need")
+            self.assertTrue(item["authors"].startswith("Ashish Vaswani"))
+            self.assertIn("query:transformer", item["tags"])
+            self.assertEqual(item["date"], "20170612")
+            self.assertIn("https://arxiv.org/pdf", item["pdf"])
+            self.assertEqual(item["selection_source"], "fresh_fetch")
 
     def test_format_beijing_time_converts_utc_with_label(self):
         generated_at = self.mod.format_beijing_time(
@@ -236,6 +255,8 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             content = sidebar_path.read_text(encoding="utf-8")
             self.assertNotIn("暂无日报", content)
             self.assertIn("2026-05-22 <!--dpr-date:20260522-->", content)
+            self.assertIn("* 本地 PDF 解析", content)
+            self.assertIn('href="#/local-pdf">上传解析</a>', content)
             self.assertIn(
                 '<a class="dpr-sidebar-brief-link" href="#/202605/22/README">📝 今日简报</a>',
                 content,
@@ -258,6 +279,7 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
+            self.assertIn('* 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n* Daily Papers', content)
             self.assertIn("* Daily Papers\n  * 2026-05-22", content)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)
@@ -287,6 +309,7 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
+            self.assertIn('* 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n* Daily Papers', content)
             self.assertIn("* Daily Papers\n  * 2026-05-22", content)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)

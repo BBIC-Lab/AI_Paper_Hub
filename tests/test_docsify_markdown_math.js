@@ -81,18 +81,23 @@ global.requestAnimationFrame = (fn) => fn();
 
 require('../app/docsify-plugin.js');
 
-const hooks = {
-  beforeEach(fn) {
-    this.beforeEachFn = fn;
-  },
-  doneEach(fn) {
-    this.doneEachFn = fn;
-  },
-};
+function buildHooksForRoute(file, path) {
+  const hooks = {
+    beforeEach(fn) {
+      this.beforeEachFn = fn;
+    },
+    doneEach(fn) {
+      this.doneEachFn = fn;
+    },
+  };
 
-window.$docsify.plugins[0](hooks, {
-  route: { file: '202605/22/example.md', path: '/202605/22/example' },
-});
+  window.$docsify.plugins[0](hooks, {
+    route: { file, path },
+  });
+  return hooks;
+}
+
+const hooks = buildHooksForRoute('202605/22/example.md', '/202605/22/example');
 
 const {
   normalizeMarkdownMathDelimiters,
@@ -152,10 +157,38 @@ function testDocsifyMathProtectionPreservesSubscriptMath() {
   assert.ok(!restored.includes('\\mathbf{Z}{\\text{non}}'));
 }
 
+function testLocalPdfRouteRendersPaperFrontMatter() {
+  const localHooks = buildHooksForRoute(
+    'local-pdf/20260524/lightglue.md',
+    '/local-pdf/20260524/lightglue',
+  );
+  const input = [
+    '---',
+    'title: "LightGlue: Local Feature Matching at Light Speed"',
+    'title_zh: LightGlue：光速局部特征匹配',
+    'authors: Unknown',
+    'date: 2026-05-24',
+    'tags: ["paper:本地PDF", "query:local-pdf"]',
+    'score: local',
+    'tldr: 本地 PDF 精读总结。',
+    'source: local-pdf',
+    '---',
+    '',
+    '## 摘要',
+    'LightGlue 摘要正文。',
+  ].join('\n');
+
+  const rendered = localHooks.beforeEachFn(input);
+  assert.ok(rendered.includes('paper-title-en'));
+  assert.ok(rendered.includes('LightGlue: Local Feature Matching at Light Speed'));
+  assert.ok(!rendered.startsWith('---'));
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
 testLatexTextCommandContentStaysInMath();
 testDocsifyMathProtectionPreservesSubscriptMath();
+testLocalPdfRouteRendersPaperFrontMatter();
 
 console.log('docsify markdown math tests passed');

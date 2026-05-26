@@ -384,3 +384,30 @@ def ensure_paper_figures(
         if figures:
             return figures
         return extract_figures_from_pdf(tmp_pdf.name, asset_dir, relative_prefix)
+
+
+def ensure_paper_figures_from_file(
+    *,
+    pdf_path: str,
+    docs_dir: str,
+    source_key: str,
+    asset_key: str,
+    force: bool = False,
+) -> List[Dict[str, Any]]:
+    if not str(pdf_path or "").strip() or not os.path.exists(pdf_path):
+        return []
+
+    asset_dir = _absolute_dir(docs_dir, source_key, asset_key)
+    relative_prefix = _relative_prefix(source_key, asset_key)
+    meta_path = os.path.join(asset_dir, "meta.json")
+    if not force:
+        cached = _load_cached_figures(meta_path)
+        if cached:
+            return cached
+        if os.path.exists(meta_path):
+            return []
+
+    figures = _extract_figures_with_pdffigures2(pdf_path, asset_dir, relative_prefix)
+    if figures:
+        return figures
+    return extract_figures_from_pdf(pdf_path, asset_dir, relative_prefix)

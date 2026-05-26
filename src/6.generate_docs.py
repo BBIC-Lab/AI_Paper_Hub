@@ -34,6 +34,13 @@ CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
 RANGE_DATE_RE = re.compile(r"^(\d{8})-(\d{8})$")
 BEIJING_TZ = timezone(timedelta(hours=8))
 TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip()
+SIDEBAR_HOME_LINK = '* <a class="dpr-sidebar-root-link" href="#/">首页</a>\n'
+SIDEBAR_TUTORIAL_LINK = (
+    '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" '
+    'href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>\n'
+)
+SIDEBAR_LOCAL_PDF_ROOT = "* 本地 PDF 解析\n"
+SIDEBAR_LOCAL_PDF_UPLOAD_LINK = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n'
 
 # LLM 配置（通用 OpenAI-compatible Chat Completions）
 LLM_CLIENT = None
@@ -1694,16 +1701,46 @@ def update_sidebar(
             repaired_lines.append(line)
     lines = repaired_lines
 
+    def is_local_pdf_root(line: str) -> bool:
+        stripped = line.strip()
+        return stripped == "* 本地 PDF 解析" or (line.startswith("* ") and 'href="#/local-pdf"' in line)
+
+    def ensure_local_pdf_section(daily_index: int) -> int:
+        root_idx = next((idx for idx, line in enumerate(lines) if is_local_pdf_root(line)), -1)
+        if root_idx == -1:
+            insert_at = daily_index if daily_index >= 0 else len(lines)
+            lines.insert(insert_at, SIDEBAR_LOCAL_PDF_ROOT)
+            lines.insert(insert_at + 1, SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
+            return daily_index + 2 if daily_index >= 0 else daily_index
+
+        if 'href="#/local-pdf"' in lines[root_idx]:
+            lines[root_idx] = SIDEBAR_LOCAL_PDF_ROOT
+
+        next_top = next((idx for idx in range(root_idx + 1, len(lines)) if lines[idx].startswith("* ")), len(lines))
+        has_upload = any('href="#/local-pdf"' in lines[idx] for idx in range(root_idx + 1, next_top))
+        if not has_upload:
+            lines.insert(root_idx + 1, SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
+            if daily_index > root_idx:
+                daily_index += 1
+        return daily_index
+
     daily_idx = -1
     for i, line in enumerate(lines):
         if line.strip().startswith("* Daily Papers"):
             daily_idx = i
             break
     if daily_idx == -1:
-        if not any("[首页]" in line for line in lines):
-            lines.append("* [首页](/)\n")
+        if not any('href="#/"' in line or "[首页]" in line for line in lines):
+            lines.append(SIDEBAR_HOME_LINK)
+        if not any("tutorial/README" in line for line in lines):
+            lines.append(SIDEBAR_TUTORIAL_LINK)
+        if not any(is_local_pdf_root(line) for line in lines):
+            lines.append(SIDEBAR_LOCAL_PDF_ROOT)
+            lines.append(SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
         lines.append("* Daily Papers\n")
         daily_idx = len(lines) - 1
+    else:
+        daily_idx = ensure_local_pdf_section(daily_idx)
 
     day_idx = -1
     for i in range(daily_idx + 1, len(lines)):

@@ -22,6 +22,16 @@ app.log
 .env
 secret.private
 
+# 运行生成的论文/日报产物
+*.pdf
+archive/*
+!archive/.gitkeep
+docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/
+docs/assets/figures/
+docs/assets/local_pdfs/
+docs/local-pdf/
+paper_reader/
+
 # Codex / local agent state
 .codex/
 
