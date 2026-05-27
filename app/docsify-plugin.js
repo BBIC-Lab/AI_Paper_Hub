@@ -3389,6 +3389,397 @@ window.$docsify = {
         });
       };
 
+      const normalizeSidebarDeleteHref = (href) =>
+        normalizeHref(href)
+          .replace(/\.md$/i, '')
+          .replace(/\/$/, '');
+
+      const isGuestAccessMode = () =>
+        String(window.DPR_ACCESS_MODE || '').toLowerCase() === 'guest';
+
+      const extractSidebarLineHref = (line) => {
+        const m = String(line || '').match(/\bhref=(["'])(.*?)\1/i);
+        return m ? normalizeSidebarDeleteHref(m[2]) : '';
+      };
+
+      const pruneEmptySidebarPaperSections = (lines) => {
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = String(lines[i] || '');
+          if (!/^\s*\*\s+(?:精读区|速读区)\s*$/.test(line.trim())) continue;
+          const indent = (line.match(/^\s*/) || [''])[0].length;
+          let hasPaperItem = false;
+          for (let j = i + 1; j < lines.length; j += 1) {
+            const next = String(lines[j] || '');
+            if (!next.trim()) continue;
+            const nextIndent = (next.match(/^\s*/) || [''])[0].length;
+            if (nextIndent <= indent) break;
+            if (next.includes('dpr-sidebar-item-link')) {
+              hasPaperItem = true;
+              break;
+            }
+          }
+          if (!hasPaperItem) {
+            lines.splice(i, 1);
+            i -= 1;
+          }
+        }
+        return lines;
+      };
+
+      const removeSidebarEntryFromContent = (content, href) => {
+        const targetHref = normalizeSidebarDeleteHref(href);
+        if (!targetHref) return String(content || '');
+
+        const raw = String(content || '').replace(/\r\n/g, '\n');
+        const hadTrailingNewline = raw.endsWith('\n');
+        const lines = raw.split('\n');
+        if (hadTrailingNewline) lines.pop();
+
+        let removed = false;
+        const filtered = lines.filter((line) => {
+          const lineHref = extractSidebarLineHref(line);
+          const matched = lineHref && lineHref === targetHref;
+          if (matched) {
+            removed = true;
+            return false;
+          }
+          return true;
+        });
+
+        if (!removed) return raw;
+        pruneEmptySidebarPaperSections(filtered);
+        return filtered.join('\n') + (hadTrailingNewline ? '\n' : '');
+      };
+
+      const getPaperIdFromSidebarHref = (href) =>
+        normalizeSidebarDeleteHref(href).replace(/^#\//, '').replace(/\/$/, '');
+
+      const normalizeGeneratedAssetRepoPath = (value) => {
+        let raw = String(value || '').trim();
+        if (!raw) return '';
+        if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) {
+          try {
+            const url = new URL(raw, window.location.href);
+            if (url.origin !== window.location.origin) return '';
+            raw = decodeURIComponent(url.pathname || '');
+          } catch {
+            return '';
+          }
+        }
+        raw = raw.split(/[?#]/)[0].replace(/\\/g, '/').replace(/^\.\/+/, '');
+        const docsIdx = raw.indexOf('/docs/');
+        if (docsIdx >= 0) {
+          raw = raw.slice(docsIdx + 1);
+        }
+        raw = raw.replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+        if (raw.startsWith('docs/')) return raw;
+        if (raw.startsWith('assets/')) return `docs/${raw}`;
+        return '';
+      };
+
+      const addRepoDeletePath = (set, value) => {
+        const path = String(value || '').trim().replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+        if (path && path !== 'docs/_sidebar.md') set.add(path);
+      };
+
+      const collectSidebarEntryRelatedDeletePaths = async ({ api, href }) => {
+        const paperId = getPaperIdFromSidebarHref(href);
+        const paths = new Set();
+        if (!paperId) return [];
+
+        const mdPath = `docs/${paperId}.md`;
+        const txtPath = `docs/${paperId}.txt`;
+        addRepoDeletePath(paths, mdPath);
+        addRepoDeletePath(paths, txtPath);
+
+        let markdown = '';
+        try {
+          const paperFile = await api.loadRepoTextFile(mdPath, { requireWorkflow: false });
+          markdown = String((paperFile && paperFile.content) || '');
+        } catch (err) {
+          if (!String((err && err.message) || '').includes('HTTP 404')) {
+            throw err;
+          }
+        }
+
+        if (!markdown) return Array.from(paths);
+
+        const parsed = parseFrontMatter(markdown);
+        const meta = parsed && parsed.meta ? parsed.meta : {};
+        const pdfPath = normalizeGeneratedAssetRepoPath(meta.pdf || meta.PDF || '');
+        addRepoDeletePath(paths, pdfPath);
+
+        const figureDirs = new Set();
+        parseFiguresMeta(meta).forEach((figure) => {
+          const figurePath = normalizeGeneratedAssetRepoPath(figure && figure.url);
+          if (!figurePath) return;
+          addRepoDeletePath(paths, figurePath);
+          const dir = figurePath.replace(/\/[^/]+$/, '');
+          if (dir && dir !== figurePath) figureDirs.add(dir);
+        });
+        figureDirs.forEach((dir) => {
+          addRepoDeletePath(paths, `${dir}/`);
+        });
+
+        return Array.from(paths);
+      };
+
+      const getSidebarEntryTitle = (link) => {
+        if (!link) return '该条目';
+        const titleEl = link.querySelector('.dpr-sidebar-title');
+        const title =
+          (titleEl && titleEl.textContent) ||
+          link.getAttribute('title') ||
+          link.textContent ||
+          '';
+        return String(title || '').replace(/\s+/g, ' ').trim() || '该条目';
+      };
+
+      const showSidebarDeleteConfirm = ({ title }) =>
+        new Promise((resolve) => {
+          const previousFocus = document.activeElement;
+          const overlay = document.createElement('div');
+          overlay.className = 'dpr-sidebar-delete-confirm-overlay';
+          overlay.setAttribute('role', 'presentation');
+
+          const dialog = document.createElement('div');
+          dialog.className = 'dpr-sidebar-delete-confirm';
+          dialog.setAttribute('role', 'dialog');
+          dialog.setAttribute('aria-modal', 'true');
+          dialog.setAttribute('aria-labelledby', 'dpr-sidebar-delete-confirm-title');
+          dialog.setAttribute('aria-describedby', 'dpr-sidebar-delete-confirm-desc');
+
+          const head = document.createElement('div');
+          head.className = 'dpr-sidebar-delete-confirm-head';
+
+          const icon = document.createElement('div');
+          icon.className = 'dpr-sidebar-delete-confirm-icon';
+          icon.setAttribute('aria-hidden', 'true');
+          icon.innerHTML =
+            '<svg viewBox="0 0 24 24">' +
+            '<path d="M3 6h18"/>' +
+            '<path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/>' +
+            '<path d="M19 6l-.8 13.1A2 2 0 0 1 16.2 21H7.8a2 2 0 0 1-2-1.9L5 6"/>' +
+            '<path d="M10 11v5"/>' +
+            '<path d="M14 11v5"/>' +
+            '</svg>';
+
+          const titleWrap = document.createElement('div');
+          const titleEl = document.createElement('div');
+          titleEl.id = 'dpr-sidebar-delete-confirm-title';
+          titleEl.className = 'dpr-sidebar-delete-confirm-title';
+          titleEl.textContent = '删除侧栏条目';
+          const paperEl = document.createElement('div');
+          paperEl.className = 'dpr-sidebar-delete-confirm-paper';
+          paperEl.textContent = String(title || '该条目').trim() || '该条目';
+          titleWrap.appendChild(titleEl);
+          titleWrap.appendChild(paperEl);
+
+          head.appendChild(icon);
+          head.appendChild(titleWrap);
+
+          const desc = document.createElement('p');
+          desc.id = 'dpr-sidebar-delete-confirm-desc';
+          desc.className = 'dpr-sidebar-delete-confirm-desc';
+          desc.textContent =
+            '确认后会提交一次仓库修改，从精读/速读列表移除该条目，并删除对应的 Markdown、TXT、本地 PDF 与图片资源。';
+
+          const actions = document.createElement('div');
+          actions.className = 'dpr-sidebar-delete-confirm-actions';
+          const cancelBtn = document.createElement('button');
+          cancelBtn.type = 'button';
+          cancelBtn.className = 'dpr-sidebar-delete-confirm-btn secondary';
+          cancelBtn.textContent = '取消';
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'dpr-sidebar-delete-confirm-btn danger';
+          deleteBtn.textContent = '删除条目';
+          actions.appendChild(cancelBtn);
+          actions.appendChild(deleteBtn);
+
+          dialog.appendChild(head);
+          dialog.appendChild(desc);
+          dialog.appendChild(actions);
+          overlay.appendChild(dialog);
+
+          let settled = false;
+          const cleanup = (value) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKeydown, true);
+            overlay.classList.remove('is-visible');
+            window.setTimeout(() => {
+              if (overlay.parentNode) overlay.remove();
+              try {
+                if (previousFocus && typeof previousFocus.focus === 'function') {
+                  previousFocus.focus();
+                }
+              } catch {
+                // ignore
+              }
+              resolve(value);
+            }, 140);
+          };
+
+          const onKeydown = (event) => {
+            const keyName = event && (event.key || event.code);
+            if (keyName === 'Escape') {
+              event.preventDefault();
+              cleanup(false);
+            }
+          };
+
+          overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) cleanup(false);
+          });
+          cancelBtn.addEventListener('click', () => cleanup(false));
+          deleteBtn.addEventListener('click', () => cleanup(true));
+          document.addEventListener('keydown', onKeydown, true);
+
+          document.body.appendChild(overlay);
+          requestAnimationFrame(() => {
+            overlay.classList.add('is-visible');
+            cancelBtn.focus();
+          });
+        });
+
+      const findSidebarDeleteFallbackHref = (li) => {
+        let current =
+          li && li.parentElement && li.parentElement.closest
+            ? li.parentElement.closest('li')
+            : null;
+        while (current) {
+          const brief = current.querySelector(':scope > ul a.dpr-sidebar-brief-link[href]');
+          if (brief) return normalizeHref(brief.getAttribute('href') || '');
+          current =
+            current.parentElement && current.parentElement.closest
+              ? current.parentElement.closest('li')
+              : null;
+        }
+        return '#/';
+      };
+
+      const removeSidebarLiAndEmptySection = (li) => {
+        if (!li || !li.parentElement) return;
+        const parentUl = li.parentElement;
+        const sectionLi = parentUl.closest('li');
+        li.remove();
+        if (!sectionLi || !sectionLi.parentElement) return;
+        const sectionLabel = sectionLi.querySelector(
+          ':scope > .dpr-sidebar-group-toggle .dpr-sidebar-group-toggle-label',
+        );
+        const sectionText = stripSidebarEmoji(
+          (sectionLabel &&
+            ((sectionLabel.dataset && sectionLabel.dataset.dprRawLabel) ||
+              sectionLabel.textContent)) ||
+            Array.from(sectionLi.childNodes || [])
+              .filter((node) => node && node.nodeType === Node.TEXT_NODE)
+              .map((node) => node.textContent || '')
+              .join(' '),
+        );
+        if (!/^(?:精读区|速读区)$/.test(sectionText)) return;
+        if (parentUl.querySelector('a.dpr-sidebar-item-link')) return;
+        sectionLi.remove();
+      };
+
+      const deleteSidebarEntryFromRepo = async ({ href, title }) => {
+        const api = window.SubscriptionsGithubToken;
+        if (
+          !api ||
+          typeof api.loadRepoTextFile !== 'function' ||
+          typeof api.commitRepoChanges !== 'function'
+        ) {
+          throw new Error('GitHub Token 模块尚未加载，无法写回仓库。');
+        }
+        const targetHref = normalizeSidebarDeleteHref(href);
+        const sidebarFile = await api.loadRepoTextFile('docs/_sidebar.md', {
+          requireWorkflow: false,
+        });
+        const nextSidebar = removeSidebarEntryFromContent(sidebarFile.content, targetHref);
+        if (nextSidebar === sidebarFile.content) {
+          throw new Error('未在 docs/_sidebar.md 中找到这个侧栏条目。');
+        }
+        const deletePaths = await collectSidebarEntryRelatedDeletePaths({ api, href: targetHref });
+        return api.commitRepoChanges(
+          {
+            updates: [{ path: 'docs/_sidebar.md', content: nextSidebar }],
+            deletes: deletePaths,
+          },
+          `chore: remove sidebar paper entry: ${String(title || '').slice(0, 72)}`,
+          { requireWorkflow: false },
+        );
+      };
+
+      const ensureSidebarEntryDeleteButtons = () => {
+        const nav = document.querySelector('.sidebar-nav');
+        if (!nav) return;
+        if (isGuestAccessMode()) {
+          nav
+            .querySelectorAll('.dpr-sidebar-entry-delete-btn')
+            .forEach((btn) => btn.remove());
+          return;
+        }
+        const links = nav.querySelectorAll('li.sidebar-paper-item > a.dpr-sidebar-item-link[href*="#/"]');
+        links.forEach((link) => {
+          const li = link.closest('li');
+          if (!li || li.querySelector(':scope > .dpr-sidebar-entry-delete-btn')) return;
+          const href = normalizeSidebarDeleteHref(link.getAttribute('href') || '');
+          if (!href) return;
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'dpr-sidebar-entry-delete-btn';
+          btn.setAttribute('aria-label', '删除条目');
+          btn.setAttribute('title', '删除条目');
+          btn.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            '<path d="M3 6h18"/>' +
+            '<path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/>' +
+            '<path d="M19 6l-.8 13.1A2 2 0 0 1 16.2 21H7.8a2 2 0 0 1-2-1.9L5 6"/>' +
+            '<path d="M10 11v5"/>' +
+            '<path d="M14 11v5"/>' +
+            '</svg>';
+          btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            if (btn.disabled) return;
+
+            const title = getSidebarEntryTitle(link);
+            if (isGuestAccessMode()) {
+              window.alert('游客模式不能删除精读/速读条目。请先解锁密钥后再操作。');
+              return;
+            }
+            const ok = await showSidebarDeleteConfirm({ title });
+            if (!ok) return;
+
+            const currentHref = normalizeSidebarDeleteHref(window.location.hash || '#/');
+            const fallbackHref = findSidebarDeleteFallbackHref(li);
+            btn.disabled = true;
+            btn.classList.add('is-busy');
+            li.classList.add('sidebar-paper-delete-busy');
+            try {
+              await deleteSidebarEntryFromRepo({ href, title });
+              removeSidebarLiAndEmptySection(li);
+              updateNavState();
+              if (currentHref && currentHref === href) {
+                window.location.hash = fallbackHref || '#/';
+              }
+              requestAnimationFrame(() => {
+                syncSidebarActiveIndicator({ animate: false });
+              });
+              window.alert('已删除侧栏条目及对应仓库文件。GitHub Pages 部署和缓存刷新后，其他设备也会同步。');
+            } catch (err) {
+              btn.disabled = false;
+              btn.classList.remove('is-busy');
+              li.classList.remove('sidebar-paper-delete-busy');
+              window.alert(`删除失败：${err && err.message ? err.message : err}`);
+            }
+          });
+          li.appendChild(btn);
+        });
+      };
+
       const scoreToStarRating = (scoreValue) => {
         const score = Number(scoreValue);
         if (!Number.isFinite(score)) return 0;
@@ -5019,6 +5410,7 @@ window.$docsify = {
           // 首页也需要应用已有的“已读高亮”，但不新增记录
           markSidebarReadState(null);
         }
+        ensureSidebarEntryDeleteButtons();
 
         ensurePaperActionToolbar(paperId, isPaperPage);
 

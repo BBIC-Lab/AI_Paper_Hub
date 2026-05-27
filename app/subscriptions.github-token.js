@@ -219,6 +219,23 @@ window.SubscriptionsGithubToken = (function () {
     .map((part) => encodeURIComponent(part))
     .join('/');
 
+  const normalizeRepoPath = (path) => String(path || '')
+    .replace(/^\/+/, '')
+    .replace(/\/{2,}/g, '/')
+    .trim();
+
+  const uniq = (items) => {
+    const out = [];
+    const seen = new Set();
+    (items || []).forEach((item) => {
+      const value = normalizeRepoPath(item);
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      out.push(value);
+    });
+    return out;
+  };
+
   const decodeBase64Utf8 = (rawBase64) => {
     const binary = atob(String(rawBase64 || '').replace(/\n/g, ''));
     if (window.TextDecoder) {
@@ -233,6 +250,29 @@ window.SubscriptionsGithubToken = (function () {
   };
 
   const encodeUtf8Base64 = (text) => btoa(unescape(encodeURIComponent(String(text || ''))));
+
+  const fetchGitHubJson = async (url, token, options = {}) => {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+        ...(options.headers || {}),
+      },
+    });
+    const text = await res.text().catch(() => '');
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text || null;
+    }
+    if (!res.ok) {
+      const detail = typeof data === 'string' ? data : (data && data.message) || text;
+      throw new Error(`GitHub API 请求失败：HTTP ${res.status} ${res.statusText}${detail ? ` - ${detail}` : ''}`);
+    }
+    return data;
+  };
 
   const ensureSodiumReady = async () => {
     if (
@@ -332,6 +372,125 @@ window.SubscriptionsGithubToken = (function () {
       ...options,
       sha: current.sha,
     });
+  };
+
+  const commitRepoChanges = async (changes = {}, commitMessage = '', options = {}) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, options.requireWorkflow !== false);
+    const repoApi = `https://api.github.com/repos/${info.owner}/${info.repo}`;
+    const repoData = await fetchGitHubJson(repoApi, info.token);
+    const branch = String(options.branch || repoData.default_branch || 'main').trim();
+    if (!branch) throw new Error('无法确定要写入的 Git 分支。');
+    const encodedBranch = encodeURIComponent(branch).replace(/%2F/g, '/');
+
+    const ref = await fetchGitHubJson(
+      `${repoApi}/git/ref/heads/${encodedBranch}`,
+      info.token,
+    );
+    const headSha = ref && ref.object && ref.object.sha;
+    if (!headSha) throw new Error(`无法读取 ${branch} 分支的 HEAD。`);
+    const headCommit = await fetchGitHubJson(
+      `${repoApi}/git/commits/${headSha}`,
+      info.token,
+    );
+    const baseTreeSha = headCommit && headCommit.tree && headCommit.tree.sha;
+    if (!baseTreeSha) throw new Error('无法读取当前仓库 tree。');
+
+    const treeData = await fetchGitHubJson(
+      `${repoApi}/git/trees/${baseTreeSha}?recursive=1`,
+      info.token,
+    );
+    const existingFiles = new Set(
+      ((treeData && treeData.tree) || [])
+        .filter((item) => item && item.type === 'blob' && item.path)
+        .map((item) => normalizeRepoPath(item.path)),
+    );
+
+    const updates = Array.isArray(changes.updates) ? changes.updates : [];
+    const deleteInputs = uniq(changes.deletes || []);
+    const updatePaths = new Set(updates.map((item) => normalizeRepoPath(item && item.path)).filter(Boolean));
+    const deletes = new Set();
+    deleteInputs.forEach((path) => {
+      const isDirHint = /\/$/.test(String(path || ''));
+      const clean = normalizeRepoPath(path).replace(/\/+$/, '');
+      if (!clean) return;
+      if (!isDirHint && existingFiles.has(clean)) {
+        deletes.add(clean);
+        return;
+      }
+      const prefix = `${clean}/`;
+      existingFiles.forEach((filePath) => {
+        if (filePath.startsWith(prefix)) deletes.add(filePath);
+      });
+    });
+    updatePaths.forEach((path) => deletes.delete(path));
+
+    const tree = [];
+    for (const item of updates) {
+      const path = normalizeRepoPath(item && item.path);
+      if (!path) continue;
+      const blob = await fetchGitHubJson(`${repoApi}/git/blobs`, info.token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: String((item && item.content) || ''),
+          encoding: 'utf-8',
+        }),
+      });
+      tree.push({
+        path,
+        mode: '100644',
+        type: 'blob',
+        sha: blob.sha,
+      });
+    }
+    deletes.forEach((path) => {
+      tree.push({
+        path,
+        mode: '100644',
+        type: 'blob',
+        sha: null,
+      });
+    });
+
+    if (!tree.length) {
+      return { skipped: true, branch, deleted: [], updated: [] };
+    }
+
+    const newTree = await fetchGitHubJson(`${repoApi}/git/trees`, info.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree,
+      }),
+    });
+    const newCommit = await fetchGitHubJson(`${repoApi}/git/commits`, info.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: commitMessage || 'chore: update repository files',
+        tree: newTree.sha,
+        parents: [headSha],
+      }),
+    });
+    await fetchGitHubJson(`${repoApi}/git/refs/heads/${encodedBranch}`, info.token, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sha: newCommit.sha,
+        force: false,
+      }),
+    });
+    return {
+      branch,
+      commit: newCommit,
+      deleted: Array.from(deletes),
+      updated: Array.from(updatePaths),
+    };
   };
 
   const saveSecrets = async (secretValues, progress) => {
@@ -759,6 +918,7 @@ window.SubscriptionsGithubToken = (function () {
     loadRepoTextFile,
     saveRepoTextFile,
     updateRepoTextFile,
+    commitRepoChanges,
     saveSecrets,
   };
 })();
