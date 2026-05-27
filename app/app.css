@@ -8012,10 +8012,10 @@ body.dpr-chat-drawer-open.dpr-paper-actions-popover-open #paper-chat-container {
   z-index: 1803;
   display: inline-flex;
   align-items: center;
-  gap: 13px;
-  min-width: 126px;
+  gap: 10px;
+  min-width: 112px;
   height: 46px;
-  padding: 0 19px 0 17px;
+  padding: 0 16px;
   border: 1px solid rgba(15, 118, 110, 0.30) !important;
   border-radius: 999px;
   background: linear-gradient(135deg, #ffffff 0%, #f3f6f7 100%) !important;
@@ -8038,10 +8038,6 @@ body.dpr-chat-drawer-open.dpr-paper-actions-popover-open #paper-chat-container {
   box-shadow:
     0 18px 42px rgba(18, 62, 90, 0.20),
     0 0 0 5px rgba(15, 118, 110, 0.11) !important;
-}
-
-#paper-chat-container .paper-chat-toggle-btn > span:last-child {
-  padding-left: 3px;
 }
 
 #paper-chat-container.is-open .paper-chat-toggle-btn {
@@ -9240,10 +9236,8 @@ body.dpr-chat-drawer-open #paper-chat-container .paper-chat-panel,
     right: 14px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
     transform: none;
-    gap: 11px;
-    min-width: 116px;
+    min-width: 104px;
     height: 42px;
-    padding: 0 16px 0 15px;
   }
 
   #paper-chat-container .paper-chat-toggle-btn:hover {
