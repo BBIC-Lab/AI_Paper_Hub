@@ -239,7 +239,9 @@ function testScoreLabelRendersAfterScore() {
   ].join('\n');
 
   const rendered = localHooks.beforeEachFn(input);
-  assert.ok(rendered.includes('<strong>Score</strong>: 8.5 订阅评分'));
+  const scoreLabel = input.match(/^score_label: (.+)$/m)[1];
+  assert.ok(rendered.includes('class="paper-meta-pill is-score"'));
+  assert.ok(rendered.includes(`<strong>Score</strong>8.5 ${scoreLabel}`));
 }
 
 testFullwidthCommaInsideInlineMath();

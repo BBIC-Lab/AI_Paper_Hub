@@ -4121,7 +4121,13 @@ window.$docsify = {
           bar.classList.add('dpr-title-single');
         }
 
-        root.insertBefore(bar, root.firstChild);
+        const hero = root.querySelector('.paper-hero-card');
+        if (hero) {
+          const titleAnchor = hero.querySelector('.paper-title-row') || hero.firstChild;
+          hero.insertBefore(bar, titleAnchor);
+        } else {
+          root.insertBefore(bar, root.firstChild);
+        }
 
         // 字体自适应：让标题条高度稳定，长标题自动缩小
         requestAnimationFrame(() => {
@@ -5130,13 +5136,25 @@ window.$docsify = {
       const renderFigureCarousel = (figures) => {
         if (!figures || !figures.length) return '';
         const slides = figures.map((figure, index) => {
-          const pageText = figure.page ? `PDF 第 ${figure.page} 页` : '';
-          const caption = figure.caption ? `<div class="paper-figure-caption">${escapePaperHtml(figure.caption)}</div>` : '';
+          const pageText = figure.page ? `PDF p. ${figure.page}` : '';
+          const captionText = String(figure.caption || '').trim();
+          const longCaption = captionText.length > 220;
+          const caption = captionText
+            ? [
+                `<div class="paper-figure-caption${longCaption ? ' is-collapsed' : ''}" data-figure-caption>${escapePaperHtml(captionText)}</div>`,
+                longCaption
+                  ? '<button class="paper-figure-caption-toggle" type="button" data-figure-caption-toggle>Expand caption</button>'
+                  : '',
+              ].join('')
+            : '';
+          const imageUrl = escapePaperHtml(resolveDocsAssetUrl(figure.url));
           return [
             `<div class="paper-figure-slide${index === 0 ? ' is-active' : ''}" data-figure-slide="${index}">`,
-            `<img class="paper-figure-image" src="${escapePaperHtml(resolveDocsAssetUrl(figure.url))}" alt="Paper Figure ${index + 1}" loading="lazy">`,
+            `<button class="paper-figure-image-button" type="button" data-figure-lightbox="${index}" aria-label="Open Figure ${index + 1}">`,
+            `<img class="paper-figure-image" src="${imageUrl}" alt="Paper Figure ${index + 1}" loading="lazy">`,
+            '</button>',
             '<div class="paper-figure-meta">',
-            `<div class="paper-figure-badge">Figure ${index + 1}${pageText ? ` · ${escapePaperHtml(pageText)}` : ''}</div>`,
+            `<div class="paper-figure-badge">Figure ${index + 1}${pageText ? ` / ${escapePaperHtml(pageText)}` : ''}</div>`,
             caption,
             '</div>',
             '</div>',
@@ -5144,9 +5162,9 @@ window.$docsify = {
         }).join('');
 
         const thumbs = figures.map((figure, index) => {
-          const thumbPageText = figure.page ? ` · PDF 第 ${figure.page} 页` : '';
+          const thumbPageText = figure.page ? ` / PDF p. ${figure.page}` : '';
           return [
-            `<button class="paper-figure-thumb${index === 0 ? ' is-active' : ''}" type="button" data-figure-thumb="${index}" aria-label="切换到第 ${index + 1} 张插图">`,
+            `<button class="paper-figure-thumb${index === 0 ? ' is-active' : ''}" type="button" data-figure-thumb="${index}" aria-label="Show Figure ${index + 1}">`,
             `<img class="paper-figure-thumb-image" src="${escapePaperHtml(resolveDocsAssetUrl(figure.url))}" alt="Thumbnail ${index + 1}" loading="lazy">`,
             `<span class="paper-figure-thumb-label">Figure ${index + 1}${thumbPageText ? escapePaperHtml(thumbPageText) : ''}</span>`,
             '</button>',
@@ -5156,17 +5174,98 @@ window.$docsify = {
         return [
           '<div class="paper-figure-section" data-paper-figure-carousel>',
           '<div class="paper-figure-toolbar">',
+          '<div class="paper-section-kicker">Figure Gallery</div>',
           `<div class="paper-figure-counter"><span data-figure-current>1</span> / ${figures.length}</div>`,
           '</div>',
           '<div class="paper-figure-stage">',
-          figures.length > 1 ? '<button class="paper-figure-nav paper-figure-nav-prev" type="button" data-figure-prev aria-label="上一张">‹</button>' : '',
+          figures.length > 1 ? '<button class="paper-figure-nav paper-figure-nav-prev" type="button" data-figure-prev aria-label="Previous">&lsaquo;</button>' : '',
           `<div class="paper-figure-viewport">${slides}</div>`,
-          figures.length > 1 ? '<button class="paper-figure-nav paper-figure-nav-next" type="button" data-figure-next aria-label="下一张">›</button>' : '',
+          figures.length > 1 ? '<button class="paper-figure-nav paper-figure-nav-next" type="button" data-figure-next aria-label="Next">&rsaquo;</button>' : '',
           '</div>',
           figures.length > 1 ? `<div class="paper-figure-thumbs">${thumbs}</div>` : '',
           '</div>',
           '',
         ].join('');
+      };
+
+      const ensureFigureLightbox = () => {
+        let overlay = document.getElementById('dpr-figure-lightbox');
+        if (overlay) return overlay;
+        overlay = document.createElement('div');
+        overlay.id = 'dpr-figure-lightbox';
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML = [
+          '<div class="dpr-figure-lightbox-backdrop" data-figure-lightbox-backdrop></div>',
+          '<div class="dpr-figure-lightbox-panel" role="dialog" aria-modal="true" aria-label="Figure preview">',
+          '<button class="dpr-figure-lightbox-close" type="button" data-figure-lightbox-close aria-label="Close">&times;</button>',
+          '<button class="dpr-figure-lightbox-nav is-prev" type="button" data-figure-lightbox-prev aria-label="Previous">&lsaquo;</button>',
+          '<figure class="dpr-figure-lightbox-figure">',
+          '<img class="dpr-figure-lightbox-image" alt="Expanded paper figure">',
+          '<figcaption class="dpr-figure-lightbox-caption"><span data-figure-lightbox-count></span><div data-figure-lightbox-caption></div></figcaption>',
+          '</figure>',
+          '<button class="dpr-figure-lightbox-nav is-next" type="button" data-figure-lightbox-next aria-label="Next">&rsaquo;</button>',
+          '</div>',
+        ].join('');
+        document.body.appendChild(overlay);
+        return overlay;
+      };
+
+      const closeFigureLightbox = () => {
+        const overlay = document.getElementById('dpr-figure-lightbox');
+        if (!overlay) return;
+        if (typeof overlay._dprCleanup === 'function') {
+          overlay._dprCleanup();
+          overlay._dprCleanup = null;
+        }
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('dpr-figure-lightbox-open');
+      };
+
+      const openFigureLightbox = (items, startIndex = 0) => {
+        if (!items || !items.length) return;
+        const overlay = ensureFigureLightbox();
+        if (typeof overlay._dprCleanup === 'function') {
+          overlay._dprCleanup();
+          overlay._dprCleanup = null;
+        }
+        const img = overlay.querySelector('.dpr-figure-lightbox-image');
+        const caption = overlay.querySelector('[data-figure-lightbox-caption]');
+        const count = overlay.querySelector('[data-figure-lightbox-count]');
+        const prev = overlay.querySelector('[data-figure-lightbox-prev]');
+        const next = overlay.querySelector('[data-figure-lightbox-next]');
+        const close = overlay.querySelector('[data-figure-lightbox-close]');
+        const backdrop = overlay.querySelector('[data-figure-lightbox-backdrop]');
+        let current = Math.max(0, Math.min(Number(startIndex) || 0, items.length - 1));
+
+        const render = () => {
+          const item = items[current] || items[0];
+          if (img) img.src = item.src || '';
+          if (caption) caption.textContent = item.caption || '';
+          if (count) count.textContent = `${current + 1} / ${items.length}${item.label ? ` / ${item.label}` : ''}`;
+          if (prev) prev.hidden = items.length <= 1;
+          if (next) next.hidden = items.length <= 1;
+        };
+        const go = (delta) => {
+          current = (current + delta + items.length) % items.length;
+          render();
+        };
+        const onKeyDown = (event) => {
+          if (event.key === 'Escape') closeFigureLightbox();
+          if (event.key === 'ArrowLeft') go(-1);
+          if (event.key === 'ArrowRight') go(1);
+        };
+
+        if (prev) prev.onclick = () => go(-1);
+        if (next) next.onclick = () => go(1);
+        if (close) close.onclick = closeFigureLightbox;
+        if (backdrop) backdrop.onclick = closeFigureLightbox;
+        document.addEventListener('keydown', onKeyDown);
+        overlay._dprCleanup = () => document.removeEventListener('keydown', onKeyDown);
+        render();
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('dpr-figure-lightbox-open');
       };
 
       const bindPaperFigureCarousels = () => {
@@ -5215,27 +5314,60 @@ window.$docsify = {
             });
           });
 
+          const lightboxItems = slides.map((slide, index) => {
+            const image = slide.querySelector('.paper-figure-image');
+            const caption = slide.querySelector('[data-figure-caption]');
+            const badge = slide.querySelector('.paper-figure-badge');
+            return {
+              src: image ? image.currentSrc || image.src || '' : '',
+              caption: caption ? (caption.textContent || '').trim() : '',
+              label: badge ? (badge.textContent || '').trim() : `Figure ${index + 1}`,
+            };
+          });
+          root.querySelectorAll('[data-figure-lightbox]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const index = Number(btn.getAttribute('data-figure-lightbox') || 0);
+              openFigureLightbox(lightboxItems, index);
+            });
+          });
+          root.querySelectorAll('[data-figure-caption-toggle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const caption = btn.parentElement ? btn.parentElement.querySelector('[data-figure-caption]') : null;
+              if (!caption) return;
+              const collapsed = caption.classList.toggle('is-collapsed');
+              btn.textContent = collapsed ? 'Expand caption' : 'Collapse caption';
+            });
+          });
+
           render();
         });
       };
 
-      // 根据 front matter 生成论文页面 HTML
       const renderPaperFromMeta = (meta) => {
         if (!meta) return '';
 
-        // 解析标签，生成带颜色的 HTML
         const renderTags = (tags) => {
           if (!tags || !tags.length) return '';
-          return tags.map(tag => {
+          return tags.map((tag) => {
             const [kind, label] = tag.includes(':') ? tag.split(':', 2) : ['other', tag];
             const css = { keyword: 'tag-green', query: 'tag-blue', paper: 'tag-pink' }[kind] || 'tag-pink';
             return `<span class="tag-label ${css}">${escapeHtml(label)}</span>`;
           }).join(' ');
         };
 
+        const scoreValue = meta.score !== undefined && meta.score !== null
+          ? String(meta.score).trim()
+          : '';
+        const scoreLabel = String(meta.score_label || '').trim();
+        const scoreDisplay = scoreValue
+          ? (scoreLabel && !scoreValue.includes(scoreLabel) ? `${scoreValue} ${scoreLabel}` : scoreValue)
+          : '';
+        const sourceDisplay = String(meta.source || meta.selection_source || '').trim();
+        const tagHtml = renderTags(meta.tags || []);
         const lines = [];
 
-        // 标题区域
+        lines.push('<section class="paper-hero-card">');
+        lines.push('<div class="paper-hero-kicker">Paper Brief</div>');
         lines.push('<div class="paper-title-row">');
         if (meta.title) {
           lines.push(`<h1 class="paper-title-en">${escapeHtml(meta.title)}</h1>`);
@@ -5244,76 +5376,59 @@ window.$docsify = {
           lines.push(`<h1 class="paper-title-zh">${escapeHtml(meta.title_zh)}</h1>`);
         }
         lines.push('</div>');
-        lines.push('');
-
-        // 中间区域
-        lines.push('<div class="paper-meta-row">');
-
-        // 左侧：Evidence 和 TLDR
-        lines.push('<div class="paper-meta-left">');
-        if (meta.evidence) {
-          lines.push(`<p><strong>Evidence</strong>: ${escapeHtml(meta.evidence)}</p>`);
-        }
         if (meta.tldr) {
-          lines.push(`<p><strong>TLDR</strong>: ${escapeHtml(meta.tldr)}</p>`);
+          lines.push('<div class="paper-hero-tldr">');
+          lines.push('<span>TLDR</span>');
+          lines.push(`<p>${escapeHtml(meta.tldr)}</p>`);
+          lines.push('</div>');
         }
-        lines.push('</div>');
-
-        // 右侧：基本信息
-        lines.push('<div class="paper-meta-right">');
-        lines.push(`<p><strong>Authors</strong>: ${escapeHtml(meta.authors || 'Unknown')}</p>`);
-        if (meta.source) {
-          lines.push(`<p><strong>Source</strong>: ${escapeHtml(meta.source)}</p>`);
+        lines.push('<div class="paper-hero-meta">');
+        if (scoreDisplay) {
+          lines.push(`<span class="paper-meta-pill is-score"><strong>Score</strong>${escapeHtml(scoreDisplay)}</span>`);
         }
-        lines.push(`<p><strong>Date</strong>: ${escapeHtml(meta.date || 'Unknown')}</p>`);
+        if (sourceDisplay) {
+          lines.push(`<span class="paper-meta-pill"><strong>Source</strong>${escapeHtml(sourceDisplay)}</span>`);
+        }
+        lines.push(`<span class="paper-meta-pill"><strong>Date</strong>${escapeHtml(meta.date || 'Unknown')}</span>`);
         if (meta.pdf) {
-          lines.push(
-            `<p class="paper-meta-link-row"><span class="paper-meta-link-label"><strong>PDF</strong>:</span> <a class="paper-meta-link" href="${escapeHtml(meta.pdf)}" target="_blank">${escapeHtml(meta.pdf)}</a></p>`
-          );
-        }
-        if (meta.tags && meta.tags.length) {
-          lines.push(`<p><strong>Tags</strong>: ${renderTags(meta.tags)}</p>`);
-        }
-        if (meta.score !== undefined && meta.score !== null) {
-          const scoreValue = String(meta.score).trim();
-          const scoreLabel = String(meta.score_label || '').trim();
-          const scoreDisplay = scoreLabel && !scoreValue.includes(scoreLabel)
-            ? `${scoreValue} ${scoreLabel}`
-            : scoreValue;
-          lines.push(`<p><strong>Score</strong>: ${escapeHtml(scoreDisplay)}</p>`);
+          lines.push(`<a class="paper-hero-link-btn" href="${escapeHtml(meta.pdf)}" target="_blank" rel="noopener">Open PDF</a>`);
         }
         lines.push('</div>');
-
-        lines.push('</div>');
+        if (tagHtml) {
+          lines.push(`<div class="paper-hero-tags">${tagHtml}</div>`);
+        }
+        if (meta.authors) {
+          lines.push(`<div class="paper-author-line"><span>Authors</span>${escapeHtml(meta.authors || 'Unknown')}</div>`);
+        }
+        if (meta.evidence) {
+          lines.push('<div class="paper-hero-evidence">');
+          lines.push('<span>Evidence</span>');
+          lines.push(`<p>${escapeHtml(meta.evidence)}</p>`);
+          lines.push('</div>');
+        }
+        lines.push('</section>');
         lines.push('');
 
-        // 速览区域
-        if (meta.motivation || meta.method || meta.result || meta.conclusion) {
-          lines.push('<div class="paper-glance-section">');
+        const flowItems = [
+          { key: 'motivation', label: 'Motivation', index: '01' },
+          { key: 'method', label: 'Method', index: '02' },
+          { key: 'result', label: 'Result', index: '03' },
+          { key: 'conclusion', label: 'Takeaway', index: '04' },
+        ].filter((item) => String(meta[item.key] || '').trim());
+
+        if (flowItems.length) {
+          lines.push('<section class="paper-glance-section paper-flow-section">');
+          lines.push('<div class="paper-section-kicker">Research Flow</div>');
           lines.push('<div class="paper-glance-row">');
-
-          lines.push('<div class="paper-glance-col">');
-          lines.push('<div class="paper-glance-label">Motivation</div>');
-          lines.push(`<div class="paper-glance-content">${escapeHtml(meta.motivation || '-')}</div>`);
+          flowItems.forEach((item) => {
+            lines.push('<article class="paper-glance-col">');
+            lines.push(`<div class="paper-flow-index">${item.index}</div>`);
+            lines.push(`<div class="paper-glance-label">${item.label}</div>`);
+            lines.push(`<div class="paper-glance-content">${escapeHtml(meta[item.key] || '-')}</div>`);
+            lines.push('</article>');
+          });
           lines.push('</div>');
-
-          lines.push('<div class="paper-glance-col">');
-          lines.push('<div class="paper-glance-label">Method</div>');
-          lines.push(`<div class="paper-glance-content">${escapeHtml(meta.method || '-')}</div>`);
-          lines.push('</div>');
-
-          lines.push('<div class="paper-glance-col">');
-          lines.push('<div class="paper-glance-label">Result</div>');
-          lines.push(`<div class="paper-glance-content">${escapeHtml(meta.result || '-')}</div>`);
-          lines.push('</div>');
-
-          lines.push('<div class="paper-glance-col">');
-          lines.push('<div class="paper-glance-label">Conclusion</div>');
-          lines.push(`<div class="paper-glance-content">${escapeHtml(meta.conclusion || '-')}</div>`);
-          lines.push('</div>');
-
-          lines.push('</div>');
-          lines.push('</div>');
+          lines.push('</section>');
           lines.push('');
         }
 
@@ -5322,8 +5437,6 @@ window.$docsify = {
           lines.push(renderFigureCarousel(figures));
         }
 
-        // 注意：在 Markdown 中插入 HTML block（如 <hr>）后，需要一个“空行”才能让后续的 `##` 等 Markdown 正常解析。
-        // 这里通过追加两个空行，确保最终输出以 `<hr>\n\n` 结尾。
         lines.push('<hr>');
         lines.push('');
         lines.push('');
