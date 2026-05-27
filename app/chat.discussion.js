@@ -1148,7 +1148,7 @@ window.PrivateDiscussionChat = (function () {
         return;
       }
 
-      // 思考过程：时间显示在上方，左对齐
+      // Thinking entries keep the timestamp above the compact toggle card.
       if (msg.time) {
         const timeSpan = document.createElement('span');
         timeSpan.className = 'msg-time msg-time-ai';
@@ -1162,10 +1162,12 @@ window.PrivateDiscussionChat = (function () {
       const thinkingHeader = document.createElement('div');
       thinkingHeader.className = 'thinking-history-header';
       const titleSpan = document.createElement('span');
-      titleSpan.textContent = '思考过程';
+      titleSpan.className = 'thinking-label';
+      titleSpan.textContent = 'Thinking';
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'thinking-history-toggle';
       toggleBtn.textContent = '展开';
+      toggleBtn.setAttribute('aria-expanded', 'false');
       thinkingHeader.appendChild(titleSpan);
       thinkingHeader.appendChild(toggleBtn);
 
@@ -1173,21 +1175,29 @@ window.PrivateDiscussionChat = (function () {
       thinkingContent.className =
         'msg-content thinking-history-content thinking-collapsed';
       const markdown = msg.content || '';
-      if (renderMarkdownWithTables) {
-        thinkingContent.innerHTML = renderMarkdownWithTables(markdown);
-      } else {
-        thinkingContent.textContent = markdown;
-      }
-      if (renderMathInEl) {
-        renderMathInEl(thinkingContent);
-      }
+      let thinkingCollapsed = true;
+      const renderThinking = () => {
+        const source = thinkingCollapsed ? '...' : markdown;
+        if (thinkingCollapsed || !renderMarkdownWithTables) {
+          thinkingContent.textContent = source;
+        } else {
+          thinkingContent.innerHTML = renderMarkdownWithTables(source);
+        }
+        thinkingContent.classList.toggle('thinking-collapsed', thinkingCollapsed);
+        toggleBtn.textContent = thinkingCollapsed ? '展开' : '收起';
+        toggleBtn.setAttribute('aria-expanded', thinkingCollapsed ? 'false' : 'true');
+        if (!thinkingCollapsed && renderMathInEl) {
+          renderMathInEl(thinkingContent);
+        }
+      };
+      renderThinking();
 
       thinkingContainer.appendChild(thinkingHeader);
       thinkingContainer.appendChild(thinkingContent);
 
       toggleBtn.addEventListener('click', () => {
-        const collapsed = thinkingContent.classList.toggle('thinking-collapsed');
-        toggleBtn.textContent = collapsed ? '展开' : '折叠';
+        thinkingCollapsed = !thinkingCollapsed;
+        renderThinking();
       });
 
       item.appendChild(thinkingContainer);
@@ -1369,12 +1379,12 @@ window.PrivateDiscussionChat = (function () {
             <span class="dot"></span>
           </span>
         </div>
-        <div class="thinking-container" style="margin-top:8px; border-left:3px solid #ddd; padding-left:8px; font-size:0.85rem; color:#666; display:none;">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <span>思考过程</span>
-            <button class="thinking-toggle" style="margin-left:8px; font-size:0.75rem; padding:2px 6px;">展开</button>
+        <div class="thinking-container" style="display:none;">
+          <div class="thinking-header">
+            <span class="thinking-label">Thinking</span>
+            <button class="thinking-toggle" aria-expanded="false">展开</button>
           </div>
-          <div class="thinking-content" style="white-space:pre-wrap; margin-top:4px;"></div>
+          <div class="thinking-content thinking-collapsed"></div>
         </div>
         <div class="msg-content msg-content-ai"></div>
     `;
@@ -1565,13 +1575,13 @@ window.PrivateDiscussionChat = (function () {
     savePreferredModelName(model);
 
     if (statusEl) {
-      statusEl.textContent = `正在调用 Chat 模型 ${model}...`;
-      statusEl.style.color = '#666';
+      statusEl.textContent = '';
+      statusEl.style.color = '';
     }
 
     let thinkingBuffer = '';
     let answerBuffer = '';
-    // 默认以折叠模式展示思考过程，仅显示前若干行
+    // 默认折叠 thinking，只给出占位省略号，完整内容由按钮展开。
     let thinkingCollapsed = true;
     let renderTimer = null;
 
@@ -1580,25 +1590,15 @@ window.PrivateDiscussionChat = (function () {
 
     const applyThinkingView = () => {
       if (!thinkingBuffer || !thinkingContent) return;
-      const source = thinkingBuffer;
-      const maxLines = 6;
-      let toRender = source;
+      const source = thinkingCollapsed ? '...' : thinkingBuffer;
 
-      if (thinkingCollapsed) {
-        const lines = source.split('\n');
-        if (lines.length > maxLines) {
-          toRender =
-            lines.slice(0, maxLines).join('\n') +
-            '\n...（已折叠，点击展开查看更多思考过程）';
-        }
-      }
-
-      if (renderMarkdownWithTables) {
-        thinkingContent.innerHTML = renderMarkdownWithTables(toRender);
+      if (thinkingCollapsed || !renderMarkdownWithTables) {
+        thinkingContent.textContent = source;
       } else {
-        thinkingContent.textContent = toRender;
+        thinkingContent.innerHTML = renderMarkdownWithTables(source);
       }
-      if (renderMathInEl) {
+      thinkingContent.classList.toggle('thinking-collapsed', thinkingCollapsed);
+      if (!thinkingCollapsed && renderMathInEl) {
         renderMathInEl(thinkingContent);
       }
     };
@@ -1619,7 +1619,8 @@ window.PrivateDiscussionChat = (function () {
     if (toggleBtn && thinkingContainer) {
       toggleBtn.addEventListener('click', () => {
         thinkingCollapsed = !thinkingCollapsed;
-        toggleBtn.textContent = thinkingCollapsed ? '展开' : '折叠';
+        toggleBtn.textContent = thinkingCollapsed ? '展开' : '收起';
+        toggleBtn.setAttribute('aria-expanded', thinkingCollapsed ? 'false' : 'true');
         applyThinkingView();
       });
     }
@@ -1840,8 +1841,8 @@ window.PrivateDiscussionChat = (function () {
       }
 
       if (statusEl) {
-        statusEl.textContent = `已使用模型 ${model}`;
-        statusEl.style.color = '#4caf50';
+        statusEl.textContent = '';
+        statusEl.style.color = '';
       }
 
       resetChatInput(input);
