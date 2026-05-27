@@ -8000,26 +8000,36 @@ body.dpr-chat-drawer-open.dpr-paper-actions-popover-open #paper-chat-container {
   z-index: 1803;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 112px;
+  gap: 13px;
+  min-width: 126px;
   height: 46px;
-  padding: 0 16px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  padding: 0 19px 0 17px;
+  border: 1px solid rgba(15, 118, 110, 0.30) !important;
   border-radius: 999px;
-  background: linear-gradient(135deg, #111827 0%, #0f766e 100%);
-  color: #fff;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+  background: linear-gradient(135deg, #ffffff 0%, #f3f6f7 100%) !important;
+  color: var(--dpr-heading-color) !important;
+  box-shadow:
+    0 16px 36px rgba(18, 62, 90, 0.16),
+    0 0 0 4px rgba(15, 118, 110, 0.075) !important;
   cursor: pointer;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.02em;
   transition: right 0.28s cubic-bezier(0.2, 0.9, 0.2, 1),
-    transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 #paper-chat-container .paper-chat-toggle-btn:hover {
   transform: translateY(-50%) translateX(-2px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.28);
+  border-color: rgba(15, 118, 110, 0.46) !important;
+  box-shadow:
+    0 18px 42px rgba(18, 62, 90, 0.20),
+    0 0 0 5px rgba(15, 118, 110, 0.11) !important;
+}
+
+#paper-chat-container .paper-chat-toggle-btn > span:last-child {
+  padding-left: 3px;
 }
 
 #paper-chat-container.is-open .paper-chat-toggle-btn {
@@ -8034,7 +8044,10 @@ body.dpr-chat-drawer-open.dpr-paper-actions-popover-open #paper-chat-container {
   height: 10px;
   border-radius: 999px;
   background: #4ade80;
-  box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.16);
+  box-shadow:
+    0 0 0 6px rgba(74, 222, 128, 0.20),
+    0 0 18px rgba(15, 118, 110, 0.32);
+  flex: 0 0 auto;
 }
 
 #paper-chat-container .paper-chat-panel {
@@ -9215,8 +9228,10 @@ body.dpr-chat-drawer-open #paper-chat-container .paper-chat-panel,
     right: 14px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
     transform: none;
-    min-width: 104px;
+    gap: 11px;
+    min-width: 116px;
     height: 42px;
+    padding: 0 16px 0 15px;
   }
 
   #paper-chat-container .paper-chat-toggle-btn:hover {
