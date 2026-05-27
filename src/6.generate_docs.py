@@ -1078,7 +1078,6 @@ def build_daily_report_html(
     run_status = "成功" if recommend_exists else "未产出 recommend 文件（视为无结果）"
     total = len(deep_entries) + len(quick_entries)
     topics = _collect_daily_topics(deep_entries, quick_entries)
-    route_items = _daily_route_items(deep_entries, quick_entries, topics)
     heading_tag = heading_tag if heading_tag in {"h1", "h2", "h3"} else "h1"
     generated_at_display = format_daily_generated_at_display(generated_at)
 
@@ -1093,9 +1092,6 @@ def build_daily_report_html(
         f'dpr-daily-topic-{html.escape(re.sub(r"[^a-z0-9_-]+", "-", kind.lower()).strip("-") or "other", quote=True)}">'
         f"{html.escape(label)}<em>{count}</em></span>"
         for label, count, kind in topics
-    )
-    route_html = "\n".join(
-        f"<li>{html.escape(item)}</li>" for item in route_items
     )
     detail_html = (
         f'<a class="dpr-daily-detail-link" href="{_daily_hash_href(detail_href)}">打开完整日报</a>'
@@ -1113,6 +1109,9 @@ def build_daily_report_html(
         f'      <div class="dpr-daily-stat"><span>运行状态</span><strong>{html.escape(run_status)}</strong></div>',
         f'      <div class="dpr-daily-stat"><span>总数</span><strong>{total}</strong></div>',
         f'      <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>{len(deep_entries)} / {len(quick_entries)}</strong></div>',
+        '      <div class="dpr-daily-stat dpr-daily-topic-stat"><span>今日主题</span>'
+        + (f'<div class="dpr-daily-topic-cloud">{topics_html}</div>' if topics_html else "<strong>暂无</strong>")
+        + "</div>",
         "    </div>",
     ]
     if summary_html:
@@ -1127,22 +1126,6 @@ def build_daily_report_html(
     if detail_html:
         lines.append(f"    {detail_html}")
     lines.append("  </div>")
-
-    if route_html or topics_html:
-        lines.extend(
-            [
-                '  <div class="dpr-daily-guide-grid">',
-                '    <section class="dpr-daily-route-card">',
-                "      <h2>今日阅读路线</h2>",
-                f"      <ol>{route_html}</ol>" if route_html else "      <p>暂无可推荐阅读路线。</p>",
-                "    </section>",
-                '    <section class="dpr-daily-topic-card">',
-                "      <h2>今日主题</h2>",
-                f'      <div class="dpr-daily-topic-cloud">{topics_html}</div>' if topics_html else "      <p>暂无主题标签。</p>",
-                "    </section>",
-                "  </div>",
-            ]
-        )
 
     if not recommend_exists:
         lines.extend(
@@ -2122,7 +2105,10 @@ def build_day_report_markdown(
     )
     lines.append("")
     lines.append("---")
-    lines.append("使用键盘方向键可在日报/论文之间快速切换。")
+    lines.append(
+        '<div class="dpr-daily-keyboard-tip"><span>快捷切换</span>'
+        "<strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>"
+    )
     lines.append("")
     return "\n".join(lines)
 

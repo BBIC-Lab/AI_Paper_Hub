@@ -5673,12 +5673,10 @@ window.$docsify = {
       const renderLegacyDailyReportHtml = ({ title, meta, summaryLines, deepEntries, quickEntries }) => {
         const total = deepEntries.length + quickEntries.length;
         const topics = dailyTopicItems(deepEntries.concat(quickEntries));
-        const routeItems = dailyRouteItems(deepEntries, quickEntries, topics);
         const topicCloud = topics.map((item) => {
           const kind = cssKindFromTag(item.kind);
           return `<span class="dpr-daily-topic-pill dpr-daily-topic-${kind}">${escapeHtml(item.label)}<em>${item.count}</em></span>`;
         }).join('\n');
-        const routeHtml = routeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join('\n');
         const summaryHtml = summaryLines.slice(0, 3).map((line) => `<p>${escapeHtml(line)}</p>`).join('\n');
         const deepCount = meta.deepCount || String(deepEntries.length);
         const quickCount = meta.quickCount || String(quickEntries.length);
@@ -5692,21 +5690,12 @@ window.$docsify = {
           `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.runStatus)}</span><strong>${escapeHtml(meta.status || DAILY_TEXT.success)}</strong></div>`,
           `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.total)}</span><strong>${escapeHtml(meta.total || String(total))}</strong></div>`,
           `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.deepQuick)}</span><strong>${escapeHtml(`${deepCount} / ${quickCount}`)}</strong></div>`,
+          `      <div class="dpr-daily-stat dpr-daily-topic-stat"><span>${escapeHtml(DAILY_TEXT.topics)}</span>${topicCloud ? `<div class="dpr-daily-topic-cloud">${topicCloud}</div>` : `<strong>${escapeHtml(DAILY_TEXT.noTopic)}</strong>`}</div>`,
           '    </div>',
           summaryHtml ? '    <div class="dpr-daily-brief-card">' : '',
           summaryHtml ? `      <span>${escapeHtml(DAILY_TEXT.brief)}</span>` : '',
           summaryHtml ? `      ${summaryHtml}` : '',
           summaryHtml ? '    </div>' : '',
-          '  </div>',
-          '  <div class="dpr-daily-guide-grid">',
-          '    <section class="dpr-daily-route-card">',
-          `      <h2>${escapeHtml(DAILY_TEXT.route)}</h2>`,
-          routeHtml ? `      <ol>${routeHtml}</ol>` : `      <p>${escapeHtml(DAILY_TEXT.noRoute)}</p>`,
-          '    </section>',
-          '    <section class="dpr-daily-topic-card">',
-          `      <h2>${escapeHtml(DAILY_TEXT.topics)}</h2>`,
-          topicCloud ? `      <div class="dpr-daily-topic-cloud">${topicCloud}</div>` : `      <p>${escapeHtml(DAILY_TEXT.noTopic)}</p>`,
-          '    </section>',
           '  </div>',
           '  <section class="dpr-daily-paper-section is-deep">',
           `    <h2>${escapeHtml(DAILY_TEXT.deep)}</h2>`,
@@ -5718,7 +5707,7 @@ window.$docsify = {
           '  </section>',
           '</section>',
           '<hr>',
-          `<p>${escapeHtml(DAILY_TEXT.keyboard)}</p>`,
+          `<div class="dpr-daily-keyboard-tip"><span>\u5feb\u6377\u5207\u6362</span><strong>${escapeHtml(DAILY_TEXT.keyboard)}</strong></div>`,
         ].filter(Boolean).join('\n');
       };
 
