@@ -3780,8 +3780,14 @@ window.$docsify = {
         });
       };
 
+      const parseScoreNumber = (scoreValue) => {
+        const match = String(scoreValue || '').trim().match(/[-+]?\d+(?:\.\d+)?/);
+        if (!match) return Number.NaN;
+        return Number(match[0]);
+      };
+
       const scoreToStarRating = (scoreValue) => {
-        const score = Number(scoreValue);
+        const score = parseScoreNumber(scoreValue);
         if (!Number.isFinite(score)) return 0;
         const clamped = Math.max(0, Math.min(10, score));
         return Math.floor(clamped + 0.5) / 2;
@@ -3789,10 +3795,13 @@ window.$docsify = {
 
       const buildSidebarStarsHtml = (scoreValue) => {
         const rating = scoreToStarRating(scoreValue);
-        const scoreNum = Number(scoreValue);
+        const scoreNum = parseScoreNumber(scoreValue);
         const scoreText = Number.isFinite(scoreNum) ? scoreNum.toFixed(1) : '';
+        const scoreLabel = String(scoreValue || '')
+          .replace(/^\s*[-+]?\d+(?:\.\d+)?\s*/, '')
+          .trim();
         const title = scoreText
-          ? `评分：${scoreText}/10（${rating.toFixed(1)}/5）`
+          ? `评分：${scoreText}/10${scoreLabel ? ` ${scoreLabel}` : ''}（${rating.toFixed(1)}/5）`
           : '评分：无';
         const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
         return (
@@ -5266,7 +5275,12 @@ window.$docsify = {
           lines.push(`<p><strong>Tags</strong>: ${renderTags(meta.tags)}</p>`);
         }
         if (meta.score !== undefined && meta.score !== null) {
-          lines.push(`<p><strong>Score</strong>: ${escapeHtml(String(meta.score))}</p>`);
+          const scoreValue = String(meta.score).trim();
+          const scoreLabel = String(meta.score_label || '').trim();
+          const scoreDisplay = scoreLabel && !scoreValue.includes(scoreLabel)
+            ? `${scoreValue} ${scoreLabel}`
+            : scoreValue;
+          lines.push(`<p><strong>Score</strong>: ${escapeHtml(scoreDisplay)}</p>`);
         }
         lines.push('</div>');
 

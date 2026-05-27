@@ -1092,8 +1092,11 @@ def score_to_star_rating(score: Any) -> float:
     将 10 分制评分映射为 5 星制，并四舍五入到 0.5 星。
     例：10->5，9->4.5，8->4，7->3.5
     """
+    match = re.search(r"[-+]?\d+(?:\.\d+)?", str(score or ""))
+    if not match:
+        return 0.0
     try:
-        s = float(score)
+        s = float(match.group(0))
     except Exception:
         return 0.0
     if not math.isfinite(s):
@@ -1104,13 +1107,13 @@ def score_to_star_rating(score: Any) -> float:
 
 def build_sidebar_stars_html(score: Any) -> str:
     rating = score_to_star_rating(score)
-    try:
-        score_str = f"{float(score):.1f}"
-    except Exception:
-        score_str = ""
+    match = re.search(r"[-+]?\d+(?:\.\d+)?", str(score or ""))
+    score_str = f"{float(match.group(0)):.1f}" if match else ""
+    score_label = re.sub(r"^\s*[-+]?\d+(?:\.\d+)?\s*", "", str(score or "")).strip()
 
     if score_str:
-        title = f"评分：{score_str}/10（{rating:.1f}/5）"
+        label_text = f" {score_label}" if score_label else ""
+        title = f"评分：{score_str}/10{label_text}（{rating:.1f}/5）"
     else:
         title = "评分：无"
 
@@ -1271,6 +1274,7 @@ def build_markdown_content(
         published = published[:10]
     pdf_url = str(paper.get("link") or paper.get("pdf_url") or "").strip()
     score = paper.get("llm_score")
+    score_label = str(paper.get("score_label") or paper.get("llm_score_label") or "").strip()
     evidence = str(paper.get("canonical_evidence") or "").strip()
     tldr = (
         paper.get("llm_tldr_cn")
@@ -1324,7 +1328,12 @@ def build_markdown_content(
         # 保留完整的 kind:label 格式，前端渲染时再处理
         lines.append(f"tags: [{', '.join(yaml_escape_value(t) for t in tags_list)}]")
     if score is not None:
-        lines.append(f"score: {score}")
+        score_text = str(score).strip()
+        if score_label and score_label not in score_text:
+            score_text = f"{score_text} {score_label}".strip()
+        lines.append(f"score: {score_text}")
+    if score_label:
+        lines.append(f"score_label: {yaml_escape_value(score_label)}")
     if evidence:
         lines.append(f"evidence: {yaml_escape_value(evidence)}")
     if display_tldr:

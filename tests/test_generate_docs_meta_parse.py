@@ -175,6 +175,27 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertEqual(len(figures), 1)
         self.assertEqual(figures[0]["url"], "assets/figures/arxiv/1234.5678/fig-001.webp")
 
+    def test_build_markdown_content_writes_score_label(self):
+        paper = {
+            "title": "Subscription Score Test",
+            "authors": ["Ada Lovelace"],
+            "published": "2026-05-27",
+            "abstract": "abstract body",
+            "source": "local-pdf",
+            "llm_score": 8.5,
+            "score_label": "订阅评分",
+        }
+        md = self.mod.build_markdown_content(paper, "deep", "", "", [])
+        meta = self.mod._parse_front_matter(md)
+        self.assertEqual(meta["score"], "8.5 订阅评分")
+        self.assertEqual(meta["score_label"], "订阅评分")
+
+    def test_subscription_score_label_still_maps_to_stars(self):
+        self.assertEqual(self.mod.score_to_star_rating("8.5 订阅评分"), 4.5)
+        html = self.mod.build_sidebar_stars_html("8.5 订阅评分")
+        self.assertIn("订阅评分", html)
+        self.assertIn("评分：8.5/10", html)
+
     def test_maybe_generate_paper_figures_accepts_biorxiv(self):
         calls = []
 

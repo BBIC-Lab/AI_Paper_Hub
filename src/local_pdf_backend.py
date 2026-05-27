@@ -26,6 +26,7 @@ gen6 = importlib.util.module_from_spec(_GEN6_SPEC)
 _GEN6_SPEC.loader.exec_module(gen6)
 
 _GENERATION_LOCK = threading.Lock()
+_REFINE_MODULE = None
 
 
 def _clean_line(value: Any) -> str:
@@ -151,7 +152,126 @@ def _parse_llm_config(raw: str | None) -> Dict[str, Any] | None:
     return obj if isinstance(obj, dict) else None
 
 
-def _insert_local_sidebar_entry(sidebar_path: str, paper_id: str, title: str, evidence: str = "") -> None:
+def _load_refine_module():
+    global _REFINE_MODULE
+    if _REFINE_MODULE is not None:
+        return _REFINE_MODULE
+    refine_path = SRC_DIR / "4.llm_refine_papers.py"
+    spec = importlib.util.spec_from_file_location("dpr_llm_refine", refine_path)
+    if not spec or not spec.loader:
+        raise RuntimeError(f"Cannot load Step4 refine module: {refine_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    _REFINE_MODULE = module
+    return module
+
+
+def _format_score_display(score: Any, label: str = "") -> str:
+    text_label = _clean_line(label)
+    try:
+        score_text = f"{float(score):.1f}"
+    except Exception:
+        score_text = _clean_line(score)
+    if not score_text:
+        return ""
+    return f"{score_text} {text_label}".strip()
+
+
+def _make_local_filter_client(refine: Any, llm_config: Dict[str, Any] | None):
+    llm_config = llm_config or {}
+    api_key = _clean_line(llm_config.get("apiKey") or llm_config.get("api_key"))
+    base_url = _clean_line(llm_config.get("baseUrl") or llm_config.get("base_url"))
+    model = _clean_line(
+        llm_config.get("filterModel")
+        or llm_config.get("filter_model")
+        or llm_config.get("model")
+    )
+    client = gen6.make_task_client(
+        "filter",
+        api_key=api_key or None,
+        base_url=base_url or None,
+        model=model or None,
+    )
+    client.kwargs.update({"temperature": 0.1, "max_tokens": 2048})
+    return client
+
+
+def _score_local_pdf_against_subscriptions(
+    paper: Dict[str, Any],
+    text: str,
+    llm_config: Dict[str, Any] | None,
+) -> Dict[str, Any] | None:
+    try:
+        refine = _load_refine_module()
+        config = refine.load_config()
+        requirements = refine.build_user_requirements(config, [])
+        if not requirements:
+            return None
+
+        paper_id = _clean_line(paper.get("id")) or "local-pdf"
+        abstract = _clean_line(paper.get("abstract"))
+        excerpt = _clean_line(text[:5000])
+        eval_text = abstract
+        if excerpt and excerpt not in abstract:
+            eval_text = f"{abstract}\n\nFull-text excerpt: {excerpt[:2500]}".strip()
+        content = refine.format_doc(_clean_line(paper.get("title")), eval_text, 2600)
+        docs = [{"id": paper_id, "content": content}]
+        client = _make_local_filter_client(refine, llm_config)
+        runner = refine._make_filter_runner(
+            client,
+            all_requirements=requirements,
+            debug_dir="",
+            base_tag="local_pdf",
+        )
+        results = refine.recover_filter_results(
+            docs,
+            runner,
+            max_attempts=2,
+            debug_tag="local_pdf",
+        )
+        merged: Dict[str, Dict[str, Any]] = {}
+        requirement_by_index = {i + 1: r for i, r in enumerate(requirements)}
+        for item in results:
+            refine.merge_filter_result(merged, item, requirement_by_index)
+        return merged.get(paper_id)
+    except Exception as exc:
+        print(f"[WARN] local PDF subscription scoring skipped: {exc}", flush=True)
+        return None
+
+
+def _apply_subscription_score(paper: Dict[str, Any], score_result: Dict[str, Any] | None) -> None:
+    if not score_result:
+        return
+    try:
+        score = float(score_result.get("score"))
+    except Exception:
+        return
+    paper["llm_score"] = max(0.0, min(10.0, score))
+    paper["score_label"] = "订阅评分"
+    evidence = _clean_line(score_result.get("canonical_evidence"))
+    if evidence:
+        paper["canonical_evidence"] = evidence
+    tldr_cn = _clean_line(score_result.get("tldr_cn"))
+    if tldr_cn and tldr_cn != "不相关":
+        paper["llm_tldr_cn"] = tldr_cn
+    matched_tag = _clean_line(score_result.get("matched_query_tag"))
+    if matched_tag:
+        tags = paper.setdefault("llm_tags", [])
+        if isinstance(tags, list) and matched_tag not in tags:
+            tags.append(matched_tag)
+    matched_query = _clean_line(score_result.get("matched_query_text"))
+    if matched_query:
+        paper["matched_query_text"] = matched_query
+
+
+def _insert_local_sidebar_entry(
+    sidebar_path: str,
+    paper_id: str,
+    title: str,
+    evidence: str = "",
+    score: Any = "local",
+    score_label: str = "",
+) -> None:
     path = Path(sidebar_path)
     lines = path.read_text(encoding="utf-8").splitlines(True) if path.exists() else []
     root_line = "* 本地 PDF 解析\n"
@@ -206,7 +326,7 @@ def _insert_local_sidebar_entry(sidebar_path: str, paper_id: str, title: str, ev
     payload = {
         "title": title,
         "link": href,
-        "score": "local",
+        "score": _format_score_display(score, score_label) or "local",
         "tags": [{"kind": "paper", "label": "本地PDF"}],
         "evidence": _clean_line(evidence) or "本地上传 PDF，使用后端精读流程生成。",
     }
@@ -301,6 +421,10 @@ def generate_local_pdf_deep_doc(
             if temporary_client is not None:
                 gen6.LLM_CLIENT = temporary_client
                 gen6.LLM_INIT_ERROR = ""
+            _apply_subscription_score(
+                paper,
+                _score_local_pdf_against_subscriptions(paper, text, llm_config),
+            )
             zh_title, zh_abstract = gen6.translate_title_and_abstract_to_zh(title, abstract)
             glance = gen6.generate_glance_overview(title, abstract) or gen6.build_glance_fallback(paper)
             if glance:
@@ -327,7 +451,14 @@ def generate_local_pdf_deep_doc(
         or paper.get("canonical_evidence")
         or "本地上传 PDF，使用后端精读流程生成。"
     ).strip()
-    _insert_local_sidebar_entry(str(docs_path / "_sidebar.md"), paper_id, title, sidebar_evidence)
+    _insert_local_sidebar_entry(
+        str(docs_path / "_sidebar.md"),
+        paper_id,
+        title,
+        sidebar_evidence,
+        score=paper.get("llm_score"),
+        score_label=str(paper.get("score_label") or ""),
+    )
     return {
         "ok": True,
         "title": title,
@@ -337,6 +468,8 @@ def generate_local_pdf_deep_doc(
         "txt_path": str(txt_path),
         "pdf_path": str(pdf_asset_path),
         "figures_count": len(figures),
+        "score": paper.get("llm_score"),
+        "score_label": paper.get("score_label"),
     }
 
 

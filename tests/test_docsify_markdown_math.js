@@ -219,6 +219,29 @@ function testLocalPdfFiguresJsonKeepsEscapedCaptionQuotes() {
   assert.ok(rendered.includes('&quot;longlegged space creature&quot;'));
 }
 
+function testScoreLabelRendersAfterScore() {
+  const localHooks = buildHooksForRoute(
+    'local-pdf/20260527/scored-paper.md',
+    '/local-pdf/20260527/scored-paper',
+  );
+  const input = [
+    '---',
+    'title: Scored Local Paper',
+    'authors: Unknown',
+    'date: 2026-05-27',
+    'source: local-pdf',
+    'score: 8.5 订阅评分',
+    'score_label: 订阅评分',
+    '---',
+    '',
+    '## Abstract',
+    'Demo body.',
+  ].join('\n');
+
+  const rendered = localHooks.beforeEachFn(input);
+  assert.ok(rendered.includes('<strong>Score</strong>: 8.5 订阅评分'));
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
@@ -226,5 +249,6 @@ testLatexTextCommandContentStaysInMath();
 testDocsifyMathProtectionPreservesSubscriptMath();
 testLocalPdfRouteRendersPaperFrontMatter();
 testLocalPdfFiguresJsonKeepsEscapedCaptionQuotes();
+testScoreLabelRendersAfterScore();
 
 console.log('docsify markdown math tests passed');
