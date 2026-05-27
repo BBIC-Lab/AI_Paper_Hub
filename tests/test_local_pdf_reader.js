@@ -53,6 +53,44 @@ assert.match(
   ),
   /^docs\/assets\/local_pdfs\/uploads\/\d{8}-\d{6}-[a-z0-9]+-lightglue-local-feature-matching-at-light-speed\.pdf$/,
 );
+assert.match(
+  helpers.buildUploadBatchId(new Date(Date.UTC(2026, 4, 25, 10, 11, 12))),
+  /^batch-\d{8}-\d{6}-[a-z0-9]+$/,
+);
+assert.strictEqual(
+  helpers.buildBatchUploadPath('batch-demo', 1, 'A Paper.pdf'),
+  'docs/assets/local_pdfs/uploads/batch-demo/002-a-paper.pdf',
+);
+assert.strictEqual(
+  helpers.buildBatchManifestPath('batch-demo'),
+  'docs/assets/local_pdfs/uploads/batch-demo/manifest.json',
+);
+assert.deepStrictEqual(
+  helpers.buildLocalPdfBatchManifest(
+    [
+      {
+        clientId: 'item-1',
+        uploadPath: 'docs/assets/local_pdfs/uploads/batch-demo/001-paper.pdf',
+        fileName: 'paper.pdf',
+        titleOverride: 'Correct Title',
+      },
+    ],
+    new Date('2026-05-25T10:11:12.000Z'),
+  ),
+  {
+    version: 1,
+    created_at: '2026-05-25T10:11:12.000Z',
+    items: [
+      {
+        client_id: 'item-1',
+        upload_path: 'docs/assets/local_pdfs/uploads/batch-demo/001-paper.pdf',
+        original_filename: 'paper.pdf',
+        title_override: 'Correct Title',
+        order: 1,
+      },
+    ],
+  },
+);
 assert.deepStrictEqual(
   helpers.normalizePdfFiles([
     { name: 'paper-a.pdf', type: 'application/pdf' },

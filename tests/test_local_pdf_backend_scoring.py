@@ -91,5 +91,62 @@ class LocalPdfBackendScoringTest(unittest.TestCase):
             self.assertEqual(payload["evidence"], "匹配当前订阅方向")
 
 
+    def test_batch_manifest_loads_ordered_items_under_upload_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp) / "docs"
+            batch_dir = docs / "assets" / "local_pdfs" / "uploads" / "batch-1"
+            batch_dir.mkdir(parents=True)
+            pdf = batch_dir / "001-paper.pdf"
+            pdf.write_bytes(b"%PDF-1.4")
+            manifest = batch_dir / "manifest.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "items": [
+                            {
+                                "client_id": "item-1",
+                                "upload_path": str(pdf),
+                                "original_filename": "paper.pdf",
+                                "title_override": "Correct Title",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            _, items = self.mod._load_local_pdf_batch_manifest(
+                manifest_path=str(manifest),
+                docs_path=docs,
+            )
+
+            self.assertEqual(len(items), 1)
+            self.assertEqual(items[0]["client_id"], "item-1")
+            self.assertEqual(items[0]["filename"], "paper.pdf")
+            self.assertEqual(items[0]["title_override"], "Correct Title")
+            self.assertEqual(items[0]["upload_path"], pdf.resolve())
+
+    def test_batch_manifest_rejects_paths_outside_upload_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp) / "docs"
+            batch_dir = docs / "assets" / "local_pdfs" / "uploads" / "batch-1"
+            batch_dir.mkdir(parents=True)
+            outside = Path(tmp) / "outside.pdf"
+            outside.write_bytes(b"%PDF-1.4")
+            manifest = batch_dir / "manifest.json"
+            manifest.write_text(
+                json.dumps({"items": [{"upload_path": str(outside)}]}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(ValueError):
+                self.mod._load_local_pdf_batch_manifest(
+                    manifest_path=str(manifest),
+                    docs_path=docs,
+                )
+
+
+
 if __name__ == "__main__":
     unittest.main()

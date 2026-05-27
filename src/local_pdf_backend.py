@@ -39,6 +39,56 @@ def _safe_asset_key(value: str) -> str:
     return text or "local-paper"
 
 
+def _resolve_local_upload_path(path_value: Any, *, docs_path: Path, label: str) -> Path:
+    raw = _clean_line(path_value)
+    if not raw:
+        raise ValueError(f"{label} is required.")
+    path = Path(raw)
+    if not path.is_absolute():
+        path = ROOT_DIR / path
+    path = path.resolve()
+    upload_root = (docs_path / "assets" / "local_pdfs" / "uploads").resolve()
+    try:
+        path.relative_to(upload_root)
+    except ValueError as exc:
+        raise ValueError(f"Unexpected {label}: {raw}") from exc
+    return path
+
+
+def _load_local_pdf_batch_manifest(*, manifest_path: str, docs_path: Path) -> tuple[Path, list[dict[str, Any]]]:
+    path = _resolve_local_upload_path(manifest_path, docs_path=docs_path, label="manifest_path")
+    if path.suffix.lower() != ".json":
+        raise ValueError("Batch manifest must be a JSON file.")
+    if not path.exists():
+        raise FileNotFoundError(f"Batch manifest not found: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list) or not items:
+        raise ValueError("Batch manifest must include a non-empty items list.")
+    clean_items: list[dict[str, Any]] = []
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            raise ValueError(f"Batch manifest item {index + 1} must be an object.")
+        upload_path = _resolve_local_upload_path(
+            item.get("upload_path"),
+            docs_path=docs_path,
+            label=f"items[{index}].upload_path",
+        )
+        if upload_path.suffix.lower() != ".pdf":
+            raise ValueError(f"Batch manifest item {index + 1} is not a PDF: {upload_path}")
+        clean_items.append(
+            {
+                "index": index,
+                "upload_path": upload_path,
+                "upload_path_raw": _clean_line(item.get("upload_path")),
+                "filename": _clean_line(item.get("original_filename") or item.get("filename")) or upload_path.name,
+                "title_override": _clean_line(item.get("title_override")),
+                "client_id": _clean_line(item.get("client_id")),
+            }
+        )
+    return path, clean_items
+
+
 def _first_meaningful_line(text: str) -> str:
     for raw in str(text or "").splitlines():
         line = _clean_line(raw)
@@ -357,7 +407,7 @@ def generate_local_pdf_deep_doc(
     docs_path = Path(docs_dir or gen6.resolve_docs_dir()).resolve()
     docs_path.mkdir(parents=True, exist_ok=True)
     day = (date_str or datetime.now(timezone.utc).strftime("%Y%m%d")).strip()
-    upload_stamp = datetime.now(timezone.utc).strftime("%H%M%S")
+    upload_stamp = datetime.now(timezone.utc).strftime("%H%M%S%f")
     llm_config = _parse_llm_config(llm_config_json)
 
     tmp_dir = docs_path / "assets" / "local_pdfs"
@@ -498,29 +548,101 @@ def generate_local_pdf_deep_doc_from_file(
     )
 
 
+def generate_local_pdf_deep_docs_from_manifest(
+    *,
+    manifest_path: str,
+    llm_config_json: str | None = None,
+    docs_dir: str | None = None,
+    date_str: str | None = None,
+    cleanup_uploads: bool = False,
+) -> Dict[str, Any]:
+    docs_path = Path(docs_dir or gen6.resolve_docs_dir()).resolve()
+    manifest_file, items = _load_local_pdf_batch_manifest(manifest_path=manifest_path, docs_path=docs_path)
+    day = (date_str or datetime.now(timezone.utc).strftime("%Y%m%d")).strip()
+    results: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+
+    for item in items:
+        result_base = {
+            "index": item["index"],
+            "client_id": item.get("client_id") or "",
+            "upload_path": item.get("upload_path_raw") or str(item["upload_path"]),
+            "filename": item.get("filename") or item["upload_path"].name,
+        }
+        try:
+            result = generate_local_pdf_deep_doc_from_file(
+                pdf_path=str(item["upload_path"]),
+                filename=item.get("filename") or item["upload_path"].name,
+                title_override=item.get("title_override") or None,
+                llm_config_json=llm_config_json,
+                docs_dir=str(docs_path),
+                date_str=day,
+            )
+            result.update(result_base)
+            results.append(result)
+            if cleanup_uploads:
+                item["upload_path"].unlink(missing_ok=True)
+        except Exception as exc:
+            failure = {
+                **result_base,
+                "ok": False,
+                "error": str(exc),
+            }
+            results.append(failure)
+            failures.append(failure)
+
+    if cleanup_uploads and not failures:
+        manifest_file.unlink(missing_ok=True)
+        try:
+            manifest_file.parent.rmdir()
+        except OSError:
+            pass
+
+    return {
+        "ok": not failures,
+        "succeeded": len(results) - len(failures),
+        "failed": len(failures),
+        "manifest_path": str(manifest_file),
+        "results": results,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate a Daily Paper style deep-read page from a local PDF.")
-    parser.add_argument("--pdf-path", required=True, help="Path to the uploaded PDF file.")
+    parser.add_argument("--pdf-path", default="", help="Path to the uploaded PDF file.")
+    parser.add_argument("--manifest-path", default="", help="Batch manifest JSON under docs/assets/local_pdfs/uploads.")
     parser.add_argument("--filename", default="", help="Original filename shown in generated metadata.")
     parser.add_argument("--title-override", default="", help="Optional user-corrected paper title.")
     parser.add_argument("--docs-dir", default=str(ROOT_DIR / "docs"), help="Docs directory to update.")
     parser.add_argument("--date", default="", help="Optional YYYYMMDD date folder.")
+    parser.add_argument("--cleanup-uploads", action="store_true", help="Remove temporary uploaded PDFs after success.")
     parser.add_argument(
         "--llm-config-json",
         default="",
         help="Optional temporary LLM JSON. GitHub Actions should prefer DPR_LLM_* secrets instead.",
     )
     args = parser.parse_args(argv)
-    result = generate_local_pdf_deep_doc_from_file(
-        pdf_path=args.pdf_path,
-        filename=args.filename or None,
-        title_override=args.title_override or None,
-        llm_config_json=args.llm_config_json or None,
-        docs_dir=args.docs_dir,
-        date_str=args.date or None,
-    )
+    if args.manifest_path:
+        result = generate_local_pdf_deep_docs_from_manifest(
+            manifest_path=args.manifest_path,
+            llm_config_json=args.llm_config_json or None,
+            docs_dir=args.docs_dir,
+            date_str=args.date or None,
+            cleanup_uploads=args.cleanup_uploads,
+        )
+    elif args.pdf_path:
+        result = generate_local_pdf_deep_doc_from_file(
+            pdf_path=args.pdf_path,
+            filename=args.filename or None,
+            title_override=args.title_override or None,
+            llm_config_json=args.llm_config_json or None,
+            docs_dir=args.docs_dir,
+            date_str=args.date or None,
+        )
+    else:
+        parser.error("one of --pdf-path or --manifest-path is required")
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if result.get("ok", True) or int(result.get("succeeded") or 0) > 0 else 1
 
 
 if __name__ == "__main__":

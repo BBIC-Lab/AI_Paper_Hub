@@ -949,6 +949,45 @@
     return `${LOCAL_PDF_UPLOAD_DIR}/${stamp}-${sanitizePdfFileName(fileName)}`;
   };
 
+  const buildUploadBatchId = (now = new Date()) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const stamp = [
+      now.getFullYear(),
+      pad(now.getMonth() + 1),
+      pad(now.getDate()),
+      '-',
+      pad(now.getHours()),
+      pad(now.getMinutes()),
+      pad(now.getSeconds()),
+      '-',
+      Math.random().toString(36).slice(2, 8),
+    ].join('');
+    return `batch-${stamp}`;
+  };
+
+  const buildBatchUploadPath = (batchId, index, fileName) => {
+    const safeBatch = String(batchId || buildUploadBatchId()).replace(/[^\w.-]+/g, '-');
+    const order = String(Number(index || 0) + 1).padStart(3, '0');
+    return `${LOCAL_PDF_UPLOAD_DIR}/${safeBatch}/${order}-${sanitizePdfFileName(fileName)}`;
+  };
+
+  const buildBatchManifestPath = (batchId) => {
+    const safeBatch = String(batchId || buildUploadBatchId()).replace(/[^\w.-]+/g, '-');
+    return `${LOCAL_PDF_UPLOAD_DIR}/${safeBatch}/manifest.json`;
+  };
+
+  const buildLocalPdfBatchManifest = (entries, createdAt = new Date()) => ({
+    version: 1,
+    created_at: createdAt.toISOString(),
+    items: (Array.isArray(entries) ? entries : []).map((entry, index) => ({
+      client_id: cleanLine(entry && entry.clientId),
+      upload_path: cleanLine(entry && entry.uploadPath),
+      original_filename: cleanLine(entry && entry.fileName) || 'local-paper.pdf',
+      title_override: cleanLine(entry && entry.titleOverride),
+      order: index + 1,
+    })),
+  });
+
   const arrayBufferToBase64 = (buffer) => {
     const bytes = new Uint8Array(buffer || []);
     const chunkSize = 0x8000;
@@ -961,6 +1000,14 @@
   };
 
   const fileToBase64 = async (file) => arrayBufferToBase64(await file.arrayBuffer());
+
+  const utf8ToBase64 = (value) => {
+    const text = String(value || '');
+    if (typeof TextEncoder !== 'undefined') {
+      return arrayBufferToBase64(new TextEncoder().encode(text).buffer);
+    }
+    return btoa(unescape(encodeURIComponent(text)));
+  };
 
   const uploadPdfToGithub = async ({ token, owner, repo, branch, file, uploadPath }) => {
     const content = await fileToBase64(file);
@@ -980,7 +1027,143 @@
     return resp.json().catch(() => null);
   };
 
-  const dispatchLocalPdfWorkflow = async ({ token, owner, repo, branch, uploadPath, fileName, titleOverride }) => {
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const getGithubBranchHead = async ({ token, owner, repo, branch }) => {
+    const refPath = encodeGitHubPath(`heads/${branch}`);
+    const resp = await ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/ref/${refPath}`);
+    if (!resp.ok) {
+      throw new Error(`读取 GitHub 分支失败：${await parseGitHubError(resp)}`);
+    }
+    const data = await resp.json().catch(() => null);
+    const sha = data && data.object && data.object.sha;
+    if (!sha) throw new Error('GitHub 分支引用缺少 commit sha。');
+    return sha;
+  };
+
+  const getGithubCommitTreeSha = async ({ token, owner, repo, sha }) => {
+    const resp = await ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/commits/${encodeURIComponent(sha)}`);
+    if (!resp.ok) {
+      throw new Error(`读取 GitHub commit 失败：${await parseGitHubError(resp)}`);
+    }
+    const data = await resp.json().catch(() => null);
+    const treeSha = data && data.tree && data.tree.sha;
+    if (!treeSha) throw new Error('GitHub commit 缺少 tree sha。');
+    return treeSha;
+  };
+
+  const createGithubBlob = async ({ token, owner, repo, contentBase64 }) => {
+    const resp = await ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/blobs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: contentBase64, encoding: 'base64' }),
+    });
+    if (!resp.ok) {
+      throw new Error(`创建 GitHub blob 失败：${await parseGitHubError(resp)}`);
+    }
+    const data = await resp.json().catch(() => null);
+    if (!data || !data.sha) throw new Error('GitHub blob 响应缺少 sha。');
+    return data.sha;
+  };
+
+  const createGithubTree = async ({ token, owner, repo, baseTreeSha, entries }) => {
+    const resp = await ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/trees`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree: entries.map((entry) => ({
+          path: entry.path,
+          mode: '100644',
+          type: 'blob',
+          sha: entry.sha,
+        })),
+      }),
+    });
+    if (!resp.ok) {
+      throw new Error(`创建 GitHub tree 失败：${await parseGitHubError(resp)}`);
+    }
+    const data = await resp.json().catch(() => null);
+    if (!data || !data.sha) throw new Error('GitHub tree 响应缺少 sha。');
+    return data.sha;
+  };
+
+  const createGithubCommit = async ({ token, owner, repo, message, treeSha, parentSha }) => {
+    const resp = await ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/commits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        tree: treeSha,
+        parents: [parentSha],
+      }),
+    });
+    if (!resp.ok) {
+      throw new Error(`创建 GitHub commit 失败：${await parseGitHubError(resp)}`);
+    }
+    const data = await resp.json().catch(() => null);
+    if (!data || !data.sha) throw new Error('GitHub commit 响应缺少 sha。');
+    return data.sha;
+  };
+
+  const updateGithubBranchHead = async ({ token, owner, repo, branch, sha }) => {
+    const refPath = encodeGitHubPath(`heads/${branch}`);
+    return ghApiFetch(token, `https://api.github.com/repos/${owner}/${repo}/git/refs/${refPath}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sha, force: false }),
+    });
+  };
+
+  const uploadFilesToGithubCommit = async ({ token, owner, repo, branch, files, message }) => {
+    const blobEntries = [];
+    for (const file of files) {
+      const contentBase64 = file.contentBase64 || (file.file ? await fileToBase64(file.file) : '');
+      if (!contentBase64) throw new Error(`待上传文件为空：${file.path}`);
+      const sha = await createGithubBlob({ token, owner, repo, contentBase64 });
+      blobEntries.push({ path: file.path, sha });
+    }
+
+    let lastError = '';
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const headSha = await getGithubBranchHead({ token, owner, repo, branch });
+      const baseTreeSha = await getGithubCommitTreeSha({ token, owner, repo, sha: headSha });
+      const treeSha = await createGithubTree({
+        token,
+        owner,
+        repo,
+        baseTreeSha,
+        entries: blobEntries,
+      });
+      const commitSha = await createGithubCommit({
+        token,
+        owner,
+        repo,
+        message,
+        treeSha,
+        parentSha: headSha,
+      });
+      const updateResp = await updateGithubBranchHead({ token, owner, repo, branch, sha: commitSha });
+      if (updateResp.ok) return { sha: commitSha };
+      lastError = await parseGitHubError(updateResp);
+      if (updateResp.status !== 409 && updateResp.status !== 422) {
+        throw new Error(`更新 GitHub 分支失败：${lastError}`);
+      }
+      await sleep(1200 * attempt);
+    }
+    throw new Error(`更新 GitHub 分支失败，请重试：${lastError}`);
+  };
+
+  const dispatchLocalPdfWorkflow = async ({
+    token,
+    owner,
+    repo,
+    branch,
+    uploadPath,
+    manifestPath,
+    fileName,
+    titleOverride,
+  }) => {
     const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
       LOCAL_PDF_WORKFLOW_ID,
     )}/dispatches`;
@@ -990,7 +1173,8 @@
       body: JSON.stringify({
         ref: branch,
         inputs: {
-          upload_path: uploadPath,
+          upload_path: uploadPath || '',
+          manifest_path: manifestPath || '',
           original_filename: fileName || 'local-paper.pdf',
           title_override: cleanLine(titleOverride),
           cleanup_upload: 'true',
@@ -1091,6 +1275,87 @@
     return { ok: true, uploadPath, run };
   };
 
+  const requestActionsBatchDeepRead = async (items) => {
+    const candidates = (Array.isArray(items) ? items : []).filter(
+      (item) => item && item.file && typeof item.file.arrayBuffer === 'function',
+    );
+    if (!candidates.length) {
+      throw new Error('没有可提交的 PDF。');
+    }
+    candidates.forEach((item) => {
+      if (Number(item.file && item.file.size || 0) > GITHUB_UPLOAD_MAX_BYTES) {
+        throw new Error(`${item.fileName || 'PDF'} 超过 ${formatBytes(GITHUB_UPLOAD_MAX_BYTES)}，请压缩后再提交。`);
+      }
+    });
+    const token = getGithubTokenForActions();
+    if (!token) {
+      throw new Error('未检测到 GitHub Token。请先在首页完成 GitHub Token 配置，并确保具备 repo 与 workflow 权限。');
+    }
+
+    setWorkflowInfo('');
+    setStatus('正在确认 GitHub 仓库权限...', 'loading');
+    const repoContext = await resolveRepoContextForActions(token);
+    const batchId = buildUploadBatchId();
+    const uploadEntries = candidates.map((item, index) => {
+      const fileName = item.fileName || (item.file && item.file.name) || 'local-paper.pdf';
+      return {
+        item,
+        clientId: item.id,
+        file: item.file,
+        fileName,
+        titleOverride: getImportItemTitle(item),
+        uploadPath: buildBatchUploadPath(batchId, index, fileName),
+      };
+    });
+    const manifestPath = buildBatchManifestPath(batchId);
+    const manifest = buildLocalPdfBatchManifest(uploadEntries);
+    const files = uploadEntries.map((entry) => ({
+      path: entry.uploadPath,
+      file: entry.file,
+    }));
+    files.push({
+      path: manifestPath,
+      contentBase64: utf8ToBase64(JSON.stringify(manifest, null, 2)),
+    });
+
+    setStatus(`正在一次性上传 ${candidates.length} 篇 PDF 批次到 ${repoContext.owner}/${repoContext.repo}...`, 'loading');
+    await uploadFilesToGithubCommit({
+      token,
+      owner: repoContext.owner,
+      repo: repoContext.repo,
+      branch: repoContext.defaultBranch,
+      files,
+      message: `[chore] upload local PDF batch for deep read: ${batchId}`,
+    });
+
+    setStatus('PDF 批次已上传，正在触发一次 GitHub Actions 后台精读...', 'loading');
+    const createdAt = new Date();
+    await dispatchLocalPdfWorkflow({
+      token,
+      owner: repoContext.owner,
+      repo: repoContext.repo,
+      branch: repoContext.defaultBranch,
+      manifestPath,
+    });
+    const run = await waitForLocalPdfWorkflowRun({
+      token,
+      owner: repoContext.owner,
+      repo: repoContext.repo,
+      branch: repoContext.defaultBranch,
+      createdAt,
+    });
+    return {
+      ok: true,
+      batchId,
+      manifestPath,
+      run,
+      items: uploadEntries.map((entry) => ({
+        client_id: entry.clientId,
+        upload_path: entry.uploadPath,
+      })),
+    };
+  };
+
   const isGitHubPages = () => /\.github\.io$/i.test(String(window.location && window.location.hostname || ''));
 
   let localBackendHealthPromise = null;
@@ -1158,6 +1423,45 @@
         window.location.reload();
       }, 80);
     }
+    return data;
+  };
+
+  const requestBackendBatchDeepRead = async (items) => {
+    const candidates = (Array.isArray(items) ? items : []).filter(
+      (item) => item && item.file && typeof item.file.arrayBuffer === 'function',
+    );
+    if (!candidates.length) {
+      throw new Error('没有可提交到本地后端的 PDF。');
+    }
+    setStatus(`正在提交 ${candidates.length} 篇 PDF 到本地后端批量精读...`, 'loading');
+    const form = new FormData();
+    const meta = candidates.map((item) => ({
+      client_id: item.id,
+      original_filename: item.fileName || (item.file && item.file.name) || 'local-paper.pdf',
+      title_override: getImportItemTitle(item),
+    }));
+    candidates.forEach((item) => {
+      form.append('pdf', item.file, item.fileName || (item.file && item.file.name) || 'local-paper.pdf');
+    });
+    form.append('items', JSON.stringify(meta));
+    const llm = resolveOptionalSummaryLLM();
+    if (llm) {
+      form.append('llm_config', JSON.stringify({
+        apiKey: llm.apiKey,
+        baseUrl: llm.baseUrl,
+        model: llm.model,
+      }));
+    }
+    const resp = await fetch('/api/local-pdf/deep-batch', {
+      method: 'POST',
+      body: form,
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data) {
+      const message = data && data.error ? data.error : `本地后端批量精读请求失败：HTTP ${resp.status}`;
+      throw new Error(message);
+    }
+    renderLocalDeepSidebar();
     return data;
   };
 
@@ -1667,49 +1971,66 @@
       setStatus('没有可生成的 PDF，请先导入并完成解析。', 'error');
       return [];
     }
-    const outcomes = [];
+
     setWorkflowInfo('');
-    for (let index = 0; index < candidates.length; index += 1) {
-      const candidate = candidates[index];
+    candidates.forEach((candidate) => {
       const item = importQueue.find((current) => current.id === candidate.id);
-      if (!canGenerateImportItem(item)) continue;
-      item.status = 'generating';
-      item.error = '';
-      renderImportQueue();
-      setStatus(`正在提交 ${index + 1}/${candidates.length}：${getImportItemTitle(item)}`, 'loading');
-      try {
-        const data = await requestDeepRead(item.file, getImportItemTitle(item), {
-          navigate: false,
-          showWorkflow: false,
+      if (item) {
+        item.status = 'generating';
+        item.error = '';
+      }
+    });
+    renderImportQueue();
+
+    const applyOutcome = (item, data, error) => {
+      const current = importQueue.find((entry) => entry.id === item.id) || item;
+      if (error) {
+        current.status = 'error';
+        current.error = error;
+        return { item: current, error };
+      }
+      current.error = '';
+      current.status = data && data.route ? 'generated' : 'submitted';
+      current.generatedRoute = data && data.route ? data.route : '';
+      current.workflowRunUrl = data && data.run && data.run.html_url ? data.run.html_url : '';
+      return { item: current, data };
+    };
+
+    try {
+      const useLocalBackend = await isLocalBackendAvailable();
+      let outcomes = [];
+      if (useLocalBackend) {
+        const data = await requestBackendBatchDeepRead(candidates);
+        const results = Array.isArray(data && data.results) ? data.results : [];
+        outcomes = candidates.map((item, index) => {
+          const result = results.find((entry) => entry && entry.client_id === item.id)
+            || results.find((entry) => entry && entry.index === index);
+          if (!result) return applyOutcome(item, null, '本地后端未返回该 PDF 的生成结果。');
+          if (result.ok === false) return applyOutcome(item, result, result.error || '本地后端生成失败。');
+          return applyOutcome(item, result, null);
         });
-        const current = importQueue.find((entry) => entry.id === item.id);
-        if (current) {
-          current.status = data && data.route ? 'generated' : 'submitted';
-          current.generatedRoute = data && data.route ? data.route : '';
-          current.workflowRunUrl = data && data.run && data.run.html_url ? data.run.html_url : '';
-          current.error = '';
-        }
-        outcomes.push({ item: current || item, data });
-      } catch (error) {
-        const current = importQueue.find((entry) => entry.id === item.id);
-        const message = error && error.message ? error.message : '后台精读生成失败。';
-        if (current) {
-          current.status = 'error';
-          current.error = message;
-        }
-        outcomes.push({ item: current || item, error: message });
+      } else {
+        const data = await requestActionsBatchDeepRead(candidates);
+        outcomes = candidates.map((item) => applyOutcome(item, { ...data, route: '', run: data.run }, null));
       }
       renderImportQueue();
+      renderBatchWorkflowResults(outcomes);
+      const failed = outcomes.filter((outcome) => outcome.error).length;
+      setStatus(
+        failed
+          ? `批量后台精读已处理：${outcomes.length - failed} 篇成功/已提交，${failed} 篇失败。`
+          : `批量后台精读已一次性提交：${outcomes.length} 篇。`,
+        failed ? 'error' : 'success',
+      );
+      return outcomes;
+    } catch (error) {
+      const message = error && error.message ? error.message : '批量后台精读提交失败。';
+      const outcomes = candidates.map((item) => applyOutcome(item, null, message));
+      renderImportQueue();
+      renderBatchWorkflowResults(outcomes);
+      setStatus(message, 'error');
+      return outcomes;
     }
-    renderBatchWorkflowResults(outcomes);
-    const failed = outcomes.filter((outcome) => outcome.error).length;
-    setStatus(
-      failed
-        ? `批量后台精读完成：${outcomes.length - failed} 篇成功/已提交，${failed} 篇失败。`
-        : `批量后台精读已完成：${outcomes.length} 篇成功/已提交。`,
-      failed ? 'error' : 'success',
-    );
-    return outcomes;
   };
 
   const bindEvents = (root) => {
@@ -1841,6 +2162,10 @@
         truncateForLLM,
         sanitizePdfFileName,
         buildUploadPath,
+        buildUploadBatchId,
+        buildBatchUploadPath,
+        buildBatchManifestPath,
+        buildLocalPdfBatchManifest,
         encodeGitHubPath,
         arrayBufferToBase64,
         isPdfFile,
