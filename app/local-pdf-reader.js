@@ -32,6 +32,9 @@
   let pdfJsPromise = null;
   let lastResult = null;
   let lastFile = null;
+  let importQueue = [];
+  let importBatchToken = 0;
+  let importParsePromise = Promise.resolve();
 
   const byId = (id) => document.getElementById(id);
 
@@ -225,8 +228,70 @@
     el.hidden = !html;
   };
 
-  const metricHtml = (label, value) =>
-    `<div class="dpr-local-pdf-metric"><span>${label}</span><strong>${value || '-'}</strong></div>`;
+  const isPdfFile = (file) => {
+    if (!file) return false;
+    const name = String(file.name || '');
+    const type = String(file.type || '');
+    return /\.pdf$/i.test(name) && (!type || type === 'application/pdf');
+  };
+
+  const normalizePdfFiles = (files) => Array.from(files || []).filter(isPdfFile);
+
+  const makeImportItemId = (file) =>
+    `pdf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}-${
+      String((file && file.name) || 'paper').replace(/[^\w.-]+/g, '-').slice(0, 48)
+    }`;
+
+  const buildImportQueueItem = (file, id) => ({
+    id: cleanLine(id || makeImportItemId(file)),
+    file,
+    fileName: cleanLine(file && file.name) || 'local-paper.pdf',
+    fileSizeText: formatBytes(file && file.size),
+    status: 'queued',
+    error: '',
+    editingTitle: false,
+    result: null,
+  });
+
+  const appendImportQueueItems = (items, files) => {
+    const next = Array.isArray(items) ? items.slice() : [];
+    normalizePdfFiles(files).forEach((file) => {
+      next.push(buildImportQueueItem(file));
+    });
+    return next;
+  };
+
+  const applyTitleToResult = (result, title) => {
+    const cleanTitle = cleanLine(title);
+    if (result && cleanTitle) result.title = cleanTitle;
+    return result;
+  };
+
+  const updateImportQueueItemTitle = (items, id, title) => {
+    const cleanTitle = cleanLine(title);
+    if (!cleanTitle) return Array.isArray(items) ? items : [];
+    return (Array.isArray(items) ? items : []).map((item) => {
+      if (!item || item.id !== id) return item;
+      const result = item.result ? { ...item.result, title: cleanTitle } : null;
+      return {
+        ...item,
+        result,
+        titleOverride: cleanTitle,
+        editingTitle: false,
+      };
+    });
+  };
+
+  const deleteImportQueueItem = (items, id) =>
+    (Array.isArray(items) ? items : []).filter((item) => item && item.id !== id);
+
+  const getImportItemTitle = (item) =>
+    cleanLine(
+      (item && item.titleOverride)
+        || (item && item.result && item.result.title)
+        || (item && item.fileName)
+        || '本地论文',
+    );
 
   const getLocalStorage = () => {
     try {
@@ -915,7 +980,7 @@
     return resp.json().catch(() => null);
   };
 
-  const dispatchLocalPdfWorkflow = async ({ token, owner, repo, branch, uploadPath, fileName }) => {
+  const dispatchLocalPdfWorkflow = async ({ token, owner, repo, branch, uploadPath, fileName, titleOverride }) => {
     const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
       LOCAL_PDF_WORKFLOW_ID,
     )}/dispatches`;
@@ -927,6 +992,7 @@
         inputs: {
           upload_path: uploadPath,
           original_filename: fileName || 'local-paper.pdf',
+          title_override: cleanLine(titleOverride),
           cleanup_upload: 'true',
         },
       }),
@@ -974,7 +1040,7 @@
     );
   };
 
-  const requestActionsDeepRead = async (file) => {
+  const requestActionsDeepRead = async (file, titleOverride, options = {}) => {
     if (!file) {
       throw new Error('请先选择 PDF 文件，再运行后台精读。');
     }
@@ -1009,6 +1075,7 @@
       branch: repoContext.defaultBranch,
       uploadPath,
       fileName: file.name || 'local-paper.pdf',
+      titleOverride,
     });
     const run = await waitForLocalPdfWorkflowRun({
       token,
@@ -1017,7 +1084,9 @@
       branch: repoContext.defaultBranch,
       createdAt,
     });
-    renderWorkflowStarted({ owner: repoContext.owner, repo: repoContext.repo, run });
+    if (options.showWorkflow !== false) {
+      renderWorkflowStarted({ owner: repoContext.owner, repo: repoContext.repo, run });
+    }
     setStatus('后台精读已开始。运行成功后刷新页面，左侧本地 PDF 精读区会出现新条目。', 'success');
     return { ok: true, uploadPath, run };
   };
@@ -1048,20 +1117,22 @@
     return localBackendHealthPromise;
   };
 
-  const requestDeepRead = async (file) => {
+  const requestDeepRead = async (file, titleOverride, options = {}) => {
     if (await isLocalBackendAvailable()) {
-      return requestBackendDeepRead(file);
+      return requestBackendDeepRead(file, titleOverride, options);
     }
-    return requestActionsDeepRead(file);
+    return requestActionsDeepRead(file, titleOverride, options);
   };
 
-  const requestBackendDeepRead = async (file) => {
+  const requestBackendDeepRead = async (file, titleOverride, options = {}) => {
     if (!file) {
       throw new Error('请先选择 PDF 文件，再运行后端精读。');
     }
     setStatus('正在上传 PDF 到后端精读流程...', 'loading');
     const form = new FormData();
     form.append('pdf', file, file.name || 'local-paper.pdf');
+    const cleanTitleOverride = cleanLine(titleOverride);
+    if (cleanTitleOverride) form.append('title_override', cleanTitleOverride);
     const llm = resolveOptionalSummaryLLM();
     if (llm) {
       form.append('llm_config', JSON.stringify({
@@ -1081,7 +1152,7 @@
     }
     setStatus('后端精读完成，正在打开生成页面...', 'success');
     renderLocalDeepSidebar();
-    if (data.route) {
+    if (data.route && options.navigate !== false) {
       window.location.hash = data.route;
       window.setTimeout(() => {
         window.location.reload();
@@ -1167,56 +1238,128 @@
     URL.revokeObjectURL(url);
   };
 
-  const renderResult = (result) => {
+  const importStatusLabel = (status) => ({
+    queued: '待解析',
+    parsing: '解析中',
+    ready: '已解析',
+    generating: '生成中',
+    generated: '已生成',
+    submitted: '已提交',
+    error: '生成失败',
+    'parse-error': '解析失败',
+  }[status] || '待解析');
+
+  const canGenerateImportItem = (item) =>
+    !!(
+      item
+      && item.file
+      && typeof item.file.arrayBuffer === 'function'
+      && item.result
+      && ['ready', 'error'].includes(item.status)
+    );
+
+  const renderImportQueue = () => {
     const root = byId(ROOT_ID);
-    if (!root) return;
-    root.classList.add('has-result');
-    const metrics = byId('dpr-local-pdf-metrics');
-    if (metrics) {
-      metrics.innerHTML = [
-        metricHtml('页数', result.pageCount),
-        metricHtml('字符数', result.charCount),
-        metricHtml('词数', result.wordCount),
-        metricHtml('文件大小', result.fileSizeText),
-      ].join('');
-    }
-    const title = byId('dpr-local-pdf-title');
-    if (title) title.textContent = result.title || result.fileName;
+    const list = byId('dpr-local-pdf-list');
     const meta = byId('dpr-local-pdf-meta');
+    const deepReadBtn = byId('dpr-local-pdf-deep-read');
+    if (root) root.classList.toggle('has-result', importQueue.length > 0);
     if (meta) {
-      const parts = [
-        result.author ? `作者：${result.author}` : '',
-        result.createdAt ? `PDF 日期：${result.createdAt}` : '',
-        result.keywords ? `关键词：${result.keywords}` : '',
-      ].filter(Boolean);
-      meta.textContent = parts.join(' · ') || '未检测到 PDF 元数据';
+      const readyCount = importQueue.filter((item) => item.status === 'ready').length;
+      const busyCount = importQueue.filter((item) => ['queued', 'parsing', 'generating'].includes(item.status)).length;
+      meta.textContent = importQueue.length
+        ? `已导入 ${importQueue.length} 篇 PDF，${readyCount} 篇可生成${busyCount ? `，${busyCount} 篇处理中` : ''}。`
+        : '支持一次选择或拖入多篇 PDF，解析后可修改标题或删除不想生成的文献。';
     }
-    const abstract = byId('dpr-local-pdf-abstract');
-    if (abstract) abstract.textContent = result.abstract || '未检测到摘要段落。';
-    const text = byId('dpr-local-pdf-text');
-    if (text) text.value = result.text;
-    const markdown = byId('dpr-local-pdf-markdown');
-    if (markdown) markdown.value = buildMarkdown(result);
-    renderMarkdownResult(byId('dpr-local-pdf-deep-summary'), result.deepSummary || '');
+    if (deepReadBtn) {
+      const eligibleCount = importQueue.filter(canGenerateImportItem).length;
+      deepReadBtn.textContent = eligibleCount > 1 ? `批量后台精读生成（${eligibleCount} 篇）` : '后台精读生成';
+      deepReadBtn.disabled = eligibleCount < 1
+        || importQueue.some((item) => ['queued', 'parsing', 'generating'].includes(item.status));
+    }
+    if (!list) return;
+    if (!importQueue.length) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = importQueue.map((item, index) => {
+      const result = item.result || {};
+      const title = getImportItemTitle(item);
+      const status = item.status || 'queued';
+      const statusClass = status.replace(/[^\w-]/g, '');
+      const metrics = [
+        result.pageCount ? `页数：${escapeHtml(result.pageCount)}` : '',
+        result.charCount ? `字符数：${escapeHtml(result.charCount)}` : '',
+        result.wordCount ? `词数：${escapeHtml(result.wordCount)}` : '',
+        item.fileSizeText ? `大小：${escapeHtml(item.fileSizeText)}` : '',
+      ].filter(Boolean).join(' · ');
+      const metaParts = [
+        escapeHtml(item.fileName),
+        result.author ? `作者：${escapeHtml(result.author)}` : '',
+        result.createdAt ? `PDF 日期：${escapeHtml(result.createdAt)}` : '',
+        result.keywords ? `关键词：${escapeHtml(result.keywords)}` : '',
+      ].filter(Boolean).join(' · ');
+      const titleControl = item.editingTitle
+        ? [
+            '<div class="dpr-local-pdf-title-edit">',
+            `<input class="dpr-local-pdf-title-input" data-local-pdf-title-input value="${escapeHtml(title)}" aria-label="修改论文标题" />`,
+            `<button class="dpr-local-pdf-secondary" type="button" data-local-pdf-action="save-title" data-local-pdf-id="${escapeHtml(item.id)}">保存</button>`,
+            `<button class="dpr-local-pdf-secondary" type="button" data-local-pdf-action="cancel-title" data-local-pdf-id="${escapeHtml(item.id)}">取消</button>`,
+            '</div>',
+          ].join('')
+        : [
+            `<h3>${escapeHtml(title)}</h3>`,
+            `<button class="dpr-local-pdf-secondary" type="button" data-local-pdf-action="edit-title" data-local-pdf-id="${escapeHtml(item.id)}" ${item.result ? '' : 'disabled'}>修改标题</button>`,
+          ].join('');
+      const routeLink = item.generatedRoute
+        ? `<a href="${escapeHtml(item.generatedRoute)}">打开生成页面</a>`
+        : '';
+      const runLink = item.workflowRunUrl
+        ? `<a href="${escapeHtml(item.workflowRunUrl)}" target="_blank" rel="noopener">查看 Actions</a>`
+        : '';
+      return [
+        `<article class="dpr-local-pdf-item is-${escapeHtml(statusClass)}" data-local-pdf-item-id="${escapeHtml(item.id)}">`,
+        '<div class="dpr-local-pdf-item-main">',
+        '<div class="dpr-local-pdf-item-title-row">',
+        `<span class="dpr-local-pdf-item-index">${index + 1}</span>`,
+        titleControl,
+        `<button class="dpr-local-pdf-secondary dpr-local-pdf-danger" type="button" data-local-pdf-action="delete" data-local-pdf-id="${escapeHtml(item.id)}" ${status === 'generating' ? 'disabled' : ''}>删除</button>`,
+        '</div>',
+        `<div class="dpr-local-pdf-item-meta">${metaParts || '未检测到 PDF 元数据'}</div>`,
+        metrics ? `<div class="dpr-local-pdf-item-metrics">${metrics}</div>` : '',
+        result.abstract ? `<p class="dpr-local-pdf-item-abstract">${escapeHtml(result.abstract)}</p>` : '',
+        item.error ? `<div class="dpr-local-pdf-item-error">${escapeHtml(item.error)}</div>` : '',
+        routeLink || runLink ? `<div class="dpr-local-pdf-item-links">${routeLink}${runLink}</div>` : '',
+        '</div>',
+        `<span class="dpr-local-pdf-item-status">${escapeHtml(importStatusLabel(status))}</span>`,
+        '</article>',
+      ].filter(Boolean).join('');
+    }).join('');
+  };
+
+  const renderResult = (result) => {
+    if (!result) return;
+    const file = lastFile || {
+      name: result.fileName || 'local-paper.pdf',
+      size: 0,
+      type: 'application/pdf',
+    };
+    const item = buildImportQueueItem(file, result.localEntryId || makeImportItemId(file));
+    item.result = result;
+    item.fileName = result.fileName || item.fileName;
+    item.fileSizeText = result.fileSizeText || item.fileSizeText;
+    item.status = result.deepSummary ? 'generated' : 'ready';
+    importQueue = [item];
+    renderImportQueue();
   };
 
   const clearResult = () => {
+    importBatchToken += 1;
+    importParsePromise = Promise.resolve();
+    importQueue = [];
     lastResult = null;
     lastFile = null;
-    const root = byId(ROOT_ID);
-    if (root) root.classList.remove('has-result');
-    ['dpr-local-pdf-title', 'dpr-local-pdf-meta', 'dpr-local-pdf-abstract'].forEach((id) => {
-      const el = byId(id);
-      if (el) el.textContent = '';
-    });
-    ['dpr-local-pdf-text', 'dpr-local-pdf-markdown'].forEach((id) => {
-      const el = byId(id);
-      if (el) el.value = '';
-    });
-    const deepSummary = byId('dpr-local-pdf-deep-summary');
-    if (deepSummary) deepSummary.innerHTML = '';
-    const metrics = byId('dpr-local-pdf-metrics');
-    if (metrics) metrics.innerHTML = '';
+    renderImportQueue();
     setWorkflowInfo('');
     setStatus('', '');
   };
@@ -1259,22 +1402,25 @@
     return summary;
   };
 
-  const parsePdfFile = async (file) => {
-    if (!file || !/pdf$/i.test(file.name || '') || (file.type && file.type !== 'application/pdf')) {
+  const parsePdfFile = async (file, options = {}) => {
+    if (!isPdfFile(file)) {
       throw new Error('请选择 PDF 文件。');
     }
-    setStatus('载入 PDF.js...', 'loading');
+    const shouldRender = options.render !== false;
+    const statusPrefix = cleanLine(options.statusPrefix);
+    const reportStatus = (message, tone) => setStatus(statusPrefix ? `${statusPrefix}：${message}` : message, tone);
+    reportStatus('载入 PDF.js...', 'loading');
     const pdfjsLib = await loadPdfJs();
-    setStatus('读取文件...', 'loading');
+    reportStatus('读取文件...', 'loading');
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    setStatus('生成本地页面预览...', 'loading');
+    reportStatus('生成本地页面预览...', 'loading');
     const previewFigures = await renderPdfPreviewFigures(pdf);
     const metadata = await pdf.getMetadata().catch(() => ({}));
     const info = metadata && metadata.info ? metadata.info : {};
     const pages = [];
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
-      setStatus(`解析第 ${pageNum}/${pdf.numPages} 页...`, 'loading');
+      reportStatus(`解析第 ${pageNum}/${pdf.numPages} 页...`, 'loading');
       const page = await pdf.getPage(pageNum);
       const content = await page.getTextContent();
       pages.push(textContentToLines(content.items || []));
@@ -1300,21 +1446,270 @@
       result.figureWidth = previewFigures[0].width;
       result.figureHeight = previewFigures[0].height;
     }
-    lastResult = result;
-    renderResult(result);
-    setStatus('解析完成。', 'success');
+    if (shouldRender) {
+      lastFile = file;
+      lastResult = result;
+      renderResult(result);
+      reportStatus('解析完成。', 'success');
+    }
     return result;
   };
 
-  const handleFile = (file) => {
-    if (!file) return;
-    lastFile = file;
+  const parseImportItems = async (itemIds, token) => {
+    const ids = Array.isArray(itemIds) ? itemIds : [];
+    let parsed = 0;
+    let failed = 0;
+    for (let index = 0; index < ids.length; index += 1) {
+      if (token !== importBatchToken) return { parsed, failed, cancelled: true };
+      const itemId = ids[index];
+      const current = importQueue.find((candidate) => candidate.id === itemId);
+      if (!current) continue;
+      current.status = 'parsing';
+      current.error = '';
+      renderImportQueue();
+      try {
+        const result = await parsePdfFile(current.file, {
+          render: false,
+          statusPrefix: `${index + 1}/${ids.length} ${current.fileName}`,
+        });
+        if (token !== importBatchToken) return { parsed, failed, cancelled: true };
+        const target = importQueue.find((candidate) => candidate.id === itemId);
+        if (!target) continue;
+        target.result = applyTitleToResult(result, target.titleOverride);
+        target.fileName = result.fileName || target.fileName;
+        target.fileSizeText = result.fileSizeText || target.fileSizeText;
+        target.status = 'ready';
+        target.error = '';
+        lastFile = target.file;
+        lastResult = target.result;
+        parsed += 1;
+      } catch (error) {
+        const target = importQueue.find((candidate) => candidate.id === itemId);
+        if (target) {
+          target.status = 'parse-error';
+          target.error = error && error.message ? error.message : '解析失败。';
+          failed += 1;
+        }
+      }
+      renderImportQueue();
+    }
+    return { parsed, failed, cancelled: false };
+  };
+
+  const handleFiles = (files) => {
+    const pdfFiles = normalizePdfFiles(files);
+    if (!pdfFiles.length) {
+      setStatus('请选择 PDF 文件。', 'error');
+      return importParsePromise;
+    }
+    const token = importBatchToken;
     setSelectedLocalDeepEntryId('');
-    clearResult();
-    lastFile = file;
-    parsePdfFile(file).catch((error) => {
-      setStatus(error && error.message ? error.message : '解析失败。', 'error');
-    });
+    setWorkflowInfo('');
+    const beforeCount = importQueue.length;
+    importQueue = appendImportQueueItems(importQueue, pdfFiles);
+    const newItems = importQueue.slice(beforeCount);
+    const newItemIds = newItems.map((item) => item.id);
+    renderImportQueue();
+    setStatus(
+      beforeCount
+        ? `已追加 ${newItems.length} 个 PDF，将按导入顺序排队解析。`
+        : `已导入 ${newItems.length} 个 PDF，开始逐篇解析...`,
+      'loading',
+    );
+    importParsePromise = importParsePromise
+      .catch(() => null)
+      .then(async () => {
+        if (token !== importBatchToken) return null;
+        const outcome = await parseImportItems(newItemIds, token);
+        if (!outcome || outcome.cancelled || token !== importBatchToken) return outcome;
+        const totalReady = importQueue.filter((item) => item.status === 'ready').length;
+        const totalFailed = importQueue.filter((item) => item.status === 'parse-error').length;
+        setStatus(
+          outcome.failed
+            ? `本次追加解析完成：${outcome.parsed} 篇成功，${outcome.failed} 篇失败。当前队列 ${totalReady} 篇可生成，${totalFailed} 篇失败。`
+            : `本次解析完成：新增 ${outcome.parsed} 篇，当前队列 ${totalReady} 篇 PDF 可批量生成精读。`,
+          outcome.failed ? 'error' : 'success',
+        );
+        return outcome;
+      });
+    return importParsePromise;
+  };
+
+  const beginTitleEdit = (id) => {
+    importQueue = importQueue.map((item) => (
+      item && item.id === id
+        ? { ...item, editingTitle: true }
+        : { ...item, editingTitle: false }
+    ));
+    renderImportQueue();
+    const safeId = window.CSS && typeof window.CSS.escape === 'function'
+      ? window.CSS.escape(id)
+      : id.replace(/["\\]/g, '\\$&');
+    const row = document.querySelector(`[data-local-pdf-item-id="${safeId}"]`);
+    const input = row && row.querySelector('[data-local-pdf-title-input]');
+    if (input && input.focus) {
+      input.focus();
+      input.select();
+    }
+  };
+
+  const saveTitleEdit = (id, title) => {
+    const cleanTitle = cleanLine(title);
+    if (!cleanTitle) {
+      setStatus('标题不能为空。', 'error');
+      return;
+    }
+    importQueue = updateImportQueueItemTitle(importQueue, id, cleanTitle);
+    const item = importQueue.find((candidate) => candidate.id === id);
+    if (item && item.result) lastResult = item.result;
+    renderImportQueue();
+    setStatus('标题已更新，后台生成将使用修改后的标题。', 'success');
+  };
+
+  const cancelTitleEdit = (id) => {
+    importQueue = importQueue.map((item) => (
+      item && item.id === id ? { ...item, editingTitle: false } : item
+    ));
+    renderImportQueue();
+  };
+
+  const removeImportItem = (id) => {
+    const item = importQueue.find((candidate) => candidate.id === id);
+    importQueue = deleteImportQueueItem(importQueue, id);
+    if (!importQueue.length) {
+      lastFile = null;
+      lastResult = null;
+    } else {
+      const latestReady = [...importQueue].reverse().find((candidate) => candidate.result);
+      lastFile = latestReady ? latestReady.file : null;
+      lastResult = latestReady ? latestReady.result : null;
+    }
+    renderImportQueue();
+    setStatus(`已删除${item && item.fileName ? `「${item.fileName}」` : '该 PDF'}，不会生成这篇文献。`, 'success');
+  };
+
+  const handleImportListClick = (event) => {
+    const button = event.target && event.target.closest
+      ? event.target.closest('[data-local-pdf-action]')
+      : null;
+    if (!button) return;
+    const id = cleanLine(button.dataset.localPdfId);
+    if (!id) return;
+    const action = button.dataset.localPdfAction;
+    if (action === 'edit-title') {
+      beginTitleEdit(id);
+      return;
+    }
+    if (action === 'cancel-title') {
+      cancelTitleEdit(id);
+      return;
+    }
+    if (action === 'save-title') {
+      const row = button.closest('[data-local-pdf-item-id]');
+      const input = row && row.querySelector('[data-local-pdf-title-input]');
+      saveTitleEdit(id, input ? input.value : '');
+      return;
+    }
+    if (action === 'delete') {
+      removeImportItem(id);
+    }
+  };
+
+  const handleImportListKeydown = (event) => {
+    if (!event || event.key !== 'Enter') return;
+    const input = event.target && event.target.matches && event.target.matches('[data-local-pdf-title-input]')
+      ? event.target
+      : null;
+    if (!input) return;
+    const row = input.closest('[data-local-pdf-item-id]');
+    const id = row ? cleanLine(row.dataset.localPdfItemId) : '';
+    if (id) {
+      event.preventDefault();
+      saveTitleEdit(id, input.value);
+    }
+  };
+
+  const renderBatchWorkflowResults = (outcomes) => {
+    const safeOutcomes = Array.isArray(outcomes) ? outcomes : [];
+    if (!safeOutcomes.length) {
+      setWorkflowInfo('');
+      return;
+    }
+    const rows = safeOutcomes.map(({ item, data, error }) => {
+      const label = escapeHtml(getImportItemTitle(item));
+      if (error) {
+        return `<li><strong>${label}</strong><span>生成失败：${escapeHtml(error)}</span></li>`;
+      }
+      if (data && data.route) {
+        return `<li><strong>${label}</strong><a href="${escapeHtml(data.route)}">打开生成页面</a></li>`;
+      }
+      const run = data && data.run;
+      const runUrl = run && run.html_url;
+      const runLabel = run && run.run_number ? `Actions #${run.run_number}` : 'Actions';
+      if (runUrl) {
+        return `<li><strong>${label}</strong><a href="${escapeHtml(runUrl)}" target="_blank" rel="noopener">查看 ${escapeHtml(runLabel)}</a></li>`;
+      }
+      return `<li><strong>${label}</strong><span>已提交后台任务</span></li>`;
+    }).join('');
+    setWorkflowInfo(
+      [
+        '<div class="dpr-local-pdf-workflow-card dpr-local-pdf-workflow-card-stack">',
+        '<span>批量后台精读已处理，生成后的条目可从左侧本地 PDF 精读区打开。</span>',
+        `<ul class="dpr-local-pdf-workflow-list">${rows}</ul>`,
+        '</div>',
+      ].join(''),
+    );
+  };
+
+  const requestBatchDeepRead = async () => {
+    const candidates = importQueue.filter(canGenerateImportItem);
+    if (!candidates.length) {
+      setStatus('没有可生成的 PDF，请先导入并完成解析。', 'error');
+      return [];
+    }
+    const outcomes = [];
+    setWorkflowInfo('');
+    for (let index = 0; index < candidates.length; index += 1) {
+      const candidate = candidates[index];
+      const item = importQueue.find((current) => current.id === candidate.id);
+      if (!canGenerateImportItem(item)) continue;
+      item.status = 'generating';
+      item.error = '';
+      renderImportQueue();
+      setStatus(`正在提交 ${index + 1}/${candidates.length}：${getImportItemTitle(item)}`, 'loading');
+      try {
+        const data = await requestDeepRead(item.file, getImportItemTitle(item), {
+          navigate: false,
+          showWorkflow: false,
+        });
+        const current = importQueue.find((entry) => entry.id === item.id);
+        if (current) {
+          current.status = data && data.route ? 'generated' : 'submitted';
+          current.generatedRoute = data && data.route ? data.route : '';
+          current.workflowRunUrl = data && data.run && data.run.html_url ? data.run.html_url : '';
+          current.error = '';
+        }
+        outcomes.push({ item: current || item, data });
+      } catch (error) {
+        const current = importQueue.find((entry) => entry.id === item.id);
+        const message = error && error.message ? error.message : '后台精读生成失败。';
+        if (current) {
+          current.status = 'error';
+          current.error = message;
+        }
+        outcomes.push({ item: current || item, error: message });
+      }
+      renderImportQueue();
+    }
+    renderBatchWorkflowResults(outcomes);
+    const failed = outcomes.filter((outcome) => outcome.error).length;
+    setStatus(
+      failed
+        ? `批量后台精读完成：${outcomes.length - failed} 篇成功/已提交，${failed} 篇失败。`
+        : `批量后台精读已完成：${outcomes.length} 篇成功/已提交。`,
+      failed ? 'error' : 'success',
+    );
+    return outcomes;
   };
 
   const bindEvents = (root) => {
@@ -1329,11 +1724,14 @@
     const deepReadBtn = byId('dpr-local-pdf-deep-read');
     const copyDeepBtn = byId('dpr-local-pdf-copy-deep');
     const downloadBtn = byId('dpr-local-pdf-download-text');
+    const list = byId('dpr-local-pdf-list');
 
     if (choose && input) choose.addEventListener('click', () => input.click());
     if (input) {
       input.addEventListener('change', () => {
-        handleFile(input.files && input.files[0]);
+        const files = input.files ? Array.from(input.files) : [];
+        input.value = '';
+        handleFiles(files);
       });
     }
     if (clear) {
@@ -1367,12 +1765,8 @@
     }
     if (deepReadBtn) {
       deepReadBtn.addEventListener('click', () => {
-        if (!lastFile) {
-          setStatus('请先选择 PDF 文件，再运行后台精读。', 'error');
-          return;
-        }
         deepReadBtn.disabled = true;
-        requestDeepRead(lastFile)
+        requestBatchDeepRead()
           .catch((error) => {
             setStatus(error && error.message ? error.message : '后台精读生成失败。', 'error');
           })
@@ -1380,6 +1774,10 @@
             deepReadBtn.disabled = false;
           });
       });
+    }
+    if (list) {
+      list.addEventListener('click', handleImportListClick);
+      list.addEventListener('keydown', handleImportListKeydown);
     }
     if (copyDeepBtn) {
       copyDeepBtn.addEventListener('click', () => {
@@ -1402,10 +1800,10 @@
         });
       });
       dropzone.addEventListener('drop', (event) => {
-        const file = event.dataTransfer && event.dataTransfer.files
-          ? event.dataTransfer.files[0]
-          : null;
-        handleFile(file);
+        const files = event.dataTransfer && event.dataTransfer.files
+          ? event.dataTransfer.files
+          : [];
+        handleFiles(files);
       });
     }
   };
@@ -1445,6 +1843,14 @@
         buildUploadPath,
         encodeGitHubPath,
         arrayBufferToBase64,
+        isPdfFile,
+        normalizePdfFiles,
+        buildImportQueueItem,
+        appendImportQueueItems,
+        applyTitleToResult,
+        updateImportQueueItemTitle,
+        deleteImportQueueItem,
+        getImportItemTitle,
       },
     };
 

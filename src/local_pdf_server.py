@@ -73,10 +73,12 @@ class LocalPdfHandler(SimpleHTTPRequestHandler):
             item = form["pdf"]
             pdf_bytes = item.file.read()
             filename = item.filename or "local-paper.pdf"
+            title_override = form.getfirst("title_override", "")
             llm_config = form.getfirst("llm_config", "")
             result = generate_local_pdf_deep_doc(
                 pdf_bytes=pdf_bytes,
                 filename=filename,
+                title_override=title_override,
                 llm_config_json=llm_config,
                 docs_dir=str(ROOT_DIR / "docs"),
             )

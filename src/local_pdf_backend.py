@@ -347,6 +347,7 @@ def generate_local_pdf_deep_doc(
     *,
     pdf_bytes: bytes,
     filename: str,
+    title_override: str | None = None,
     llm_config_json: str | None = None,
     docs_dir: str | None = None,
     date_str: str | None = None,
@@ -369,7 +370,8 @@ def generate_local_pdf_deep_doc(
 
     text = gen6.extract_pdf_text(str(pdf_asset_path))
     meta = _pdf_metadata(str(pdf_asset_path), text, filename)
-    title = meta["title"]
+    detected_title = meta["title"]
+    title = _clean_line(title_override) or detected_title
     abstract = meta["abstract"] or _clean_line(text[:1200])
     slug = gen6.slugify(title)
     paper_basename = f"{asset_key}-{slug}"
@@ -462,6 +464,7 @@ def generate_local_pdf_deep_doc(
     return {
         "ok": True,
         "title": title,
+        "detected_title": detected_title,
         "paper_id": paper_id,
         "route": f"#/{paper_id}",
         "md_path": str(md_path),
@@ -477,6 +480,7 @@ def generate_local_pdf_deep_doc_from_file(
     *,
     pdf_path: str,
     filename: str | None = None,
+    title_override: str | None = None,
     llm_config_json: str | None = None,
     docs_dir: str | None = None,
     date_str: str | None = None,
@@ -487,6 +491,7 @@ def generate_local_pdf_deep_doc_from_file(
     return generate_local_pdf_deep_doc(
         pdf_bytes=path.read_bytes(),
         filename=filename or path.name,
+        title_override=title_override,
         llm_config_json=llm_config_json,
         docs_dir=docs_dir,
         date_str=date_str,
@@ -497,6 +502,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate a Daily Paper style deep-read page from a local PDF.")
     parser.add_argument("--pdf-path", required=True, help="Path to the uploaded PDF file.")
     parser.add_argument("--filename", default="", help="Original filename shown in generated metadata.")
+    parser.add_argument("--title-override", default="", help="Optional user-corrected paper title.")
     parser.add_argument("--docs-dir", default=str(ROOT_DIR / "docs"), help="Docs directory to update.")
     parser.add_argument("--date", default="", help="Optional YYYYMMDD date folder.")
     parser.add_argument(
@@ -508,6 +514,7 @@ def main(argv: list[str] | None = None) -> int:
     result = generate_local_pdf_deep_doc_from_file(
         pdf_path=args.pdf_path,
         filename=args.filename or None,
+        title_override=args.title_override or None,
         llm_config_json=args.llm_config_json or None,
         docs_dir=args.docs_dir,
         date_str=args.date or None,

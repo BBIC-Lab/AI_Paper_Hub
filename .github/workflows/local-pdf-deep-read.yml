@@ -10,6 +10,10 @@ on:
         description: "Original PDF filename"
         required: false
         default: ""
+      title_override:
+        description: "Optional user-corrected paper title"
+        required: false
+        default: ""
       cleanup_upload:
         description: "Remove temporary upload after generation"
         required: false
@@ -97,6 +101,7 @@ jobs:
         env:
           UPLOAD_PATH: ${{ inputs.upload_path }}
           ORIGINAL_FILENAME: ${{ inputs.original_filename }}
+          TITLE_OVERRIDE: ${{ inputs.title_override }}
           CLEANUP_UPLOAD: ${{ inputs.cleanup_upload }}
         run: |
           set -euo pipefail
@@ -111,6 +116,7 @@ jobs:
           python src/local_pdf_backend.py \
             --pdf-path "$UPLOAD_PATH" \
             --filename "${ORIGINAL_FILENAME:-$(basename "$UPLOAD_PATH")}" \
+            --title-override "$TITLE_OVERRIDE" \
             --docs-dir docs
           if [ "$CLEANUP_UPLOAD" = "true" ]; then
             rm -f "$UPLOAD_PATH"

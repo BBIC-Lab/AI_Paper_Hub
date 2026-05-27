@@ -53,6 +53,41 @@ assert.match(
   ),
   /^docs\/assets\/local_pdfs\/uploads\/\d{8}-\d{6}-[a-z0-9]+-lightglue-local-feature-matching-at-light-speed\.pdf$/,
 );
+assert.deepStrictEqual(
+  helpers.normalizePdfFiles([
+    { name: 'paper-a.pdf', type: 'application/pdf' },
+    { name: 'paper-b.PDF', type: '' },
+    { name: 'notes.txt', type: 'text/plain' },
+  ]).map((file) => file.name),
+  ['paper-a.pdf', 'paper-b.PDF'],
+);
+
+const importItem = helpers.buildImportQueueItem(
+  { name: 'wrong-title.pdf', type: 'application/pdf', size: 2048 },
+  'item-1',
+);
+assert.strictEqual(importItem.status, 'queued');
+assert.strictEqual(importItem.fileSizeText, '2.0 KB');
+const appendedQueue = helpers.appendImportQueueItems(
+  [importItem],
+  [
+    { name: 'second.pdf', type: 'application/pdf', size: 1024 },
+    { name: 'third.pdf', type: 'application/pdf', size: 1024 },
+  ],
+);
+assert.deepStrictEqual(appendedQueue.map((item) => item.fileName), [
+  'wrong-title.pdf',
+  'second.pdf',
+  'third.pdf',
+]);
+const renamedQueue = helpers.updateImportQueueItemTitle(
+  [{ ...importItem, result: { title: 'Wrong Title', fileName: 'wrong-title.pdf' } }],
+  'item-1',
+  'Corrected Paper Title',
+);
+assert.strictEqual(helpers.getImportItemTitle(renamedQueue[0]), 'Corrected Paper Title');
+assert.strictEqual(renamedQueue[0].result.title, 'Corrected Paper Title');
+assert.deepStrictEqual(helpers.deleteImportQueueItem(renamedQueue, 'item-1'), []);
 
 const sampleText = [
   'Activation Geometry for Neural Models',
