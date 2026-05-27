@@ -5444,6 +5444,307 @@ window.$docsify = {
         return lines.join('\n');
       };
 
+
+      const DAILY_TEXT = {
+        kicker: 'Daily Research Brief',
+        reportPrefix: '\u65e5\u62a5',
+        generatedAt: '\u751f\u6210\u65f6\u95f4',
+        runStatus: '\u8fd0\u884c\u72b6\u6001',
+        total: '\u603b\u6570',
+        deepQuick: '\u7cbe\u8bfb / \u901f\u8bfb',
+        success: '\u6210\u529f',
+        oldTotal: '\u5f53\u6b21\u63a8\u8350\u603b\u6570',
+        deep: '\u7cbe\u8bfb\u533a',
+        quick: '\u901f\u8bfb\u533a',
+        brief: '\u4eca\u65e5\u7b80\u62a5\uff08AI\uff09',
+        route: '\u4eca\u65e5\u9605\u8bfb\u8def\u7ebf',
+        topics: '\u4eca\u65e5\u4e3b\u9898',
+        evidence: '\u63a8\u8350\u4f9d\u636e',
+        noRoute: '\u6682\u65e0\u53ef\u63a8\u8350\u9605\u8bfb\u8def\u7ebf\u3002',
+        noTopic: '\u6682\u65e0\u4e3b\u9898\u6807\u7b7e\u3002',
+        deepEmpty: '\u672c\u6b21\u65e0\u7cbe\u8bfb\u63a8\u8350\u3002',
+        quickEmpty: '\u672c\u6b21\u65e0\u901f\u8bfb\u63a8\u8350\u3002',
+        keyboard: '\u4f7f\u7528\u952e\u76d8\u65b9\u5411\u952e\u53ef\u5728\u65e5\u62a5/\u8bba\u6587\u4e4b\u95f4\u5feb\u901f\u5207\u6362\u3002',
+      };
+
+      const normalizeDailyText = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+
+      const shortDailyText = (value, limit = 150) => {
+        const dailyText = normalizeDailyText(value);
+        if (dailyText.length <= limit) return dailyText;
+        return `${dailyText.slice(0, Math.max(0, limit - 1)).trim()}\u2026`;
+      };
+
+      const shortDailyGeneratedAt = (value) => {
+        const dailyText = normalizeDailyText(value);
+        const match = dailyText.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?\s*(.*)$/);
+        if (!match) return dailyText;
+        const suffix = match[6] ? ` ${match[6]}` : '';
+        return `${match[1].slice(2)}-${match[2]}-${match[3]} ${match[4]}:${match[5]}${suffix}`.trim();
+      };
+
+      const routeIdFromHref = (href) => {
+        let raw = String(href || '').trim();
+        if (!raw) return '';
+        try {
+          const url = new URL(raw, window.location.href);
+          raw = url.hash ? url.hash : url.pathname;
+        } catch {
+          // Keep raw href.
+        }
+        raw = raw.replace(/^#\/?/, '').replace(/^\/+/, '').replace(/\/$/, '');
+        raw = raw.replace(/\.md$/i, '');
+        return raw;
+      };
+
+      const hashHrefFromRouteId = (routeId) => {
+        const id = String(routeId || '').replace(/^#\/?/, '').replace(/^\/+/, '').replace(/\/$/, '');
+        return id ? `#/${escapeHtml(id)}` : '#/';
+      };
+
+      const cssKindFromTag = (kind) => (
+        String(kind || 'other').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'other'
+      );
+
+      const getSidebarPayloadByRoute = () => {
+        const result = {};
+        const nav = document.querySelector('.sidebar-nav');
+        if (!nav) return result;
+        nav.querySelectorAll('a.dpr-sidebar-item-link[href*="#/"]').forEach((a) => {
+          const routeId = routeIdFromHref(a.getAttribute('href') || '');
+          if (!routeId) return;
+          const raw = a.getAttribute('data-sidebar-item') || '';
+          if (!raw) return;
+          try {
+            const payload = JSON.parse(raw);
+            if (payload && typeof payload === 'object') result[routeId] = payload;
+          } catch {
+            // Ignore malformed legacy payload.
+          }
+        });
+        return result;
+      };
+
+      const parseLegacyDailyMeta = (h1) => {
+        const meta = { generatedAt: '', total: '', deepCount: '', quickCount: '', status: DAILY_TEXT.success };
+        const list = h1 && h1.nextElementSibling && h1.nextElementSibling.tagName === 'UL'
+          ? h1.nextElementSibling
+          : null;
+        if (!list) return meta;
+        Array.from(list.querySelectorAll(':scope > li')).forEach((li) => {
+          const lineText = normalizeDailyText(li.textContent || '');
+          const valueAfter = (label) => lineText.slice(label.length).replace(/^[\uFF1A:\s-]+/, '').trim();
+          if (lineText.startsWith(DAILY_TEXT.generatedAt)) meta.generatedAt = valueAfter(DAILY_TEXT.generatedAt);
+          if (lineText.startsWith(DAILY_TEXT.oldTotal)) meta.total = valueAfter(DAILY_TEXT.oldTotal);
+          if (lineText.startsWith(DAILY_TEXT.total)) meta.total = valueAfter(DAILY_TEXT.total);
+          if (lineText.startsWith(DAILY_TEXT.deep)) meta.deepCount = valueAfter(DAILY_TEXT.deep);
+          if (lineText.startsWith(DAILY_TEXT.quick)) meta.quickCount = valueAfter(DAILY_TEXT.quick);
+        });
+        return meta;
+      };
+
+      const findLegacyDailyHeading = (root, label) => (
+        Array.from(root.querySelectorAll('h2')).find((h) => normalizeDailyText(h.textContent || '') === label) || null
+      );
+
+      const collectLegacyDailySummary = (heading) => {
+        if (!heading) return [];
+        const lines = [];
+        let node = heading.nextElementSibling;
+        while (node && !/^H[12]$/i.test(node.tagName || '') && node.tagName !== 'HR') {
+          if (node.tagName === 'P') {
+            const lineText = normalizeDailyText(node.textContent || '');
+            if (lineText) lines.push(lineText);
+          }
+          node = node.nextElementSibling;
+        }
+        return lines;
+      };
+
+      const parseLegacyDailyEntries = (heading, payloadByRoute) => {
+        if (!heading) return [];
+        let list = heading.nextElementSibling;
+        while (list && !/^(OL|UL)$/i.test(list.tagName || '') && !/^H[12]$/i.test(list.tagName || '')) {
+          list = list.nextElementSibling;
+        }
+        if (!list || !/^(OL|UL)$/i.test(list.tagName || '')) return [];
+        return Array.from(list.querySelectorAll(':scope > li')).map((li) => {
+          const a = li.querySelector('a');
+          const routeId = routeIdFromHref(a ? a.getAttribute('href') || '' : '');
+          const payload = payloadByRoute[routeId] || {};
+          const rawText = normalizeDailyText(li.textContent || '');
+          const scoreMatch = rawText.match(/([0-9]+(?:\.[0-9]+)?)\s*\/\s*10/);
+          const payloadScore = payload && payload.score !== undefined && payload.score !== null
+            ? String(payload.score).trim()
+            : '';
+          const score = scoreMatch ? scoreMatch[1] : payloadScore.replace(/\s.*$/, '');
+          const tags = Array.isArray(payload.tags) ? payload.tags : [];
+          return {
+            routeId,
+            href: a ? a.getAttribute('href') || hashHrefFromRouteId(routeId) : hashHrefFromRouteId(routeId),
+            title: normalizeDailyText((a && a.textContent) || (payload && payload.title) || routeId),
+            score,
+            tags,
+            evidence: normalizeDailyText((payload && payload.evidence) || ''),
+          };
+        }).filter((item) => item.title);
+      };
+
+      const dailyScoreNumber = (item) => {
+        const n = parseFloat(String((item && item.score) || '').replace(/[^\d.+-].*$/, ''));
+        return Number.isFinite(n) ? n : -1;
+      };
+
+      const dailyScoreText = (item) => {
+        const n = dailyScoreNumber(item);
+        if (!Number.isFinite(n) || n < 0) return '';
+        return `${n.toFixed(1)}/10`;
+      };
+
+      const dailyTopicItems = (entries) => {
+        const counts = {};
+        entries.forEach((entry) => {
+          (entry.tags || []).forEach((tag) => {
+            const rawKind = String((tag && tag.kind) || 'other').trim();
+            if (rawKind === 'score') return;
+            const kind = rawKind === 'keyword' ? 'query' : rawKind;
+            const label = String((tag && tag.label) || '').trim();
+            if (!label) return;
+            const key = label.toLowerCase();
+            if (!counts[key]) counts[key] = { label, kind, count: 0 };
+            counts[key].count += 1;
+          });
+        });
+        return Object.values(counts).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)).slice(0, 8);
+      };
+
+      const dailyRouteItems = (deepEntries, quickEntries, topics) => {
+        const items = [];
+        if (deepEntries.length) {
+          const best = deepEntries.slice().sort((a, b) => dailyScoreNumber(b) - dailyScoreNumber(a))[0];
+          const score = dailyScoreText(best);
+          items.push(`\u5148\u770b\u7cbe\u8bfb\u533a\u300a${shortDailyText(best.title, 54)}\u300b${score ? `\uff08${score}\uff09` : ''}\uff0c\u5feb\u901f\u5efa\u7acb\u4eca\u5929\u7684\u6838\u5fc3\u95ee\u9898\u610f\u8bc6\u3002`);
+        } else if (quickEntries.length) {
+          items.push(`\u4eca\u5929\u6ca1\u6709\u7cbe\u8bfb\u63a8\u8350\uff0c\u53ef\u5148\u4ece\u901f\u8bfb\u533a\u300a${shortDailyText(quickEntries[0].title, 54)}\u300b\u5f00\u59cb\u626b\u8bfb\u3002`);
+        }
+        if (topics.length) {
+          items.push(`\u6cbf\u7740 ${topics.slice(0, 3).map((item) => item.label).join(' / ')} \u8fd9\u51e0\u4e2a\u4e3b\u9898\u4e32\u8054\u9605\u8bfb\uff0c\u4f18\u5148\u770b\u540c\u4e3b\u9898\u4e0b\u5206\u6570\u66f4\u9ad8\u7684\u8bba\u6587\u3002`);
+        }
+        if (quickEntries.length) {
+          items.push('\u6700\u540e\u7528\u901f\u8bfb\u533a\u8865\u9f50\u76f8\u90bb\u65b9\u5411\uff0c\u53ea\u4fdd\u7559\u503c\u5f97\u540e\u7eed\u6df1\u6316\u7684\u8bba\u6587\u3002');
+        }
+        return items;
+      };
+
+      const dailyTopicChipsHtml = (tags, limit = 5) => (tags || [])
+        .filter((tag) => tag && String(tag.kind || '').trim() !== 'score' && String(tag.label || '').trim())
+        .slice(0, limit)
+        .map((tag) => {
+          const kind = cssKindFromTag(tag.kind === 'keyword' ? 'query' : tag.kind);
+          return `<span class="dpr-daily-topic-chip dpr-daily-topic-${kind}">${escapeHtml(tag.label)}</span>`;
+        })
+        .join('');
+
+      const dailyPaperCardsHtml = (entries, section) => {
+        if (!entries.length) {
+          return `<div class="dpr-daily-empty-note">${escapeHtml(section === 'deep' ? DAILY_TEXT.deepEmpty : DAILY_TEXT.quickEmpty)}</div>`;
+        }
+        return entries.map((entry, index) => {
+          const score = dailyScoreText(entry);
+          const scoreHtml = score ? `<span class="dpr-daily-score-pill">${escapeHtml(score)}</span>` : '';
+          const chips = dailyTopicChipsHtml(entry.tags, section === 'deep' ? 5 : 3);
+          const evidence = shortDailyText(entry.evidence, 170);
+          const evidenceHtml = evidence
+            ? `<div class="dpr-daily-paper-evidence"><span>${escapeHtml(DAILY_TEXT.evidence)}</span>${escapeHtml(evidence)}</div>`
+            : '';
+          return [
+            `<article class="dpr-daily-paper-card is-${section}">`,
+            `  <div class="dpr-daily-paper-index">${String(index + 1).padStart(2, '0')}</div>`,
+            '  <div class="dpr-daily-paper-main">',
+            `    <a class="dpr-daily-paper-title" href="${hashHrefFromRouteId(entry.routeId) || escapeHtml(entry.href)}">${escapeHtml(entry.title)}</a>`,
+            `    <div class="dpr-daily-paper-meta">${scoreHtml}${chips}</div>`,
+            `    ${evidenceHtml}`,
+            '  </div>',
+            '</article>',
+          ].join('\n');
+        }).join('\n');
+      };
+
+      const renderLegacyDailyReportHtml = ({ title, meta, summaryLines, deepEntries, quickEntries }) => {
+        const total = deepEntries.length + quickEntries.length;
+        const topics = dailyTopicItems(deepEntries.concat(quickEntries));
+        const routeItems = dailyRouteItems(deepEntries, quickEntries, topics);
+        const topicCloud = topics.map((item) => {
+          const kind = cssKindFromTag(item.kind);
+          return `<span class="dpr-daily-topic-pill dpr-daily-topic-${kind}">${escapeHtml(item.label)}<em>${item.count}</em></span>`;
+        }).join('\n');
+        const routeHtml = routeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join('\n');
+        const summaryHtml = summaryLines.slice(0, 3).map((line) => `<p>${escapeHtml(line)}</p>`).join('\n');
+        const deepCount = meta.deepCount || String(deepEntries.length);
+        const quickCount = meta.quickCount || String(quickEntries.length);
+        return [
+          '<section class="dpr-daily-report">',
+          '  <div class="dpr-daily-hero">',
+          `    <div class="dpr-daily-kicker">${escapeHtml(DAILY_TEXT.kicker)}</div>`,
+          `    <h1>${escapeHtml(title)}</h1>`,
+          `    <div class="dpr-daily-stats" aria-label="${escapeHtml(DAILY_TEXT.reportPrefix)}">`,
+          `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.generatedAt)}</span><strong>${escapeHtml(shortDailyGeneratedAt(meta.generatedAt) || '-')}</strong></div>`,
+          `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.runStatus)}</span><strong>${escapeHtml(meta.status || DAILY_TEXT.success)}</strong></div>`,
+          `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.total)}</span><strong>${escapeHtml(meta.total || String(total))}</strong></div>`,
+          `      <div class="dpr-daily-stat"><span>${escapeHtml(DAILY_TEXT.deepQuick)}</span><strong>${escapeHtml(`${deepCount} / ${quickCount}`)}</strong></div>`,
+          '    </div>',
+          summaryHtml ? '    <div class="dpr-daily-brief-card">' : '',
+          summaryHtml ? `      <span>${escapeHtml(DAILY_TEXT.brief)}</span>` : '',
+          summaryHtml ? `      ${summaryHtml}` : '',
+          summaryHtml ? '    </div>' : '',
+          '  </div>',
+          '  <div class="dpr-daily-guide-grid">',
+          '    <section class="dpr-daily-route-card">',
+          `      <h2>${escapeHtml(DAILY_TEXT.route)}</h2>`,
+          routeHtml ? `      <ol>${routeHtml}</ol>` : `      <p>${escapeHtml(DAILY_TEXT.noRoute)}</p>`,
+          '    </section>',
+          '    <section class="dpr-daily-topic-card">',
+          `      <h2>${escapeHtml(DAILY_TEXT.topics)}</h2>`,
+          topicCloud ? `      <div class="dpr-daily-topic-cloud">${topicCloud}</div>` : `      <p>${escapeHtml(DAILY_TEXT.noTopic)}</p>`,
+          '    </section>',
+          '  </div>',
+          '  <section class="dpr-daily-paper-section is-deep">',
+          `    <h2>${escapeHtml(DAILY_TEXT.deep)}</h2>`,
+          `    <div class="dpr-daily-paper-grid">${dailyPaperCardsHtml(deepEntries, 'deep')}</div>`,
+          '  </section>',
+          '  <section class="dpr-daily-paper-section is-quick">',
+          `    <h2>${escapeHtml(DAILY_TEXT.quick)}</h2>`,
+          `    <div class="dpr-daily-paper-grid">${dailyPaperCardsHtml(quickEntries, 'quick')}</div>`,
+          '  </section>',
+          '</section>',
+          '<hr>',
+          `<p>${escapeHtml(DAILY_TEXT.keyboard)}</p>`,
+        ].filter(Boolean).join('\n');
+      };
+
+      const applyLegacyDailyReportCards = (root) => {
+        if (!root || root.querySelector('.dpr-daily-report')) return;
+        const h1 = root.querySelector(':scope > h1');
+        const title = normalizeDailyText(h1 && h1.textContent ? h1.textContent : '');
+        if (!title || !title.startsWith(DAILY_TEXT.reportPrefix)) return;
+        const payloadByRoute = getSidebarPayloadByRoute();
+        const deepHeading = findLegacyDailyHeading(root, DAILY_TEXT.deep);
+        const quickHeading = findLegacyDailyHeading(root, DAILY_TEXT.quick);
+        const summaryHeading = findLegacyDailyHeading(root, DAILY_TEXT.brief);
+        const deepEntries = parseLegacyDailyEntries(deepHeading, payloadByRoute);
+        const quickEntries = parseLegacyDailyEntries(quickHeading, payloadByRoute);
+        if (!deepEntries.length && !quickEntries.length) return;
+        const meta = parseLegacyDailyMeta(h1);
+        const summaryLines = collectLegacyDailySummary(summaryHeading);
+        root.innerHTML = renderLegacyDailyReportHtml({
+          title,
+          meta,
+          summaryLines,
+          deepEntries,
+          quickEntries,
+        });
+      };
+
       // --- Docsify beforeEach 钩子：解析 front matter ---
       hook.beforeEach(function (content) {
         const file = vm && vm.route ? vm.route.file : '';
@@ -5506,6 +5807,7 @@ window.$docsify = {
           // 先创建正文包装层，避免后续切页动画影响聊天浮层
           const root = isPaperPage ? ensurePageContentRoot() : null;
           const mathRoot = root || mainContent;
+          if (isReportPage) applyLegacyDailyReportCards(mathRoot);
           restoreMarkdownMathPlaceholdersInEl(mathRoot);
           renderMathInEl(mathRoot);
         }

@@ -67,6 +67,19 @@ def format_beijing_time(dt: datetime | None = None) -> str:
     return current.astimezone(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S 北京时间")
 
 
+def format_daily_generated_at_display(value: str) -> str:
+    text = str(value or "").strip()
+    m = re.match(
+        r"^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?\s*(.*)$",
+        text,
+    )
+    if not m:
+        return text
+    suffix = m.group(6).strip()
+    compact = f"{m.group(1)[2:]}-{m.group(2)}-{m.group(3)} {m.group(4)}:{m.group(5)}"
+    return f"{compact} {suffix}".strip() if suffix else compact
+
+
 if not TODAY_STR:
     TODAY_STR = beijing_date_token()
 
@@ -1067,6 +1080,7 @@ def build_daily_report_html(
     topics = _collect_daily_topics(deep_entries, quick_entries)
     route_items = _daily_route_items(deep_entries, quick_entries, topics)
     heading_tag = heading_tag if heading_tag in {"h1", "h2", "h3"} else "h1"
+    generated_at_display = format_daily_generated_at_display(generated_at)
 
     summary_lines = _plain_summary_lines(summary)
     if not summary_lines and total == 0:
@@ -1095,7 +1109,7 @@ def build_daily_report_html(
         '    <div class="dpr-daily-kicker">Daily Research Brief</div>',
         f"    <{heading_tag}>日报 · {html.escape(effective_label)}</{heading_tag}>",
         '    <div class="dpr-daily-stats" aria-label="日报运行概览">',
-        f'      <div class="dpr-daily-stat"><span>生成时间</span><strong>{html.escape(generated_at)}</strong></div>',
+        f'      <div class="dpr-daily-stat"><span>生成时间</span><strong>{html.escape(generated_at_display)}</strong></div>',
         f'      <div class="dpr-daily-stat"><span>运行状态</span><strong>{html.escape(run_status)}</strong></div>',
         f'      <div class="dpr-daily-stat"><span>总数</span><strong>{total}</strong></div>',
         f'      <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>{len(deep_entries)} / {len(quick_entries)}</strong></div>',
