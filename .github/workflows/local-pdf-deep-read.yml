@@ -135,6 +135,14 @@ jobs:
           fi
 
           git commit -m "[chore] local PDF deep read"
-          git fetch origin "$branch"
-          git rebase -X theirs "origin/$branch"
-          git push origin HEAD:"$branch"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$branch"
+            git -c merge.directoryRenames=false rebase "origin/$branch"
+            if git push origin HEAD:"$branch"; then
+              exit 0
+            fi
+            echo "Push raced with a newer upload commit; retrying ($attempt/5)..." >&2
+            sleep 5
+          done
+          echo "Failed to push local PDF deep-read result after retries." >&2
+          exit 1
