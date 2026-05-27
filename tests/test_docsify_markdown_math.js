@@ -184,11 +184,47 @@ function testLocalPdfRouteRendersPaperFrontMatter() {
   assert.ok(!rendered.startsWith('---'));
 }
 
+function testLocalPdfFiguresJsonKeepsEscapedCaptionQuotes() {
+  const localHooks = buildHooksForRoute(
+    'local-pdf/20260527/neural-driven-image-editing.md',
+    '/local-pdf/20260527/neural-driven-image-editing',
+  );
+  const figures = JSON.stringify([
+    {
+      url: 'assets/figures/local-pdf/local-20260527-092525-neural-driven/fig-001.webp',
+      caption: 'Failure case: "longlegged space creature".',
+      page: 34,
+      index: 1,
+      width: 826,
+      height: 540,
+    },
+  ]);
+  const yamlFigures = figures.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const input = [
+    '---',
+    'title: Neural-Driven Image Editing',
+    'authors: Unknown',
+    'date: 2026-05-27',
+    'source: local-pdf',
+    `figures_json: "${yamlFigures}"`,
+    '---',
+    '',
+    '## Abstract',
+    'Demo body.',
+  ].join('\n');
+
+  const rendered = localHooks.beforeEachFn(input);
+  assert.ok(rendered.includes('paper-figure-section'));
+  assert.ok(rendered.includes('fig-001.webp'));
+  assert.ok(rendered.includes('&quot;longlegged space creature&quot;'));
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
 testLatexTextCommandContentStaysInMath();
 testDocsifyMathProtectionPreservesSubscriptMath();
 testLocalPdfRouteRendersPaperFrontMatter();
+testLocalPdfFiguresJsonKeepsEscapedCaptionQuotes();
 
 console.log('docsify markdown math tests passed');

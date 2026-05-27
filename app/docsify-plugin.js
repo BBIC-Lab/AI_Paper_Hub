@@ -4947,6 +4947,50 @@ window.$docsify = {
         const yamlStr = content.slice(4, endIdx).trim();
         const body = content.slice(endIdx + 4).trim();
 
+        const decodeYamlScalar = (rawValue) => {
+          const text = String(rawValue || '').trim();
+          if (text.length < 2) return text;
+          const quote = text[0];
+          if ((quote !== '"' && quote !== "'") || text[text.length - 1] !== quote) {
+            return text;
+          }
+          const inner = text.slice(1, -1);
+          if (quote === "'") return inner.replace(/''/g, "'");
+
+          let out = '';
+          let escaped = false;
+          const escapeMap = {
+            0: '\0',
+            a: '\x07',
+            b: '\b',
+            t: '\t',
+            n: '\n',
+            v: '\v',
+            f: '\f',
+            r: '\r',
+            e: '\x1b',
+            '"': '"',
+            '/': '/',
+            '\\': '\\',
+          };
+          for (const ch of inner) {
+            if (escaped) {
+              out += Object.prototype.hasOwnProperty.call(escapeMap, ch)
+                ? escapeMap[ch]
+                : `\\${ch}`;
+              escaped = false;
+              continue;
+            }
+            if (ch === '\\') {
+              escaped = true;
+              continue;
+            }
+            out += ch;
+          }
+          if (escaped) out += '\\';
+          return out;
+        };
+
         // 简单解析 YAML（不依赖外部库）
         const meta = {};
         const lines = yamlStr.split('\n');
@@ -4980,10 +5024,10 @@ window.$docsify = {
             }
             if (current.trim()) items.push(current.trim());
             // 去除引号
-            meta[key] = items.map(s => s.replace(/^["']|["']$/g, ''));
+            meta[key] = items.map(s => decodeYamlScalar(s));
           } else {
             // 去除引号
-            meta[key] = value.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            meta[key] = decodeYamlScalar(value);
           }
         }
         return { meta, body };
