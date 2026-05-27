@@ -2189,7 +2189,7 @@ body.close #sidebar-resizer {
   max-width: 900px !important;
   width: 100% !important;
   /* 增加底部留白：让页面滚动到底时内容刚好停在浮动聊天框上方，包含渐变区域 */
-  padding: 15px 60px 200px 60px !important;
+  padding: 7.5px 60px 200px 60px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -2197,7 +2197,7 @@ body.close #sidebar-resizer {
 /* 微宽屏/窄屏：正文左右留白收紧，避免内容区域过窄 */
 @media (max-width: 1023px) {
   .markdown-section {
-    padding: 11px 18px 200px 18px !important;
+    padding: 5.5px 18px 200px 18px !important;
   }
 }
 
@@ -2364,7 +2364,7 @@ body.dpr-paper-page .markdown-section .dpr-page-content.dpr-page-enter.dpr-page-
 article.markdown-section {
   max-width: 900px !important;
   width: 100% !important;
-  padding: 15px 60px 200px 60px !important;
+  padding: 7.5px 60px 200px 60px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -2400,7 +2400,7 @@ article.markdown-section {
   .markdown-section,
   article.markdown-section {
     max-width: 100% !important;
-    padding: 8px 16px 160px 16px !important;
+    padding: 4px 16px 160px 16px !important;
     margin: 0 !important;
     width: 100% !important;
     overflow-x: hidden;
