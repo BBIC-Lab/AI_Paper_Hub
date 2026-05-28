@@ -3729,7 +3729,7 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
 /* 自定义按钮样式 - 紧挨着 sidebar-toggle（左下角） */
 .custom-toggle-btn {
   position: fixed;
-  bottom: 2px;
+  bottom: 0;
   left: 40px;
   width: 40px;
   height: 40px;
