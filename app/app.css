@@ -2370,6 +2370,13 @@ article.markdown-section {
   box-sizing: border-box !important;
 }
 
+body.dpr-report-page .markdown-section,
+body.dpr-paper-page .markdown-section,
+body.dpr-report-page article.markdown-section,
+body.dpr-paper-page article.markdown-section {
+  padding-bottom: 30px !important;
+}
+
 /* 移动端布局适配：在小屏幕下让内容区域占满宽度，并简化左右留白，
    同时将浮动聊天输入框与底部工具条改为相对视口居中，不改变 Docsify 自带的侧边栏开合行为 */
 @media (max-width: 1023px) {
