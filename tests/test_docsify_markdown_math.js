@@ -244,6 +244,95 @@ function testScoreLabelRendersAfterScore() {
   assert.ok(rendered.includes(`<strong>Score</strong>8.5 ${scoreLabel}`));
 }
 
+function testResearchValueSectionMovesBeforeResearchFlow() {
+  const localHooks = buildHooksForRoute(
+    'local-pdf/20260528/research-value.md',
+    '/local-pdf/20260528/research-value',
+  );
+  const input = [
+    '---',
+    'title: Research Value Demo',
+    'authors: Unknown',
+    'date: 2026-05-28',
+    'source: local-pdf',
+    'method: Demo method.',
+    'result: Demo result.',
+    '---',
+    '',
+    '## 核心问题',
+    '正文内容。',
+    '',
+    '## 9. 对读者研究方向的启发与意义',
+    '',
+    '- **关联方向：** 脑机接口；神经信号解码。',
+    '- **启发与意义：** 可以快速判断是否值得精读。',
+    '- **阅读建议：** 先读方法和实验。',
+    '',
+    '（完）',
+  ].join('\n');
+
+  const rendered = localHooks.beforeEachFn(input);
+  const cardIndex = rendered.indexOf('## 研究价值与阅读建议');
+  const flowIndex = rendered.indexOf('paper-flow-section');
+  const bodyIndex = rendered.indexOf('## 核心问题');
+  assert.ok(cardIndex > 0);
+  assert.ok(flowIndex > 0);
+  assert.ok(cardIndex < flowIndex);
+  assert.ok(flowIndex < bodyIndex);
+  assert.ok(rendered.includes('**关联方向：** 脑机接口；神经信号解码。'));
+  assert.ok(!rendered.includes('## 9. 对读者研究方向的启发与意义'));
+}
+
+function testResearchValueExtractorKeepsDoneMarkerInBody() {
+  const extracted = window.DPRResearchValueCard.extractResearchValueSectionFromMarkdown([
+    '## 方法',
+    '正文。',
+    '',
+    '9. 对读者研究方向的启发与意义',
+    '关联方向：弱相关。',
+    '',
+    '（完）',
+  ].join('\n'));
+
+  assert.equal(extracted.section, '## 研究价值与阅读建议\n\n关联方向：弱相关。');
+  assert.ok(extracted.body.includes('## 方法'));
+  assert.ok(extracted.body.includes('（完）'));
+  assert.ok(!extracted.body.includes('对读者研究方向的启发与意义'));
+}
+
+function testResearchValueBoundaryStopsBeforeGeneratedSections() {
+  const isBoundary = window.DPRResearchValueCard.isResearchValueBoundaryNode;
+  const figureSection = {
+    nodeType: 1,
+    tagName: 'section',
+    textContent: 'Figure Gallery',
+    classList: {
+      contains(name) {
+        return name === 'paper-figure-section';
+      },
+    },
+  };
+  const flowSection = {
+    nodeType: 1,
+    tagName: 'section',
+    textContent: 'Research Flow',
+    classList: {
+      contains(name) {
+        return name === 'paper-flow-section';
+      },
+    },
+  };
+  const normalParagraph = {
+    nodeType: 1,
+    tagName: 'p',
+    textContent: '启发与意义：值得跟进。',
+  };
+
+  assert.equal(isBoundary(figureSection), true);
+  assert.equal(isBoundary(flowSection), true);
+  assert.equal(isBoundary(normalParagraph), false);
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
@@ -252,5 +341,8 @@ testDocsifyMathProtectionPreservesSubscriptMath();
 testLocalPdfRouteRendersPaperFrontMatter();
 testLocalPdfFiguresJsonKeepsEscapedCaptionQuotes();
 testScoreLabelRendersAfterScore();
+testResearchValueSectionMovesBeforeResearchFlow();
+testResearchValueExtractorKeepsDoneMarkerInBody();
+testResearchValueBoundaryStopsBeforeGeneratedSections();
 
 console.log('docsify markdown math tests passed');

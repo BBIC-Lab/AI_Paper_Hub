@@ -4207,6 +4207,212 @@ window.$docsify = {
         });
       };
 
+      // 研究价值卡片：兼容旧的 AI 输出，并统一前置为折叠卡片。
+
+      const cleanResearchValueText = (value) =>
+        String(value || '')
+          .replace(/\s+/g, ' ')
+          .replace(/^[-\u2022\s]+/, '')
+          .trim();
+
+      const relationTextFromNode = (node) => {
+        const text = cleanResearchValueText(node && node.textContent);
+        if (!text) return '';
+        const match = text.match(/\u5173\u8054\u65b9\u5411\s*[\uFF1A:]\s*(.+)$/);
+        return match ? match[1].trim() : text;
+      };
+
+      const findResearchRelationNode = (nodes) => {
+        for (const node of nodes) {
+          if (!node || node.nodeType !== 1) continue;
+          const candidates = [];
+          if (node.matches && node.matches('p, li')) candidates.push(node);
+          if (node.querySelectorAll) {
+            node.querySelectorAll('p, li').forEach((item) => candidates.push(item));
+          }
+          const found = candidates.find((item) => /\u5173\u8054\u65b9\u5411\s*[\uFF1A:]/.test(item.textContent || ''));
+          if (found) return found;
+        }
+        return null;
+      };
+
+      const hasMeaningfulResearchNode = (node) =>
+        !!(
+          node &&
+          (
+            (node.nodeType === 1 && cleanResearchValueText(node.textContent)) ||
+            (node.nodeType === 3 && cleanResearchValueText(node.textContent))
+          )
+        );
+
+      const bindResearchValueCard = (card) => {
+        if (!card || card.dataset.researchValueBound === '1') return;
+        const toggle = card.querySelector('[data-research-value-toggle]');
+        const body = card.querySelector('[data-research-value-body]');
+        if (!toggle || !body) return;
+        card.dataset.researchValueBound = '1';
+
+        const openBodyMaxHeight = () => `${body.scrollHeight + 32}px`;
+        const setCollapsed = (collapsed) => {
+          card.classList.toggle('is-collapsed', collapsed);
+          card.classList.toggle('is-open', !collapsed);
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          toggle.textContent = collapsed ? '\u5c55\u5f00' : '\u6536\u8d77';
+          body.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+          body.style.maxHeight = collapsed ? '0px' : openBodyMaxHeight();
+        };
+
+        toggle.addEventListener('click', () => {
+          setCollapsed(!card.classList.contains('is-collapsed'));
+        });
+        window.addEventListener('resize', () => {
+          if (card.classList.contains('is-open')) {
+            body.style.maxHeight = openBodyMaxHeight();
+          }
+        });
+        setCollapsed(true);
+      };
+
+      const createResearchValueCard = (contentNodes) => {
+        const relationNode = findResearchRelationNode(contentNodes);
+        const relationText = relationNode
+          ? relationTextFromNode(relationNode)
+          : '\u672a\u8bc6\u522b\u5230\u660e\u786e\u5173\u8054\u65b9\u5411\uff0c\u8bf7\u5c55\u5f00\u67e5\u770b\u4e0a\u4e0b\u6587\u3002';
+
+        if (relationNode) {
+          const parent = relationNode.parentElement;
+          relationNode.remove();
+          if (parent && /^(UL|OL)$/i.test(parent.tagName || '') && !parent.children.length) {
+            parent.remove();
+          }
+        }
+
+        const card = document.createElement('section');
+        card.className = 'dpr-research-value-card is-collapsed';
+        card.setAttribute('data-research-value-card', '1');
+
+        const bodyId = `dpr-research-value-body-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const header = document.createElement('div');
+        header.className = 'dpr-research-value-head';
+        header.innerHTML =
+          '<div>' +
+          '<div class="dpr-research-value-kicker">Research Direction Insight</div>' +
+          `<h2>${RESEARCH_VALUE_TITLE}</h2>` +
+          '</div>';
+
+        const toggle = document.createElement('button');
+        toggle.className = 'dpr-research-value-toggle';
+        toggle.type = 'button';
+        toggle.setAttribute('aria-controls', bodyId);
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('data-research-value-toggle', '1');
+        toggle.textContent = '\u5c55\u5f00';
+        header.appendChild(toggle);
+
+        const relation = document.createElement('div');
+        relation.className = 'dpr-research-value-relation';
+        relation.innerHTML =
+          '<span>\u5173\u8054\u65b9\u5411</span>' +
+          `<p>${escapeHtml(relationText)}</p>`;
+
+        const body = document.createElement('div');
+        body.id = bodyId;
+        body.className = 'dpr-research-value-body';
+        body.setAttribute('data-research-value-body', '1');
+        body.setAttribute('aria-hidden', 'true');
+        body.style.maxHeight = '0px';
+
+        contentNodes.forEach((node) => {
+          if (hasMeaningfulResearchNode(node)) body.appendChild(node);
+        });
+
+        card.appendChild(header);
+        card.appendChild(relation);
+        card.appendChild(body);
+        return card;
+      };
+
+      const moveResearchValueCardAfterHero = (root, card) => {
+        if (!root || !card) return;
+        const hero = root.querySelector('.paper-hero-card');
+        if (!hero || hero.nextSibling === card) return;
+        root.insertBefore(card, hero.nextSibling);
+      };
+
+      const moveResearchFlowIntoValueCard = (root, card) => {
+        if (!root || !card) return;
+        const body = card.querySelector('[data-research-value-body]');
+        if (!body) return;
+        const flow = root.querySelector(':scope > .paper-flow-section');
+        if (!flow || card.contains(flow)) return;
+        body.appendChild(flow);
+      };
+
+      const isResearchValueBoundaryNode = (node) => {
+        if (!node || node.nodeType !== 1) return false;
+        const tag = String(node.tagName || '').toUpperCase();
+        const text = cleanResearchValueText(node.textContent);
+        if (/^H[1-3]$/.test(tag) || tag === 'HR' || /^\uFF08\u5B8C\uFF09$/.test(text)) {
+          return true;
+        }
+        if (tag !== 'SECTION' || !node.classList) return false;
+        return [
+          'paper-flow-section',
+          'paper-figure-section',
+          'paper-abstract-fold',
+          'paper-hero-card',
+          'dpr-research-value-card',
+        ].some((className) => node.classList.contains(className));
+      };
+
+      const applyPaperResearchValueCard = (root) => {
+        if (!root) return;
+
+        const existing = root.querySelector('.dpr-research-value-card');
+        if (existing) {
+          moveResearchValueCardAfterHero(root, existing);
+          moveResearchFlowIntoValueCard(root, existing);
+          bindResearchValueCard(existing);
+          return;
+        }
+
+        const oldHtmlCard = root.querySelector('.dpr-research-insight-card');
+        if (oldHtmlCard) {
+          const contentNodes = Array.from(oldHtmlCard.childNodes).filter((node) => {
+            if (node.nodeType !== 1) return hasMeaningfulResearchNode(node);
+            if (node.classList && node.classList.contains('dpr-research-insight-kicker')) return false;
+            if (/^H[1-6]$/i.test(node.tagName || '') && isResearchValueHeadingText(node.textContent)) return false;
+            return hasMeaningfulResearchNode(node);
+          });
+          const card = createResearchValueCard(contentNodes);
+          oldHtmlCard.replaceWith(card);
+          moveResearchValueCardAfterHero(root, card);
+          moveResearchFlowIntoValueCard(root, card);
+          bindResearchValueCard(card);
+          return;
+        }
+
+        const heading = Array.from(root.querySelectorAll('h2, h3')).find((item) =>
+          isResearchValueHeadingText(item.textContent || ''),
+        );
+        if (!heading) return;
+
+        const contentNodes = [];
+        let cursor = heading.nextElementSibling;
+        while (cursor) {
+          if (isResearchValueBoundaryNode(cursor)) break;
+          contentNodes.push(cursor);
+          cursor = cursor.nextElementSibling;
+        }
+        if (!contentNodes.length) return;
+
+        const card = createResearchValueCard(contentNodes);
+        heading.replaceWith(card);
+        moveResearchValueCardAfterHero(root, card);
+        moveResearchFlowIntoValueCard(root, card);
+        bindResearchValueCard(card);
+      };
+
       // 论文页导航：左右滑动 / 键盘方向键切换论文
       const DPR_NAV_STATE = {
         paperHrefs: [],
@@ -5412,7 +5618,82 @@ window.$docsify = {
         });
       };
 
-      const renderPaperFromMeta = (meta) => {
+      const RESEARCH_VALUE_TITLE = '研究价值与阅读建议';
+      const RESEARCH_VALUE_LEGACY_TITLE = '对读者研究方向的启发与意义';
+
+      const normalizeResearchValueHeading = (value) =>
+        String(value || '')
+          .replace(/\s+/g, ' ')
+          .replace(/^#+\s*/, '')
+          .replace(/^[\s*_\-`]+|[\s*_\-`]+$/g, '')
+          .replace(/^\d{1,2}\s*[.、]\s*/, '')
+          .replace(/[：:]\s*$/, '')
+          .trim();
+
+      const isResearchValueHeadingText = (value) => {
+        const title = normalizeResearchValueHeading(value);
+        return title === RESEARCH_VALUE_TITLE || title === RESEARCH_VALUE_LEGACY_TITLE;
+      };
+
+      const isResearchValuePlainHeadingLine = (line) => {
+        const text = String(line || '').trim();
+        if (!text) return false;
+        const markdownMatch = text.match(/^(#{1,6})\s+(.+)$/);
+        if (markdownMatch) return isResearchValueHeadingText(markdownMatch[2]);
+        return isResearchValueHeadingText(text);
+      };
+
+      const extractResearchValueSectionFromMarkdown = (markdown) => {
+        const source = String(markdown || '').replace(/\r\n/g, '\n');
+        const lines = source.split('\n');
+        let start = -1;
+        let level = 2;
+
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = lines[i];
+          const heading = line.match(/^(#{1,6})\s+(.+)$/);
+          if (heading && isResearchValueHeadingText(heading[2])) {
+            start = i;
+            level = heading[1].length;
+            break;
+          }
+          if (!heading && isResearchValuePlainHeadingLine(line)) {
+            start = i;
+            level = 2;
+            break;
+          }
+        }
+
+        if (start < 0) {
+          return { body: source, section: '' };
+        }
+
+        let end = lines.length;
+        for (let i = start + 1; i < lines.length; i += 1) {
+          const trimmed = lines[i].trim();
+          if (/^（完）$/.test(trimmed)) {
+            end = i;
+            break;
+          }
+          const heading = lines[i].match(/^(#{1,6})\s+/);
+          if (heading && heading[1].length <= level) {
+            end = i;
+            break;
+          }
+        }
+
+        const sectionBody = lines.slice(start + 1, end).join('\n').trim();
+        const before = lines.slice(0, start).join('\n').trimEnd();
+        const after = lines.slice(end).join('\n').trimStart();
+        const body = [before, after].filter(Boolean).join('\n\n');
+        const section = sectionBody
+          ? `## ${RESEARCH_VALUE_TITLE}\n\n${sectionBody}`
+          : `## ${RESEARCH_VALUE_TITLE}`;
+
+        return { body, section };
+      };
+
+      const renderPaperFromMeta = (meta, options = {}) => {
         if (!meta) return '';
 
         const renderTags = (tags) => {
@@ -5478,6 +5759,11 @@ window.$docsify = {
         lines.push('</section>');
         lines.push('');
 
+        if (options.researchValueMarkdown) {
+          lines.push(options.researchValueMarkdown);
+          lines.push('');
+        }
+
         const flowItems = [
           { key: 'motivation', label: 'Motivation', index: '01' },
           { key: 'method', label: 'Method', index: '02' },
@@ -5513,6 +5799,12 @@ window.$docsify = {
         return lines.join('\n');
       };
 
+      window.DPRResearchValueCard = {
+        extractResearchValueSectionFromMarkdown,
+        isResearchValueHeadingText,
+        isResearchValueBoundaryNode,
+        moveResearchFlowIntoValueCard,
+      };
 
       const DAILY_TEXT = {
         kicker: 'Daily Research Brief',
@@ -5826,8 +6118,11 @@ window.$docsify = {
         }
 
         // 生成论文页面 HTML + 正文
-        const paperHtml = renderPaperFromMeta(meta);
-        return protectMarkdownMathForDocsify(paperHtml + body);
+        const researchValue = extractResearchValueSectionFromMarkdown(body);
+        const paperHtml = renderPaperFromMeta(meta, {
+          researchValueMarkdown: researchValue.section,
+        });
+        return protectMarkdownMathForDocsify(paperHtml + researchValue.body);
       });
 
       // --- Docsify 生命周期钩子 ---
@@ -5879,6 +6174,10 @@ window.$docsify = {
 
         // 论文页标题条排版（只对 docs/YYYYMM/DD/*.md 生效）
         applyPaperTitleBar();
+        if (isPaperPage && mainContent) {
+          const paperRoot = mainContent.querySelector(`:scope > .${DPR_PAGE_CONTENT_CLASS}`) || mainContent;
+          applyPaperResearchValueCard(paperRoot);
+        }
 
         // 论文页左右切换：更新导航列表并绑定事件（只绑定一次）
         updateNavState();
