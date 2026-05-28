@@ -5583,6 +5583,7 @@ window.$docsify = {
             routeId,
             href: a ? a.getAttribute('href') || hashHrefFromRouteId(routeId) : hashHrefFromRouteId(routeId),
             title: normalizeDailyText((a && a.textContent) || (payload && payload.title) || routeId),
+            titleZh: normalizeDailyText((payload && (payload.title_zh || payload.titleZh)) || ''),
             score,
             tags,
             evidence: normalizeDailyText((payload && payload.evidence) || ''),
@@ -5654,6 +5655,10 @@ window.$docsify = {
           const scoreHtml = score ? `<span class="dpr-daily-score-pill">${escapeHtml(score)}</span>` : '';
           const chips = dailyTopicChipsHtml(entry.tags, section === 'deep' ? 5 : 3);
           const evidence = shortDailyText(entry.evidence, 170);
+          const titleZh = normalizeDailyText(entry.titleZh || entry.title_zh || '');
+          const titleZhHtml = titleZh
+            ? `<div class="dpr-daily-paper-title-zh">${escapeHtml(titleZh)}</div>`
+            : '';
           const evidenceHtml = evidence
             ? `<div class="dpr-daily-paper-evidence"><span>${escapeHtml(DAILY_TEXT.evidence)}</span>${escapeHtml(evidence)}</div>`
             : '';
@@ -5662,6 +5667,7 @@ window.$docsify = {
             `  <div class="dpr-daily-paper-index">${String(index + 1).padStart(2, '0')}</div>`,
             '  <div class="dpr-daily-paper-main">',
             `    <a class="dpr-daily-paper-title" href="${hashHrefFromRouteId(entry.routeId) || escapeHtml(entry.href)}">${escapeHtml(entry.title)}</a>`,
+            titleZhHtml,
             `    <div class="dpr-daily-paper-meta">${scoreHtml}${chips}</div>`,
             `    ${evidenceHtml}`,
             '  </div>',

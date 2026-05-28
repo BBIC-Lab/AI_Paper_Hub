@@ -237,7 +237,9 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
 
             self.assertFalse((docs_dir / "_home_notice.md").exists())
             self.assertFalse((docs_dir / "_home_promo.md").exists())
-            self.assertIn("## 最新日报", content)
+            self.assertIn("<h3>最新日报</h3>", content)
+            self.assertNotIn("## 最新日报", content)
+            self.assertNotIn("<h3>日报 · 2026-05-19</h3>", content)
             self.assertNotIn("Start Here", content)
             forbidden_phrases = [
                 "".join(["宣传", "占位"]),
@@ -247,6 +249,28 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             ]
             for phrase in forbidden_phrases:
                 self.assertNotIn(phrase, content)
+
+    def test_daily_report_card_includes_chinese_title(self):
+        content = self.mod.build_daily_report_html(
+            date_str="20260528",
+            date_label="2026-05-28",
+            generated_at="2026-05-28 09:30:00 北京时间",
+            recommend_exists=True,
+            deep_entries=[
+                (
+                    "202605/28/test-paper",
+                    "Test Paper Title",
+                    "测试论文标题",
+                    [("score", "9.0"), ("query", "alignment")],
+                )
+            ],
+            quick_entries=[],
+            paper_evidence_by_id={"202605/28/test-paper": "matches the subscription"},
+            summary="今日推荐 1 篇论文。",
+        )
+
+        self.assertIn('class="dpr-daily-paper-title"', content)
+        self.assertIn('<div class="dpr-daily-paper-title-zh">测试论文标题</div>', content)
 
     def test_update_sidebar_removes_initial_empty_daily_placeholder(self):
         with tempfile.TemporaryDirectory() as d:

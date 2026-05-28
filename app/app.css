@@ -7504,6 +7504,14 @@ body.dpr-paper-page .paper-hero-evidence span {
   color: var(--dpr-accent-color-hover) !important;
 }
 
+.markdown-section .dpr-daily-paper-title-zh {
+  margin-top: 4px;
+  color: var(--dpr-quiet-muted) !important;
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.48;
+}
+
 .markdown-section .dpr-daily-paper-meta {
   margin-top: 9px;
 }
