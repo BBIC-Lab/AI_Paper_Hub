@@ -2160,6 +2160,7 @@ body.close .chat-footer {
   left: 0 !important;
   margin-left: var(--sidebar-width, 260px) !important;
   padding-left: 0 !important;
+  padding-top: 30px !important;
   display: flex !important;
   justify-content: center !important;
   /* 默认在 sidebar 展开/收起（body.close 切换）时做轻微过渡 */
@@ -2562,6 +2563,7 @@ article.markdown-section {
     left: 0 !important;
     right: 0 !important;
     padding-left: 0 !important;
+    padding-top: 10px !important;
     width: 100% !important;
     max-width: 100% !important;
     position: static !important;
