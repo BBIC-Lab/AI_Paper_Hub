@@ -30,6 +30,11 @@ try:
 except Exception:  # pragma: no cover
     from src.paper_figures import ensure_paper_figures
 
+try:
+    from research_profile import format_research_directions_for_prompt, resolve_research_directions
+except Exception:  # pragma: no cover
+    from src.research_profile import format_research_directions_for_prompt, resolve_research_directions
+
 CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
 RANGE_DATE_RE = re.compile(r"^(\d{8})-(\d{8})$")
 BEIJING_TZ = timezone(timedelta(hours=8))
@@ -169,6 +174,14 @@ def load_config() -> dict:
     except Exception as e:
         log(f"[WARN] 读取 config.yaml 失败：{e}")
         return {}
+
+
+def load_research_direction_context() -> Dict[str, Any]:
+    return resolve_research_directions(load_config())
+
+
+def build_research_direction_prompt_context(context: Dict[str, Any] | None = None) -> str:
+    return format_research_directions_for_prompt(context or load_research_direction_context())
 
 
 def resolve_docs_dir() -> str:
@@ -573,6 +586,7 @@ def generate_deep_summary(md_file_path: str, txt_file_path: str, max_retries: in
         with open(txt_file_path, "r", encoding="utf-8") as f:
             paper_txt_content = f.read()
 
+    research_context_text = build_research_direction_prompt_context()
     system_prompt = (
         "你是一名资深学术论文分析助手，请使用中文、以 Markdown 形式，"
         "对给定论文做结构化、深入、客观的总结。"
@@ -586,8 +600,21 @@ def generate_deep_summary(md_file_path: str, txt_file_path: str, max_retries: in
         "5. 实验数量与充分性：大概做了多少组实验（如不同数据集、消融实验等），这些实验是否充分、是否客观、公平。\n"
         "6. 论文的主要结论与发现。\n"
         "7. 优点：方法或实验设计上有哪些亮点。\n"
-        "8. 不足与局限：包括实验覆盖、偏差风险、应用限制等。\n\n"
+        "8. 不足与局限：包括实验覆盖、偏差风险、应用限制等。\n"
+        "9. 对读者研究方向的启发与意义：必须基于“读者研究方向”分析当前推荐论文对读者的启发、意义、可借鉴点和下一步行动；"
+        "如果关联较弱，要明确写“弱相关”，并说明仅有哪些间接启发。\n\n"
         "请用分层标题和项目符号（Markdown 格式）组织上述内容，语言尽量简洁但信息要尽量完整。\n"
+        "最后一节必须放在全文末尾（在“（完）”之前），并使用下面这种 HTML 卡片结构输出，不要使用代码围栏：\n"
+        '<section class="dpr-research-insight-card">\n'
+        '  <div class="dpr-research-insight-kicker">Research Direction Insight</div>\n'
+        "  <h3>对读者研究方向的启发与意义</h3>\n"
+        "  <p><strong>关联方向：</strong>列出最相关的 1-3 个读者研究方向关键词；若弱相关则写“弱相关”。</p>\n"
+        "  <ul>\n"
+        "    <li><strong>启发与意义：</strong>说明这篇论文对读者方向可能提供的具体启发。</li>\n"
+        "    <li><strong>可借鉴点：</strong>说明可迁移的方法、实验、数据或失败经验。</li>\n"
+        "    <li><strong>下一步建议：</strong>说明读者是否值得深挖、复现、跟进或仅扫读。</li>\n"
+        "  </ul>\n"
+        "</section>\n"
         "若需要写数学符号或公式，请使用 Markdown 数学格式：行内公式用 $...$，块级公式用 $$...$$，不要输出裸括号形式如 (T) 或 (D_K)。"
         "多条公式请分别包裹为独立数学片段；中文说明、中文标点不要放进 $...$ 或 $$...$$ 内，例如写作 $a=b$，最终损失为 $L$。\n"
         "要求：最后单独输出一行“（完）”作为结束标记。"
@@ -596,6 +623,7 @@ def generate_deep_summary(md_file_path: str, txt_file_path: str, max_retries: in
     messages = [{"role": "system", "content": system_prompt}]
     if paper_txt_content:
         messages.append({"role": "user", "content": f"### 论文 PDF 提取文本 ###\n{paper_txt_content}"})
+    messages.append({"role": "user", "content": f"### 读者研究方向 ###\n{research_context_text}"})
     messages.append({"role": "user", "content": f"### 论文 Markdown 元数据 ###\n{paper_md_content}"})
     messages.append({"role": "user", "content": user_prompt})
 
@@ -614,6 +642,7 @@ def generate_deep_summary(md_file_path: str, txt_file_path: str, max_retries: in
             # 续写一次：避免输出被截断
             cont_messages = [
                 {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"### 读者研究方向 ###\n{research_context_text}"},
                 {"role": "user", "content": "你上一次的总结可能被截断了，请从中断处继续补全，不要重复已输出内容。"},
                 {"role": "user", "content": f"上一次输出如下：\n\n{summary}\n\n请继续补全，最后以一行“（完）”结束。"},
             ]

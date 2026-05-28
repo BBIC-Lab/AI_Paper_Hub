@@ -7,6 +7,7 @@
 window.SubscriptionsManager = (function () {
   const MAX_KEYWORDS_PER_PROFILE = 6;
   const MAX_INTENT_QUERIES_PER_PROFILE = 4;
+  const MAX_RESEARCH_DIRECTIONS = 8;
   const DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10;
   const DEFAULT_DAILY_RECALL_WINDOW_DAYS = 3;
   const DEFAULT_CARRYOVER_WINDOW_DAYS = 3;
@@ -34,6 +35,8 @@ window.SubscriptionsManager = (function () {
   let emailSaveBtn = null;
   let emailTestBtn = null;
   let emailMsgEl = null;
+  let researchSaveBtn = null;
+  let researchMsgEl = null;
   let settingsDirtyBadge = null;
   let activeSettingsPage = 'search';
   let lastConfigSource = '';
@@ -426,6 +429,78 @@ window.SubscriptionsManager = (function () {
     return out;
   };
 
+  const splitResearchDirectionText = (value) => String(value || '')
+    .split(/[、，,；;\n\r]+/)
+    .map((item) => normalizeText(item))
+    .filter(Boolean);
+
+  const normalizeResearchDirections = (value) => {
+    const rawItems = Array.isArray(value)
+      ? value.flatMap((item) => splitResearchDirectionText(item))
+      : splitResearchDirectionText(value);
+    const seen = new Set();
+    const out = [];
+    for (const item of rawItems) {
+      const key = item.toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+      if (out.length >= MAX_RESEARCH_DIRECTIONS) break;
+    }
+    return out;
+  };
+
+  const getConfiguredResearchDirections = (config) => {
+    const readerProfile = isPlainObject(config && config.reader_profile)
+      ? config.reader_profile
+      : {};
+    return normalizeResearchDirections(readerProfile.research_directions || []);
+  };
+
+  const getRawResearchDirections = (config) => {
+    const readerProfile = isPlainObject(config && config.reader_profile)
+      ? config.reader_profile
+      : {};
+    return Array.isArray(readerProfile.research_directions)
+      ? readerProfile.research_directions.map((item) => String(item || ''))
+      : [];
+  };
+
+  const getFallbackResearchDirections = (config) => {
+    const subs = isPlainObject(config && config.subscriptions) ? config.subscriptions : {};
+    const profiles = Array.isArray(subs.intent_profiles) ? subs.intent_profiles : [];
+    const raw = [];
+    profiles.forEach((profile) => {
+      if (!isPlainObject(profile)) return;
+      if (profile.enabled === false || profile.paused === true) return;
+      (Array.isArray(profile.keywords) ? profile.keywords : []).forEach((item) => {
+        const normalized = normalizeKeywordItem(item);
+        if (normalized && normalized.keyword) raw.push(normalized.keyword);
+      });
+    });
+    return normalizeResearchDirections(raw);
+  };
+
+  const resolveResearchDirections = (config) => {
+    const configured = getConfiguredResearchDirections(config);
+    if (configured.length) {
+      return { directions: configured, source: 'configured' };
+    }
+    return { directions: getFallbackResearchDirections(config), source: 'fallback' };
+  };
+
+  const normalizeReaderProfile = (config) => {
+    const next = isPlainObject(config) ? config : {};
+    const readerProfile = isPlainObject(next.reader_profile)
+      ? cloneDeep(next.reader_profile)
+      : {};
+    readerProfile.research_directions = normalizeResearchDirections(
+      readerProfile.research_directions || [],
+    );
+    next.reader_profile = readerProfile;
+    return next;
+  };
+
   const normalizeIntentQueryItem = (item) => {
     if (typeof item === 'string') {
       const query = normalizeText(item);
@@ -505,6 +580,12 @@ window.SubscriptionsManager = (function () {
         ? '保存当前设置到 config.yaml'
         : '当前没有未保存修改';
     }
+    if (researchSaveBtn) {
+      researchSaveBtn.classList.toggle('is-dirty', hasUnsavedChanges);
+      researchSaveBtn.title = hasUnsavedChanges
+        ? '保存当前研究方向到 config.yaml'
+        : '当前没有未保存修改';
+    }
   };
 
   const activateSettingsPage = (pageKey) => {
@@ -559,6 +640,7 @@ window.SubscriptionsManager = (function () {
       el.textContent = String(windows.daysWindow);
     });
     syncEmailSettingsFields();
+    renderResearchDirections();
 
     if (profileCountEl) {
       profileCountEl.textContent = String(profiles.length);
@@ -624,7 +706,7 @@ window.SubscriptionsManager = (function () {
     }
   };
 
-  const refreshQuickRunButtons = () => {
+  const refreshQuickRunButtons = (options = {}) => {
     const blocked = hasUnsavedChanges;
     [quickRunTodayBtn, quickRun10dBtn, quickRun30dBtn, quickRun30dStandardBtn].forEach((btn) => {
       if (!btn) return;
@@ -639,7 +721,9 @@ window.SubscriptionsManager = (function () {
       quickRunMsgEl.style.color = '#c00';
     }
     updateSettingsChrome();
-    renderSettingsSnapshot();
+    if (options.renderSnapshot !== false) {
+      renderSettingsSnapshot();
+    }
   };
 
   const setQuickRunMessage = (text, color) => {
@@ -1081,6 +1165,7 @@ window.SubscriptionsManager = (function () {
 
   const normalizeSubscriptions = (config) => {
     const next = cloneDeep(config || {});
+    normalizeReaderProfile(next);
     if (!next.subscriptions) next.subscriptions = {};
     const subs = next.subscriptions;
 
@@ -1115,9 +1200,131 @@ window.SubscriptionsManager = (function () {
   };
 
   const setMessage = (text, color) => {
-    if (!msgEl) return;
-    msgEl.textContent = text || '';
-    msgEl.style.color = color || '#666';
+    if (msgEl) {
+      msgEl.textContent = text || '';
+      msgEl.style.color = color || '#666';
+    }
+    if (researchMsgEl) {
+      researchMsgEl.textContent = text || '';
+      researchMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const setResearchMessage = (text, color) => {
+    if (researchMsgEl) {
+      researchMsgEl.textContent = text || '';
+      researchMsgEl.style.color = color || '#666';
+    }
+    if (msgEl) {
+      msgEl.textContent = text || '';
+      msgEl.style.color = color || '#666';
+    }
+  };
+
+  const setResearchDirectionsDraft = (items, options = {}) => {
+    const next = cloneDeep(draftConfig || {});
+    const readerProfile = isPlainObject(next.reader_profile)
+      ? cloneDeep(next.reader_profile)
+      : {};
+    readerProfile.research_directions = options.normalize === false
+      ? (Array.isArray(items) ? items.map((item) => String(item || '')) : [])
+      : normalizeResearchDirections(items || []);
+    next.reader_profile = readerProfile;
+    draftConfig = options.normalize === false ? next : normalizeSubscriptions(next);
+    hasUnsavedChanges = true;
+    refreshQuickRunButtons({ renderSnapshot: options.renderSnapshot !== false });
+  };
+
+  const renderResearchDirections = () => {
+    if (!panel) return;
+    const listEl = document.getElementById('dpr-research-direction-list');
+    const countEl = document.getElementById('dpr-research-direction-count');
+    const fallbackEl = document.getElementById('dpr-research-direction-fallback');
+    if (!listEl) return;
+    const active = document.activeElement;
+    const activeInList = active && active.closest && active.closest('#dpr-research-direction-list');
+    const configured = getConfiguredResearchDirections(draftConfig || {});
+    const resolved = resolveResearchDirections(draftConfig || {});
+    const fallback = getFallbackResearchDirections(draftConfig || {});
+
+    if (countEl) {
+      countEl.textContent = `${configured.length}/${MAX_RESEARCH_DIRECTIONS}`;
+    }
+    if (fallbackEl) {
+      if (configured.length) {
+        fallbackEl.textContent = '已使用你手动配置的研究方向；清空后会自动回退到检索配置关键词。';
+      } else if (fallback.length) {
+        fallbackEl.textContent = `未手动配置时，将使用检索关键词：${fallback.join('、')}`;
+      } else {
+        fallbackEl.textContent = '尚未配置研究方向，也未从检索配置读取到可回退关键词。';
+      }
+    }
+
+    if (activeInList) return;
+    if (!configured.length) {
+      listEl.innerHTML = `
+        <div class="dpr-research-empty">
+          <strong>未手动配置研究方向</strong>
+          <span>${escapeHtml(resolved.directions.length ? '报告会使用检索配置关键词作为研究方向。' : '请先添加研究方向或完善检索关键词。')}</span>
+        </div>
+      `;
+      return;
+    }
+    listEl.innerHTML = configured.map((item, index) => `
+      <label class="dpr-research-direction-item">
+        <input class="dpr-research-direction-check" type="checkbox" data-research-direction-index="${index}" />
+        <span class="dpr-research-direction-index">${String(index + 1).padStart(2, '0')}</span>
+        <input class="dpr-research-direction-input" type="text" value="${escapeHtml(item)}" data-research-direction-index="${index}" aria-label="研究方向 ${index + 1}" />
+      </label>
+    `).join('');
+  };
+
+  const addResearchDirectionsFromInput = () => {
+    const inputEl = document.getElementById('dpr-research-bulk-input');
+    const raw = inputEl ? inputEl.value : '';
+    const incoming = normalizeResearchDirections(raw);
+    if (!incoming.length) {
+      setResearchMessage('请输入至少 1 个研究方向关键词；多条请用 、，逗号或分号分隔。', '#c00');
+      return;
+    }
+    const current = getConfiguredResearchDirections(draftConfig || {});
+    const merged = normalizeResearchDirections(current.concat(incoming));
+    const added = Math.max(0, merged.length - current.length);
+    setResearchDirectionsDraft(merged);
+    if (inputEl) inputEl.value = '';
+    if (merged.length >= MAX_RESEARCH_DIRECTIONS && current.length + incoming.length > MAX_RESEARCH_DIRECTIONS) {
+      setResearchMessage(`已保留前 ${MAX_RESEARCH_DIRECTIONS} 个研究方向，超出的关键词未加入。`, '#c90');
+    } else if (added === 0) {
+      setResearchMessage('没有新增关键词；可能与已有研究方向重复。', '#c90');
+    } else {
+      setResearchMessage(`已新增 ${added} 个研究方向，记得点击右下角保存。`, '#080');
+    }
+  };
+
+  const deleteSelectedResearchDirections = () => {
+    const checks = Array.from(document.querySelectorAll('.dpr-research-direction-check:checked'));
+    if (!checks.length) {
+      setResearchMessage('请先勾选要删除的研究方向。', '#c00');
+      return;
+    }
+    const selected = new Set(
+      checks.map((el) => parseInt(el.getAttribute('data-research-direction-index') || '-1', 10)),
+    );
+    const current = getConfiguredResearchDirections(draftConfig || {});
+    const next = current.filter((_item, idx) => !selected.has(idx));
+    setResearchDirectionsDraft(next);
+    setResearchMessage(`已删除 ${checks.length} 个研究方向，记得点击右下角保存。`, '#080');
+  };
+
+  const updateResearchDirectionAt = (index, value, options = {}) => {
+    const current = getRawResearchDirections(draftConfig || {});
+    if (index < 0 || index >= current.length) return;
+    const next = current.slice();
+    next[index] = options.normalize === false ? String(value || '') : normalizeText(value);
+    setResearchDirectionsDraft(next, {
+      normalize: options.normalize !== false,
+      renderSnapshot: options.renderSnapshot !== false,
+    });
   };
 
   const ensureOverlay = () => {
@@ -1168,6 +1375,10 @@ window.SubscriptionsManager = (function () {
               <button class="dpr-settings-nav-btn dpr-settings-nav-btn-privacy" type="button" data-settings-page="secrets" aria-selected="false">
                 <span class="dpr-settings-nav-icon">🔐</span>
                 <span class="dpr-settings-nav-text">密钥配置</span>
+              </button>
+              <button class="dpr-settings-nav-btn dpr-settings-nav-btn-privacy" type="button" data-settings-page="research" aria-selected="false">
+                <span class="dpr-settings-nav-icon">🧭</span>
+                <span class="dpr-settings-nav-text">研究方向</span>
               </button>
               <button class="dpr-settings-nav-btn dpr-settings-nav-btn-privacy" type="button" data-settings-page="email" aria-selected="false">
                 <span class="dpr-settings-nav-icon">✉️</span>
@@ -1392,6 +1603,50 @@ window.SubscriptionsManager = (function () {
               </div>
             </section>
 
+            <section class="dpr-settings-page dpr-settings-page-with-save" data-settings-page-panel="research" hidden>
+              <div class="dpr-settings-page-head">
+                <div>
+                  <div class="dpr-settings-page-kicker">Privacy / Research Profile</div>
+                  <h2>研究方向</h2>
+                  <p>配置最多 ${MAX_RESEARCH_DIRECTIONS} 个个人研究方向关键词，AI 精读会据此分析论文对你的启发和意义。</p>
+                </div>
+                <span id="dpr-research-direction-count" class="dpr-research-count-pill">0/${MAX_RESEARCH_DIRECTIONS}</span>
+              </div>
+              <div class="dpr-settings-card dpr-research-card">
+                <div class="dpr-settings-card-head">
+                  <div>
+                    <h3>批量新增关键词</h3>
+                    <p>一次新增多条时，请用“、”“，”“,”“；”“;”或换行显式区分不同关键词。</p>
+                  </div>
+                </div>
+                <div class="dpr-research-add-row">
+                  <textarea
+                    id="dpr-research-bulk-input"
+                    rows="3"
+                    placeholder="例如：symbolic regression、equation discovery；interpretable machine learning"
+                  ></textarea>
+                  <button id="dpr-research-add-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">新增关键词</button>
+                </div>
+                <div id="dpr-research-direction-fallback" class="dpr-research-fallback-note"></div>
+              </div>
+              <div class="dpr-settings-card dpr-research-card">
+                <div class="dpr-settings-card-head">
+                  <div>
+                    <h3>已配置研究方向</h3>
+                    <p>每个关键词单独成框，可勾选后批量删除；编辑完成后点击右下角保存。</p>
+                  </div>
+                  <button id="dpr-research-delete-selected-btn" class="arxiv-tool-btn dpr-research-delete-btn" type="button">删除选中</button>
+                </div>
+                <div id="dpr-research-direction-list" class="dpr-research-direction-list"></div>
+              </div>
+              <div id="dpr-research-settings-msg" class="dpr-settings-message">
+                提示：研究方向会写入 config.yaml；如果为空，报告会回退使用检索配置中的关键词。
+              </div>
+              <div class="dpr-settings-save-row">
+                <button id="dpr-research-save-btn" class="arxiv-tool-btn dpr-settings-save-btn" type="button">保存研究方向</button>
+              </div>
+            </section>
+
             <section class="dpr-settings-page" data-settings-page-panel="email" hidden>
               <div class="dpr-settings-page-head">
                 <div>
@@ -1520,6 +1775,8 @@ window.SubscriptionsManager = (function () {
     panel = document.getElementById('arxiv-search-panel');
 
     saveBtn = document.getElementById('arxiv-config-save-btn');
+    researchSaveBtn = document.getElementById('dpr-research-save-btn');
+    researchMsgEl = document.getElementById('dpr-research-settings-msg');
     closeBtn = document.getElementById('arxiv-search-close-btn');
     msgEl = document.getElementById('dpr-smart-msg');
     settingsDirtyBadge = document.getElementById('dpr-settings-unsaved-badge');
@@ -1715,6 +1972,47 @@ window.SubscriptionsManager = (function () {
     if (saveBtn && !saveBtn._bound) {
       saveBtn._bound = true;
       saveBtn.addEventListener('click', saveDraftConfig);
+    }
+
+    researchSaveBtn = document.getElementById('dpr-research-save-btn');
+    researchMsgEl = document.getElementById('dpr-research-settings-msg');
+    if (researchSaveBtn && !researchSaveBtn._bound) {
+      researchSaveBtn._bound = true;
+      researchSaveBtn.addEventListener('click', saveDraftConfig);
+    }
+
+    const researchAddBtn = document.getElementById('dpr-research-add-btn');
+    if (researchAddBtn && !researchAddBtn._bound) {
+      researchAddBtn._bound = true;
+      researchAddBtn.addEventListener('click', addResearchDirectionsFromInput);
+    }
+
+    const researchDeleteBtn = document.getElementById('dpr-research-delete-selected-btn');
+    if (researchDeleteBtn && !researchDeleteBtn._bound) {
+      researchDeleteBtn._bound = true;
+      researchDeleteBtn.addEventListener('click', deleteSelectedResearchDirections);
+    }
+
+    const researchList = document.getElementById('dpr-research-direction-list');
+    if (researchList && !researchList._bound) {
+      researchList._bound = true;
+      researchList.addEventListener('input', (e) => {
+        const input = e.target && e.target.closest
+          ? e.target.closest('.dpr-research-direction-input')
+          : null;
+        if (!input) return;
+        const index = parseInt(input.getAttribute('data-research-direction-index') || '-1', 10);
+        updateResearchDirectionAt(index, input.value, { normalize: false, renderSnapshot: false });
+      });
+      researchList.addEventListener('blur', (e) => {
+        const input = e.target && e.target.closest
+          ? e.target.closest('.dpr-research-direction-input')
+          : null;
+        if (!input) return;
+        const index = parseInt(input.getAttribute('data-research-direction-index') || '-1', 10);
+        updateResearchDirectionAt(index, input.value, { normalize: true, renderSnapshot: true });
+        setResearchMessage('研究方向已更新，记得点击右下角保存。', '#080');
+      }, true);
     }
 
     if (panel && !panel._settingsNavBound) {
@@ -1940,6 +2238,8 @@ window.SubscriptionsManager = (function () {
       resolvePaperWindows: (config) => resolvePaperWindows(cloneDeep(config || {})),
       getWindowWarningText: (value) => getWindowWarningText(value),
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
+      normalizeResearchDirections: (value) => normalizeResearchDirections(value),
+      resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
     },
   };
 })();

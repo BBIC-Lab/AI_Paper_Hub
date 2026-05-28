@@ -190,6 +190,18 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertEqual(meta["score"], "8.5 订阅评分")
         self.assertEqual(meta["score_label"], "订阅评分")
 
+    def test_research_direction_prompt_context_mentions_configured_source(self):
+        text = self.mod.build_research_direction_prompt_context(
+            {
+                "source": "configured",
+                "directions": ["symbolic regression", "equation discovery"],
+            }
+        )
+
+        self.assertIn("用户手动配置", text)
+        self.assertIn("- symbolic regression", text)
+        self.assertIn("- equation discovery", text)
+
     def test_subscription_score_label_still_maps_to_stars(self):
         self.assertEqual(self.mod.score_to_star_rating("8.5 订阅评分"), 4.5)
         html = self.mod.build_sidebar_stars_html("8.5 订阅评分")

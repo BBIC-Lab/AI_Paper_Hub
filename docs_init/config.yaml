@@ -1,6 +1,8 @@
 ﻿github:
   owner: ''
   repo: AI_Daily_Paper_Reader
+reader_profile:
+  research_directions: []
 arxiv_paper_setting:
   mode: standard
   days_window: 9
