@@ -7750,6 +7750,88 @@ body.dpr-paper-page .paper-glance-content {
   font-size: 0.88rem;
 }
 
+body.dpr-paper-page .paper-abstract-fold {
+  margin: 18px 0 22px;
+  border: 1px solid rgba(18, 62, 90, 0.12);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--dpr-quiet-shadow-sm);
+  overflow: hidden;
+}
+
+body.dpr-paper-page .paper-abstract-fold-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+body.dpr-paper-page .paper-abstract-fold-title {
+  display: inline-flex;
+  gap: 10px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+body.dpr-paper-page .paper-abstract-fold-title span {
+  color: var(--dpr-heading-color) !important;
+  font-size: 0.94rem;
+  font-weight: 780;
+  letter-spacing: 0.01em;
+}
+
+body.dpr-paper-page .paper-abstract-fold-title em {
+  color: var(--dpr-quiet-muted) !important;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 650;
+}
+
+body.dpr-paper-page .paper-abstract-fold-toggle {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  border: 1px solid rgba(18, 62, 90, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--dpr-accent-color) !important;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.2;
+}
+
+body.dpr-paper-page .paper-abstract-fold-toggle:hover {
+  border-color: rgba(15, 118, 110, 0.24);
+  background: #ffffff;
+  color: var(--dpr-accent-color-hover) !important;
+}
+
+body.dpr-paper-page .paper-abstract-fold-content {
+  max-height: 0;
+  padding: 0 16px;
+  border-top: 1px solid transparent;
+  color: var(--dpr-quiet-text) !important;
+  font-size: 0.94rem;
+  line-height: 1.78;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 220ms ease, opacity 180ms ease, padding 180ms ease, border-color 180ms ease;
+}
+
+body.dpr-paper-page .paper-abstract-fold.is-open .paper-abstract-fold-content {
+  padding: 2px 16px 24px;
+  border-top-color: rgba(18, 62, 90, 0.08);
+  opacity: 1;
+}
+
+body.dpr-paper-page .paper-abstract-fold-content p {
+  margin: 0.75em 0 0 !important;
+  color: inherit !important;
+  line-height: inherit !important;
+}
+
 body.dpr-paper-page .paper-figure-toolbar {
   justify-content: space-between;
 }

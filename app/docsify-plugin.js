@@ -4138,6 +4138,75 @@ window.$docsify = {
         });
       };
 
+      const applyPaperAbstractFold = (root) => {
+        if (!root || root.querySelector('.paper-abstract-fold')) return;
+
+        const abstractHeading = Array.from(root.querySelectorAll('h2, h3')).find((heading) => (
+          String(heading.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === 'abstract'
+        ));
+        if (!abstractHeading) return;
+
+        const contentNodes = [];
+        let cursor = abstractHeading.nextElementSibling;
+        while (cursor) {
+          const tag = String(cursor.tagName || '').toUpperCase();
+          if (tag === 'H1' || tag === 'H2' || tag === 'HR') break;
+          contentNodes.push(cursor);
+          cursor = cursor.nextElementSibling;
+        }
+        if (!contentNodes.length) return;
+
+        const wrapper = document.createElement('section');
+        wrapper.className = 'paper-abstract-fold is-collapsed';
+        wrapper.id = abstractHeading.id || 'abstract';
+
+        const contentId = `paper-abstract-content-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const header = document.createElement('div');
+        header.className = 'paper-abstract-fold-header';
+
+        const title = document.createElement('div');
+        title.className = 'paper-abstract-fold-title';
+        title.innerHTML = '<span>Abstract</span><em>English original</em>';
+
+        const toggle = document.createElement('button');
+        toggle.className = 'paper-abstract-fold-toggle';
+        toggle.type = 'button';
+        toggle.setAttribute('aria-controls', contentId);
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.textContent = '展开';
+
+        const content = document.createElement('div');
+        content.id = contentId;
+        content.className = 'paper-abstract-fold-content';
+        content.setAttribute('aria-hidden', 'true');
+        content.style.maxHeight = '0px';
+
+        header.appendChild(title);
+        header.appendChild(toggle);
+        wrapper.appendChild(header);
+        wrapper.appendChild(content);
+        abstractHeading.replaceWith(wrapper);
+        contentNodes.forEach((node) => content.appendChild(node));
+
+        const setCollapsed = (collapsed) => {
+          wrapper.classList.toggle('is-collapsed', collapsed);
+          wrapper.classList.toggle('is-open', !collapsed);
+          toggle.textContent = collapsed ? '展开' : '收起';
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          content.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+          content.style.maxHeight = collapsed ? '0px' : `${content.scrollHeight}px`;
+        };
+
+        toggle.addEventListener('click', () => {
+          setCollapsed(!wrapper.classList.contains('is-collapsed'));
+        });
+        window.addEventListener('resize', () => {
+          if (wrapper.classList.contains('is-open')) {
+            content.style.maxHeight = `${content.scrollHeight}px`;
+          }
+        });
+      };
+
       // 论文页导航：左右滑动 / 键盘方向键切换论文
       const DPR_NAV_STATE = {
         paperHrefs: [],
@@ -5805,6 +5874,7 @@ window.$docsify = {
           if (isReportPage) applyLegacyDailyReportCards(mathRoot);
           restoreMarkdownMathPlaceholdersInEl(mathRoot);
           renderMathInEl(mathRoot);
+          if (isPaperPage) applyPaperAbstractFold(mathRoot);
         }
 
         // 论文页标题条排版（只对 docs/YYYYMM/DD/*.md 生效）
