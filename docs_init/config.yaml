@@ -5,7 +5,8 @@ reader_profile:
   research_directions: []
 arxiv_paper_setting:
   mode: standard
-  days_window: 9
+  days_window: 5
+  carryover_days: 7
   docs_dir: docs
   prefer_supabase_read: true
 supabase:

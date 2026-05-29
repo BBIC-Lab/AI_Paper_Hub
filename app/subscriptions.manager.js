@@ -9,8 +9,8 @@ window.SubscriptionsManager = (function () {
   const MAX_INTENT_QUERIES_PER_PROFILE = 4;
   const MAX_RESEARCH_DIRECTIONS = 8;
   const DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10;
-  const DEFAULT_DAILY_RECALL_WINDOW_DAYS = 3;
-  const DEFAULT_CARRYOVER_WINDOW_DAYS = 3;
+  const DEFAULT_DAILY_RECALL_WINDOW_DAYS = 5;
+  const DEFAULT_CARRYOVER_WINDOW_DAYS = 7;
   const LONG_WINDOW_WARNING_THRESHOLD_DAYS = 7;
   const LONG_WINDOW_WARNING_TEXT = '窗口较长，可能增加旧论文反复进入候选池的概率，提高token消耗。';
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
@@ -1478,7 +1478,7 @@ window.SubscriptionsManager = (function () {
                 <div class="dpr-quick-run-grid">
                   <button id="arxiv-admin-quick-run-today-btn" class="chat-quick-run-item" type="button">
                     <span>默认日报</span>
-                    <small>使用检索配置回溯 <b data-dpr-default-window-days>3</b> 天，标准抓取</small>
+                    <small>使用检索配置回溯 <b data-dpr-default-window-days>5</b> 天，标准抓取</small>
                   </button>
                   <button id="arxiv-admin-quick-run-10d-btn" class="chat-quick-run-item" type="button">
                     <span>十天内论文</span>

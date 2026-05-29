@@ -23,7 +23,7 @@ SRC_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SRC_DIR, ".."))
 CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
 LONG_RANGE_DAYS_THRESHOLD = 10
-MAIN_DEFAULT_DAYS = 3
+MAIN_DEFAULT_DAYS = 5
 SKIMS_FETCH_DAYS_THRESHOLD = 11
 BEIJING_TZ = timezone(timedelta(hours=8))
 

@@ -66,9 +66,9 @@ def log(message: str) -> None:
 def resolve_supabase_recall_window(config: Dict[str, Any], end_dt: datetime | None = None) -> tuple[datetime, datetime]:
   paper_setting = (config or {}).get("arxiv_paper_setting") or {}
   try:
-    days = int(paper_setting.get("days_window") or 3)
+    days = int(paper_setting.get("days_window") or 5)
   except Exception:
-    days = 3
+    days = 5
   safe_days = max(days, 1)
 
   anchor = end_dt or datetime.now(timezone.utc)

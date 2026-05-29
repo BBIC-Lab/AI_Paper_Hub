@@ -138,11 +138,11 @@ function testNormalizeSubscriptionsDefaultsDailyPaperLimits() {
   assert.equal(profile.quick_daily_paper_limit, 10);
 }
 
-function testNormalizeSubscriptionsDefaultsPaperWindowsToThreeDays() {
+function testNormalizeSubscriptionsDefaultsPaperWindows() {
   const normalized = normalizeSubscriptions(buildBaseConfig());
 
-  assert.equal(normalized.arxiv_paper_setting.days_window, 3);
-  assert.equal(normalized.arxiv_paper_setting.carryover_days, 3);
+  assert.equal(normalized.arxiv_paper_setting.days_window, 5);
+  assert.equal(normalized.arxiv_paper_setting.carryover_days, 7);
 }
 
 function testResolvePaperWindowsKeepsSeparateCarryoverWindow() {
@@ -251,7 +251,7 @@ testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
 testNormalizeSubscriptionsKeepsSectionDailyPaperLimits();
 testNormalizeSubscriptionsDefaultsDailyPaperLimits();
-testNormalizeSubscriptionsDefaultsPaperWindowsToThreeDays();
+testNormalizeSubscriptionsDefaultsPaperWindows();
 testResolvePaperWindowsKeepsSeparateCarryoverWindow();
 testResolvePaperWindowsFallsBackCarryoverToLegacyDaysWindow();
 testWindowWarningOnlyAppearsForLongWindow();

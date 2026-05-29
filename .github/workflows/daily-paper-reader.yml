@@ -2,7 +2,7 @@ name: daily-paper-reader
 
 on:
   schedule:
-    - cron: "30 18 * * *" # 北京时间次日 02:30（UTC 18:30）
+    - cron: "30 18 * * 0-4" # 北京时间周一至周五 02:30（UTC 周日至周四 18:30）
   workflow_dispatch:
     inputs:
       run_enrich:
@@ -10,9 +10,9 @@ on:
         required: false
         default: "false"
       fetch_days:
-        description: "回溯抓取天数（例如 3 或 30）；留空则使用默认配置"
+        description: "回溯抓取天数（例如 5 或 30）；留空则使用默认配置"
         required: false
-        default: "3"
+        default: "5"
       fetch_mode:
         description: "抓取模式：auto/standard/skims（auto 按 fetch-days 阈值决定，standard/ skims 强制）"
         required: false
@@ -178,12 +178,18 @@ jobs:
           FETCH_DAYS="${{ github.event.inputs.fetch_days }}"
           FETCH_MODE="${{ github.event.inputs.fetch_mode }}"
           PROFILE_TAG="${{ github.event.inputs.profile_tag }}"
+          if [ -z "$FETCH_DAYS" ]; then
+            FETCH_DAYS="5"
+          fi
           ARGS=()
           if [ "$RUN_ENRICH" = "true" ]; then
             ARGS+=(--run-enrich)
           fi
           if [ -n "$FETCH_DAYS" ]; then
             ARGS+=(--fetch-days "$FETCH_DAYS")
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS+=(--fetch-ignore-seen)
           fi
           if [ -n "$FETCH_MODE" ]; then
             ARGS+=(--fetch-mode "$FETCH_MODE")

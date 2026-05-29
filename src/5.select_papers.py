@@ -48,7 +48,8 @@ MODES = {
     },
 }
 
-CARRYOVER_DAYS = 3
+DEFAULT_LOOKBACK_DAYS = 5
+CARRYOVER_DAYS = 7
 CARRYOVER_RATIO = 0.5
 SOURCE_FRESH_FETCH = "fresh_fetch"
 SOURCE_CARRYOVER_CACHE = "carryover_cache"
@@ -1257,7 +1258,7 @@ def main() -> None:
         output_dir = os.path.abspath(os.path.join(ROOT_DIR, output_dir))
 
     setting = load_arxiv_paper_setting()
-    lookback_days = resolve_positive_int(setting.get("days_window"), CARRYOVER_DAYS)
+    lookback_days = resolve_positive_int(setting.get("days_window"), DEFAULT_LOOKBACK_DAYS)
     carryover_days = resolve_carryover_days(setting)
     mode_text = args.modes
     if not mode_text:

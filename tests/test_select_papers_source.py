@@ -78,7 +78,7 @@ class SelectPapersSourceTagTest(unittest.TestCase):
             3,
         )
         self.assertEqual(self.mod.resolve_carryover_days({"days_window": 4}), 4)
-        self.assertEqual(self.mod.resolve_carryover_days({}), 3)
+        self.assertEqual(self.mod.resolve_carryover_days({}), 7)
 
     def test_build_carryover_out_marks_source(self):
         out = self.mod.build_carryover_out(
