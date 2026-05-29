@@ -333,6 +333,11 @@ function testResearchValueBoundaryStopsBeforeGeneratedSections() {
   assert.equal(isBoundary(normalParagraph), false);
 }
 
+function testSidebarEmojiStripperIsShared() {
+  assert.equal(typeof window.DPRSidebarUtils.stripSidebarEmoji, 'function');
+  assert.equal(window.DPRSidebarUtils.stripSidebarEmoji('\u{1F5C2}\uFE0F Daily Papers'), 'Daily Papers');
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
@@ -344,5 +349,6 @@ testScoreLabelRendersAfterScore();
 testResearchValueSectionMovesBeforeResearchFlow();
 testResearchValueExtractorKeepsDoneMarkerInBody();
 testResearchValueBoundaryStopsBeforeGeneratedSections();
+testSidebarEmojiStripperIsShared();
 
 console.log('docsify markdown math tests passed');

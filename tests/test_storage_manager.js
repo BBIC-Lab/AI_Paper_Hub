@@ -197,6 +197,48 @@ function testRemoveSidebarLines() {
   assert.ok(next.includes('* Daily Papers'));
 }
 
+function createStorageContainerStub() {
+  return {
+    dataset: {},
+    innerHTML: '',
+    addEventListener() {},
+    removeEventListener() {},
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+  };
+}
+
+async function testRefreshIfEmptyDoesNotAutoScan() {
+  global.document = global.document || {
+    getElementById() {
+      return null;
+    },
+  };
+  let scanCount = 0;
+  const container = createStorageContainerStub();
+  const api = {
+    async listRepoTree() {
+      scanCount += 1;
+      return [];
+    },
+    async loadRepoTextFile() {
+      return { content: '' };
+    },
+  };
+
+  global.window.DPRStorageManager.mount(container, { api });
+  global.window.DPRStorageManager.refreshIfEmpty();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+
+  assert.equal(scanCount, 0);
+  assert.ok(container.innerHTML.includes('删除前请先扫描运行态文件'));
+  assert.ok(container.innerHTML.includes('想执行删除前，请先点击上方“扫描运行态文件”。'));
+}
+
 (async function run() {
   testRouteRecognition();
   testInventoryAndSelectionPlan();
@@ -205,5 +247,6 @@ function testRemoveSidebarLines() {
   testMergeSidebarContextLines();
   testHelpers();
   testRemoveSidebarLines();
+  await testRefreshIfEmptyDoesNotAutoScan();
   console.log('storage manager tests passed');
 })();

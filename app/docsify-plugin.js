@@ -48,6 +48,15 @@ window.$docsify = {
 
       const defaultAuthors = ['Daily Paper Reader Team', 'Docsify Renderer'];
 
+      const stripSidebarEmoji = (value) =>
+        String(value || '')
+          .replace(/^(?:[\s\uFE0F\u200D]*(?:[\u2600-\u27BF]|[\u{1F300}-\u{1FAFF}])\uFE0F?\s*)+/u, '')
+          .trim();
+
+      window.DPRSidebarUtils = Object.assign({}, window.DPRSidebarUtils || {}, {
+        stripSidebarEmoji,
+      });
+
       // Zotero 摘要结构标记：方便后续在 Zotero 插件中重新解析
       const START_MARKER = '【🤖 AI Summary】';
       const CHAT_MARKER = '【💬 Chat History】';
@@ -1411,11 +1420,6 @@ window.$docsify = {
           if (raw.startsWith('#')) return `#/${raw.slice(1).replace(/^\//, '')}`;
           return `#/${raw.replace(/^\//, '')}`;
         };
-
-        const stripSidebarEmoji = (value) =>
-          String(value || '')
-            .replace(/^(?:[\s\uFE0F\u200D]*(?:[\u2600-\u27BF]|[\u{1F300}-\u{1FAFF}])\uFE0F?\s*)+/u, '')
-            .trim();
 
         const getSidebarEmoji = (type, text) => {
           const value = stripSidebarEmoji(text);

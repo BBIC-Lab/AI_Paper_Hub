@@ -1068,7 +1068,7 @@ window.DPRStorageManager = (function () {
   };
 
   const renderTree = () => {
-    if (!state.inventory) return '<div class="dpr-settings-empty">点击“扫描运行态文件”后显示可删除层级。</div>';
+    if (!state.inventory) return '<div class="dpr-settings-empty">想执行删除前，请先点击上方“扫描运行态文件”。</div>';
     if (!state.inventory.leaves.length) {
       return '<div class="dpr-settings-empty">没有扫描到 Daily Papers 或本地 PDF 运行态报告。</div>';
     }
@@ -1156,7 +1156,8 @@ window.DPRStorageManager = (function () {
   };
 
   const selectedPlanSummaryText = () => {
-    if (!state.inventory || !state.plan || !state.plan.leaves.length) return '未选择运行态文件';
+    if (!state.inventory) return '删除前请先扫描运行态文件';
+    if (!state.plan || !state.plan.leaves.length) return '未选择运行态文件';
     const summary = summarizePlan(state.plan, state.inventory);
     return `已选择 ${summary.paperCount} 篇文献，${summary.pathCount} 个路径`;
   };
@@ -1447,7 +1448,11 @@ window.DPRStorageManager = (function () {
   };
 
   const deleteSelected = async () => {
-    if (!state.inventory || !state.plan || !state.plan.leaves.length) {
+    if (!state.inventory) {
+      setMessage('想执行删除前，请先点击“扫描运行态文件”。', '#c00');
+      return;
+    }
+    if (!state.plan || !state.plan.leaves.length) {
       setMessage('请先选中要删除的运行态文件。', '#c00');
       return;
     }
@@ -1710,8 +1715,8 @@ window.DPRStorageManager = (function () {
   };
 
   const refreshIfEmpty = () => {
-    if (!state.inventory && !state.loading) refresh();
-    refreshTrash();
+    // Keep opening the storage page cheap; runtime scanning is user-triggered only.
+    render();
   };
 
   return {
