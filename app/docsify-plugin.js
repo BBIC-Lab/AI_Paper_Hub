@@ -3796,16 +3796,11 @@ window.$docsify = {
                 tone: 'danger',
               })
               : null;
-            const startedAt = new Date().toISOString();
             try {
               if (progress) progress.setMessage('正在移动文件到回收站...');
               const result = await deleteSidebarEntryFromRepo({ href, title });
               removeSidebarLiAndEmptySection(li);
               updateNavState();
-              if (progress) progress.setMessage('正在等待页面重建...');
-              if (storageRuntime && typeof storageRuntime.waitForRuntimeRebuild === 'function') {
-                await storageRuntime.waitForRuntimeRebuild(window.SubscriptionsGithubToken, startedAt, progress);
-              }
               const impacted = currentHref && (
                 currentHref === normalizeSidebarDeleteHref(href) ||
                 (storageRuntime && typeof storageRuntime.routeImpactedByPaths === 'function'
@@ -3813,15 +3808,17 @@ window.$docsify = {
                   : false)
               );
               if (impacted) {
-                window.location.hash = '#/';
+                window.location.hash = fallbackHref || '#/';
               } else if (currentHref && currentHref === href) {
                 window.location.hash = fallbackHref || '#/';
               }
               requestAnimationFrame(() => {
                 syncSidebarActiveIndicator({ animate: false });
               });
-              if (progress) progress.setMessage('正在刷新页面...');
-              window.location.reload();
+              if (progress) {
+                progress.setMessage('已移入回收站，可在设置页恢复或彻底删除。');
+                progress.close();
+              }
             } catch (err) {
               btn.disabled = false;
               btn.classList.remove('is-busy');

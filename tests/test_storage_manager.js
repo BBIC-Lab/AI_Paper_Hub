@@ -351,6 +351,28 @@ async function testOpenTrashShowsBlockingProgressBeforeScanCompletes() {
   );
 }
 
+async function testRuntimeMutationDoesNotForceReload() {
+  const runtime = global.window.DPRStorageManager.__runtime;
+  const originalLocation = global.window.location;
+  let reloadCount = 0;
+  global.window.location = {
+    href: 'https://example.github.io/AI_Daily_Paper_Reader/#/202605/28/demo',
+    hash: '#/202605/28/demo',
+    reload() {
+      reloadCount += 1;
+    },
+  };
+
+  await runtime.reloadAfterRuntimeMutation({
+    impacted: true,
+    removedHrefs: ['#/202605/28/demo'],
+  });
+
+  assert.equal(global.window.location.hash, '#/');
+  assert.equal(reloadCount, 0);
+  global.window.location = originalLocation;
+}
+
 (async function run() {
   testRouteRecognition();
   testInventoryAndSelectionPlan();
@@ -361,5 +383,6 @@ async function testOpenTrashShowsBlockingProgressBeforeScanCompletes() {
   testRemoveSidebarLines();
   await testRefreshIfEmptyDoesNotAutoScan();
   await testOpenTrashShowsBlockingProgressBeforeScanCompletes();
+  await testRuntimeMutationDoesNotForceReload();
   console.log('storage manager tests passed');
 })();

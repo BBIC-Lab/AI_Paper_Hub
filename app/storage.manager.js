@@ -978,27 +978,35 @@ window.DPRStorageManager = (function () {
     };
   };
 
-  const waitForRuntimeRebuild = async (api, startedAt, progress) => {
-    if (progress) progress.setMessage('正在等待页面重建...');
-    if (api && typeof api.waitForPagesBuild === 'function') {
-      const result = await api.waitForPagesBuild(startedAt, {
-        requireWorkflow: false,
-        timeoutMs: 90000,
-        pollMs: 5000,
-        fallbackMs: 2600,
-      });
-      return result;
+  const removeVisibleSidebarHrefs = (hrefs = []) => {
+    if (typeof document === 'undefined' || !document.querySelector) return;
+    const nav = document.querySelector('.sidebar-nav');
+    if (!nav) return;
+    const targets = new Set(
+      (hrefs || [])
+        .map((href) => normalizeHref(href).replace(/\.md$/i, '').replace(/\/$/, ''))
+        .filter(Boolean),
+    );
+    if (!targets.size) return;
+    nav.querySelectorAll('a[href]').forEach((link) => {
+      const href = normalizeHref(link.getAttribute('href') || '')
+        .replace(/\.md$/i, '')
+        .replace(/\/$/, '');
+      if (!targets.has(href)) return;
+      const li = link.closest && link.closest('li');
+      if (li && li.remove) li.remove();
+    });
+    if (window.syncSidebarActiveIndicator && typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => window.syncSidebarActiveIndicator({ animate: false }));
     }
-    await delay(2600);
-    return { skipped: true };
   };
 
-  const reloadAfterRuntimeMutation = async ({ impacted = false } = {}) => {
+  const reloadAfterRuntimeMutation = async ({ impacted = false, removedHrefs = [] } = {}) => {
+    removeVisibleSidebarHrefs(removedHrefs);
     if (impacted) {
       window.location.hash = '#/';
       await delay(80);
     }
-    window.location.reload();
   };
 
   const renderPathCards = () => PATH_CARDS.map((item) => `
@@ -1516,7 +1524,6 @@ window.DPRStorageManager = (function () {
       message: '正在准备删除计划...',
       tone: 'danger',
     });
-    const startedAt = new Date().toISOString();
     try {
       progress.setMessage('正在读取回收站清单...');
       const manifest = await loadTrashManifest(api);
@@ -1534,10 +1541,18 @@ window.DPRStorageManager = (function () {
         'chore: move runtime files to trash',
         { requireWorkflow: false },
       );
-      await waitForRuntimeRebuild(api, startedAt, progress);
-      progress.setMessage('正在刷新页面...');
-      setMessage('已将选中运行态文件移入回收站。', '#080');
-      await reloadAfterRuntimeMutation({ impacted: routeImpactedByPaths(window.location.hash, plan.paths) });
+      progress.setMessage('正在更新当前页面状态...');
+      await reloadAfterRuntimeMutation({
+        impacted: routeImpactedByPaths(window.location.hash, plan.paths),
+        removedHrefs: (plan.leaves || []).map((leaf) => leaf.href),
+      });
+      state.inventory = null;
+      state.selectedIds = new Set();
+      state.expandedIds = new Set();
+      state.plan = null;
+      render();
+      setMessage('已将选中运行态文件移入回收站。如需继续删除，请重新扫描运行态文件。', '#080');
+      progress.close();
     } catch (err) {
       progress.setError(`删除失败：${err && err.message ? err.message : err}`);
       setMessage(`删除失败：${err && err.message ? err.message : err}`, '#c00');
@@ -1559,7 +1574,7 @@ window.DPRStorageManager = (function () {
     const summary = summarizeTrashPlan(plan, state.trashInventory);
     const ok = await showConfirmPhrase({
       title: '恢复运行态',
-      message: `将恢复 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径，完成后等待页面重建并刷新。`,
+      message: `将恢复 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径，完成后会刷新回收站清单。`,
       phrase: RESTORE_CONFIRM_PHRASE,
       confirmLabel: '确认恢复',
       tone: 'restore',
@@ -1573,7 +1588,6 @@ window.DPRStorageManager = (function () {
       message: '正在准备恢复计划...',
       tone: 'restore',
     });
-    const startedAt = new Date().toISOString();
     try {
       progress.setMessage('正在更新回收站清单和侧边栏...');
       const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
@@ -1596,10 +1610,15 @@ window.DPRStorageManager = (function () {
         'chore: restore runtime files from trash',
         { requireWorkflow: false },
       );
-      await waitForRuntimeRebuild(api, startedAt, progress);
-      progress.setMessage('正在刷新页面...');
-      setMessage('回收站选中项已恢复。', '#080');
-      await reloadAfterRuntimeMutation({ impacted: false });
+      progress.setMessage('正在重新扫描回收站文件...');
+      await refreshTrash({
+        progress,
+        renderMain: true,
+        throwOnError: true,
+        message: '正在重新扫描回收站文件...',
+      });
+      setMessage('回收站选中项已恢复。站点发布可能稍后同步。', '#080');
+      progress.close();
     } catch (err) {
       progress.setError(`恢复失败：${err && err.message ? err.message : err}`);
       setMessage(`恢复失败：${err && err.message ? err.message : err}`, '#c00');
@@ -1802,7 +1821,6 @@ window.DPRStorageManager = (function () {
       buildSidebarTrashItem,
       mergeSidebarContextLines,
       showBlockingProgress,
-      waitForRuntimeRebuild,
       reloadAfterRuntimeMutation,
       routeImpactedByPaths,
     },
