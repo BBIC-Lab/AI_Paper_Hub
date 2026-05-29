@@ -604,6 +604,10 @@ window.SubscriptionsManager = (function () {
       section.classList.toggle('is-active', selected);
       section.hidden = !selected;
     });
+
+    if (key === 'storage' && window.DPRStorageManager) {
+      window.DPRStorageManager.refreshIfEmpty();
+    }
   };
 
   const renderSettingsSnapshot = () => {
@@ -1725,20 +1729,12 @@ window.SubscriptionsManager = (function () {
                 <div>
                   <div class="dpr-settings-page-kicker">Danger / Storage</div>
                   <h2>存储</h2>
-                  <p>检查当前配置来源、草稿状态与本地设置，不直接删除运行产物。</p>
+                  <p>查看运行态路径，按单篇、单日/批次或完整集合批量删除；删除前会自动创建回收站分支。</p>
                 </div>
-                <button id="dpr-settings-reload-config-btn" class="arxiv-tool-btn" type="button">重新加载配置</button>
+                <button id="dpr-storage-open-trash-page" class="arxiv-tool-btn dpr-storage-danger-btn" type="button">回收站</button>
               </div>
-              <div class="dpr-settings-card">
-                <div class="dpr-settings-card-head">
-                  <div>
-                    <h3>配置与草稿</h3>
-                    <p>关闭窗口前若有未保存修改，将提示是否丢弃本地草稿。</p>
-                  </div>
-                </div>
-                <div id="dpr-settings-storage-status" class="dpr-storage-status">
-                  <div class="dpr-settings-empty">等待配置加载...</div>
-                </div>
+              <div id="dpr-storage-manager-root">
+                <div class="dpr-settings-empty">正在初始化存储管理器...</div>
               </div>
             </section>
 
@@ -1780,6 +1776,9 @@ window.SubscriptionsManager = (function () {
     closeBtn = document.getElementById('arxiv-search-close-btn');
     msgEl = document.getElementById('dpr-smart-msg');
     settingsDirtyBadge = document.getElementById('dpr-settings-unsaved-badge');
+    if (window.DPRStorageManager) {
+      window.DPRStorageManager.mount(document.getElementById('dpr-storage-manager-root'));
+    }
     activateSettingsPage(activeSettingsPage);
     updateSettingsChrome();
     renderSettingsSnapshot();

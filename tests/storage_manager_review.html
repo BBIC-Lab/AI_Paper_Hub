@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Storage Manager Review</title>
+  <link rel="stylesheet" href="../app/app.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #edf3ef;
+      color: #172033;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #arxiv-search-panel {
+      position: static;
+      width: min(1180px, 100%);
+      height: auto;
+      margin: 0 auto;
+      transform: none;
+      opacity: 1;
+      pointer-events: auto;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.16);
+    }
+    #arxiv-search-panel-main {
+      padding: 0;
+      overflow: visible;
+    }
+    .review-note {
+      max-width: 1180px;
+      margin: 0 auto 14px;
+      color: #475467;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="review-note">
+    内部最小审查页：使用 mock GitHub API，不会访问网络，也不会真的创建分支或删除文件。
+  </div>
+  <div id="arxiv-search-panel">
+    <main id="arxiv-search-panel-main">
+      <section class="dpr-settings-page is-active" data-settings-page-panel="storage">
+        <div class="dpr-settings-page-head">
+          <div>
+            <div class="dpr-settings-page-kicker">Danger / Storage</div>
+            <h2>存储</h2>
+            <p>查看运行态路径，按单篇、单日/批次或完整集合批量删除；删除前会自动创建回收站分支。</p>
+          </div>
+          <button id="dpr-storage-open-trash-page" class="arxiv-tool-btn dpr-storage-danger-btn" type="button">回收站</button>
+        </div>
+        <div id="dpr-storage-manager-root"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const sidebar = [
+      '* Daily Papers',
+      '  * 26-05-28',
+      '    * <a class="dpr-sidebar-brief-link" href="#/260528/28/README">日报</a>',
+      '    * 精读区',
+      '      * <a class="dpr-sidebar-item-link" href="#/260528/28/paper-one" data-sidebar-item="{&quot;title&quot;:&quot;Representation Learning for Agents&quot;}">Paper One</a>',
+      '      * <a class="dpr-sidebar-item-link" href="#/260528/28/paper-two" data-sidebar-item="{&quot;title&quot;:&quot;Efficient Scientific Discovery&quot;}">Paper Two</a>',
+      '* 本地 PDF 解析',
+      '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>',
+      '  * 2026-05-29',
+      '    * <a class="dpr-sidebar-item-link" href="#/local-pdf/20260529/local-demo" data-sidebar-item="{&quot;title&quot;:&quot;Local Demo PDF&quot;}">Local Demo</a>',
+    ].join('\\n');
+
+    const files = [
+      { path: 'docs/_sidebar.md', type: 'blob', size: 1800 },
+      { path: 'docs/260528/28/README.md', type: 'blob', size: 4200 },
+      { path: 'docs/260528/28/paper-one.md', type: 'blob', size: 5200 },
+      { path: 'docs/260528/28/paper-one.txt', type: 'blob', size: 18000 },
+      { path: 'docs/260528/28/paper-two.md', type: 'blob', size: 4800 },
+      { path: 'docs/260528/28/paper-two.txt', type: 'blob', size: 16000 },
+      { path: 'docs/assets/figures/arxiv/paper-one/fig-001.webp', type: 'blob', size: 90000 },
+      { path: 'docs/local-pdf/20260529/local-demo.md', type: 'blob', size: 5600 },
+      { path: 'docs/local-pdf/20260529/local-demo.txt', type: 'blob', size: 21000 },
+      { path: 'docs/assets/local_pdfs/local-demo.pdf', type: 'blob', size: 1200000 },
+      { path: 'docs/assets/figures/local-pdf/local-demo/fig-001.webp', type: 'blob', size: 78000 },
+    ];
+
+    window.SubscriptionsGithubToken = {
+      async listRepoTree() {
+        return { files };
+      },
+      async loadRepoTextFile(path) {
+        if (path === 'docs/_sidebar.md') return { content: sidebar };
+        if (path.includes('local-demo')) {
+          return {
+            content: [
+              '---',
+              'title: Local Demo PDF',
+              'pdf: assets/local_pdfs/local-demo.pdf',
+              'figures_json: "[{\\"url\\":\\"assets/figures/local-pdf/local-demo/fig-001.webp\\"}]"',
+              '---',
+            ].join('\\n'),
+          };
+        }
+        return {
+          content: [
+            '---',
+            'title: Daily Paper',
+            'figures_json: "[{\\"url\\":\\"assets/figures/arxiv/paper-one/fig-001.webp\\"}]"',
+            '---',
+          ].join('\\n'),
+        };
+      },
+      async listRecycleBranches() {
+        return [
+          { name: 'recycle/adpr-storage-20260529-094501', sha: 'abc123456789' },
+        ];
+      },
+      async createRecycleBranch(name) {
+        console.log('mock create branch', name);
+        return { name };
+      },
+      async commitRepoChanges(changes, message) {
+        console.log('mock commit', message, changes);
+        return { commit: { sha: 'mock-delete' } };
+      },
+      async restoreRuntimeFromBranch(name) {
+        console.log('mock restore', name);
+        return { restored: files.map((item) => item.path) };
+      },
+      async deleteBranch(name) {
+        console.log('mock delete branch', name);
+        return {};
+      },
+    };
+  </script>
+  <script src="../app/storage.manager.js"></script>
+  <script>
+    window.DPRStorageManager.mount(document.getElementById('dpr-storage-manager-root'), {
+      autoRefresh: true,
+      autoRefreshTrash: true,
+    });
+  </script>
+</body>
+</html>

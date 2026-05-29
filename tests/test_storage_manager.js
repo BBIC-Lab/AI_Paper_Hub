@@ -1,0 +1,148 @@
+const assert = require('node:assert/strict');
+
+global.window = global.window || {
+  location: { href: 'https://example.github.io/AI_Daily_Paper_Reader/' },
+  setTimeout: (fn) => setTimeout(fn, 0),
+};
+
+require('../app/storage.manager.js');
+
+const {
+  normalizeHref,
+  DELETE_CONFIRM_PHRASE,
+  RESTORE_CONFIRM_PHRASE,
+  EMPTY_TRASH_CONFIRM_PHRASE,
+  routeFromRepoPath,
+  parseFrontMatter,
+  parseFiguresMeta,
+  createInventory,
+  buildDeletePlan,
+  enrichDeletePlan,
+  summarizePlan,
+  removeSidebarLines,
+  pathMatchesRuntime,
+} = global.window.DPRStorageManager.__test;
+
+function buildInventory() {
+  const sidebar = [
+    '* Daily Papers',
+    '  * 26-05-28',
+    '    * <a class="dpr-sidebar-brief-link" href="#/260528/28/README">日报</a>',
+    '    * 精读区',
+    '      * <a class="dpr-sidebar-item-link" href="#/260528/28/daily-paper" data-sidebar-item="{&quot;title&quot;:&quot;Daily Paper&quot;}">Daily Paper</a>',
+    '* 本地 PDF 解析',
+    '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>',
+    '  * 2026-05-29',
+    '    * <a class="dpr-sidebar-item-link" href="#/local-pdf/20260529/local-demo" data-sidebar-item="{&quot;title&quot;:&quot;Local Demo&quot;}">Local Demo</a>',
+  ].join('\n');
+  const tree = [
+    { path: 'docs/_sidebar.md', type: 'blob', size: 100 },
+    { path: 'docs/260528/28/README.md', type: 'blob', size: 200 },
+    { path: 'docs/260528/28/daily-paper.md', type: 'blob', size: 300 },
+    { path: 'docs/260528/28/daily-paper.txt', type: 'blob', size: 400 },
+    { path: 'docs/local-pdf/20260529/local-demo.md', type: 'blob', size: 500 },
+    { path: 'docs/local-pdf/20260529/local-demo.txt', type: 'blob', size: 600 },
+    { path: 'docs/assets/local_pdfs/local-demo.pdf', type: 'blob', size: 700 },
+    { path: 'docs/assets/figures/local-pdf/local-demo/fig-001.webp', type: 'blob', size: 800 },
+  ];
+  return createInventory({ tree, sidebar });
+}
+
+function testRouteRecognition() {
+  assert.deepEqual(routeFromRepoPath('docs/260528/28/demo.md'), {
+    routeId: '260528/28/demo',
+    type: 'daily',
+    groupKey: 'daily:260528/28',
+  });
+  assert.deepEqual(routeFromRepoPath('docs/local-pdf/20260529/demo.md'), {
+    routeId: 'local-pdf/20260529/demo',
+    type: 'local-pdf',
+    groupKey: 'local:20260529',
+  });
+  assert.equal(routeFromRepoPath('docs/260528/28/README.md'), null);
+}
+
+function testInventoryAndSelectionPlan() {
+  const inventory = buildInventory();
+  assert.equal(inventory.leaves.length, 2);
+  assert.equal(inventory.leaves[0].label, 'Local Demo');
+  assert.equal(inventory.leaves[1].label, 'Daily Paper');
+
+  const selected = new Set(['paper:local-pdf/20260529/local-demo']);
+  const plan = buildDeletePlan(inventory, selected);
+  assert.equal(plan.leaves.length, 1);
+  assert.ok(plan.paths.includes('docs/local-pdf/20260529/local-demo.md'));
+  assert.ok(plan.paths.includes('docs/local-pdf/20260529/local-demo.txt'));
+  assert.ok(plan.sidebarChanged);
+  assert.ok(!plan.nextSidebar.includes('#/local-pdf/20260529/local-demo'));
+  assert.ok(plan.nextSidebar.includes('#/local-pdf">上传解析</a>'));
+}
+
+async function testEnrichedPlanIncludesPdfAndFigures() {
+  const inventory = buildInventory();
+  const selected = new Set(['paper:local-pdf/20260529/local-demo']);
+  const basePlan = buildDeletePlan(inventory, selected);
+  const api = {
+    async loadRepoTextFile(path) {
+      assert.equal(path, 'docs/local-pdf/20260529/local-demo.md');
+      return {
+        content: [
+          '---',
+          'title: Local Demo',
+          'pdf: assets/local_pdfs/local-demo.pdf',
+          'figures_json: "[{\\"url\\":\\"assets/figures/local-pdf/local-demo/fig-001.webp\\"}]"',
+          '---',
+          '',
+        ].join('\n'),
+      };
+    },
+  };
+  const plan = await enrichDeletePlan(basePlan, api, inventory);
+  assert.ok(plan.paths.includes('docs/assets/local_pdfs/local-demo.pdf'));
+  assert.ok(plan.paths.includes('docs/assets/figures/local-pdf/local-demo/'));
+  const summary = summarizePlan(plan, inventory);
+  assert.equal(summary.paperCount, 1);
+  assert.ok(summary.fileCount >= 4);
+}
+
+function testHelpers() {
+  assert.equal(DELETE_CONFIRM_PHRASE, '删除运行态');
+  assert.equal(RESTORE_CONFIRM_PHRASE, '恢复运行态');
+  assert.equal(EMPTY_TRASH_CONFIRM_PHRASE, '清空回收站');
+  assert.equal(normalizeHref('/260528/28/demo.md?x=1'), '#/260528/28/demo');
+  const meta = parseFrontMatter([
+    '---',
+    'pdf: "assets/local_pdfs/demo.pdf"',
+    'figures_json: "[{\\"url\\":\\"assets/figures/demo/fig.webp\\"}]"',
+    '---',
+  ].join('\n'));
+  assert.equal(meta.pdf, 'assets/local_pdfs/demo.pdf');
+  assert.equal(parseFiguresMeta(meta)[0].url, 'assets/figures/demo/fig.webp');
+  assert.ok(pathMatchesRuntime('docs/assets/local_pdfs/demo.pdf'));
+  assert.ok(pathMatchesRuntime('docs/260528/28/demo.md'));
+  assert.ok(!pathMatchesRuntime('app/storage.manager.js'));
+}
+
+function testRemoveSidebarLines() {
+  const next = removeSidebarLines(
+    [
+      '* Daily Papers',
+      '  * 26-05-28',
+      '    * <a href="#/260528/28/README">日报</a>',
+      '    * <a href="#/260528/28/demo">Demo</a>',
+    ].join('\n'),
+    ['#/260528/28/demo', '#/260528/28/README'],
+  );
+  assert.ok(!next.includes('#/260528/28/demo'));
+  assert.ok(!next.includes('#/260528/28/README'));
+  assert.ok(next.includes('* Daily Papers'));
+}
+
+(async function run() {
+  testRouteRecognition();
+  testInventoryAndSelectionPlan();
+  await testEnrichedPlanIncludesPdfAndFigures();
+  testHelpers();
+  testRemoveSidebarLines();
+  console.log('storage manager tests passed');
+})();

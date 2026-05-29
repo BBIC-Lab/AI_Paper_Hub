@@ -294,8 +294,11 @@ window.SubscriptionsGithubToken = (function () {
       throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
     }
     const info = await resolveRepoInfoFromToken(token, options.requireWorkflow !== false);
+    const refQuery = options.ref || options.branch
+      ? `?ref=${encodeURIComponent(options.ref || options.branch)}`
+      : '';
     const res = await fetch(
-      `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${encodeRepoPath(path)}`,
+      `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${encodeRepoPath(path)}${refQuery}`,
       {
         headers: {
           Authorization: `token ${info.token}`,
@@ -314,6 +317,199 @@ window.SubscriptionsGithubToken = (function () {
       owner: info.owner,
       repo: info.repo,
       token: info.token,
+    };
+  };
+
+  const getRepoContext = async (options = {}) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, options.requireWorkflow !== false);
+    const repoApi = `https://api.github.com/repos/${info.owner}/${info.repo}`;
+    const repoData = await fetchGitHubJson(repoApi, info.token);
+    const branch = String(options.branch || repoData.default_branch || 'main').trim();
+    if (!branch) throw new Error('无法确定要写入的 Git 分支。');
+    return {
+      ...info,
+      repoApi,
+      defaultBranch: String(repoData.default_branch || 'main').trim() || 'main',
+      branch,
+      repoData,
+    };
+  };
+
+  const encodeBranchForGitRef = (branch) =>
+    encodeURIComponent(String(branch || '').trim()).replace(/%2F/g, '/');
+
+  const getBranchCommit = async (ctx, branch) => {
+    const cleanBranch = String(branch || ctx.branch || ctx.defaultBranch || 'main').trim();
+    const encodedBranch = encodeBranchForGitRef(cleanBranch);
+    const ref = await fetchGitHubJson(
+      `${ctx.repoApi}/git/ref/heads/${encodedBranch}`,
+      ctx.token,
+    );
+    const headSha = ref && ref.object && ref.object.sha;
+    if (!headSha) throw new Error(`无法读取 ${cleanBranch} 分支的 HEAD。`);
+    const commit = await fetchGitHubJson(`${ctx.repoApi}/git/commits/${headSha}`, ctx.token);
+    const treeSha = commit && commit.tree && commit.tree.sha;
+    if (!treeSha) throw new Error(`无法读取 ${cleanBranch} 分支的 tree。`);
+    return { branch: cleanBranch, headSha, commit, treeSha };
+  };
+
+  const listRepoTree = async (options = {}) => {
+    const ctx = await getRepoContext(options);
+    const head = await getBranchCommit(ctx, options.branch || ctx.branch);
+    const treeData = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${head.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    return {
+      owner: ctx.owner,
+      repo: ctx.repo,
+      branch: head.branch,
+      headSha: head.headSha,
+      treeSha: head.treeSha,
+      files: ((treeData && treeData.tree) || []).map((item) => ({
+        path: normalizeRepoPath(item && item.path),
+        type: item && item.type,
+        sha: item && item.sha,
+        size: Number((item && item.size) || 0),
+        mode: item && item.mode,
+      })),
+    };
+  };
+
+  const createRecycleBranch = async (branchName, options = {}) => {
+    const ctx = await getRepoContext(options);
+    const source = await getBranchCommit(ctx, options.fromBranch || ctx.branch);
+    const cleanBranch = String(branchName || '').trim();
+    if (!cleanBranch) throw new Error('缺少回收站分支名。');
+    return fetchGitHubJson(`${ctx.repoApi}/git/refs`, ctx.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ref: `refs/heads/${cleanBranch}`,
+        sha: source.headSha,
+      }),
+    });
+  };
+
+  const listRecycleBranches = async (prefix = 'recycle/adpr-storage-', options = {}) => {
+    const ctx = await getRepoContext(options);
+    const cleanPrefix = String(prefix || '').replace(/^refs\/heads\//, '');
+    const refs = await fetchGitHubJson(
+      `${ctx.repoApi}/git/matching-refs/heads/${encodeBranchForGitRef(cleanPrefix)}`,
+      ctx.token,
+    );
+    return (Array.isArray(refs) ? refs : [])
+      .map((ref) => {
+        const name = String((ref && ref.ref) || '').replace(/^refs\/heads\//, '');
+        return {
+          name,
+          sha: ref && ref.object && ref.object.sha,
+          ref: ref && ref.ref,
+        };
+      })
+      .filter((item) => item.name && item.name.startsWith(cleanPrefix))
+      .sort((a, b) => String(b.name).localeCompare(String(a.name)));
+  };
+
+  const deleteBranch = async (branchName, options = {}) => {
+    const ctx = await getRepoContext(options);
+    const cleanBranch = String(branchName || '').trim();
+    if (!cleanBranch) throw new Error('缺少要删除的分支名。');
+    return fetchGitHubJson(
+      `${ctx.repoApi}/git/refs/heads/${encodeBranchForGitRef(cleanBranch)}`,
+      ctx.token,
+      { method: 'DELETE' },
+    );
+  };
+
+  const runtimePathMatches = (path, matchers) => {
+    const clean = normalizeRepoPath(path);
+    const list = Array.isArray(matchers) && matchers.length
+      ? matchers
+      : [
+        'docs/_sidebar.md',
+        'docs/assets/figures/',
+        'docs/assets/local_pdfs/',
+        'docs/local-pdf/',
+        /^docs\/\d{6}\//,
+        /^docs\/\d{8}-\d{8}\//,
+      ];
+    return list.some((matcher) => {
+      if (matcher instanceof RegExp) return matcher.test(clean);
+      if (String(matcher).endsWith('/')) return clean.startsWith(String(matcher));
+      return clean === String(matcher);
+    });
+  };
+
+  const restoreRuntimeFromBranch = async (sourceBranch, options = {}) => {
+    const ctx = await getRepoContext(options);
+    const target = await getBranchCommit(ctx, options.branch || ctx.branch);
+    const source = await getBranchCommit(ctx, sourceBranch);
+    const sourceTree = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${source.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    const targetTree = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${target.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    const targetFiles = new Map(
+      ((targetTree && targetTree.tree) || [])
+        .filter((item) => item && item.type === 'blob' && item.path)
+        .map((item) => [normalizeRepoPath(item.path), item.sha]),
+    );
+    const restoreEntries = ((sourceTree && sourceTree.tree) || [])
+      .filter((item) => item && item.type === 'blob' && item.path && item.sha)
+      .filter((item) => runtimePathMatches(item.path, options.runtimeMatchers))
+      .filter((item) => options.overwrite === true || targetFiles.get(normalizeRepoPath(item.path)) !== item.sha)
+      .map((item) => ({
+        path: normalizeRepoPath(item.path),
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: item.sha,
+      }));
+
+    if (!restoreEntries.length) {
+      return { skipped: true, restored: [], branch: target.branch };
+    }
+
+    const newTree = await fetchGitHubJson(`${ctx.repoApi}/git/trees`, ctx.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_tree: target.treeSha,
+        tree: restoreEntries,
+      }),
+    });
+    const newCommit = await fetchGitHubJson(`${ctx.repoApi}/git/commits`, ctx.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: options.commitMessage || `chore: restore runtime files from ${sourceBranch}`,
+        tree: newTree.sha,
+        parents: [target.headSha],
+      }),
+    });
+    await fetchGitHubJson(
+      `${ctx.repoApi}/git/refs/heads/${encodeBranchForGitRef(target.branch)}`,
+      ctx.token,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sha: newCommit.sha,
+          force: false,
+        }),
+      },
+    );
+    return {
+      branch: target.branch,
+      commit: newCommit,
+      restored: restoreEntries.map((item) => item.path),
     };
   };
 
@@ -915,6 +1111,12 @@ window.SubscriptionsGithubToken = (function () {
     loadConfig,
     updateConfig,
     saveConfig,
+    getRepoContext,
+    listRepoTree,
+    createRecycleBranch,
+    listRecycleBranches,
+    deleteBranch,
+    restoreRuntimeFromBranch,
     loadRepoTextFile,
     saveRepoTextFile,
     updateRepoTextFile,
