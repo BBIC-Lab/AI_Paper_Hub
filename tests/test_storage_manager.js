@@ -164,6 +164,32 @@ function testMergeSidebarContextLines() {
   assert.equal((restored.match(/本地 PDF 解析/g) || []).length, 1);
 }
 
+function testMergeSidebarContextLinesScopesDuplicateSectionNames() {
+  const current = [
+    '* Daily Papers',
+    '  * 2026-05-29 <!--dpr-date:20260529-->',
+    '    * 精读区',
+    '      * <a class="dpr-sidebar-item-link" href="#/202605/29/today-paper">Today Paper</a>',
+    '  * 2026-05-28 <!--dpr-date:20260528-->',
+    '    * <a class="dpr-sidebar-brief-link" href="#/202605/28/README">日报</a>',
+    '    * 精读区',
+    '      * <a class="dpr-sidebar-item-link" href="#/202605/28/kept-paper">Kept Paper</a>',
+  ].join('\n');
+  const restored = mergeSidebarContextLines(current, [[
+    '* Daily Papers',
+    '  * 2026-05-28 <!--dpr-date:20260528-->',
+    '    * 精读区',
+    '      * <a class="dpr-sidebar-item-link" href="#/202605/28/restored-paper">Restored Paper</a>',
+  ]]);
+  const todayIndex = restored.indexOf('#/202605/29/today-paper');
+  const date28Index = restored.indexOf('2026-05-28');
+  const restoredIndex = restored.indexOf('#/202605/28/restored-paper');
+  const keptIndex = restored.indexOf('#/202605/28/kept-paper');
+  assert.ok(restoredIndex > date28Index);
+  assert.ok(restoredIndex > todayIndex);
+  assert.ok(restoredIndex > keptIndex);
+}
+
 function testHelpers() {
   assert.equal(DELETE_CONFIRM_PHRASE, '删除运行态');
   assert.equal(RESTORE_CONFIRM_PHRASE, '恢复运行态');
@@ -379,6 +405,7 @@ async function testRuntimeMutationDoesNotForceReload() {
   await testEnrichedPlanIncludesPdfAndFigures();
   testTrashManifestAndRestorePlan();
   testMergeSidebarContextLines();
+  testMergeSidebarContextLinesScopesDuplicateSectionNames();
   testHelpers();
   testRemoveSidebarLines();
   await testRefreshIfEmptyDoesNotAutoScan();

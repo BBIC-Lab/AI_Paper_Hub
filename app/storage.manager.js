@@ -293,6 +293,32 @@ window.DPRStorageManager = (function () {
     return insertAt;
   };
 
+  const subtreeEndIndex = (lines, parentIndex) => {
+    if (parentIndex < 0) return lines.length;
+    const indent = lineIndent(lines[parentIndex]);
+    let end = parentIndex + 1;
+    while (end < lines.length) {
+      const next = lines[end];
+      if (String(next || '').trim() && lineIndent(next) <= indent) break;
+      end += 1;
+    }
+    return end;
+  };
+
+  const findExistingContextLine = (lines, line, parentIndex) => {
+    const targetText = String(line || '').trim();
+    const targetIndent = lineIndent(line);
+    const start = parentIndex >= 0 ? parentIndex + 1 : 0;
+    const end = subtreeEndIndex(lines, parentIndex);
+    for (let i = start; i < end; i += 1) {
+      const candidate = lines[i];
+      if (String(candidate || '').trim() !== targetText) continue;
+      if (lineIndent(candidate) !== targetIndent) continue;
+      return i;
+    }
+    return -1;
+  };
+
   const mergeSidebarContextLines = (content, contextGroups) => {
     const raw = String(content || '').replace(/\r\n/g, '\n');
     const hadTrailingNewline = raw.endsWith('\n');
@@ -305,7 +331,7 @@ window.DPRStorageManager = (function () {
       if (leafHref && lines.some((line) => extractLineHref(line) === leafHref)) return;
       let parentIndex = -1;
       context.forEach((line) => {
-        const existing = lines.findIndex((candidate) => String(candidate || '').trim() === String(line || '').trim() && lineIndent(candidate) === lineIndent(line));
+        const existing = findExistingContextLine(lines, line, parentIndex);
         if (existing >= 0) {
           parentIndex = existing;
           return;
