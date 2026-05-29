@@ -338,6 +338,15 @@ function testSidebarEmojiStripperIsShared() {
   assert.equal(window.DPRSidebarUtils.stripSidebarEmoji('\u{1F5C2}\uFE0F Daily Papers'), 'Daily Papers');
 }
 
+function testSidebarCacheBusterTargetsOnlySidebar() {
+  assert.equal(typeof window.DPRAppendSidebarCacheBuster, 'function');
+  const sidebarUrl = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md');
+  assert.match(sidebarUrl, /^docs\/_sidebar\.md\?dpr_v=\d+$/);
+  const updated = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md?dpr_v=old&x=1');
+  assert.match(updated, /^docs\/_sidebar\.md\?dpr_v=\d+&x=1$/);
+  assert.equal(window.DPRAppendSidebarCacheBuster('docs/202605/28/README.md'), 'docs/202605/28/README.md');
+}
+
 testFullwidthCommaInsideInlineMath();
 testNarrativeTextIsMovedOutsideInlineMath();
 testDisplayMathAndFollowingInlineMathCanCoexist();
@@ -350,5 +359,6 @@ testResearchValueSectionMovesBeforeResearchFlow();
 testResearchValueExtractorKeepsDoneMarkerInBody();
 testResearchValueBoundaryStopsBeforeGeneratedSections();
 testSidebarEmojiStripperIsShared();
+testSidebarCacheBusterTargetsOnlySidebar();
 
 console.log('docsify markdown math tests passed');

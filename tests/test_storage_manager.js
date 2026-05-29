@@ -190,6 +190,54 @@ function testMergeSidebarContextLinesScopesDuplicateSectionNames() {
   assert.ok(restoredIndex > keptIndex);
 }
 
+function testRestorePlanRepairsStaleSidebarContextDate() {
+  const href = '#/202605/28/restored-paper';
+  const leafLine = `      * <a class="dpr-sidebar-item-link" href="${href}">Restored Paper</a>`;
+  const manifest = {
+    version: 1,
+    items: [{
+      id: 'stale-context',
+      routeId: '202605/28/restored-paper',
+      href,
+      type: 'daily',
+      groupKey: 'daily:202605/28',
+      label: 'Restored Paper',
+      paths: ['docs/202605/28/restored-paper.md'],
+      sidebarContextLines: [
+        '* Daily Papers',
+        '  * 2026-05-29 <!--dpr-date:20260529-->',
+        '    * 精读区',
+        leafLine,
+      ],
+    }],
+    extras: [],
+  };
+  const trash = createTrashInventory({
+    tree: [{ path: 'trash/docs/202605/28/restored-paper.md', type: 'blob', size: 200 }],
+    manifest,
+  });
+  const plan = buildTrashActionPlan(trash, new Set(['trash-paper:stale-context']));
+  assert.ok(plan.contextGroups[0].includes('  * 2026-05-28 <!--dpr-date:20260528-->'));
+  assert.ok(!plan.contextGroups[0].includes('  * 2026-05-29 <!--dpr-date:20260529-->'));
+
+  const current = [
+    '* Daily Papers',
+    '  * 2026-05-29 <!--dpr-date:20260529-->',
+    '    * 精读区',
+    leafLine,
+    '  * 2026-05-28 <!--dpr-date:20260528-->',
+    '    * 精读区',
+    '      * <a class="dpr-sidebar-item-link" href="#/202605/28/kept-paper">Kept Paper</a>',
+  ].join('\n');
+  const restored = mergeSidebarContextLines(current, plan.contextGroups);
+  const date29Index = restored.indexOf('2026-05-29');
+  const date28Index = restored.indexOf('2026-05-28');
+  const restoredIndex = restored.indexOf(href);
+  const block29 = restored.slice(date29Index, date28Index);
+  assert.ok(!block29.includes(href));
+  assert.ok(restoredIndex > date28Index);
+}
+
 function testHelpers() {
   assert.equal(DELETE_CONFIRM_PHRASE, '删除运行态');
   assert.equal(RESTORE_CONFIRM_PHRASE, '恢复运行态');
@@ -406,6 +454,7 @@ async function testRuntimeMutationDoesNotForceReload() {
   testTrashManifestAndRestorePlan();
   testMergeSidebarContextLines();
   testMergeSidebarContextLinesScopesDuplicateSectionNames();
+  testRestorePlanRepairsStaleSidebarContextDate();
   testHelpers();
   testRemoveSidebarLines();
   await testRefreshIfEmptyDoesNotAutoScan();

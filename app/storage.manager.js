@@ -261,12 +261,8 @@ window.DPRStorageManager = (function () {
 
   const lineIndent = (line) => (String(line || '').match(/^\s*/) || [''])[0].length;
 
-  const extractSidebarContextLines = (content, href) => {
-    const targetHref = normalizeHref(href);
-    if (!targetHref) return [];
-    const lines = String(content || '').replace(/\r\n/g, '\n').split('\n');
-    const index = lines.findIndex((line) => extractLineHref(line) === targetHref);
-    if (index < 0) return [];
+  const sidebarContextForLineIndex = (lines, index) => {
+    if (!Array.isArray(lines) || index < 0 || index >= lines.length) return [];
     const context = [lines[index]];
     let childIndent = lineIndent(lines[index]);
     for (let i = index - 1; i >= 0; i -= 1) {
@@ -279,6 +275,14 @@ window.DPRStorageManager = (function () {
       }
     }
     return context.filter((line) => String(line || '').trim());
+  };
+
+  const extractSidebarContextLines = (content, href) => {
+    const targetHref = normalizeHref(href);
+    if (!targetHref) return [];
+    const lines = String(content || '').replace(/\r\n/g, '\n').split('\n');
+    const index = lines.findIndex((line) => extractLineHref(line) === targetHref);
+    return sidebarContextForLineIndex(lines, index);
   };
 
   const insertAfterSubtree = (lines, parentIndex, childLine) => {
@@ -319,6 +323,16 @@ window.DPRStorageManager = (function () {
     return -1;
   };
 
+  const sidebarContextMatches = (actual, expected) => {
+    const normalize = (items) => (items || [])
+      .slice(0, -1)
+      .map((line) => String(line || '').trim())
+      .filter(Boolean);
+    const left = normalize(actual);
+    const right = normalize(expected);
+    return left.length === right.length && left.every((line, index) => line === right[index]);
+  };
+
   const mergeSidebarContextLines = (content, contextGroups) => {
     const raw = String(content || '').replace(/\r\n/g, '\n');
     const hadTrailingNewline = raw.endsWith('\n');
@@ -328,7 +342,12 @@ window.DPRStorageManager = (function () {
       const context = (Array.isArray(group) ? group : []).filter((line) => String(line || '').trim());
       if (!context.length) return;
       const leafHref = extractLineHref(context[context.length - 1]);
-      if (leafHref && lines.some((line) => extractLineHref(line) === leafHref)) return;
+      const existingLeafIndex = leafHref ? lines.findIndex((line) => extractLineHref(line) === leafHref) : -1;
+      if (existingLeafIndex >= 0) {
+        const existingContext = sidebarContextForLineIndex(lines, existingLeafIndex);
+        if (sidebarContextMatches(existingContext, context)) return;
+        lines.splice(existingLeafIndex, 1);
+      }
       let parentIndex = -1;
       context.forEach((line) => {
         const existing = findExistingContextLine(lines, line, parentIndex);
@@ -872,6 +891,44 @@ window.DPRStorageManager = (function () {
     }).items[0];
   };
 
+  const dailyGroupDateToken = (groupKey) => {
+    const clean = String(groupKey || '').replace(/^daily:/, '');
+    if (/^\d{6}\/\d{2}$/.test(clean)) return clean.replace('/', '');
+    if (/^\d{8}$/.test(clean)) return clean;
+    return '';
+  };
+
+  const dailyGroupContextLine = (groupKey) => {
+    const token = dailyGroupDateToken(groupKey);
+    return `  * ${formatGroupLabel(groupKey)}${token ? ` <!--dpr-date:${token}-->` : ''}`;
+  };
+
+  const restoreLeafContextLine = (leaf, context) => {
+    const href = normalizeHref((leaf && leaf.href) || `#/${leaf && leaf.routeId}`);
+    const existing = (context || []).find((line) => extractLineHref(line) === href);
+    if (existing) return existing;
+    return `      * <a class="dpr-sidebar-item-link" href="${href}">${escapeHtml((leaf && leaf.label) || fileStemTitle(leaf && leaf.routeId))}</a>`;
+  };
+
+  const restoreSidebarContextLines = (leaf) => {
+    const context = (Array.isArray(leaf && leaf.sidebarContextLines) ? leaf.sidebarContextLines : [])
+      .filter((line) => String(line || '').trim());
+    if (!leaf || leaf.type !== 'daily') return context;
+
+    const rootLine = context.find((line) => lineIndent(line) === 0 && /Daily Papers/i.test(String(line || '')))
+      || '* Daily Papers';
+    const groupLine = dailyGroupContextLine(leaf.groupKey || groupKeyFromRouteId(leaf.routeId));
+    const leafLine = restoreLeafContextLine(leaf, context);
+    const groupIndent = lineIndent(groupLine);
+    const leafIndent = lineIndent(leafLine);
+    const middle = context.filter((line) => {
+      if (extractLineHref(line)) return false;
+      const indent = lineIndent(line);
+      return indent > groupIndent && indent < leafIndent;
+    });
+    return [rootLine, groupLine, ...middle, leafLine];
+  };
+
   const summarizePlan = (plan, inventory) => {
     const fileCount = plan.paths.reduce((sum, path) => {
       if (path.endsWith('/')) return sum + directoryCount(inventory, path);
@@ -903,8 +960,9 @@ window.DPRStorageManager = (function () {
     const selectedGroups = [];
     (leaves || []).forEach((leaf) => {
       (leaf.paths || []).forEach((path) => paths.add(normalizeRepoPath(path)));
-      if (leaf.sidebarContextLines && leaf.sidebarContextLines.length) {
-        contextGroups.push(leaf.sidebarContextLines);
+      const context = restoreSidebarContextLines(leaf);
+      if (context.length) {
+        contextGroups.push(context);
       }
     });
     (inventory.roots || []).forEach((root) => {
@@ -969,6 +1027,13 @@ window.DPRStorageManager = (function () {
 
   const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+  const refreshSidebarCacheBuster = () => {
+    if (window.DPR_REFRESH_SIDEBAR_CACHE_BUSTER && typeof window.DPR_REFRESH_SIDEBAR_CACHE_BUSTER === 'function') {
+      return window.DPR_REFRESH_SIDEBAR_CACHE_BUSTER();
+    }
+    return '';
+  };
+
   const showBlockingProgress = ({ title = '正在处理运行态文件', message = '请稍候...', tone = 'neutral' } = {}) => {
     const overlay = document.createElement('div');
     overlay.className = `dpr-storage-progress-overlay is-${tone}`;
@@ -1028,6 +1093,7 @@ window.DPRStorageManager = (function () {
   };
 
   const reloadAfterRuntimeMutation = async ({ impacted = false, removedHrefs = [] } = {}) => {
+    refreshSidebarCacheBuster();
     removeVisibleSidebarHrefs(removedHrefs);
     if (impacted) {
       window.location.hash = '#/';
@@ -1643,7 +1709,13 @@ window.DPRStorageManager = (function () {
         throwOnError: true,
         message: '正在重新扫描回收站文件...',
       });
-      setMessage('回收站选中项已恢复。站点发布可能稍后同步。', '#080');
+      progress.setMessage('正在刷新页面侧边栏...');
+      refreshSidebarCacheBuster();
+      setMessage('回收站选中项已恢复，正在刷新页面索引。', '#080');
+      if (window.location && typeof window.location.reload === 'function') {
+        window.setTimeout(() => window.location.reload(), 80);
+        return;
+      }
       progress.close();
     } catch (err) {
       progress.setError(`恢复失败：${err && err.message ? err.message : err}`);

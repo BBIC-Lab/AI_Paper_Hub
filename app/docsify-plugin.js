@@ -1,4 +1,50 @@
 // Docsify 配置与公共插件（评论区 + Zotero 元数据）
+(() => {
+  if (window.__dprSidebarCacheBusterInstalled) return;
+  window.__dprSidebarCacheBusterInstalled = true;
+
+  const refreshSidebarCacheBuster = () => {
+    window.DPR_SIDEBAR_CACHE_BUSTER = `${Date.now()}`;
+    return window.DPR_SIDEBAR_CACHE_BUSTER;
+  };
+  window.DPR_REFRESH_SIDEBAR_CACHE_BUSTER = refreshSidebarCacheBuster;
+  refreshSidebarCacheBuster();
+
+  const appendSidebarCacheBuster = (url) => {
+    if (typeof url !== 'string') return url;
+    const [beforeHash, hashPart = ''] = url.split('#');
+    const pathPart = beforeHash.split('?')[0];
+    if (!/(^|\/)_sidebar\.md$/i.test(pathPart)) return url;
+    const token = encodeURIComponent(window.DPR_SIDEBAR_CACHE_BUSTER || refreshSidebarCacheBuster());
+    const nextBeforeHash = /([?&])dpr_v=/.test(beforeHash)
+      ? beforeHash.replace(/([?&]dpr_v=)[^&#]*/i, `$1${token}`)
+      : `${beforeHash}${beforeHash.includes('?') ? '&' : '?'}dpr_v=${token}`;
+    return `${nextBeforeHash}${hashPart ? `#${hashPart}` : ''}`;
+  };
+
+  window.DPRAppendSidebarCacheBuster = appendSidebarCacheBuster;
+
+  if (typeof XMLHttpRequest !== 'undefined' && XMLHttpRequest.prototype && XMLHttpRequest.prototype.open) {
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function dprOpen(method, url, ...rest) {
+      return originalOpen.call(this, method, appendSidebarCacheBuster(url), ...rest);
+    };
+  }
+
+  if (typeof window.fetch === 'function') {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      if (typeof Request !== 'undefined' && input instanceof Request) {
+        const nextUrl = appendSidebarCacheBuster(input.url);
+        if (nextUrl !== input.url) {
+          return originalFetch(new Request(nextUrl, input), init);
+        }
+      }
+      return originalFetch(appendSidebarCacheBuster(input), init);
+    };
+  }
+})();
+
 window.$docsify = {
   name:
     '<span class="dpr-brand"><img class="dpr-brand-logo" src="app/asserts/adpr-logo.svg" alt="" aria-hidden="true"><span class="dpr-brand-text">ADPR</span></span>',
