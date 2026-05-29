@@ -689,6 +689,259 @@ window.SubscriptionsGithubToken = (function () {
     };
   };
 
+  const expandTreePaths = (treeItems, inputs = [], prefix = '') => {
+    const files = (treeItems || [])
+      .filter((item) => item && item.type === 'blob' && item.path)
+      .map((item) => ({
+        ...item,
+        path: normalizeRepoPath(item.path),
+      }));
+    const byPath = new Map(files.map((item) => [item.path, item]));
+    const out = new Map();
+    uniq(inputs).forEach((input) => {
+      const cleanInput = normalizeRepoPath(input).replace(/\/+$/, '');
+      if (!cleanInput) return;
+      const clean = prefix ? normalizeRepoPath(`${prefix}/${cleanInput}`) : cleanInput;
+      const isDirHint = /\/$/.test(String(input || '')) || !byPath.has(clean);
+      if (!isDirHint && byPath.has(clean)) {
+        out.set(clean, byPath.get(clean));
+        return;
+      }
+      const dirPrefix = `${clean}/`;
+      files.forEach((item) => {
+        if (item.path.startsWith(dirPrefix)) out.set(item.path, item);
+      });
+    });
+    return Array.from(out.values());
+  };
+
+  const commitTreeEntries = async ({ ctx, target, entries, commitMessage }) => {
+    if (!entries.length) {
+      return { skipped: true, branch: target.branch, moved: [], restored: [], deleted: [], updated: [] };
+    }
+    const newTree = await fetchGitHubJson(`${ctx.repoApi}/git/trees`, ctx.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_tree: target.treeSha,
+        tree: entries,
+      }),
+    });
+    const newCommit = await fetchGitHubJson(`${ctx.repoApi}/git/commits`, ctx.token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: commitMessage || 'chore: update repository files',
+        tree: newTree.sha,
+        parents: [target.headSha],
+      }),
+    });
+    await fetchGitHubJson(
+      `${ctx.repoApi}/git/refs/heads/${encodeBranchForGitRef(target.branch)}`,
+      ctx.token,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sha: newCommit.sha,
+          force: false,
+        }),
+      },
+    );
+    return { branch: target.branch, commit: newCommit };
+  };
+
+  const blobEntriesForUpdates = async (ctx, updates = []) => {
+    const entries = [];
+    for (const item of updates || []) {
+      const path = normalizeRepoPath(item && item.path);
+      if (!path) continue;
+      const blob = await fetchGitHubJson(`${ctx.repoApi}/git/blobs`, ctx.token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: String((item && item.content) || ''),
+          encoding: 'utf-8',
+        }),
+      });
+      entries.push({
+        path,
+        mode: '100644',
+        type: 'blob',
+        sha: blob.sha,
+      });
+    }
+    return entries;
+  };
+
+  const moveRepoPathsToTrash = async (changes = {}, commitMessage = '', options = {}) => {
+    const ctx = await getRepoContext(options);
+    const target = await getBranchCommit(ctx, options.branch || ctx.branch);
+    const treeData = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${target.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    const treeItems = (treeData && treeData.tree) || [];
+    const filesByPath = new Map(
+      treeItems
+        .filter((item) => item && item.type === 'blob' && item.path)
+        .map((item) => [normalizeRepoPath(item.path), item]),
+    );
+    const sourceFiles = expandTreePaths(treeItems, changes.paths || [])
+      .filter((item) => !normalizeRepoPath(item.path).startsWith('trash/'))
+      .filter((item) => normalizeRepoPath(item.path) !== 'docs/_sidebar.md');
+    const entries = await blobEntriesForUpdates(ctx, changes.updates || []);
+    const updatePaths = new Set(entries.map((item) => item.path));
+    const moved = [];
+    sourceFiles.forEach((item) => {
+      const sourcePath = normalizeRepoPath(item.path);
+      const targetPath = normalizeRepoPath(`trash/${sourcePath}`);
+      if (filesByPath.has(targetPath) && !updatePaths.has(targetPath)) {
+        throw new Error(`回收站已存在同名文件：${targetPath}`);
+      }
+      entries.push({
+        path: targetPath,
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: item.sha,
+      });
+      entries.push({
+        path: sourcePath,
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: null,
+      });
+      moved.push(sourcePath);
+    });
+    const result = await commitTreeEntries({
+      ctx,
+      target,
+      entries,
+      commitMessage: commitMessage || 'chore: move runtime files to trash',
+    });
+    return {
+      ...result,
+      moved,
+      updated: Array.from(updatePaths),
+    };
+  };
+
+  const restoreRepoPathsFromTrash = async (changes = {}, commitMessage = '', options = {}) => {
+    const ctx = await getRepoContext(options);
+    const target = await getBranchCommit(ctx, options.branch || ctx.branch);
+    const treeData = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${target.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    const treeItems = (treeData && treeData.tree) || [];
+    const filesByPath = new Map(
+      treeItems
+        .filter((item) => item && item.type === 'blob' && item.path)
+        .map((item) => [normalizeRepoPath(item.path), item]),
+    );
+    const trashFiles = expandTreePaths(treeItems, changes.paths || [], 'trash');
+    const entries = await blobEntriesForUpdates(ctx, changes.updates || []);
+    const updatePaths = new Set(entries.map((item) => item.path));
+    const restored = [];
+    trashFiles.forEach((item) => {
+      const trashPath = normalizeRepoPath(item.path);
+      const sourcePath = trashPath.replace(/^trash\//, '');
+      if (filesByPath.has(sourcePath) && !updatePaths.has(sourcePath)) {
+        throw new Error(`恢复目标已存在：${sourcePath}`);
+      }
+      entries.push({
+        path: sourcePath,
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: item.sha,
+      });
+      entries.push({
+        path: trashPath,
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: null,
+      });
+      restored.push(sourcePath);
+    });
+    const result = await commitTreeEntries({
+      ctx,
+      target,
+      entries,
+      commitMessage: commitMessage || 'chore: restore runtime files from trash',
+    });
+    return {
+      ...result,
+      restored,
+      updated: Array.from(updatePaths),
+    };
+  };
+
+  const deleteRepoTrashPaths = async (changes = {}, commitMessage = '', options = {}) => {
+    const ctx = await getRepoContext(options);
+    const target = await getBranchCommit(ctx, options.branch || ctx.branch);
+    const treeData = await fetchGitHubJson(
+      `${ctx.repoApi}/git/trees/${target.treeSha}?recursive=1`,
+      ctx.token,
+    );
+    const treeItems = (treeData && treeData.tree) || [];
+    const trashFiles = expandTreePaths(treeItems, changes.paths || [], 'trash');
+    const entries = await blobEntriesForUpdates(ctx, changes.updates || []);
+    const deleted = [];
+    trashFiles.forEach((item) => {
+      const trashPath = normalizeRepoPath(item.path);
+      entries.push({
+        path: trashPath,
+        mode: item.mode || '100644',
+        type: 'blob',
+        sha: null,
+      });
+      deleted.push(trashPath);
+    });
+    const result = await commitTreeEntries({
+      ctx,
+      target,
+      entries,
+      commitMessage: commitMessage || 'chore: delete runtime trash files',
+    });
+    return {
+      ...result,
+      deleted,
+      updated: entries.filter((item) => item.sha).map((item) => item.path),
+    };
+  };
+
+  const waitForPagesBuild = async (_startedAt, options = {}) => {
+    const fallbackMs = Number(options.fallbackMs || 2500);
+    const startedAt = new Date(_startedAt || Date.now()).getTime();
+    const ctx = await getRepoContext(options);
+    const timeoutMs = Number(options.timeoutMs || 90000);
+    const pollMs = Number(options.pollMs || 5000);
+    const deadline = Date.now() + timeoutMs;
+    const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    try {
+      while (Date.now() < deadline) {
+        const build = await fetchGitHubJson(`${ctx.repoApi}/pages/builds/latest`, ctx.token);
+        const status = String((build && build.status) || '').toLowerCase();
+        const updated = new Date((build && (build.updated_at || build.created_at)) || 0).getTime();
+        if (status === 'built' && (!Number.isFinite(startedAt) || updated >= startedAt - 5000)) {
+          return { status: 'built', build };
+        }
+        if (status === 'errored' || status === 'error') {
+          throw new Error('GitHub Pages 重建失败。');
+        }
+        await sleep(pollMs);
+      }
+      return { timeout: true };
+    } catch (err) {
+      const msg = String((err && err.message) || err || '');
+      if (msg.includes('HTTP 404') || msg.includes('HTTP 403')) {
+        await sleep(fallbackMs);
+        return { skipped: true };
+      }
+      throw err;
+    }
+  };
+
   const saveSecrets = async (secretValues, progress) => {
     const token = getTokenForConfig();
     if (!token) {
@@ -1117,6 +1370,10 @@ window.SubscriptionsGithubToken = (function () {
     listRecycleBranches,
     deleteBranch,
     restoreRuntimeFromBranch,
+    moveRepoPathsToTrash,
+    restoreRepoPathsFromTrash,
+    deleteRepoTrashPaths,
+    waitForPagesBuild,
     loadRepoTextFile,
     saveRepoTextFile,
     updateRepoTextFile,

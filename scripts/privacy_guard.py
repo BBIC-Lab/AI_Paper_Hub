@@ -33,6 +33,8 @@ def main() -> int:
             failures.append(f"tracked generated paper figure asset: {path}")
         if path.startswith("archive/") and path != "archive/.gitkeep":
             failures.append(f"tracked runtime archive artifact: {path}")
+        if path.startswith("trash/"):
+            failures.append(f"tracked runtime trash artifact: {path}")
 
     for rel in ("config.yaml", "docs/config.yaml", "docs_init/config.yaml"):
         p = ROOT / rel

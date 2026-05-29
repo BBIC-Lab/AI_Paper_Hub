@@ -14,6 +14,7 @@ from private:
 - local PDF runtime artifacts: docs/local-pdf/** and docs/assets/local_pdfs/**
 - generated figures: docs/assets/figures/**
 - archive/**
+- runtime trash: trash/**
 - .env files, logs, caches, .codex/**, TODO.md
 #>
 
@@ -99,6 +100,7 @@ function Test-ProtectedPrivatePath {
     "^docs/assets/local_pdfs/",
     "^docs/assets/figures/",
     "^archive/",
+    "^trash/",
     "^\.codex/",
     "^TODO\.md$",
     "^\.env($|\.)",

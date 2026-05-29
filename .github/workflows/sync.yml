@@ -59,7 +59,8 @@ jobs:
             docs/_sidebar.md \
             docs/_home_notice.md \
             docs/_home_promo.md \
-            archive
+            archive \
+            trash
           do
             copy_path "$path"
           done
@@ -110,7 +111,8 @@ jobs:
             docs/_sidebar.md \
             docs/_home_notice.md \
             docs/_home_promo.md \
-            archive
+            archive \
+            trash
           do
             [ -e "$path" ] && paths+=("$path")
           done

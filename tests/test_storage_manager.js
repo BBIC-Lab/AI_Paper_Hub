@@ -16,8 +16,13 @@ const {
   parseFrontMatter,
   parseFiguresMeta,
   createInventory,
+  createTrashInventory,
   buildDeletePlan,
   enrichDeletePlan,
+  appendPlanToTrashManifest,
+  buildTrashActionPlan,
+  removeTrashPlanFromManifest,
+  mergeSidebarContextLines,
   summarizePlan,
   removeSidebarLines,
   pathMatchesRuntime,
@@ -107,6 +112,58 @@ async function testEnrichedPlanIncludesPdfAndFigures() {
   assert.ok(summary.fileCount >= 4);
 }
 
+function testTrashManifestAndRestorePlan() {
+  const inventory = buildInventory();
+  const selected = new Set(['paper:local-pdf/20260529/local-demo']);
+  const basePlan = buildDeletePlan(inventory, selected);
+  const plan = {
+    ...basePlan,
+    metadataLoaded: true,
+    paths: [
+      ...basePlan.paths,
+      'docs/assets/local_pdfs/local-demo.pdf',
+      'docs/assets/figures/local-pdf/local-demo/',
+    ],
+  };
+  const manifest = appendPlanToTrashManifest({ items: [] }, plan, 'settings');
+  assert.equal(manifest.items.length, 1);
+  assert.equal(manifest.items[0].groupKey, 'local:20260529');
+  assert.ok(manifest.items[0].paths.includes('docs/local-pdf/20260529/local-demo.md'));
+  assert.ok(manifest.items[0].sidebarContextLines.some((line) => line.includes('#/local-pdf/20260529/local-demo')));
+
+  const tree = [
+    { path: 'trash/docs/local-pdf/20260529/local-demo.md', type: 'blob', size: 500 },
+    { path: 'trash/docs/local-pdf/20260529/local-demo.txt', type: 'blob', size: 600 },
+    { path: 'trash/docs/assets/local_pdfs/local-demo.pdf', type: 'blob', size: 700 },
+    { path: 'trash/docs/assets/figures/local-pdf/local-demo/fig-001.webp', type: 'blob', size: 800 },
+    { path: 'trash/manifest.json', type: 'blob', size: 300 },
+  ];
+  const trash = createTrashInventory({ tree, manifest });
+  assert.equal(trash.leaves.length, 1);
+  assert.equal(trash.roots[1].children[0].label, '2026-05-29');
+  const restorePlan = buildTrashActionPlan(trash, new Set([trash.leaves[0].id]));
+  assert.equal(restorePlan.leaves.length, 1);
+  assert.ok(restorePlan.paths.includes('docs/local-pdf/20260529/local-demo.md'));
+  const cleaned = removeTrashPlanFromManifest(manifest, restorePlan);
+  assert.equal(cleaned.items.length, 0);
+}
+
+function testMergeSidebarContextLines() {
+  const current = [
+    '* Daily Papers',
+    '* 本地 PDF 解析',
+    '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>',
+  ].join('\n');
+  const restored = mergeSidebarContextLines(current, [[
+    '* 本地 PDF 解析',
+    '  * 2026-05-29',
+    '    * <a class="dpr-sidebar-item-link" href="#/local-pdf/20260529/local-demo">Local Demo</a>',
+  ]]);
+  assert.ok(restored.includes('  * 2026-05-29'));
+  assert.ok(restored.includes('#/local-pdf/20260529/local-demo'));
+  assert.equal((restored.match(/本地 PDF 解析/g) || []).length, 1);
+}
+
 function testHelpers() {
   assert.equal(DELETE_CONFIRM_PHRASE, '删除运行态');
   assert.equal(RESTORE_CONFIRM_PHRASE, '恢复运行态');
@@ -144,6 +201,8 @@ function testRemoveSidebarLines() {
   testRouteRecognition();
   testInventoryAndSelectionPlan();
   await testEnrichedPlanIncludesPdfAndFigures();
+  testTrashManifestAndRestorePlan();
+  testMergeSidebarContextLines();
   testHelpers();
   testRemoveSidebarLines();
   console.log('storage manager tests passed');

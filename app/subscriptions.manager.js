@@ -1729,7 +1729,7 @@ window.SubscriptionsManager = (function () {
                 <div>
                   <div class="dpr-settings-page-kicker">Danger / Storage</div>
                   <h2>存储</h2>
-                  <p>查看运行态路径，按单篇、单日/批次或完整集合批量删除；删除前会自动创建回收站分支。</p>
+                  <p>查看运行态路径，按单篇、单日/批次或完整集合移入回收站，并可按原路径恢复。</p>
                 </div>
                 <button id="dpr-storage-open-trash-page" class="arxiv-tool-btn dpr-storage-danger-btn" type="button">回收站</button>
               </div>

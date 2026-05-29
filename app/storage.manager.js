@@ -1,6 +1,8 @@
-// Runtime storage manager for generated reports, local PDF artifacts, and trash branches.
+// Runtime storage manager for generated reports, local PDF artifacts, and trash folders.
 window.DPRStorageManager = (function () {
   const RECYCLE_BRANCH_PREFIX = 'recycle/adpr-storage-';
+  const TRASH_ROOT = 'trash';
+  const TRASH_MANIFEST_PATH = `${TRASH_ROOT}/manifest.json`;
   const DELETE_CONFIRM_PHRASE = '删除运行态';
   const RESTORE_CONFIRM_PHRASE = '恢复运行态';
   const EMPTY_TRASH_CONFIRM_PHRASE = '清空回收站';
@@ -45,7 +47,9 @@ window.DPRStorageManager = (function () {
     plan: null,
     loading: false,
     planSeq: 0,
-    trash: [],
+    trashInventory: null,
+    trashSelectedIds: new Set(),
+    trashExpandedIds: new Set(),
     mounted: false,
     pathsExpanded: false,
     expandedIds: new Set(),
@@ -139,6 +143,87 @@ window.DPRStorageManager = (function () {
     return clean || '未分组';
   };
 
+  const trashPathFor = (path) => `${TRASH_ROOT}/${normalizeRepoPath(path)}`;
+
+  const originalPathFromTrash = (path) => {
+    const clean = normalizeRepoPath(path);
+    const prefix = `${TRASH_ROOT}/`;
+    return clean.startsWith(prefix) ? clean.slice(prefix.length) : clean;
+  };
+
+  const routeTypeFromRouteId = (routeId) =>
+    String(routeId || '').startsWith('local-pdf/') ? 'local-pdf' : 'daily';
+
+  const groupKeyFromRouteId = (routeId) => {
+    const clean = String(routeId || '').replace(/^#?\//, '').replace(/\.md$/i, '');
+    if (clean.startsWith('local-pdf/')) {
+      const date = clean.split('/')[1] || '';
+      return `local:${date}`;
+    }
+    const parts = clean.split('/');
+    if (/^\d{8}-\d{8}$/.test(parts[0] || '')) return `daily:${parts[0]}`;
+    if (parts.length >= 2) return `daily:${parts[0]}/${parts[1]}`;
+    return 'daily:unknown';
+  };
+
+  const makeTrashItemId = (routeId, deletedAt = new Date().toISOString()) => {
+    const slug = String(routeId || 'item').replace(/[^A-Za-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+    return `${deletedAt.replace(/[^0-9]/g, '').slice(0, 14)}-${slug}`;
+  };
+
+  const normalizeTrashManifest = (manifest) => {
+    const raw = manifest && typeof manifest === 'object' ? manifest : {};
+    const items = Array.isArray(raw.items) ? raw.items : [];
+    const extras = Array.isArray(raw.extras) ? raw.extras : [];
+    return {
+      version: 1,
+      updatedAt: String(raw.updatedAt || ''),
+      items: items.map((item) => {
+        const routeId = String(item.routeId || item.href || '').replace(/^#?\//, '').replace(/\.md$/i, '').replace(/\/$/, '');
+        const type = item.type === 'local-pdf' ? 'local-pdf' : routeTypeFromRouteId(routeId);
+        const groupKey = item.groupKey || groupKeyFromRouteId(routeId);
+        const deletedAt = String(item.deletedAt || raw.updatedAt || new Date().toISOString());
+        return {
+          id: String(item.id || makeTrashItemId(routeId, deletedAt)),
+          routeId,
+          href: normalizeHref(item.href || `#/${routeId}`),
+          type,
+          groupKey,
+          label: String(item.label || fileStemTitle(routeId)),
+          deletedAt,
+          deletedBy: String(item.deletedBy || 'settings'),
+          paths: uniq(item.paths || []),
+          hrefs: (item.hrefs || [item.href || `#/${routeId}`]).map(normalizeHref).filter(Boolean),
+          sidebarContextLines: Array.isArray(item.sidebarContextLines) ? item.sidebarContextLines.map(String) : [],
+        };
+      }).filter((item) => item.routeId && item.paths.length),
+      extras: extras.map((item) => ({
+        id: String(item.id || `extra:${item.groupKey || 'unknown'}:${(item.paths || []).join('|')}`),
+        type: item.type === 'local-pdf' ? 'local-pdf' : 'daily',
+        groupKey: String(item.groupKey || ''),
+        label: String(item.label || formatGroupLabel(item.groupKey || '')),
+        paths: uniq(item.paths || []),
+      })).filter((item) => item.groupKey && item.paths.length),
+    };
+  };
+
+  const loadTrashManifest = async (api) => {
+    try {
+      const file = await api.loadRepoTextFile(TRASH_MANIFEST_PATH, { requireWorkflow: false });
+      return normalizeTrashManifest(JSON.parse(file.content || '{}'));
+    } catch (err) {
+      const msg = String((err && err.message) || err || '');
+      if (msg.includes('HTTP 404')) return normalizeTrashManifest({});
+      throw err;
+    }
+  };
+
+  const serializeTrashManifest = (manifest) => {
+    const normalized = normalizeTrashManifest(manifest);
+    normalized.updatedAt = new Date().toISOString();
+    return `${JSON.stringify(normalized, null, 2)}\n`;
+  };
+
   const fileStemTitle = (routeId) => {
     const stem = String(routeId || '').split('/').pop() || 'paper';
     return stem.replace(/[-_]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
@@ -167,6 +252,73 @@ window.DPRStorageManager = (function () {
       result.set(href, { href, title });
     });
     return result;
+  };
+
+  const extractLineHref = (line) => {
+    const match = String(line || '').match(/\bhref=["']([^"']+)["']/i);
+    return match ? normalizeHref(match[1]) : '';
+  };
+
+  const lineIndent = (line) => (String(line || '').match(/^\s*/) || [''])[0].length;
+
+  const extractSidebarContextLines = (content, href) => {
+    const targetHref = normalizeHref(href);
+    if (!targetHref) return [];
+    const lines = String(content || '').replace(/\r\n/g, '\n').split('\n');
+    const index = lines.findIndex((line) => extractLineHref(line) === targetHref);
+    if (index < 0) return [];
+    const context = [lines[index]];
+    let childIndent = lineIndent(lines[index]);
+    for (let i = index - 1; i >= 0; i -= 1) {
+      const line = lines[i];
+      if (!String(line || '').trim().startsWith('*')) continue;
+      const indent = lineIndent(line);
+      if (indent < childIndent) {
+        context.unshift(line);
+        childIndent = indent;
+      }
+    }
+    return context.filter((line) => String(line || '').trim());
+  };
+
+  const insertAfterSubtree = (lines, parentIndex, childLine) => {
+    const indent = lineIndent(lines[parentIndex]);
+    let insertAt = parentIndex + 1;
+    while (insertAt < lines.length) {
+      const next = lines[insertAt];
+      if (String(next || '').trim() && lineIndent(next) <= indent) break;
+      insertAt += 1;
+    }
+    lines.splice(insertAt, 0, childLine);
+    return insertAt;
+  };
+
+  const mergeSidebarContextLines = (content, contextGroups) => {
+    const raw = String(content || '').replace(/\r\n/g, '\n');
+    const hadTrailingNewline = raw.endsWith('\n');
+    const lines = raw.split('\n');
+    if (hadTrailingNewline) lines.pop();
+    (contextGroups || []).forEach((group) => {
+      const context = (Array.isArray(group) ? group : []).filter((line) => String(line || '').trim());
+      if (!context.length) return;
+      const leafHref = extractLineHref(context[context.length - 1]);
+      if (leafHref && lines.some((line) => extractLineHref(line) === leafHref)) return;
+      let parentIndex = -1;
+      context.forEach((line) => {
+        const existing = lines.findIndex((candidate) => String(candidate || '').trim() === String(line || '').trim() && lineIndent(candidate) === lineIndent(line));
+        if (existing >= 0) {
+          parentIndex = existing;
+          return;
+        }
+        if (parentIndex >= 0) {
+          parentIndex = insertAfterSubtree(lines, parentIndex, line);
+        } else {
+          lines.push(line);
+          parentIndex = lines.length - 1;
+        }
+      });
+    });
+    return lines.join('\n') + (hadTrailingNewline ? '\n' : '');
   };
 
   const parseFrontMatter = (markdown) => {
@@ -313,6 +465,106 @@ window.DPRStorageManager = (function () {
     };
   };
 
+  const createTrashInventory = ({ tree = [], manifest = {} } = {}) => {
+    const files = (Array.isArray(tree) ? tree : [])
+      .filter((item) => item && item.type === 'blob' && item.path)
+      .map((item) => ({
+        path: normalizeRepoPath(item.path),
+        originalPath: originalPathFromTrash(item.path),
+        size: Number(item.size || 0),
+        sha: item.sha || '',
+      }))
+      .filter((item) => item.path.startsWith(`${TRASH_ROOT}/`) && item.path !== TRASH_MANIFEST_PATH);
+    const fileMap = new Map(files.map((item) => [item.path, item]));
+    const trashManifest = normalizeTrashManifest(manifest);
+    const roots = [
+      {
+        id: 'trash-root:daily',
+        type: 'daily',
+        label: 'Daily Papers',
+        note: '',
+        children: [],
+        extraPaths: [],
+      },
+      {
+        id: 'trash-root:local-pdf',
+        type: 'local-pdf',
+        label: '本地导入 PDF',
+        note: '',
+        children: [],
+        extraPaths: [],
+      },
+    ];
+    const groups = new Map();
+    const groupFor = (type, groupKey, label) => {
+      const root = type === 'local-pdf' ? roots[1] : roots[0];
+      if (!groups.has(groupKey)) {
+        const node = {
+          id: `trash-group:${groupKey}`,
+          type,
+          groupKey,
+          label: label || formatGroupLabel(groupKey),
+          note: '',
+          children: [],
+          extraPaths: [],
+        };
+        groups.set(groupKey, node);
+        root.children.push(node);
+      }
+      return groups.get(groupKey);
+    };
+    trashManifest.items.forEach((item) => {
+      const group = groupFor(item.type, item.groupKey, formatGroupLabel(item.groupKey));
+      group.children.push({
+        id: `trash-paper:${item.id}`,
+        trashId: item.id,
+        routeId: item.routeId,
+        href: item.href,
+        type: item.type,
+        groupKey: item.groupKey,
+        label: item.label,
+        paths: item.paths || [],
+        hrefs: item.hrefs || [item.href],
+        sidebarContextLines: item.sidebarContextLines || [],
+        deletedAt: item.deletedAt,
+      });
+    });
+    trashManifest.extras.forEach((extra) => {
+      const group = groupFor(extra.type, extra.groupKey, extra.label || formatGroupLabel(extra.groupKey));
+      group.extraPaths.push(...(extra.paths || []));
+      const root = extra.type === 'local-pdf' ? roots[1] : roots[0];
+      root.extraPaths.push(...(extra.paths || []));
+    });
+    roots.forEach((root) => {
+      root.children.sort((a, b) => String(b.groupKey).localeCompare(String(a.groupKey)));
+      root.children.forEach((group) => group.children.sort((a, b) => String(b.routeId).localeCompare(String(a.routeId))));
+      root.extraPaths = uniq(root.extraPaths || []);
+    });
+    groups.forEach((group) => {
+      group.extraPaths = uniq(group.extraPaths || []);
+    });
+    return {
+      files,
+      fileMap,
+      roots,
+      leaves: trashManifest.items.map((item) => ({
+        id: `trash-paper:${item.id}`,
+        trashId: item.id,
+        routeId: item.routeId,
+        href: item.href,
+        type: item.type,
+        groupKey: item.groupKey,
+        label: item.label,
+        paths: item.paths || [],
+        hrefs: item.hrefs || [item.href],
+        sidebarContextLines: item.sidebarContextLines || [],
+        deletedAt: item.deletedAt,
+      })),
+      manifest: trashManifest,
+      generatedAt: new Date().toISOString(),
+    };
+  };
+
   const flattenLeafIds = (node) => {
     if (!node) return [];
     if (!Array.isArray(node.children) || !node.children.length) return [node.id];
@@ -449,6 +701,7 @@ window.DPRStorageManager = (function () {
       hrefs: Array.from(hrefs).sort(),
       paths: uniq(Array.from(paths)),
       sidebarChanged: nextSidebar !== inventory.sidebar,
+      originalSidebar: inventory.sidebar,
       nextSidebar,
       fullySelectedGroups,
       fullySelectedRoots,
@@ -460,18 +713,26 @@ window.DPRStorageManager = (function () {
   const enrichDeletePlan = async (plan, api, inventory) => {
     const paths = new Set(plan.paths);
     const warnings = [];
+    const leafTrashPaths = new Map();
     for (const leaf of plan.leaves) {
       const mdPath = `docs/${leaf.routeId}.md`;
+      const perLeafPaths = new Set((leaf.paths || []).map(normalizeRepoPath));
       try {
         const file = await api.loadRepoTextFile(mdPath, { requireWorkflow: false });
         const meta = parseFrontMatter((file && file.content) || '');
-        addDeletePath(paths, normalizeGeneratedAssetPath(meta.pdf || meta.PDF || ''));
+        const pdfPath = normalizeGeneratedAssetPath(meta.pdf || meta.PDF || '');
+        addDeletePath(paths, pdfPath);
+        if (pdfPath) perLeafPaths.add(pdfPath);
         parseFiguresMeta(meta).forEach((figure) => {
           const figurePath = normalizeGeneratedAssetPath(figure && figure.url);
           if (!figurePath) return;
           addDeletePath(paths, figurePath);
+          perLeafPaths.add(figurePath);
           const dir = figurePath.replace(/\/[^/]+$/, '');
-          if (dir && directoryCount(inventory, dir) > 0) addDeletePath(paths, `${dir}/`);
+          if (dir && directoryCount(inventory, dir) > 0) {
+            addDeletePath(paths, `${dir}/`);
+            perLeafPaths.add(`${dir}/`);
+          }
         });
       } catch (err) {
         const msg = String((err && err.message) || err || '');
@@ -479,13 +740,110 @@ window.DPRStorageManager = (function () {
           warnings.push(`读取 ${mdPath} 失败：${msg}`);
         }
       }
+      leafTrashPaths.set(leaf.id, uniq(Array.from(perLeafPaths)));
     }
     return {
       ...plan,
+      leaves: (plan.leaves || []).map((leaf) => ({
+        ...leaf,
+        trashPaths: leafTrashPaths.get(leaf.id) || leaf.paths || [],
+      })),
       paths: uniq(Array.from(paths)),
       metadataLoaded: true,
       warnings,
     };
+  };
+
+  const leafTrashPaths = (plan, leaf) => {
+    if (Array.isArray(leaf.trashPaths) && leaf.trashPaths.length) return uniq(leaf.trashPaths);
+    const prefix = `docs/${leaf.routeId}`.replace(/\/+$/, '');
+    const bases = new Set((leaf.paths || []).map(normalizeRepoPath));
+    const out = new Set();
+    (plan.paths || []).forEach((path) => {
+      const clean = normalizeRepoPath(path);
+      if (!clean) return;
+      if (bases.has(clean)) {
+        out.add(clean);
+        return;
+      }
+      if (clean.startsWith(`${prefix}.`)) out.add(clean);
+      if (clean.startsWith('docs/assets/figures/') || clean.startsWith('docs/assets/local_pdfs/')) {
+        const stem = leaf.routeId.split('/').pop() || '';
+        if (stem && clean.includes(stem)) out.add(clean);
+      }
+    });
+    (leaf.paths || []).forEach((path) => out.add(path));
+    return uniq(Array.from(out));
+  };
+
+  const collectLeafPathSet = (items) => {
+    const set = new Set();
+    (items || []).forEach((item) => (item.paths || []).forEach((path) => set.add(normalizeRepoPath(path))));
+    return set;
+  };
+
+  const appendPlanToTrashManifest = (manifest, plan, source = 'settings') => {
+    const next = normalizeTrashManifest(manifest);
+    const deletedAt = new Date().toISOString();
+    const items = (plan.leaves || []).map((leaf) => ({
+      id: makeTrashItemId(leaf.routeId, deletedAt),
+      routeId: leaf.routeId,
+      href: leaf.href,
+      type: leaf.type,
+      groupKey: leaf.groupKey,
+      label: leaf.label,
+      deletedAt,
+      deletedBy: source,
+      paths: leafTrashPaths(plan, leaf),
+      hrefs: [leaf.href],
+      sidebarContextLines: extractSidebarContextLines(plan.originalSidebar || '', leaf.href),
+    }));
+    const leafPathSet = collectLeafPathSet(items);
+    const extras = [];
+    (plan.fullySelectedGroups || []).forEach((group) => {
+      const paths = (plan.paths || []).filter((path) => {
+        const clean = normalizeRepoPath(path);
+        if (!clean || leafPathSet.has(clean)) return false;
+        if (group.type === 'local-pdf') {
+          const date = String(group.groupKey || '').replace(/^local:/, '');
+          return clean.startsWith(`docs/local-pdf/${date}/`);
+        }
+        const key = String(group.groupKey || '').replace(/^daily:/, '');
+        return clean.startsWith(`docs/${key}/`);
+      });
+      if (paths.length) {
+        extras.push({
+          id: `extra:${deletedAt}:${group.groupKey}`,
+          type: group.type,
+          groupKey: group.groupKey,
+          label: group.label,
+          paths: uniq(paths),
+        });
+      }
+    });
+    next.items.push(...items);
+    next.extras.push(...extras);
+    return normalizeTrashManifest(next);
+  };
+
+  const buildSidebarTrashItem = ({ href, title, paths, sidebar }) => {
+    const routeId = normalizeHref(href).replace(/^#\//, '').replace(/\.md$/i, '').replace(/\/$/, '');
+    const deletedAt = new Date().toISOString();
+    return normalizeTrashManifest({
+      items: [{
+        id: makeTrashItemId(routeId, deletedAt),
+        routeId,
+        href: `#/${routeId}`,
+        type: routeTypeFromRouteId(routeId),
+        groupKey: groupKeyFromRouteId(routeId),
+        label: title || fileStemTitle(routeId),
+        deletedAt,
+        deletedBy: 'sidebar',
+        paths,
+        hrefs: [`#/${routeId}`],
+        sidebarContextLines: extractSidebarContextLines(sidebar || '', `#/${routeId}`),
+      }],
+    }).items[0];
   };
 
   const summarizePlan = (plan, inventory) => {
@@ -499,6 +857,148 @@ window.DPRStorageManager = (function () {
       fileCount,
       sidebarChanged: plan.sidebarChanged,
     };
+  };
+
+  const trashDirectoryCount = (inventory, originalDirPath) => {
+    const clean = normalizeRepoPath(originalDirPath).replace(/\/+$/, '');
+    const prefix = `${TRASH_ROOT}/${clean}/`;
+    return (inventory.files || []).filter((file) => file.path.startsWith(prefix)).length;
+  };
+
+  const collectSelectedTrashLeaves = (inventory, selectedIds) => {
+    if (!inventory) return [];
+    return inventory.leaves.filter((leaf) => selectedIds.has(leaf.id));
+  };
+
+  const buildTrashActionPlan = (inventory, selectedIds) => {
+    const leaves = collectSelectedTrashLeaves(inventory, selectedIds);
+    const paths = new Set();
+    const contextGroups = [];
+    const selectedGroups = [];
+    (leaves || []).forEach((leaf) => {
+      (leaf.paths || []).forEach((path) => paths.add(normalizeRepoPath(path)));
+      if (leaf.sidebarContextLines && leaf.sidebarContextLines.length) {
+        contextGroups.push(leaf.sidebarContextLines);
+      }
+    });
+    (inventory.roots || []).forEach((root) => {
+      (root.children || []).forEach((group) => {
+        const info = selectionState(group, selectedIds);
+        if (info.isChecked && info.total > 0) {
+          selectedGroups.push(group);
+          (group.extraPaths || []).forEach((path) => paths.add(normalizeRepoPath(path)));
+        }
+      });
+      const rootInfo = selectionState(root, selectedIds);
+      if (rootInfo.isChecked && rootInfo.total > 0) {
+        (root.extraPaths || []).forEach((path) => paths.add(normalizeRepoPath(path)));
+      }
+    });
+    return {
+      leaves,
+      selectedGroups,
+      paths: uniq(Array.from(paths)),
+      contextGroups,
+    };
+  };
+
+  const summarizeTrashPlan = (plan, inventory) => {
+    const fileCount = (plan.paths || []).reduce((sum, path) => {
+      if (path.endsWith('/')) return sum + trashDirectoryCount(inventory, path);
+      return sum + (inventory.fileMap.has(trashPathFor(path)) ? 1 : 0);
+    }, 0);
+    return {
+      paperCount: (plan.leaves || []).length,
+      pathCount: (plan.paths || []).length,
+      fileCount,
+    };
+  };
+
+  const removeTrashPlanFromManifest = (manifest, plan) => {
+    const selectedIds = new Set((plan.leaves || []).map((leaf) => leaf.trashId || String(leaf.id || '').replace(/^trash-paper:/, '')));
+    const selectedPaths = new Set((plan.paths || []).map(normalizeRepoPath));
+    const next = normalizeTrashManifest(manifest);
+    next.items = next.items.filter((item) => !selectedIds.has(item.id));
+    next.extras = next.extras
+      .map((extra) => ({
+        ...extra,
+        paths: (extra.paths || []).filter((path) => !selectedPaths.has(normalizeRepoPath(path))),
+      }))
+      .filter((extra) => extra.paths.length);
+    return normalizeTrashManifest(next);
+  };
+
+  const routeImpactedByPaths = (href, paths) => {
+    const route = normalizeHref(href || (window.location && window.location.hash) || '#/')
+      .replace(/^#\//, '')
+      .replace(/\/$/, '');
+    if (!route) return false;
+    const candidates = [`docs/${route}.md`, `docs/${route}.txt`, `docs/${route}/`].map(normalizeRepoPath);
+    return (paths || []).map(normalizeRepoPath).some((path) => {
+      if (!path) return false;
+      if (path.endsWith('/')) return candidates.some((candidate) => candidate.startsWith(path));
+      return candidates.includes(path);
+    });
+  };
+
+  const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  const showBlockingProgress = ({ title = '正在处理运行态文件', message = '请稍候...', tone = 'neutral' } = {}) => {
+    const overlay = document.createElement('div');
+    overlay.className = `dpr-storage-progress-overlay is-${tone}`;
+    overlay.innerHTML = `
+      <div class="dpr-storage-progress-modal" role="alertdialog" aria-modal="true" aria-live="polite">
+        <div class="dpr-storage-progress-spinner" aria-hidden="true"></div>
+        <h3>${escapeHtml(title)}</h3>
+        <p data-storage-progress-message>${escapeHtml(message)}</p>
+        <button class="arxiv-tool-btn dpr-storage-soft-btn" type="button" data-storage-progress-close hidden>关闭</button>
+      </div>
+    `;
+    overlay.addEventListener('click', (event) => {
+      const closeBtn = event.target && event.target.closest ? event.target.closest('[data-storage-progress-close]') : null;
+      if (closeBtn) overlay.remove();
+    });
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-visible'));
+    const messageEl = overlay.querySelector('[data-storage-progress-message]');
+    const closeBtn = overlay.querySelector('[data-storage-progress-close]');
+    return {
+      setMessage(nextMessage) {
+        if (messageEl) messageEl.textContent = nextMessage || '';
+      },
+      setError(nextMessage) {
+        overlay.classList.add('is-error');
+        if (messageEl) messageEl.textContent = nextMessage || '';
+        if (closeBtn) closeBtn.hidden = false;
+      },
+      close() {
+        overlay.classList.remove('is-visible');
+        window.setTimeout(() => overlay.remove(), 140);
+      },
+    };
+  };
+
+  const waitForRuntimeRebuild = async (api, startedAt, progress) => {
+    if (progress) progress.setMessage('正在等待页面重建...');
+    if (api && typeof api.waitForPagesBuild === 'function') {
+      const result = await api.waitForPagesBuild(startedAt, {
+        requireWorkflow: false,
+        timeoutMs: 90000,
+        pollMs: 5000,
+        fallbackMs: 2600,
+      });
+      return result;
+    }
+    await delay(2600);
+    return { skipped: true };
+  };
+
+  const reloadAfterRuntimeMutation = async ({ impacted = false } = {}) => {
+    if (impacted) {
+      window.location.hash = '#/';
+      await delay(80);
+    }
+    window.location.reload();
   };
 
   const renderPathCards = () => PATH_CARDS.map((item) => `
@@ -597,24 +1097,61 @@ window.DPRStorageManager = (function () {
   };
 
   const renderTrash = () => {
-    if (!state.trash.length) {
-      return '<div class="dpr-settings-empty">回收站为空。批量删除前会自动创建一个备份分支。</div>';
+    const inventory = state.trashInventory;
+    if (!inventory || !inventory.leaves.length) {
+      return '<div class="dpr-settings-empty">回收站为空。首次删除会把文件移动到 trash/ 文件夹。</div>';
     }
+    const plan = buildTrashActionPlan(inventory, state.trashSelectedIds);
+    const summary = summarizeTrashPlan(plan, inventory);
     return `
-      <div class="dpr-storage-trash-list">
-        ${state.trash.map((item) => `
-          <article class="dpr-storage-trash-item">
-            <div>
-              <strong>${escapeHtml(item.name)}</strong>
-              <span>${escapeHtml(item.sha ? item.sha.slice(0, 8) : 'unknown')}</span>
-            </div>
-            <div class="dpr-storage-trash-buttons">
-              <button class="arxiv-tool-btn dpr-storage-restore-btn" type="button" data-storage-restore="${escapeHtml(item.name)}">恢复</button>
-              <button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-empty="${escapeHtml(item.name)}">删除分支</button>
-            </div>
-          </article>
-        `).join('')}
+      <div class="dpr-storage-plan-summary">
+        <span><strong>${summary.paperCount}</strong> 篇文献</span>
+        <span><strong>${summary.pathCount}</strong> 个路径</span>
+        <span><strong>${summary.fileCount}</strong> 个仓库文件</span>
       </div>
+      <div class="dpr-storage-trash-actions">
+        <button class="arxiv-tool-btn dpr-storage-restore-btn" type="button" data-storage-trash-action="restore-selected" ${plan.leaves.length ? '' : 'disabled'}>恢复选中项</button>
+        <button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-trash-action="delete-selected" ${plan.leaves.length ? '' : 'disabled'}>彻底删除选中项</button>
+      </div>
+      <ul class="dpr-storage-tree dpr-storage-compact-tree dpr-storage-trash-tree">
+        ${inventory.roots.filter((root) => root.children && root.children.length).map((root) => renderTrashNode(root, 0)).join('')}
+      </ul>
+    `;
+  };
+
+  const renderTrashNode = (node, depth = 0) => {
+    const stateInfo = selectionState(node, state.trashSelectedIds);
+    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+    const expanded = hasChildren && state.trashExpandedIds.has(node.id);
+    const meta = hasChildren ? `${stateInfo.checked}/${stateInfo.total}` : '文献';
+    const selectedClass = stateInfo.isChecked ? 'is-selected' : (stateInfo.isPartial ? 'is-partial' : '');
+    return `
+      <li class="dpr-storage-node ${hasChildren ? 'has-children' : 'is-leaf'} ${selectedClass}" data-storage-trash-node-id="${escapeHtml(node.id)}" data-storage-depth="${depth}">
+        <div class="dpr-storage-node-wrap">
+          ${hasChildren ? `
+            <button
+              class="dpr-storage-disclosure ${expanded ? 'is-open' : ''}"
+              type="button"
+              data-storage-trash-toggle="${escapeHtml(node.id)}"
+              aria-label="${expanded ? '收起' : '展开'} ${escapeHtml(node.label)}"
+              aria-expanded="${expanded ? 'true' : 'false'}"
+            >▸</button>
+          ` : '<span class="dpr-storage-disclosure-spacer" aria-hidden="true"></span>'}
+          <label class="dpr-storage-node-line ${selectedClass}">
+            <input
+              class="dpr-storage-select-dot"
+              type="checkbox"
+              data-storage-trash-select="${escapeHtml(node.id)}"
+              ${stateInfo.isChecked ? 'checked' : ''}
+            />
+            <span class="dpr-storage-node-text">
+              <strong>${escapeHtml(node.label)}</strong>
+            </span>
+            <span class="dpr-storage-node-meta">${escapeHtml(meta)}</span>
+          </label>
+        </div>
+        ${hasChildren && expanded ? `<ul>${node.children.map((child) => renderTrashNode(child, depth + 1)).join('')}</ul>` : ''}
+      </li>
     `;
   };
 
@@ -685,6 +1222,15 @@ window.DPRStorageManager = (function () {
     });
   };
 
+  const syncTrashIndeterminate = (root = document) => {
+    if (!state.trashInventory) return;
+    root.querySelectorAll('[data-storage-trash-select]').forEach((input) => {
+      const node = findNodeById(state.trashInventory.roots, input.getAttribute('data-storage-trash-select'));
+      const info = selectionState(node, state.trashSelectedIds);
+      input.indeterminate = info.isPartial;
+    });
+  };
+
   const schedulePlanRefresh = () => {
     const seq = ++state.planSeq;
     const basePlan = state.inventory ? buildDeletePlan(state.inventory, state.selectedIds) : null;
@@ -738,9 +1284,13 @@ window.DPRStorageManager = (function () {
 
   const refreshTrash = async () => {
     const api = getApi();
-    if (!api || typeof api.listRecycleBranches !== 'function') return;
+    if (!api || typeof api.listRepoTree !== 'function' || typeof api.loadRepoTextFile !== 'function') return;
     try {
-      state.trash = await api.listRecycleBranches(RECYCLE_BRANCH_PREFIX, { requireWorkflow: false });
+      const tree = await api.listRepoTree({ requireWorkflow: false });
+      const manifest = await loadTrashManifest(api);
+      state.trashInventory = createTrashInventory({ tree: tree.files || tree.tree || tree, manifest });
+      state.trashSelectedIds = new Set();
+      state.trashExpandedIds = new Set();
       render();
     } catch (err) {
       setMessage(`读取回收站失败：${err && err.message ? err.message : err}`, '#c00');
@@ -841,40 +1391,59 @@ window.DPRStorageManager = (function () {
 
   const openTrashModal = async () => {
     await refreshTrash();
-    showInfoModal({
+    const overlay = showInfoModal({
       title: '回收站',
-      subtitle: `备份分支前缀：${RECYCLE_BRANCH_PREFIX}`,
+      subtitle: `回收站目录：${TRASH_ROOT}/。恢复也会等待页面重建后刷新。`,
       className: 'dpr-storage-trash-modal-overlay',
-      headActions: '<button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-action="empty-all-trash">清空回收站</button>',
+      headActions: '<button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-trash-action="empty-all">清空回收站</button>',
       body: renderTrash(),
-      bind: (overlay) => {
-        overlay.addEventListener('click', (event) => {
-          const restoreBtn = event.target && event.target.closest ? event.target.closest('[data-storage-restore]') : null;
-          if (restoreBtn) {
-            restoreBranch(restoreBtn.getAttribute('data-storage-restore') || '');
-            overlay.remove();
-            return;
-          }
-          const emptyBtn = event.target && event.target.closest ? event.target.closest('[data-storage-empty]') : null;
-          if (emptyBtn) {
-            emptyBranch(emptyBtn.getAttribute('data-storage-empty') || '');
-            overlay.remove();
-            return;
-          }
-          const emptyAllBtn = event.target && event.target.closest ? event.target.closest('[data-storage-action="empty-all-trash"]') : null;
-          if (emptyAllBtn) {
-            emptyAllTrash();
-            overlay.remove();
-          }
-        });
-      },
+      bind: bindTrashModal,
     });
+    syncTrashIndeterminate(overlay);
   };
 
-  const makeRecycleBranchName = () => {
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${RECYCLE_BRANCH_PREFIX}${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const refreshTrashModalBody = (overlay) => {
+    const body = overlay && overlay.querySelector('.dpr-storage-modal-body');
+    if (!body) return;
+    body.innerHTML = renderTrash();
+    syncTrashIndeterminate(overlay);
+  };
+
+  const bindTrashModal = (overlay) => {
+    overlay.addEventListener('click', async (event) => {
+      const toggleBtn = event.target && event.target.closest ? event.target.closest('[data-storage-trash-toggle]') : null;
+      if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-storage-trash-toggle') || '';
+        if (state.trashExpandedIds.has(id)) state.trashExpandedIds.delete(id);
+        else state.trashExpandedIds.add(id);
+        refreshTrashModalBody(overlay);
+        return;
+      }
+      const actionBtn = event.target && event.target.closest ? event.target.closest('[data-storage-trash-action]') : null;
+      if (!actionBtn) return;
+      const action = actionBtn.getAttribute('data-storage-trash-action');
+      if (action === 'restore-selected') {
+        overlay.remove();
+        await restoreTrashSelection();
+      } else if (action === 'delete-selected') {
+        overlay.remove();
+        await deleteTrashSelection();
+      } else if (action === 'empty-all') {
+        overlay.remove();
+        await emptyAllTrash();
+      }
+    });
+    overlay.addEventListener('change', (event) => {
+      const input = event.target && event.target.closest ? event.target.closest('[data-storage-trash-select]') : null;
+      if (!input || !state.trashInventory) return;
+      const node = findNodeById(state.trashInventory.roots, input.getAttribute('data-storage-trash-select'));
+      const ids = flattenLeafIds(node);
+      ids.forEach((id) => {
+        if (input.checked) state.trashSelectedIds.add(id);
+        else state.trashSelectedIds.delete(id);
+      });
+      refreshTrashModalBody(overlay);
+    });
   };
 
   const deleteSelected = async () => {
@@ -883,12 +1452,8 @@ window.DPRStorageManager = (function () {
       return;
     }
     const api = getApi();
-    if (
-      !api ||
-      typeof api.createRecycleBranch !== 'function' ||
-      typeof api.commitRepoChanges !== 'function'
-    ) {
-      setMessage('GitHub Token 模块缺少回收站或提交能力。', '#c00');
+    if (!api || typeof api.moveRepoPathsToTrash !== 'function') {
+      setMessage('GitHub Token 模块缺少文件夹回收站能力。', '#c00');
       return;
     }
     const plan = state.plan.metadataLoaded
@@ -897,7 +1462,7 @@ window.DPRStorageManager = (function () {
     const summary = summarizePlan(plan, state.inventory);
     const ok = await showConfirmPhrase({
       title: '移入回收站',
-      message: `该操作会先创建回收站分支，再删除 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径。之后可通过回收站恢复。`,
+      message: `该操作会把 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径移动到 ${TRASH_ROOT}/，之后可在回收站恢复或彻底删除。`,
       phrase: DELETE_CONFIRM_PHRASE,
       confirmLabel: '确认移入回收站',
     });
@@ -905,39 +1470,55 @@ window.DPRStorageManager = (function () {
       setMessage('已取消删除。');
       return;
     }
-    const branchName = makeRecycleBranchName();
+    const progress = showBlockingProgress({
+      title: '正在移入回收站',
+      message: '正在准备删除计划...',
+      tone: 'danger',
+    });
+    const startedAt = new Date().toISOString();
     try {
-      setMessage('正在创建回收站分支...');
-      await api.createRecycleBranch(branchName, { requireWorkflow: false });
-      setMessage('正在提交删除计划...');
+      progress.setMessage('正在读取回收站清单...');
+      const manifest = await loadTrashManifest(api);
+      const nextManifest = appendPlanToTrashManifest(manifest, plan, 'settings');
       const updates = plan.sidebarChanged
         ? [{ path: 'docs/_sidebar.md', content: plan.nextSidebar }]
         : [];
-      await api.commitRepoChanges(
+      updates.push({ path: TRASH_MANIFEST_PATH, content: serializeTrashManifest(nextManifest) });
+      progress.setMessage('正在移动文件到回收站...');
+      await api.moveRepoPathsToTrash(
         {
+          paths: plan.paths,
           updates,
-          deletes: plan.paths,
         },
-        `chore: move runtime files to trash: ${branchName}`,
+        'chore: move runtime files to trash',
         { requireWorkflow: false },
       );
-      setMessage(`已删除选中运行态文件，回收站分支：${branchName}`, '#080');
-      await refresh();
-      await refreshTrash();
+      await waitForRuntimeRebuild(api, startedAt, progress);
+      progress.setMessage('正在刷新页面...');
+      setMessage('已将选中运行态文件移入回收站。', '#080');
+      await reloadAfterRuntimeMutation({ impacted: routeImpactedByPaths(window.location.hash, plan.paths) });
     } catch (err) {
+      progress.setError(`删除失败：${err && err.message ? err.message : err}`);
       setMessage(`删除失败：${err && err.message ? err.message : err}`, '#c00');
     }
   };
 
-  const restoreBranch = async (branchName) => {
+  const restoreTrashSelection = async () => {
     const api = getApi();
-    if (!api || typeof api.restoreRuntimeFromBranch !== 'function') {
+    if (!state.trashInventory) return;
+    if (!api || typeof api.restoreRepoPathsFromTrash !== 'function') {
       setMessage('GitHub Token 模块缺少恢复能力。', '#c00');
       return;
     }
+    const plan = buildTrashActionPlan(state.trashInventory, state.trashSelectedIds);
+    if (!plan.leaves.length) {
+      setMessage('请先选中要恢复的回收站条目。', '#c00');
+      return;
+    }
+    const summary = summarizeTrashPlan(plan, state.trashInventory);
     const ok = await showConfirmPhrase({
       title: '恢复运行态',
-      message: `将从 ${branchName} 恢复运行态文件和侧栏快照。`,
+      message: `将恢复 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径，完成后等待页面重建并刷新。`,
       phrase: RESTORE_CONFIRM_PHRASE,
       confirmLabel: '确认恢复',
       tone: 'restore',
@@ -946,51 +1527,92 @@ window.DPRStorageManager = (function () {
       setMessage('已取消恢复。');
       return;
     }
+    const progress = showBlockingProgress({
+      title: '正在恢复运行态',
+      message: '正在准备恢复计划...',
+      tone: 'restore',
+    });
+    const startedAt = new Date().toISOString();
     try {
-      setMessage('正在从回收站恢复...');
-      const result = await api.restoreRuntimeFromBranch(branchName, {
-        requireWorkflow: false,
-        runtimeMatchers: RUNTIME_RESTORE_PREFIXES,
-        commitMessage: `chore: restore runtime files from ${branchName}`,
-      });
-      setMessage(`恢复完成：${(result && result.restored && result.restored.length) || 0} 个文件。`, '#080');
-      await refresh();
-      await refreshTrash();
+      progress.setMessage('正在更新回收站清单和侧边栏...');
+      const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
+      let sidebar = '';
+      try {
+        const sidebarFile = await api.loadRepoTextFile('docs/_sidebar.md', { requireWorkflow: false });
+        sidebar = sidebarFile.content || '';
+      } catch {
+        sidebar = '';
+      }
+      const nextSidebar = mergeSidebarContextLines(sidebar, plan.contextGroups);
+      const updates = [{ path: TRASH_MANIFEST_PATH, content: serializeTrashManifest(nextManifest) }];
+      if (nextSidebar !== sidebar) updates.push({ path: 'docs/_sidebar.md', content: nextSidebar });
+      progress.setMessage('正在从回收站移回原路径...');
+      await api.restoreRepoPathsFromTrash(
+        {
+          paths: plan.paths,
+          updates,
+        },
+        'chore: restore runtime files from trash',
+        { requireWorkflow: false },
+      );
+      await waitForRuntimeRebuild(api, startedAt, progress);
+      progress.setMessage('正在刷新页面...');
+      setMessage('回收站选中项已恢复。', '#080');
+      await reloadAfterRuntimeMutation({ impacted: false });
     } catch (err) {
+      progress.setError(`恢复失败：${err && err.message ? err.message : err}`);
       setMessage(`恢复失败：${err && err.message ? err.message : err}`, '#c00');
     }
   };
 
-  const emptyBranch = async (branchName) => {
+  const deleteTrashSelection = async () => {
     const api = getApi();
-    if (!api || typeof api.deleteBranch !== 'function') {
-      setMessage('GitHub Token 模块缺少删除分支能力。', '#c00');
+    if (!state.trashInventory) return;
+    if (!api || typeof api.deleteRepoTrashPaths !== 'function') {
+      setMessage('GitHub Token 模块缺少彻底删除能力。', '#c00');
       return;
     }
+    const plan = buildTrashActionPlan(state.trashInventory, state.trashSelectedIds);
+    if (!plan.leaves.length) {
+      setMessage('请先选中要彻底删除的回收站条目。', '#c00');
+      return;
+    }
+    const summary = summarizeTrashPlan(plan, state.trashInventory);
     const ok = await showConfirmPhrase({
-      title: '删除回收站分支',
-      message: `将永久删除回收站分支 ${branchName}，该操作不会删除当前 main 文件。`,
+      title: '彻底删除回收站选中项',
+      message: `将从回收站永久删除 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径，该操作不可恢复。`,
       phrase: EMPTY_TRASH_CONFIRM_PHRASE,
-      confirmLabel: '确认删除分支',
+      confirmLabel: '确认彻底删除',
     });
     if (!ok) {
       setMessage('已取消清空。');
       return;
     }
     try {
-      await api.deleteBranch(branchName, { requireWorkflow: false });
-      setMessage(`已删除回收站分支：${branchName}`, '#080');
+      const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
+      await api.deleteRepoTrashPaths(
+        {
+          paths: plan.paths,
+          updates: [{ path: TRASH_MANIFEST_PATH, content: serializeTrashManifest(nextManifest) }],
+        },
+        'chore: permanently delete trash files',
+        { requireWorkflow: false },
+      );
+      setMessage('已彻底删除回收站选中项。', '#080');
       await refreshTrash();
     } catch (err) {
-      setMessage(`删除回收站分支失败：${err && err.message ? err.message : err}`, '#c00');
+      setMessage(`彻底删除失败：${err && err.message ? err.message : err}`, '#c00');
     }
   };
 
   const emptyAllTrash = async () => {
-    if (!state.trash.length) return;
+    if (!state.trashInventory || !state.trashInventory.leaves.length) return;
+    const allIds = new Set(state.trashInventory.leaves.map((leaf) => leaf.id));
+    const plan = buildTrashActionPlan(state.trashInventory, allIds);
+    const summary = summarizeTrashPlan(plan, state.trashInventory);
     const ok = await showConfirmPhrase({
       title: '清空回收站',
-      message: `将删除 ${state.trash.length} 个回收站分支。该操作只删除备份分支，不删除当前运行态文件。`,
+      message: `将永久删除回收站中的 ${summary.paperCount} 篇文献、${summary.pathCount} 个路径，该操作不可恢复。`,
       phrase: EMPTY_TRASH_CONFIRM_PHRASE,
       confirmLabel: '确认清空回收站',
     });
@@ -999,10 +1621,20 @@ window.DPRStorageManager = (function () {
       return;
     }
     const api = getApi();
+    if (!api || typeof api.deleteRepoTrashPaths !== 'function') {
+      setMessage('GitHub Token 模块缺少清空回收站能力。', '#c00');
+      return;
+    }
     try {
-      for (const item of state.trash) {
-        await api.deleteBranch(item.name, { requireWorkflow: false });
-      }
+      const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
+      await api.deleteRepoTrashPaths(
+        {
+          paths: plan.paths,
+          updates: [{ path: TRASH_MANIFEST_PATH, content: serializeTrashManifest(nextManifest) }],
+        },
+        'chore: empty runtime trash',
+        { requireWorkflow: false },
+      );
       setMessage('回收站已清空。', '#080');
       await refreshTrash();
     } catch (err) {
@@ -1031,17 +1663,7 @@ window.DPRStorageManager = (function () {
       if (action === 'open-plan') openPlanModal();
       if (action === 'open-trash') openTrashModal();
       if (action === 'delete-selected') deleteSelected();
-      if (action === 'empty-all-trash') emptyAllTrash();
       return;
-    }
-    const restoreBtn = event.target && event.target.closest ? event.target.closest('[data-storage-restore]') : null;
-    if (restoreBtn) {
-      restoreBranch(restoreBtn.getAttribute('data-storage-restore') || '');
-      return;
-    }
-    const emptyBtn = event.target && event.target.closest ? event.target.closest('[data-storage-empty]') : null;
-    if (emptyBtn) {
-      emptyBranch(emptyBtn.getAttribute('data-storage-empty') || '');
     }
   };
 
@@ -1097,8 +1719,24 @@ window.DPRStorageManager = (function () {
     refresh,
     refreshIfEmpty,
     openTrashModal,
+    __runtime: {
+      TRASH_ROOT,
+      TRASH_MANIFEST_PATH,
+      normalizeHref,
+      loadTrashManifest,
+      serializeTrashManifest,
+      normalizeTrashManifest,
+      buildSidebarTrashItem,
+      mergeSidebarContextLines,
+      showBlockingProgress,
+      waitForRuntimeRebuild,
+      reloadAfterRuntimeMutation,
+      routeImpactedByPaths,
+    },
     __test: {
       RECYCLE_BRANCH_PREFIX,
+      TRASH_ROOT,
+      TRASH_MANIFEST_PATH,
       DELETE_CONFIRM_PHRASE,
       RESTORE_CONFIRM_PHRASE,
       EMPTY_TRASH_CONFIRM_PHRASE,
@@ -1108,8 +1746,14 @@ window.DPRStorageManager = (function () {
       parseFrontMatter,
       parseFiguresMeta,
       createInventory,
+      createTrashInventory,
       buildDeletePlan,
       enrichDeletePlan,
+      appendPlanToTrashManifest,
+      buildSidebarTrashItem,
+      buildTrashActionPlan,
+      removeTrashPlanFromManifest,
+      mergeSidebarContextLines,
       summarizePlan,
       removeSidebarLines,
       pathMatchesRuntime,
