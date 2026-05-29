@@ -26,10 +26,10 @@ const {
 function buildInventory() {
   const sidebar = [
     '* Daily Papers',
-    '  * 26-05-28',
-    '    * <a class="dpr-sidebar-brief-link" href="#/260528/28/README">日报</a>',
+    '  * 2026-05-28',
+    '    * <a class="dpr-sidebar-brief-link" href="#/202605/28/README">日报</a>',
     '    * 精读区',
-    '      * <a class="dpr-sidebar-item-link" href="#/260528/28/daily-paper" data-sidebar-item="{&quot;title&quot;:&quot;Daily Paper&quot;}">Daily Paper</a>',
+    '      * <a class="dpr-sidebar-item-link" href="#/202605/28/daily-paper" data-sidebar-item="{&quot;title&quot;:&quot;Daily Paper&quot;}">Daily Paper</a>',
     '* 本地 PDF 解析',
     '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>',
     '  * 2026-05-29',
@@ -37,9 +37,9 @@ function buildInventory() {
   ].join('\n');
   const tree = [
     { path: 'docs/_sidebar.md', type: 'blob', size: 100 },
-    { path: 'docs/260528/28/README.md', type: 'blob', size: 200 },
-    { path: 'docs/260528/28/daily-paper.md', type: 'blob', size: 300 },
-    { path: 'docs/260528/28/daily-paper.txt', type: 'blob', size: 400 },
+    { path: 'docs/202605/28/README.md', type: 'blob', size: 200 },
+    { path: 'docs/202605/28/daily-paper.md', type: 'blob', size: 300 },
+    { path: 'docs/202605/28/daily-paper.txt', type: 'blob', size: 400 },
     { path: 'docs/local-pdf/20260529/local-demo.md', type: 'blob', size: 500 },
     { path: 'docs/local-pdf/20260529/local-demo.txt', type: 'blob', size: 600 },
     { path: 'docs/assets/local_pdfs/local-demo.pdf', type: 'blob', size: 700 },
@@ -49,17 +49,17 @@ function buildInventory() {
 }
 
 function testRouteRecognition() {
-  assert.deepEqual(routeFromRepoPath('docs/260528/28/demo.md'), {
-    routeId: '260528/28/demo',
+  assert.deepEqual(routeFromRepoPath('docs/202605/28/demo.md'), {
+    routeId: '202605/28/demo',
     type: 'daily',
-    groupKey: 'daily:260528/28',
+    groupKey: 'daily:202605/28',
   });
   assert.deepEqual(routeFromRepoPath('docs/local-pdf/20260529/demo.md'), {
     routeId: 'local-pdf/20260529/demo',
     type: 'local-pdf',
     groupKey: 'local:20260529',
   });
-  assert.equal(routeFromRepoPath('docs/260528/28/README.md'), null);
+  assert.equal(routeFromRepoPath('docs/202605/28/README.md'), null);
 }
 
 function testInventoryAndSelectionPlan() {
@@ -67,6 +67,8 @@ function testInventoryAndSelectionPlan() {
   assert.equal(inventory.leaves.length, 2);
   assert.equal(inventory.leaves[0].label, 'Local Demo');
   assert.equal(inventory.leaves[1].label, 'Daily Paper');
+  assert.equal(inventory.roots[0].children[0].label, '2026-05-28');
+  assert.equal(inventory.roots[1].children[0].label, '2026-05-29');
 
   const selected = new Set(['paper:local-pdf/20260529/local-demo']);
   const plan = buildDeletePlan(inventory, selected);
@@ -109,7 +111,7 @@ function testHelpers() {
   assert.equal(DELETE_CONFIRM_PHRASE, '删除运行态');
   assert.equal(RESTORE_CONFIRM_PHRASE, '恢复运行态');
   assert.equal(EMPTY_TRASH_CONFIRM_PHRASE, '清空回收站');
-  assert.equal(normalizeHref('/260528/28/demo.md?x=1'), '#/260528/28/demo');
+  assert.equal(normalizeHref('/202605/28/demo.md?x=1'), '#/202605/28/demo');
   const meta = parseFrontMatter([
     '---',
     'pdf: "assets/local_pdfs/demo.pdf"',
@@ -119,7 +121,7 @@ function testHelpers() {
   assert.equal(meta.pdf, 'assets/local_pdfs/demo.pdf');
   assert.equal(parseFiguresMeta(meta)[0].url, 'assets/figures/demo/fig.webp');
   assert.ok(pathMatchesRuntime('docs/assets/local_pdfs/demo.pdf'));
-  assert.ok(pathMatchesRuntime('docs/260528/28/demo.md'));
+  assert.ok(pathMatchesRuntime('docs/202605/28/demo.md'));
   assert.ok(!pathMatchesRuntime('app/storage.manager.js'));
 }
 
@@ -127,14 +129,14 @@ function testRemoveSidebarLines() {
   const next = removeSidebarLines(
     [
       '* Daily Papers',
-      '  * 26-05-28',
-      '    * <a href="#/260528/28/README">日报</a>',
-      '    * <a href="#/260528/28/demo">Demo</a>',
+      '  * 2026-05-28',
+      '    * <a href="#/202605/28/README">日报</a>',
+      '    * <a href="#/202605/28/demo">Demo</a>',
     ].join('\n'),
-    ['#/260528/28/demo', '#/260528/28/README'],
+    ['#/202605/28/demo', '#/202605/28/README'],
   );
-  assert.ok(!next.includes('#/260528/28/demo'));
-  assert.ok(!next.includes('#/260528/28/README'));
+  assert.ok(!next.includes('#/202605/28/demo'));
+  assert.ok(!next.includes('#/202605/28/README'));
   assert.ok(next.includes('* Daily Papers'));
 }
 

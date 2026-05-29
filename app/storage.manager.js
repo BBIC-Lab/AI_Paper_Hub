@@ -124,7 +124,9 @@ window.DPRStorageManager = (function () {
   const formatGroupLabel = (groupKey) => {
     const clean = String(groupKey || '').replace(/^(daily|local):/, '');
     if (/^\d{6}\/\d{2}$/.test(clean)) {
-      return `20${clean.slice(0, 2)}-${clean.slice(2, 4)}-${clean.slice(5, 7)}`;
+      const [ym, day] = clean.split('/');
+      if (ym.startsWith('20')) return `${ym.slice(0, 4)}-${ym.slice(4, 6)}-${day}`;
+      return `20${ym.slice(0, 2)}-${ym.slice(2, 4)}-${day}`;
     }
     if (/^\d{8}$/.test(clean)) {
       return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`;
