@@ -1283,18 +1283,41 @@ window.DPRStorageManager = (function () {
     }
   };
 
-  const refreshTrash = async () => {
+  const refreshTrash = async (options = {}) => {
+    const {
+      progress = null,
+      overlay = null,
+      renderMain = true,
+      resetSelection = true,
+      resetExpanded = true,
+      throwOnError = false,
+      message = '正在扫描回收站文件...',
+    } = options || {};
     const api = getApi();
-    if (!api || typeof api.listRepoTree !== 'function' || typeof api.loadRepoTextFile !== 'function') return;
+    if (!api || typeof api.listRepoTree !== 'function' || typeof api.loadRepoTextFile !== 'function') {
+      const err = new Error('GitHub Token 模块尚未加载，无法扫描回收站文件。');
+      setMessage(err.message, '#c00');
+      if (progress) progress.setError(err.message);
+      if (throwOnError) throw err;
+      return null;
+    }
     try {
+      if (progress) progress.setMessage(message);
       const tree = await api.listRepoTree({ requireWorkflow: false });
+      if (progress) progress.setMessage('正在读取回收站清单...');
       const manifest = await loadTrashManifest(api);
       state.trashInventory = createTrashInventory({ tree: tree.files || tree.tree || tree, manifest });
-      state.trashSelectedIds = new Set();
-      state.trashExpandedIds = new Set();
-      render();
+      if (resetSelection) state.trashSelectedIds = new Set();
+      if (resetExpanded) state.trashExpandedIds = new Set();
+      if (renderMain) render();
+      if (overlay) refreshTrashModalBody(overlay);
+      return state.trashInventory;
     } catch (err) {
-      setMessage(`读取回收站失败：${err && err.message ? err.message : err}`, '#c00');
+      const errorMessage = `读取回收站失败：${err && err.message ? err.message : err}`;
+      setMessage(errorMessage, '#c00');
+      if (progress) progress.setError(errorMessage);
+      if (throwOnError) throw err;
+      return null;
     }
   };
 
@@ -1391,16 +1414,31 @@ window.DPRStorageManager = (function () {
   };
 
   const openTrashModal = async () => {
-    await refreshTrash();
-    const overlay = showInfoModal({
-      title: '回收站',
-      subtitle: `回收站目录：${TRASH_ROOT}/。恢复也会等待页面重建后刷新。`,
-      className: 'dpr-storage-trash-modal-overlay',
-      headActions: '<button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-trash-action="empty-all">清空回收站</button>',
-      body: renderTrash(),
-      bind: bindTrashModal,
+    const progress = showBlockingProgress({
+      title: '正在扫描回收站文件',
+      message: `正在读取 ${TRASH_ROOT}/ 目录...`,
+      tone: 'neutral',
     });
-    syncTrashIndeterminate(overlay);
+    try {
+      await refreshTrash({
+        progress,
+        renderMain: false,
+        throwOnError: true,
+        message: `正在扫描 ${TRASH_ROOT}/ 目录...`,
+      });
+      progress.close();
+      const overlay = showInfoModal({
+        title: '回收站',
+        subtitle: `回收站目录：${TRASH_ROOT}/。恢复也会等待页面重建后刷新。`,
+        className: 'dpr-storage-trash-modal-overlay',
+        headActions: '<button class="arxiv-tool-btn dpr-storage-danger-btn" type="button" data-storage-trash-action="empty-all">清空回收站</button>',
+        body: renderTrash(),
+        bind: bindTrashModal,
+      });
+      syncTrashIndeterminate(overlay);
+    } catch (err) {
+      progress.setError(`扫描回收站失败：${err && err.message ? err.message : err}`);
+    }
   };
 
   const refreshTrashModalBody = (overlay) => {
@@ -1427,11 +1465,9 @@ window.DPRStorageManager = (function () {
         overlay.remove();
         await restoreTrashSelection();
       } else if (action === 'delete-selected') {
-        overlay.remove();
-        await deleteTrashSelection();
+        await deleteTrashSelection(overlay);
       } else if (action === 'empty-all') {
-        overlay.remove();
-        await emptyAllTrash();
+        await emptyAllTrash(overlay);
       }
     });
     overlay.addEventListener('change', (event) => {
@@ -1570,7 +1606,7 @@ window.DPRStorageManager = (function () {
     }
   };
 
-  const deleteTrashSelection = async () => {
+  const deleteTrashSelection = async (overlay = null) => {
     const api = getApi();
     if (!state.trashInventory) return;
     if (!api || typeof api.deleteRepoTrashPaths !== 'function') {
@@ -1593,7 +1629,13 @@ window.DPRStorageManager = (function () {
       setMessage('已取消清空。');
       return;
     }
+    const progress = showBlockingProgress({
+      title: '正在删除回收站文件',
+      message: '正在准备删除回收站选中项...',
+      tone: 'danger',
+    });
     try {
+      progress.setMessage('正在删除回收站文件...');
       const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
       await api.deleteRepoTrashPaths(
         {
@@ -1603,14 +1645,24 @@ window.DPRStorageManager = (function () {
         'chore: permanently delete trash files',
         { requireWorkflow: false },
       );
+      progress.setMessage('正在重新扫描回收站文件...');
       setMessage('已彻底删除回收站选中项。', '#080');
-      await refreshTrash();
+      await refreshTrash({
+        progress,
+        overlay,
+        renderMain: !overlay,
+        throwOnError: true,
+        message: '正在重新扫描回收站文件...',
+      });
+      progress.close();
     } catch (err) {
-      setMessage(`彻底删除失败：${err && err.message ? err.message : err}`, '#c00');
+      const errorMessage = `彻底删除失败：${err && err.message ? err.message : err}`;
+      progress.setError(errorMessage);
+      setMessage(errorMessage, '#c00');
     }
   };
 
-  const emptyAllTrash = async () => {
+  const emptyAllTrash = async (overlay = null) => {
     if (!state.trashInventory || !state.trashInventory.leaves.length) return;
     const allIds = new Set(state.trashInventory.leaves.map((leaf) => leaf.id));
     const plan = buildTrashActionPlan(state.trashInventory, allIds);
@@ -1630,7 +1682,13 @@ window.DPRStorageManager = (function () {
       setMessage('GitHub Token 模块缺少清空回收站能力。', '#c00');
       return;
     }
+    const progress = showBlockingProgress({
+      title: '正在删除回收站文件',
+      message: '正在准备清空回收站...',
+      tone: 'danger',
+    });
     try {
+      progress.setMessage('正在删除回收站文件...');
       const nextManifest = removeTrashPlanFromManifest(state.trashInventory.manifest, plan);
       await api.deleteRepoTrashPaths(
         {
@@ -1640,10 +1698,20 @@ window.DPRStorageManager = (function () {
         'chore: empty runtime trash',
         { requireWorkflow: false },
       );
+      progress.setMessage('正在重新扫描回收站文件...');
       setMessage('回收站已清空。', '#080');
-      await refreshTrash();
+      await refreshTrash({
+        progress,
+        overlay,
+        renderMain: !overlay,
+        throwOnError: true,
+        message: '正在重新扫描回收站文件...',
+      });
+      progress.close();
     } catch (err) {
-      setMessage(`清空回收站失败：${err && err.message ? err.message : err}`, '#c00');
+      const errorMessage = `清空回收站失败：${err && err.message ? err.message : err}`;
+      progress.setError(errorMessage);
+      setMessage(errorMessage, '#c00');
     }
   };
 

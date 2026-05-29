@@ -212,6 +212,79 @@ function createStorageContainerStub() {
   };
 }
 
+function createDocumentStub() {
+  const appended = [];
+  const createElement = (tagName = 'div') => {
+    const children = [];
+    const el = {
+      tagName,
+      className: '',
+      dataset: {},
+      hidden: false,
+      innerHTML: '',
+      parentNode: null,
+      style: {},
+      textContent: '',
+      children,
+      classList: {
+        add(...names) {
+          const current = new Set(String(el.className || '').split(/\s+/).filter(Boolean));
+          names.forEach((name) => current.add(name));
+          el.className = Array.from(current).join(' ');
+        },
+        remove(...names) {
+          const current = new Set(String(el.className || '').split(/\s+/).filter(Boolean));
+          names.forEach((name) => current.delete(name));
+          el.className = Array.from(current).join(' ');
+        },
+        contains(name) {
+          return String(el.className || '').split(/\s+/).includes(name);
+        },
+      },
+      appendChild(child) {
+        child.parentNode = el;
+        children.push(child);
+        if (el === body) appended.push(child);
+      },
+      addEventListener() {},
+      remove() {
+        const index = appended.indexOf(el);
+        if (index >= 0) appended.splice(index, 1);
+      },
+      querySelector(selector) {
+        if (selector === '[data-storage-progress-message]') {
+          el._progressMessage = el._progressMessage || createElement('p');
+          return el._progressMessage;
+        }
+        if (selector === '[data-storage-progress-close]') {
+          el._progressClose = el._progressClose || createElement('button');
+          return el._progressClose;
+        }
+        if (selector === '.dpr-storage-modal-body') {
+          el._modalBody = el._modalBody || createElement('div');
+          return el._modalBody;
+        }
+        return null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+      setAttribute() {},
+      focus() {},
+    };
+    return el;
+  };
+  const body = createElement('body');
+  return {
+    appended,
+    body,
+    createElement,
+    getElementById() {
+      return null;
+    },
+  };
+}
+
 async function testRefreshIfEmptyDoesNotAutoScan() {
   global.document = global.document || {
     getElementById() {
@@ -239,6 +312,45 @@ async function testRefreshIfEmptyDoesNotAutoScan() {
   assert.ok(container.innerHTML.includes('想执行删除前，请先点击上方“扫描运行态文件”。'));
 }
 
+async function testOpenTrashShowsBlockingProgressBeforeScanCompletes() {
+  const documentStub = createDocumentStub();
+  global.document = documentStub;
+  global.requestAnimationFrame = (fn) => fn();
+
+  let scanCount = 0;
+  let resolveTree;
+  const treePromise = new Promise((resolve) => {
+    resolveTree = resolve;
+  });
+  const api = {
+    async listRepoTree() {
+      scanCount += 1;
+      return treePromise;
+    },
+    async loadRepoTextFile(path) {
+      assert.equal(path, 'trash/manifest.json');
+      return { content: '{"items":[]}' };
+    },
+  };
+
+  global.window.DPRStorageManager.mount(createStorageContainerStub(), { api });
+  const openPromise = global.window.DPRStorageManager.openTrashModal();
+
+  assert.equal(scanCount, 1);
+  assert.ok(
+    documentStub.appended.some((el) =>
+      String(el.className || '').includes('dpr-storage-progress-overlay')),
+  );
+
+  resolveTree({ files: [{ path: 'trash/manifest.json', type: 'blob', size: 20 }] });
+  await openPromise;
+
+  assert.ok(
+    documentStub.appended.some((el) =>
+      String(el.className || '').includes('dpr-storage-trash-modal-overlay')),
+  );
+}
+
 (async function run() {
   testRouteRecognition();
   testInventoryAndSelectionPlan();
@@ -248,5 +360,6 @@ async function testRefreshIfEmptyDoesNotAutoScan() {
   testHelpers();
   testRemoveSidebarLines();
   await testRefreshIfEmptyDoesNotAutoScan();
+  await testOpenTrashShowsBlockingProgressBeforeScanCompletes();
   console.log('storage manager tests passed');
 })();
