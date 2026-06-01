@@ -16,6 +16,35 @@ window.SubscriptionsManager = (function () {
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
   const DEFAULT_EMAIL_PUSH_TIME = '08:30';
   const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
+  const DEFAULT_PERIODIC_REPORTS = {
+    enabled: true,
+    default_input_mode: 'artifacts',
+    language: 'zh-CN',
+    max_candidates: 240,
+    max_topics: 10,
+    representative_papers: 12,
+    weekly: {
+      enabled: true,
+      schedule: '30 23 * * 5',
+      input_mode: 'artifacts',
+      recrawl_days: 10,
+    },
+    monthly: {
+      enabled: true,
+      schedule: '30 23 1 * *',
+      input_mode: 'artifacts',
+      recrawl_days: 30,
+    },
+    charts: {
+      topics: true,
+      sources: true,
+      score_distribution: true,
+      timeline: true,
+      topic_timeline: true,
+    },
+    topic_aliases: {},
+    include_low_score_novelty: false,
+  };
   let overlay = null;
   let panel = null;
   let saveBtn = null;
@@ -25,6 +54,11 @@ window.SubscriptionsManager = (function () {
   let quickRun10dBtn = null;
   let quickRun30dBtn = null;
   let quickRun30dStandardBtn = null;
+  let quickRunWeeklyReportBtn = null;
+  let quickRunMonthlyReportBtn = null;
+  let quickRunWeeklyRecrawlBtn = null;
+  let quickRunMonthlyRecrawlBtn = null;
+  let periodicReportMsgEl = null;
   let quickRunOpenWorkflowPanelBtn = null;
   let quickRunConferenceBtn = null;
   let quickRunYearSelect = null;
@@ -292,6 +326,58 @@ window.SubscriptionsManager = (function () {
     normalizeWindowDays(value, DEFAULT_DAILY_RECALL_WINDOW_DAYS) > LONG_WINDOW_WARNING_THRESHOLD_DAYS
       ? LONG_WINDOW_WARNING_TEXT
       : ''
+  );
+
+  const normalizePositiveInt = (value, fallback) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+
+  const normalizePeriodicInputMode = (value, fallback = 'artifacts') => {
+    const mode = normalizeText(value).toLowerCase();
+    return ['artifacts', 'recrawl', 'hybrid'].includes(mode) ? mode : fallback;
+  };
+
+  const normalizePeriodicReports = (value) => {
+    const raw = isPlainObject(value) ? value : {};
+    const weeklyRaw = isPlainObject(raw.weekly) ? raw.weekly : {};
+    const monthlyRaw = isPlainObject(raw.monthly) ? raw.monthly : {};
+    const chartsRaw = isPlainObject(raw.charts) ? raw.charts : {};
+    const defaults = cloneDeep(DEFAULT_PERIODIC_REPORTS);
+    const defaultMode = normalizePeriodicInputMode(raw.default_input_mode, defaults.default_input_mode);
+    return {
+      enabled: raw.enabled !== false,
+      default_input_mode: defaultMode,
+      language: normalizeText(raw.language || defaults.language) || defaults.language,
+      max_candidates: normalizePositiveInt(raw.max_candidates, defaults.max_candidates),
+      max_topics: normalizePositiveInt(raw.max_topics, defaults.max_topics),
+      representative_papers: normalizePositiveInt(raw.representative_papers, defaults.representative_papers),
+      weekly: {
+        enabled: weeklyRaw.enabled !== false,
+        schedule: normalizeText(weeklyRaw.schedule || defaults.weekly.schedule),
+        input_mode: normalizePeriodicInputMode(weeklyRaw.input_mode, defaultMode),
+        recrawl_days: normalizePositiveInt(weeklyRaw.recrawl_days, defaults.weekly.recrawl_days),
+      },
+      monthly: {
+        enabled: monthlyRaw.enabled !== false,
+        schedule: normalizeText(monthlyRaw.schedule || defaults.monthly.schedule),
+        input_mode: normalizePeriodicInputMode(monthlyRaw.input_mode, defaultMode),
+        recrawl_days: normalizePositiveInt(monthlyRaw.recrawl_days, defaults.monthly.recrawl_days),
+      },
+      charts: {
+        topics: chartsRaw.topics !== false,
+        sources: chartsRaw.sources !== false,
+        score_distribution: chartsRaw.score_distribution !== false,
+        timeline: chartsRaw.timeline !== false,
+        topic_timeline: chartsRaw.topic_timeline !== false,
+      },
+      topic_aliases: isPlainObject(raw.topic_aliases) ? cloneDeep(raw.topic_aliases) : {},
+      include_low_score_novelty: raw.include_low_score_novelty === true,
+    };
+  };
+
+  const resolvePeriodicReports = (config) => normalizePeriodicReports(
+    isPlainObject(config) ? config.periodic_reports : {},
   );
 
   const resolveDailyPaperLimits = (profile) => {
@@ -610,6 +696,41 @@ window.SubscriptionsManager = (function () {
     }
   };
 
+  const syncPeriodicReportFields = () => {
+    const settings = resolvePeriodicReports(draftConfig || {});
+    const syncValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && document.activeElement !== el) el.value = String(value);
+    };
+    const syncChecked = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!value;
+    };
+    syncChecked('dpr-periodic-enabled-input', settings.enabled);
+    syncValue('dpr-periodic-default-mode-select', settings.default_input_mode);
+    syncValue('dpr-periodic-language-input', settings.language);
+    syncValue('dpr-periodic-max-candidates-input', settings.max_candidates);
+    syncValue('dpr-periodic-max-topics-input', settings.max_topics);
+    syncValue('dpr-periodic-representative-input', settings.representative_papers);
+    syncChecked('dpr-periodic-weekly-enabled-input', settings.weekly.enabled);
+    syncValue('dpr-periodic-weekly-mode-select', settings.weekly.input_mode);
+    syncValue('dpr-periodic-weekly-recrawl-input', settings.weekly.recrawl_days);
+    syncChecked('dpr-periodic-monthly-enabled-input', settings.monthly.enabled);
+    syncValue('dpr-periodic-monthly-mode-select', settings.monthly.input_mode);
+    syncValue('dpr-periodic-monthly-recrawl-input', settings.monthly.recrawl_days);
+    syncChecked('dpr-periodic-chart-topics-input', settings.charts.topics);
+    syncChecked('dpr-periodic-chart-sources-input', settings.charts.sources);
+    syncChecked('dpr-periodic-chart-scores-input', settings.charts.score_distribution);
+    syncChecked('dpr-periodic-chart-timeline-input', settings.charts.timeline);
+    syncChecked('dpr-periodic-chart-topic-timeline-input', settings.charts.topic_timeline);
+    const aliasEl = document.getElementById('dpr-periodic-topic-aliases-input');
+    if (aliasEl && document.activeElement !== aliasEl) {
+      aliasEl.value = Object.keys(settings.topic_aliases || {}).length
+        ? JSON.stringify(settings.topic_aliases, null, 2)
+        : '';
+    }
+  };
+
   const renderSettingsSnapshot = () => {
     if (!panel) return;
     const cfg = isPlainObject(draftConfig) ? draftConfig : {};
@@ -644,6 +765,7 @@ window.SubscriptionsManager = (function () {
       el.textContent = String(windows.daysWindow);
     });
     syncEmailSettingsFields();
+    syncPeriodicReportFields();
     renderResearchDirections();
 
     if (profileCountEl) {
@@ -712,7 +834,16 @@ window.SubscriptionsManager = (function () {
 
   const refreshQuickRunButtons = (options = {}) => {
     const blocked = hasUnsavedChanges;
-    [quickRunTodayBtn, quickRun10dBtn, quickRun30dBtn, quickRun30dStandardBtn].forEach((btn) => {
+    [
+      quickRunTodayBtn,
+      quickRun10dBtn,
+      quickRun30dBtn,
+      quickRun30dStandardBtn,
+      quickRunWeeklyReportBtn,
+      quickRunMonthlyReportBtn,
+      quickRunWeeklyRecrawlBtn,
+      quickRunMonthlyRecrawlBtn,
+    ].forEach((btn) => {
       if (!btn) return;
       btn.disabled = blocked;
       btn.classList.toggle('chat-quick-run-item--disabled', blocked);
@@ -723,6 +854,10 @@ window.SubscriptionsManager = (function () {
     if (blocked && quickRunMsgEl) {
       quickRunMsgEl.textContent = '检测到未保存修改，请先保存后再发起快速抓取。';
       quickRunMsgEl.style.color = '#c00';
+    }
+    if (blocked && periodicReportMsgEl) {
+      periodicReportMsgEl.textContent = '检测到未保存修改，请先保存后再发起周期报告。';
+      periodicReportMsgEl.style.color = '#c00';
     }
     updateSettingsChrome();
     if (options.renderSnapshot !== false) {
@@ -768,6 +903,40 @@ window.SubscriptionsManager = (function () {
       msgEl.style.color = '#080';
     }
     setQuickRunMessage(finalTip, '#080');
+    return true;
+  };
+
+  const setPeriodicReportMessage = (text, color) => {
+    if (periodicReportMsgEl) {
+      periodicReportMsgEl.textContent = text || '';
+      periodicReportMsgEl.style.color = color || '#666';
+    }
+    if (msgEl && msgEl !== periodicReportMsgEl) {
+      msgEl.textContent = text || '';
+      msgEl.style.color = color || '#666';
+    }
+  };
+
+  const runPeriodicReportQuick = (period, inputMode, fetchDays) => {
+    if (hasUnsavedChanges) {
+      setPeriodicReportMessage('检测到未保存修改，请先点击“保存”后再发起周期报告。', '#c00');
+      return false;
+    }
+    if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runPeriodicReport !== 'function') {
+      setPeriodicReportMessage('周期报告工作流触发器未加载到当前页面。', '#c00');
+      return false;
+    }
+    const periodKey = period === 'monthly' ? 'monthly' : 'weekly';
+    const mode = normalizePeriodicInputMode(inputMode, 'artifacts');
+    const dispatchInputs = {};
+    if (fetchDays) {
+      dispatchInputs.fetch_days = String(fetchDays);
+    }
+    window.DPRWorkflowRunner.runPeriodicReport(periodKey, mode, { dispatchInputs });
+    const periodLabel = periodKey === 'monthly' ? '月报' : '周报';
+    const modeLabel = mode === 'artifacts' ? 'artifact' : mode;
+    const fetchText = fetchDays ? `，候选池窗口 ${fetchDays} 天` : '';
+    setPeriodicReportMessage(`已发起${periodLabel}生成任务（${modeLabel}${fetchText}）。`, '#080');
     return true;
   };
 
@@ -1183,6 +1352,7 @@ window.SubscriptionsManager = (function () {
     paperSetting.days_window = windows.daysWindow;
     paperSetting.carryover_days = windows.carryoverDays;
     next.arxiv_paper_setting = paperSetting;
+    next.periodic_reports = normalizePeriodicReports(next.periodic_reports);
 
     if (!subs.schema_migration || typeof subs.schema_migration !== 'object') {
       subs.schema_migration = {};
@@ -1369,6 +1539,10 @@ window.SubscriptionsManager = (function () {
                 <span class="dpr-settings-nav-icon">▶</span>
                 <span class="dpr-settings-nav-text">工作流</span>
               </button>
+              <button class="dpr-settings-nav-btn" type="button" data-settings-page="periodic" aria-selected="false">
+                <span class="dpr-settings-nav-icon">📊</span>
+                <span class="dpr-settings-nav-text">周期报告</span>
+              </button>
               <button class="dpr-settings-nav-btn" type="button" data-settings-page="sources" aria-selected="false">
                 <span class="dpr-settings-nav-icon">📚</span>
                 <span class="dpr-settings-nav-text">文献源</span>
@@ -1496,6 +1670,32 @@ window.SubscriptionsManager = (function () {
                 <div class="chat-quick-run-divider" aria-hidden="true"></div>
                 <div class="dpr-settings-card-head dpr-settings-card-head-compact">
                   <div>
+                    <h3>周期报告</h3>
+                    <p>默认复用日报 artifact；重新抓取入口会扩大候选池，成本更高。</p>
+                  </div>
+                </div>
+                <div class="dpr-quick-run-grid dpr-periodic-quick-grid">
+                  <button id="arxiv-admin-weekly-report-btn" class="chat-quick-run-item" type="button">
+                    <span>生成本周周报</span>
+                    <small>artifact 模式：最省 token</small>
+                  </button>
+                  <button id="arxiv-admin-monthly-report-btn" class="chat-quick-run-item" type="button">
+                    <span>生成本月月报</span>
+                    <small>图表优先的 high-level 趋势</small>
+                  </button>
+                  <button id="arxiv-admin-weekly-recrawl-report-btn" class="chat-quick-run-item" type="button">
+                    <span>重抓本周候选池</span>
+                    <small>hybrid / 10 天窗口</small>
+                  </button>
+                  <button id="arxiv-admin-monthly-recrawl-report-btn" class="chat-quick-run-item" type="button">
+                    <span>重抓本月候选池</span>
+                    <small>hybrid / 30 天窗口</small>
+                  </button>
+                </div>
+                <div id="dpr-periodic-report-msg" class="chat-quick-run-msg"></div>
+                <div class="chat-quick-run-divider" aria-hidden="true"></div>
+                <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                  <div>
                     <h3>会议论文</h3>
                     <p>入口已预留，后续可接入会议专属抓取。</p>
                   </div>
@@ -1559,6 +1759,94 @@ window.SubscriptionsManager = (function () {
                     </div>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            <section class="dpr-settings-page dpr-settings-page-with-save" data-settings-page-panel="periodic" hidden>
+              <div class="dpr-settings-page-head">
+                <div>
+                  <div class="dpr-settings-page-kicker">General / Periodic Reports</div>
+                  <h2>周期报告</h2>
+                  <p>周报偏阅读路线，月报偏研究热点趋势；默认复用日报 artifact，避免额外 PDF 精读和大上下文调用。</p>
+                </div>
+              </div>
+              <div class="dpr-periodic-settings-grid">
+                <div class="dpr-settings-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>默认策略</h3>
+                      <p>artifacts 最省 token；hybrid/recrawl 会扩大候选池，适合人工触发。</p>
+                    </div>
+                  </div>
+                  <div class="dpr-settings-form-grid">
+                    <label class="chat-quick-run-row" for="dpr-periodic-enabled-input">
+                      <span>启用周期报告</span>
+                      <input id="dpr-periodic-enabled-input" type="checkbox" />
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-default-mode-select">
+                      <span>默认输入模式</span>
+                      <select id="dpr-periodic-default-mode-select">
+                        <option value="artifacts">artifacts</option>
+                        <option value="hybrid">hybrid</option>
+                        <option value="recrawl">recrawl</option>
+                      </select>
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-language-input">
+                      <span>输出语言</span>
+                      <input id="dpr-periodic-language-input" type="text" placeholder="zh-CN" />
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-max-candidates-input">
+                      <span>最大候选数</span>
+                      <input id="dpr-periodic-max-candidates-input" type="number" min="1" step="1" />
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-max-topics-input">
+                      <span>最大主题数</span>
+                      <input id="dpr-periodic-max-topics-input" type="number" min="1" step="1" />
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-representative-input">
+                      <span>代表论文数</span>
+                      <input id="dpr-periodic-representative-input" type="number" min="1" step="1" />
+                    </label>
+                  </div>
+                </div>
+                <div class="dpr-settings-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>周报 / 月报窗口</h3>
+                      <p>定时表达为 UTC cron；当前默认对应北京时间周六/月初早晨。</p>
+                    </div>
+                  </div>
+                  <div class="dpr-settings-form-grid">
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-enabled-input"><span>周报启用</span><input id="dpr-periodic-weekly-enabled-input" type="checkbox" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-mode-select"><span>周报模式</span><select id="dpr-periodic-weekly-mode-select"><option value="artifacts">artifacts</option><option value="hybrid">hybrid</option><option value="recrawl">recrawl</option></select></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-recrawl-input"><span>周报重抓天数</span><input id="dpr-periodic-weekly-recrawl-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-enabled-input"><span>月报启用</span><input id="dpr-periodic-monthly-enabled-input" type="checkbox" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-mode-select"><span>月报模式</span><select id="dpr-periodic-monthly-mode-select"><option value="artifacts">artifacts</option><option value="hybrid">hybrid</option><option value="recrawl">recrawl</option></select></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-recrawl-input"><span>月报重抓天数</span><input id="dpr-periodic-monthly-recrawl-input" type="number" min="1" step="1" /></label>
+                  </div>
+                </div>
+                <div class="dpr-settings-card dpr-periodic-chart-settings-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>图表与主题合并</h3>
+                      <p>关闭不需要的图表可降低页面密度；topic aliases 使用 JSON 对象。</p>
+                    </div>
+                  </div>
+                  <div class="dpr-periodic-chart-toggle-grid">
+                    <label><input id="dpr-periodic-chart-topics-input" type="checkbox" /> 主题 TopN</label>
+                    <label><input id="dpr-periodic-chart-sources-input" type="checkbox" /> 来源分布</label>
+                    <label><input id="dpr-periodic-chart-scores-input" type="checkbox" /> 分数分布</label>
+                    <label><input id="dpr-periodic-chart-timeline-input" type="checkbox" /> 时间分布</label>
+                    <label><input id="dpr-periodic-chart-topic-timeline-input" type="checkbox" /> 主题演化</label>
+                  </div>
+                  <label class="dpr-periodic-alias-field" for="dpr-periodic-topic-aliases-input">
+                    <span>主题别名 JSON</span>
+                    <textarea id="dpr-periodic-topic-aliases-input" rows="6" placeholder='{"LLM Agent":["agents","AI agents"]}'></textarea>
+                  </label>
+                </div>
+              </div>
+              <div class="dpr-settings-save-row">
+                <button id="dpr-periodic-save-btn" class="arxiv-tool-btn dpr-settings-save-btn" type="button">保存周期报告设置</button>
               </div>
             </section>
 
@@ -1955,6 +2243,136 @@ window.SubscriptionsManager = (function () {
     });
   };
 
+  const updatePeriodicReportSetting = (updater, options = {}) => {
+    if (!draftConfig) return;
+    const next = cloneDeep(draftConfig || {});
+    const current = normalizePeriodicReports(next.periodic_reports);
+    const updated = typeof updater === 'function'
+      ? updater(cloneDeep(current)) || current
+      : current;
+    next.periodic_reports = normalizePeriodicReports(updated);
+    draftConfig = normalizeSubscriptions(next);
+    hasUnsavedChanges = true;
+    if (options.message) {
+      setPeriodicReportMessage(options.message, options.color || '#080');
+    }
+    refreshQuickRunButtons({ renderSnapshot: options.renderSnapshot !== false });
+  };
+
+  const parsePeriodicAliases = (value) => {
+    const text = normalizeText(value || '');
+    if (!text) return {};
+    const parsed = JSON.parse(text);
+    if (!isPlainObject(parsed)) {
+      throw new Error('主题别名必须是 JSON 对象。');
+    }
+    return parsed;
+  };
+
+  const bindPeriodicInput = (inputId, updater, eventName = 'input') => {
+    const inputEl = document.getElementById(inputId);
+    if (!inputEl || inputEl._dprPeriodicBound) return;
+    inputEl._dprPeriodicBound = true;
+    inputEl.addEventListener(eventName, () => {
+      updatePeriodicReportSetting((settings) => updater(settings, inputEl));
+    });
+    inputEl.addEventListener('blur', () => {
+      renderSettingsSnapshot();
+    });
+  };
+
+  const bindPeriodicReportInputs = () => {
+    bindPeriodicInput('dpr-periodic-enabled-input', (settings, el) => {
+      settings.enabled = !!el.checked;
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-default-mode-select', (settings, el) => {
+      const mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
+      settings.default_input_mode = mode;
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-language-input', (settings, el) => {
+      settings.language = normalizeText(el.value) || DEFAULT_PERIODIC_REPORTS.language;
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-max-candidates-input', (settings, el) => {
+      settings.max_candidates = normalizePositiveInt(el.value, DEFAULT_PERIODIC_REPORTS.max_candidates);
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-max-topics-input', (settings, el) => {
+      settings.max_topics = normalizePositiveInt(el.value, DEFAULT_PERIODIC_REPORTS.max_topics);
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-representative-input', (settings, el) => {
+      settings.representative_papers = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.representative_papers,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-weekly-enabled-input', (settings, el) => {
+      settings.weekly.enabled = !!el.checked;
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-weekly-mode-select', (settings, el) => {
+      settings.weekly.input_mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-weekly-recrawl-input', (settings, el) => {
+      settings.weekly.recrawl_days = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.recrawl_days,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-enabled-input', (settings, el) => {
+      settings.monthly.enabled = !!el.checked;
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-monthly-mode-select', (settings, el) => {
+      settings.monthly.input_mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
+      return settings;
+    }, 'change');
+    bindPeriodicInput('dpr-periodic-monthly-recrawl-input', (settings, el) => {
+      settings.monthly.recrawl_days = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.recrawl_days,
+      );
+      return settings;
+    });
+    [
+      ['dpr-periodic-chart-topics-input', 'topics'],
+      ['dpr-periodic-chart-sources-input', 'sources'],
+      ['dpr-periodic-chart-scores-input', 'score_distribution'],
+      ['dpr-periodic-chart-timeline-input', 'timeline'],
+      ['dpr-periodic-chart-topic-timeline-input', 'topic_timeline'],
+    ].forEach(([inputId, key]) => {
+      bindPeriodicInput(inputId, (settings, el) => {
+        settings.charts[key] = !!el.checked;
+        return settings;
+      }, 'change');
+    });
+
+    const aliasEl = document.getElementById('dpr-periodic-topic-aliases-input');
+    if (aliasEl && !aliasEl._dprPeriodicAliasBound) {
+      aliasEl._dprPeriodicAliasBound = true;
+      aliasEl.addEventListener('blur', () => {
+        try {
+          const aliases = parsePeriodicAliases(aliasEl.value);
+          updatePeriodicReportSetting((settings) => {
+            settings.topic_aliases = aliases;
+            return settings;
+          }, {
+            message: '主题别名已更新，记得保存配置。',
+            renderSnapshot: true,
+          });
+        } catch (e) {
+          setPeriodicReportMessage((e && e.message) || '主题别名 JSON 无法解析。', '#c00');
+        }
+      });
+    }
+  };
+
   const bindBaseEvents = () => {
     if (closeBtn && !closeBtn._bound) {
       closeBtn._bound = true;
@@ -2025,6 +2443,7 @@ window.SubscriptionsManager = (function () {
 
     bindWindowInput('dpr-settings-days-window-input', 'days_window');
     bindWindowInput('dpr-settings-carryover-window-input', 'carryover_days');
+    bindPeriodicReportInputs();
 
     const reloadConfigBtn = document.getElementById('dpr-settings-reload-config-btn');
     if (reloadConfigBtn && !reloadConfigBtn._bound) {
@@ -2054,6 +2473,11 @@ window.SubscriptionsManager = (function () {
     quickRun10dBtn = document.getElementById('arxiv-admin-quick-run-10d-btn');
     quickRun30dBtn = document.getElementById('arxiv-admin-quick-run-30d-btn');
     quickRun30dStandardBtn = document.getElementById('arxiv-admin-quick-run-30d-standard-btn');
+    quickRunWeeklyReportBtn = document.getElementById('arxiv-admin-weekly-report-btn');
+    quickRunMonthlyReportBtn = document.getElementById('arxiv-admin-monthly-report-btn');
+    quickRunWeeklyRecrawlBtn = document.getElementById('arxiv-admin-weekly-recrawl-report-btn');
+    quickRunMonthlyRecrawlBtn = document.getElementById('arxiv-admin-monthly-recrawl-report-btn');
+    periodicReportMsgEl = document.getElementById('dpr-periodic-report-msg');
     quickRunOpenWorkflowPanelBtn = document.getElementById('arxiv-admin-open-workflow-panel-btn');
     quickRunConferenceBtn = document.getElementById(
       'arxiv-admin-quick-run-conference-run-btn',
@@ -2081,7 +2505,16 @@ window.SubscriptionsManager = (function () {
       quickRunConferenceBtn.title = '会议论文抓取功能暂未接入';
     }
     fillQuickRunOptions(quickRunYearSelect, quickRunConferenceSelect);
-    [quickRunTodayBtn, quickRun10dBtn, quickRun30dBtn, quickRun30dStandardBtn].forEach((btn) => {
+    [
+      quickRunTodayBtn,
+      quickRun10dBtn,
+      quickRun30dBtn,
+      quickRun30dStandardBtn,
+      quickRunWeeklyReportBtn,
+      quickRunMonthlyReportBtn,
+      quickRunWeeklyRecrawlBtn,
+      quickRunMonthlyRecrawlBtn,
+    ].forEach((btn) => {
       if (!btn) return;
       if (!btn.dataset.defaultTitle) {
         btn.setAttribute('data-default-title', btn.textContent || '');
@@ -2138,6 +2571,34 @@ window.SubscriptionsManager = (function () {
       });
     }
 
+    if (quickRunWeeklyReportBtn && !quickRunWeeklyReportBtn._bound) {
+      quickRunWeeklyReportBtn._bound = true;
+      quickRunWeeklyReportBtn.addEventListener('click', () => {
+        runPeriodicReportQuick('weekly', 'artifacts');
+      });
+    }
+
+    if (quickRunMonthlyReportBtn && !quickRunMonthlyReportBtn._bound) {
+      quickRunMonthlyReportBtn._bound = true;
+      quickRunMonthlyReportBtn.addEventListener('click', () => {
+        runPeriodicReportQuick('monthly', 'artifacts');
+      });
+    }
+
+    if (quickRunWeeklyRecrawlBtn && !quickRunWeeklyRecrawlBtn._bound) {
+      quickRunWeeklyRecrawlBtn._bound = true;
+      quickRunWeeklyRecrawlBtn.addEventListener('click', () => {
+        runPeriodicReportQuick('weekly', 'hybrid', DEFAULT_PERIODIC_REPORTS.weekly.recrawl_days);
+      });
+    }
+
+    if (quickRunMonthlyRecrawlBtn && !quickRunMonthlyRecrawlBtn._bound) {
+      quickRunMonthlyRecrawlBtn._bound = true;
+      quickRunMonthlyRecrawlBtn.addEventListener('click', () => {
+        runPeriodicReportQuick('monthly', 'hybrid', DEFAULT_PERIODIC_REPORTS.monthly.recrawl_days);
+      });
+    }
+
     if (quickRunOpenWorkflowPanelBtn && !quickRunOpenWorkflowPanelBtn._bound) {
       quickRunOpenWorkflowPanelBtn._bound = true;
       quickRunOpenWorkflowPanelBtn.addEventListener('click', () => {
@@ -2182,6 +2643,12 @@ window.SubscriptionsManager = (function () {
     if (emailTestBtn && !emailTestBtn._bound) {
       emailTestBtn._bound = true;
       emailTestBtn.addEventListener('click', sendEmailTest);
+    }
+
+    const periodicSaveBtn = document.getElementById('dpr-periodic-save-btn');
+    if (periodicSaveBtn && !periodicSaveBtn._bound) {
+      periodicSaveBtn._bound = true;
+      periodicSaveBtn.addEventListener('click', saveDraftConfig);
     }
 
   };
@@ -2239,6 +2706,8 @@ window.SubscriptionsManager = (function () {
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
       normalizeResearchDirections: (value) => normalizeResearchDirections(value),
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
+      normalizePeriodicReports: (value) => normalizePeriodicReports(cloneDeep(value || {})),
+      resolvePeriodicReports: (config) => resolvePeriodicReports(cloneDeep(config || {})),
     },
   };
 })();

@@ -29,6 +29,17 @@ window.DPRWorkflowRunner = (function () {
       },
     },
     {
+      key: 'periodic-report',
+      id: 'periodic-report.yml',
+      name: '生成周报/月报',
+      desc: '复用日报 artifact 生成研究周报或月报；recrawl/hybrid 仅按需扩大候选池。',
+      dispatchInputs: {
+        period: 'weekly',
+        input_mode: 'artifacts',
+        dry_run: 'false',
+      },
+    },
+    {
       key: 'reset-content',
       id: 'reset-content.yml',
       name: '重置 content（docs + archive）',
@@ -867,9 +878,37 @@ window.DPRWorkflowRunner = (function () {
     return runWorkflowByKey(preset.key, mergedInputs);
   };
 
+  const buildPeriodicReportInputs = (period, inputMode, extra) => {
+    const safePeriod = String(period || 'weekly').trim().toLowerCase() === 'monthly' ? 'monthly' : 'weekly';
+    const safeMode = ['artifacts', 'recrawl', 'hybrid'].includes(String(inputMode || '').trim().toLowerCase())
+      ? String(inputMode || '').trim().toLowerCase()
+      : 'artifacts';
+    const options = extra && typeof extra === 'object' ? extra : {};
+    return combineInputs(
+      {
+        period: safePeriod,
+        input_mode: safeMode,
+        dry_run: 'false',
+      },
+      options.dispatchInputs,
+    );
+  };
+
+  const runPeriodicReport = async (period, inputMode, extra) => {
+    const mergedInputs = buildPeriodicReportInputs(period, inputMode, extra);
+    return runWorkflowByKey('periodic-report', mergedInputs);
+  };
+
   return {
     open,
     runWorkflowByKey,
     runQuickFetchByDays,
+    runPeriodicReport,
+    __test: {
+      WORKFLOWS,
+      QUICK_FETCH_PRESETS,
+      getWorkflowByKey,
+      buildPeriodicReportInputs,
+    },
   };
 })();

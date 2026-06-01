@@ -4106,7 +4106,15 @@ window.$docsify = {
 
       const isReportRouteFile = (file) => {
         const f = String(file || '');
-        return /^(?:\d{6}\/\d{2}|\d{8}-\d{8})\/README\.md$/i.test(f);
+        return (
+          /^(?:\d{6}\/\d{2}|\d{8}-\d{8})\/README\.md$/i.test(f) ||
+          /^reports\/(?:weekly|monthly)(?:\/[^/]+)?\/README\.md$/i.test(f)
+        );
+      };
+
+      const isPeriodicReportRouteFile = (file) => {
+        const f = String(file || '');
+        return /^reports\/(?:weekly|monthly)(?:\/[^/]+)?\/README\.md$/i.test(f);
       };
 
       const fitTextToBox = (el, minPx, maxPx) => {
@@ -4154,13 +4162,41 @@ window.$docsify = {
         isHomePage = false,
         isReportPage = false,
         isPaperPage = false,
+        isPeriodicReportPage = false,
       } = {}) => {
         const body = document.body;
         if (!body || !body.classList) return;
         body.classList.toggle('dpr-home-page', !!isHomePage);
         body.classList.toggle('dpr-report-page', !!isReportPage);
+        body.classList.toggle('dpr-periodic-report-page', !!isPeriodicReportPage);
         body.classList.toggle('dpr-landing-page', !!(isHomePage || isReportPage));
         body.classList.toggle('dpr-paper-page', !!isPaperPage);
+      };
+
+      const bindPeriodicEvidenceToggles = (root) => {
+        const scope = root || document;
+        const buttons = scope.querySelectorAll(
+          '.dpr-weekly-evidence-toggle:not([data-dpr-evidence-bound])',
+        );
+        buttons.forEach((button) => {
+          button.dataset.dprEvidenceBound = '1';
+          button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const strip = button.closest('[data-dpr-weekly-evidence]');
+            const listId = button.getAttribute('aria-controls') || '';
+            const list = listId
+              ? document.getElementById(listId)
+              : strip && strip.querySelector('.dpr-weekly-evidence-list');
+            if (!strip || !list) return;
+            const nextExpanded = button.getAttribute('aria-expanded') !== 'true';
+            button.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+            button.textContent = nextExpanded ? '收起' : '展开';
+            list.hidden = !nextExpanded;
+            strip.classList.toggle('is-expanded', nextExpanded);
+            strip.classList.toggle('is-collapsed', !nextExpanded);
+          });
+        });
       };
 
       const applyPaperTitleBar = () => {
@@ -6251,6 +6287,7 @@ window.$docsify = {
           routePath === '';
         const file = vm && vm.route ? vm.route.file : '';
         const isReportPage = isReportRouteFile(file);
+        const isPeriodicReportPage = isPeriodicReportRouteFile(file);
         const isPaperPage = isPaperRouteFile(file);
         const isTutorialPage = /^tutorial(?:\/|$)/i.test(
           String(file || routePath || paperId || '').replace(/^\/+/, ''),
@@ -6258,7 +6295,7 @@ window.$docsify = {
         const normalizedLandingFile = String(file || routePath || paperId || '').replace(/^\/+/, '');
         const isLocalPdfToolPage = /^local-pdf(?:\.md)?$/i.test(normalizedLandingFile);
         const isLandingLikePage = isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage;
-        syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage });
+        syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage, isPeriodicReportPage });
 
         // A. 对正文区域进行一次全局公式渲染（支持 $...$ / $$...$$）
         const mainContent = document.querySelector('.markdown-section');
@@ -6266,10 +6303,11 @@ window.$docsify = {
           // 先创建正文包装层，避免后续切页动画影响聊天浮层
           const root = isPaperPage ? ensurePageContentRoot() : null;
           const mathRoot = root || mainContent;
-          if (isReportPage) applyLegacyDailyReportCards(mathRoot);
+          if (isReportPage && !isPeriodicReportPage) applyLegacyDailyReportCards(mathRoot);
           restoreMarkdownMathPlaceholdersInEl(mathRoot);
           renderMathInEl(mathRoot);
           if (isPaperPage) applyPaperAbstractFold(mathRoot);
+          if (isPeriodicReportPage) bindPeriodicEvidenceToggles(mathRoot);
         }
 
         // 论文页标题条排版（只对 docs/YYYYMM/DD/*.md 生效）

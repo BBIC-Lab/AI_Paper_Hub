@@ -9,6 +9,31 @@ arxiv_paper_setting:
   carryover_days: 7
   docs_dir: docs
   prefer_supabase_read: true
+periodic_reports:
+  enabled: true
+  default_input_mode: artifacts
+  language: zh-CN
+  max_candidates: 240
+  max_topics: 10
+  representative_papers: 12
+  weekly:
+    enabled: true
+    schedule: "30 23 * * 5"
+    input_mode: artifacts
+    recrawl_days: 10
+  monthly:
+    enabled: true
+    schedule: "30 23 1 * *"
+    input_mode: artifacts
+    recrawl_days: 30
+  charts:
+    topics: true
+    sources: true
+    score_distribution: true
+    timeline: true
+    topic_timeline: true
+  topic_aliases: {}
+  include_low_score_novelty: false
 supabase:
   enabled: true
   url: https://lyucdwgefyfbmaiopjbk.supabase.co

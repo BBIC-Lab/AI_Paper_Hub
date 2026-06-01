@@ -1,0 +1,211 @@
+name: periodic-report
+
+on:
+  schedule:
+    - cron: "30 23 * * 5" # 北京时间周六 07:30 周报
+    - cron: "30 23 28-31 * *" # 北京时间每月 1 日 07:30 月报，脚本内二次判断
+  workflow_dispatch:
+    inputs:
+      period:
+        description: "报告周期：weekly/monthly"
+        required: false
+        default: "weekly"
+      start_date:
+        description: "自定义开始日期 YYYY-MM-DD；留空自动解析"
+        required: false
+        default: ""
+      end_date:
+        description: "自定义结束日期 YYYY-MM-DD；留空自动解析"
+        required: false
+        default: ""
+      input_mode:
+        description: "输入模式：artifacts/recrawl/hybrid"
+        required: false
+        default: "artifacts"
+      fetch_days:
+        description: "recrawl/hybrid 使用的抓取天数；留空按周期默认"
+        required: false
+        default: ""
+      profile_tag:
+        description: "仅运行指定词条 tag；留空表示全量"
+        required: false
+        default: ""
+      dry_run:
+        description: "仅演练，不写入周期报告和提交"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: periodic-report-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.period || 'scheduled' }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DPR_LLM_PROVIDER: ${{ secrets.DPR_LLM_PROVIDER }}
+      DPR_LLM_API_KEY: ${{ secrets.DPR_LLM_API_KEY }}
+      DPR_LLM_BASE_URL: ${{ secrets.DPR_LLM_BASE_URL }}
+      DPR_LLM_MODEL: ${{ secrets.DPR_LLM_MODEL }}
+      DPR_LLM_REWRITE_MODEL: ${{ secrets.DPR_LLM_REWRITE_MODEL }}
+      DPR_LLM_FILTER_MODEL: ${{ secrets.DPR_LLM_FILTER_MODEL }}
+      DPR_LLM_SUMMARY_MODEL: ${{ secrets.DPR_LLM_SUMMARY_MODEL }}
+      DPR_LLM_REPORT_MODEL: ${{ secrets.DPR_LLM_REPORT_MODEL }}
+      DPR_SKIP_RERANK: "true"
+      DPR_EMBED_API_TIMEOUT: "60"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Random delay to spread scheduled runs
+        if: github.event_name == 'schedule'
+        run: |
+          DELAY=$(shuf -i 0-1800 -n 1)
+          echo "Sleeping ${DELAY}s to stagger scheduled periodic reports..."
+          sleep "$DELAY"
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python deps
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/uv
+            ~/.cache/torch
+          key: ${{ runner.os }}-dpr-periodic-deps-v1-${{ hashFiles('requirements.txt') }}
+
+      - name: Install deps (skip sqlite3)
+        run: |
+          python - <<'PY'
+          import re
+          lines = open("requirements.txt", "r", encoding="utf-8").read().splitlines()
+          lines = [line for line in lines if line.strip() and not re.match(r"^sqlite3\b", line)]
+          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(lines))
+          PY
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          uv pip install --system -r /tmp/req.txt
+
+      - name: Resolve periodic arguments
+        id: args
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVENT_NAME="${{ github.event_name }}"
+          EVENT_SCHEDULE="${{ github.event.schedule || '' }}"
+          PERIOD="${{ github.event.inputs.period || '' }}"
+          INPUT_MODE="${{ github.event.inputs.input_mode || '' }}"
+          START_DATE="${{ github.event.inputs.start_date || '' }}"
+          END_DATE="${{ github.event.inputs.end_date || '' }}"
+          FETCH_DAYS="${{ github.event.inputs.fetch_days || '' }}"
+          PROFILE_TAG="${{ github.event.inputs.profile_tag || '' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            START_DATE=""
+            END_DATE=""
+            PROFILE_TAG=""
+            DRY_RUN="false"
+            INPUT_MODE="artifacts"
+            if [ "$EVENT_SCHEDULE" = "30 23 * * 5" ]; then
+              PERIOD="weekly"
+              FETCH_DAYS="10"
+            else
+              PERIOD="monthly"
+              FETCH_DAYS="30"
+              if [ "$(TZ=Asia/Shanghai date +%d)" != "01" ]; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "Not Beijing month start; skipping monthly schedule."
+                exit 0
+              fi
+            fi
+          fi
+
+          PERIOD="${PERIOD:-weekly}"
+          INPUT_MODE="${INPUT_MODE:-artifacts}"
+          if [ -z "$FETCH_DAYS" ]; then
+            if [ "$PERIOD" = "monthly" ]; then
+              FETCH_DAYS="30"
+            else
+              FETCH_DAYS="10"
+            fi
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "period=$PERIOD" >> "$GITHUB_OUTPUT"
+          echo "input_mode=$INPUT_MODE" >> "$GITHUB_OUTPUT"
+          echo "start_date=$START_DATE" >> "$GITHUB_OUTPUT"
+          echo "end_date=$END_DATE" >> "$GITHUB_OUTPUT"
+          echo "fetch_days=$FETCH_DAYS" >> "$GITHUB_OUTPUT"
+          echo "profile_tag=$PROFILE_TAG" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$DRY_RUN" >> "$GITHUB_OUTPUT"
+
+      - name: Optional recrawl candidate pool
+        if: steps.args.outputs.skip != 'true' && (steps.args.outputs.input_mode == 'recrawl' || steps.args.outputs.input_mode == 'hybrid')
+        env:
+          HF_HOME: ${{ github.workspace }}/hf_cache
+          HUGGINGFACE_HUB_CACHE: ${{ github.workspace }}/hf_cache
+          HF_HUB_DISABLE_SYMLINKS: "1"
+        run: |
+          set -euo pipefail
+          ARGS=(--fetch-days "${{ steps.args.outputs.fetch_days }}" --fetch-mode skims)
+          if [ -n "${{ steps.args.outputs.profile_tag }}" ]; then
+            ARGS+=(--profile-tag "${{ steps.args.outputs.profile_tag }}")
+          fi
+          python src/main.py "${ARGS[@]}" --embedding-device cpu --embedding-batch-size 8
+
+      - name: Generate periodic report
+        if: steps.args.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          ARGS=(--period "${{ steps.args.outputs.period }}" --input-mode "${{ steps.args.outputs.input_mode }}" --fetch-days "${{ steps.args.outputs.fetch_days }}")
+          if [ -n "${{ steps.args.outputs.start_date }}" ]; then
+            ARGS+=(--start-date "${{ steps.args.outputs.start_date }}")
+          fi
+          if [ -n "${{ steps.args.outputs.end_date }}" ]; then
+            ARGS+=(--end-date "${{ steps.args.outputs.end_date }}")
+          fi
+          if [ -n "${{ steps.args.outputs.profile_tag }}" ]; then
+            ARGS+=(--profile-tag "${{ steps.args.outputs.profile_tag }}")
+          fi
+          if [ "${{ steps.args.outputs.dry_run }}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python src/periodic_reports.py "${ARGS[@]}"
+
+      - name: Commit periodic report
+        if: steps.args.outputs.skip != 'true' && steps.args.outputs.dry_run != 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="${GITHUB_REF_NAME:-main}"
+
+          shopt -s nullglob
+          paths=(docs/reports docs/_sidebar.md)
+          for d in archive/*/recommend; do
+            paths+=("$d")
+          done
+
+          git add "${paths[@]}"
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "[chore] periodic report"
+          git fetch origin "$branch"
+          git rebase -X theirs "origin/$branch"
+          git push origin HEAD:"$branch"

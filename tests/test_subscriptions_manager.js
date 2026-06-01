@@ -15,6 +15,8 @@ const {
   buildEmailWorkflowCron,
   normalizeResearchDirections,
   resolveResearchDirections,
+  normalizePeriodicReports,
+  resolvePeriodicReports,
 } = global.window.SubscriptionsManager.__test;
 
 function buildBaseConfig() {
@@ -246,6 +248,81 @@ function testResolveResearchDirectionsPrefersConfiguredValues() {
   assert.deepEqual(context.directions, ['causal discovery', 'symbolic regression']);
 }
 
+function testNormalizeSubscriptionsAddsPeriodicReportDefaults() {
+  const normalized = normalizeSubscriptions(buildBaseConfig());
+  const reports = normalized.periodic_reports;
+
+  assert.equal(reports.enabled, true);
+  assert.equal(reports.default_input_mode, 'artifacts');
+  assert.equal(reports.weekly.input_mode, 'artifacts');
+  assert.equal(reports.weekly.recrawl_days, 10);
+  assert.equal(reports.monthly.recrawl_days, 30);
+  assert.equal(reports.charts.topic_timeline, true);
+  assert.deepEqual(reports.topic_aliases, {});
+}
+
+function testNormalizePeriodicReportsPreservesUserEdits() {
+  const reports = normalizePeriodicReports({
+    enabled: false,
+    default_input_mode: 'hybrid',
+    language: 'en-US',
+    max_candidates: '120',
+    max_topics: '7',
+    representative_papers: '5',
+    weekly: {
+      input_mode: 'recrawl',
+      recrawl_days: '9',
+    },
+    monthly: {
+      enabled: false,
+      input_mode: 'hybrid',
+      recrawl_days: '45',
+    },
+    charts: {
+      topics: false,
+      sources: true,
+      score_distribution: false,
+      timeline: true,
+      topic_timeline: false,
+    },
+    topic_aliases: {
+      Agents: ['agentic systems'],
+    },
+  });
+
+  assert.equal(reports.enabled, false);
+  assert.equal(reports.default_input_mode, 'hybrid');
+  assert.equal(reports.language, 'en-US');
+  assert.equal(reports.max_candidates, 120);
+  assert.equal(reports.max_topics, 7);
+  assert.equal(reports.representative_papers, 5);
+  assert.equal(reports.weekly.enabled, true);
+  assert.equal(reports.weekly.input_mode, 'recrawl');
+  assert.equal(reports.weekly.recrawl_days, 9);
+  assert.equal(reports.monthly.enabled, false);
+  assert.equal(reports.monthly.input_mode, 'hybrid');
+  assert.equal(reports.monthly.recrawl_days, 45);
+  assert.equal(reports.charts.topics, false);
+  assert.equal(reports.charts.score_distribution, false);
+  assert.equal(reports.charts.topic_timeline, false);
+  assert.deepEqual(reports.topic_aliases, { Agents: ['agentic systems'] });
+}
+
+function testResolvePeriodicReportsFallsBackFromConfig() {
+  const reports = resolvePeriodicReports({
+    periodic_reports: {
+      default_input_mode: 'invalid',
+      weekly: {
+        input_mode: 'hybrid',
+      },
+    },
+  });
+
+  assert.equal(reports.default_input_mode, 'artifacts');
+  assert.equal(reports.weekly.input_mode, 'hybrid');
+  assert.equal(reports.monthly.input_mode, 'artifacts');
+}
+
 testNormalizeSubscriptionsAddsBiorxivBackend();
 testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
@@ -261,5 +338,8 @@ testEmailWorkflowCronKeepsUtcTime();
 testNormalizeResearchDirectionsSplitsAndCaps();
 testResolveResearchDirectionsFallsBackToKeywords();
 testResolveResearchDirectionsPrefersConfiguredValues();
+testNormalizeSubscriptionsAddsPeriodicReportDefaults();
+testNormalizePeriodicReportsPreservesUserEdits();
+testResolvePeriodicReportsFallsBackFromConfig();
 
 console.log('subscriptions manager tests passed');
