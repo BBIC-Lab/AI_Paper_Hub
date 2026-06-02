@@ -11382,12 +11382,6 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   line-height: 24px;
 }
 
-.dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level-1 { background: rgba(167, 101, 41, 0.15); }
-.dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level-2 { background: rgba(167, 101, 41, 0.28); }
-.dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level-3 { background: rgba(167, 101, 41, 0.44); color: #563510; }
-.dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level-4 { background: rgba(167, 101, 41, 0.66); color: #ffffff; }
-.dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level-5 { background: rgba(167, 101, 41, 0.88); color: #ffffff; }
-
 .dpr-weekly-word-cloud {
   display: block;
   width: 100%;

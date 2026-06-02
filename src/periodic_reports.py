@@ -72,6 +72,8 @@ WORD_STOPWORDS = {
     "about", "after", "again", "against", "also", "among", "based", "between", "could", "from",
     "have", "into", "latest", "learning", "model", "models", "paper", "papers", "study", "that",
     "their", "these", "this", "through", "using", "with", "without", "towards", "toward", "via",
+    "already", "being", "both", "but", "each", "existing", "fetch", "fresh", "fresh_fetch",
+    "often", "than", "they", "under", "when", "where", "which", "while", "would",
     "for", "and", "the", "of", "in", "on", "to", "a", "an", "by", "is", "are", "as", "we",
 }
 
@@ -815,7 +817,6 @@ def paper_text_blob(paper: dict[str, Any], excluded_labels: set[str] | None = No
         paper.get("abstract"),
         paper.get("evidence"),
         paper.get("tldr"),
-        paper.get("selection_source"),
     ]
     for tag in paper.get("tags") or []:
         if not isinstance(tag, dict):
@@ -1744,8 +1745,7 @@ def weekday_heatmap_html(rows: list[dict[str, Any]], topic_limit: int = DEFAULT_
             title = f"{point.get('weekday')} {point.get('date')}: {count}"
             cells.append(f'<span class="dpr-periodic-heat-cell level-{level}" title="{html.escape(title)}">{count if count else ""}</span>')
         topic = html.escape(str(row.get("topic") or ""))
-        kind = "context" if row.get("kind") == "context" else "focus"
-        body.append(f'<div class="dpr-weekly-heat-row is-{kind}"><strong title="{topic}">{topic}</strong>{"".join(cells)}</div>')
+        body.append(f'<div class="dpr-weekly-heat-row"><strong title="{topic}">{topic}</strong>{"".join(cells)}</div>')
     return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card"><h2>主题演化</h2>' + header + "".join(body) + "</section>"
 
 

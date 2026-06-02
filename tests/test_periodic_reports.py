@@ -273,7 +273,7 @@ class PeriodicReportsTest(unittest.TestCase):
             self.assertIn("dpr-periodic-index-mini-cloud", weekly_index)
             self.assertIn("研究月报", monthly_index)
 
-    def test_weekly_v2_chart_markup_uses_cloud_bundle_and_context_heatmap(self):
+    def test_weekly_v2_chart_markup_uses_cloud_bundle_and_single_heatmap_scale(self):
         words = [
             {"label": "agents", "count": 9},
             {"label": "benchmark", "count": 5},
@@ -327,10 +327,13 @@ class PeriodicReportsTest(unittest.TestCase):
                 {"topic": "retrieval", "kind": "context", "points": points},
             ]
         )
-        self.assertIn("is-context", heat_html)
+        self.assertNotIn("is-context", heat_html)
+        self.assertNotIn("is-focus", heat_html)
         for label in ["周一", "周二", "周三", "周四", "周五"]:
             self.assertIn(label, heat_html)
         self.assertEqual(heat_html.count("dpr-periodic-heat-cell"), 10)
+        css = (Path(__file__).resolve().parents[1] / "app" / "app.css").read_text(encoding="utf-8")
+        self.assertNotIn(".dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level", css)
 
         many_heat_html = self.mod.weekday_heatmap_html(
             [{"topic": f"topic-{idx}", "kind": "focus", "points": points} for idx in range(13)]
@@ -357,6 +360,31 @@ class PeriodicReportsTest(unittest.TestCase):
             [row["topic"] for row in completed[:6]],
             ["agents", "retrieval", "reasoning", "benchmark", "multimodal", "systems"],
         )
+
+    def test_word_cloud_filters_runtime_source_and_generic_words(self):
+        papers = [
+            {
+                "paper_id": "p1",
+                "title": "Retrieval augmented agents",
+                "abstract": "They often compare with existing methods, but retrieval remains useful.",
+                "evidence": "Existing baselines are discussed, but retrieval agents improve grounding.",
+                "selection_source": "fresh_fetch",
+                "tags": [{"kind": "paper", "label": "retrieval"}],
+                "date": "2026-05-25",
+            }
+        ]
+
+        words = self.mod.word_cloud_items(papers, 20, {}, set())
+        labels = {item["label"] for item in words}
+
+        self.assertIn("retrieval", labels)
+        self.assertNotIn("fresh_fetch", labels)
+        self.assertNotIn("fresh", labels)
+        self.assertNotIn("fetch", labels)
+        self.assertNotIn("but", labels)
+        self.assertNotIn("they", labels)
+        self.assertNotIn("often", labels)
+        self.assertNotIn("existing", labels)
 
     def test_weekly_v24_excludes_profile_tag_and_applies_topic_limits(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
