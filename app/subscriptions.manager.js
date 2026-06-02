@@ -28,12 +28,26 @@ window.SubscriptionsManager = (function () {
       schedule: '30 23 * * 5',
       input_mode: 'artifacts',
       recrawl_days: 10,
+      max_candidates: 240,
+      representative_papers: 12,
+      topic_limits: {
+        related_topics: 10,
+        topic_timeline: 10,
+        cooccurrence_topics: 10,
+        cooccurrence_pairs: 12,
+      },
     },
     monthly: {
       enabled: true,
       schedule: '30 23 1 * *',
       input_mode: 'artifacts',
       recrawl_days: 30,
+      max_candidates: 240,
+      representative_papers: 12,
+      topic_limits: {
+        topics: 10,
+        topic_timeline: 10,
+      },
     },
     charts: {
       topics: true,
@@ -60,9 +74,6 @@ window.SubscriptionsManager = (function () {
   let quickRunMonthlyRecrawlBtn = null;
   let periodicReportMsgEl = null;
   let quickRunOpenWorkflowPanelBtn = null;
-  let quickRunConferenceBtn = null;
-  let quickRunYearSelect = null;
-  let quickRunConferenceSelect = null;
   let quickRunMsgEl = null;
   let resetContentBtn = null;
   let resetContentMsgEl = null;
@@ -121,18 +132,6 @@ window.SubscriptionsManager = (function () {
     '8) Tag suggestion should be concise, preferably under 6 characters.',
   ].join('\n');
 
-  const QUICK_RUN_CONFERENCES = [
-    'ACL',
-    'AAAI',
-    'COLING',
-    'EMNLP',
-    'ICCV',
-    'ICLR',
-    'ICML',
-    'IJCAI',
-    'NeurIPS',
-    'SIGIR',
-  ];
 
   const normalizeText = (v) => String(v || '').trim();
   const normalizeSourceKey = (v) => normalizeText(v).toLowerCase();
@@ -345,25 +344,40 @@ window.SubscriptionsManager = (function () {
     const chartsRaw = isPlainObject(raw.charts) ? raw.charts : {};
     const defaults = cloneDeep(DEFAULT_PERIODIC_REPORTS);
     const defaultMode = normalizePeriodicInputMode(raw.default_input_mode, defaults.default_input_mode);
+    const normalizeTopicLimits = (limits, fallback) => {
+      const rawLimits = isPlainObject(limits) ? limits : {};
+      const out = {};
+      Object.keys(fallback || {}).forEach((key) => {
+        out[key] = normalizePositiveInt(rawLimits[key], fallback[key]);
+      });
+      return out;
+    };
+    const normalizePeriod = (periodRaw, periodDefaults) => ({
+      enabled: periodRaw.enabled !== false,
+      schedule: normalizeText(periodRaw.schedule || periodDefaults.schedule),
+      input_mode: normalizePeriodicInputMode(periodRaw.input_mode, defaultMode),
+      recrawl_days: normalizePositiveInt(periodRaw.recrawl_days, periodDefaults.recrawl_days),
+      max_candidates: normalizePositiveInt(
+        periodRaw.max_candidates ?? raw.max_candidates,
+        periodDefaults.max_candidates,
+      ),
+      representative_papers: normalizePositiveInt(
+        periodRaw.representative_papers ?? raw.representative_papers,
+        periodDefaults.representative_papers,
+      ),
+      topic_limits: normalizeTopicLimits(periodRaw.topic_limits, periodDefaults.topic_limits),
+    });
+    const weekly = normalizePeriod(weeklyRaw, defaults.weekly);
+    const monthly = normalizePeriod(monthlyRaw, defaults.monthly);
     return {
-      enabled: raw.enabled !== false,
+      enabled: raw.enabled !== false && (weekly.enabled || monthly.enabled),
       default_input_mode: defaultMode,
       language: normalizeText(raw.language || defaults.language) || defaults.language,
       max_candidates: normalizePositiveInt(raw.max_candidates, defaults.max_candidates),
       max_topics: normalizePositiveInt(raw.max_topics, defaults.max_topics),
       representative_papers: normalizePositiveInt(raw.representative_papers, defaults.representative_papers),
-      weekly: {
-        enabled: weeklyRaw.enabled !== false,
-        schedule: normalizeText(weeklyRaw.schedule || defaults.weekly.schedule),
-        input_mode: normalizePeriodicInputMode(weeklyRaw.input_mode, defaultMode),
-        recrawl_days: normalizePositiveInt(weeklyRaw.recrawl_days, defaults.weekly.recrawl_days),
-      },
-      monthly: {
-        enabled: monthlyRaw.enabled !== false,
-        schedule: normalizeText(monthlyRaw.schedule || defaults.monthly.schedule),
-        input_mode: normalizePeriodicInputMode(monthlyRaw.input_mode, defaultMode),
-        recrawl_days: normalizePositiveInt(monthlyRaw.recrawl_days, defaults.monthly.recrawl_days),
-      },
+      weekly,
+      monthly,
       charts: {
         topics: chartsRaw.topics !== false,
         sources: chartsRaw.sources !== false,
@@ -632,29 +646,6 @@ window.SubscriptionsManager = (function () {
     return out;
   };
 
-  const fillQuickRunOptions = (yearSelectEl, confSelectEl) => {
-    if (yearSelectEl && !yearSelectEl._dprQuickRunOptionsFilled) {
-      yearSelectEl._dprQuickRunOptionsFilled = true;
-      const currentYear = new Date().getFullYear();
-      for (let y = currentYear; y >= currentYear - 8; y -= 1) {
-        const opt = document.createElement('option');
-        opt.value = String(y);
-        opt.textContent = String(y);
-        yearSelectEl.appendChild(opt);
-      }
-    }
-
-    if (confSelectEl && !confSelectEl._dprQuickRunOptionsFilled) {
-      confSelectEl._dprQuickRunOptionsFilled = true;
-      QUICK_RUN_CONFERENCES.forEach((name) => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        confSelectEl.appendChild(opt);
-      });
-    }
-  };
-
   const updateSettingsChrome = () => {
     if (settingsDirtyBadge) {
       settingsDirtyBadge.textContent = hasUnsavedChanges ? '有未保存更改' : '已保存';
@@ -706,29 +697,25 @@ window.SubscriptionsManager = (function () {
       const el = document.getElementById(id);
       if (el) el.checked = !!value;
     };
-    syncChecked('dpr-periodic-enabled-input', settings.enabled);
-    syncValue('dpr-periodic-default-mode-select', settings.default_input_mode);
-    syncValue('dpr-periodic-language-input', settings.language);
-    syncValue('dpr-periodic-max-candidates-input', settings.max_candidates);
-    syncValue('dpr-periodic-max-topics-input', settings.max_topics);
-    syncValue('dpr-periodic-representative-input', settings.representative_papers);
-    syncChecked('dpr-periodic-weekly-enabled-input', settings.weekly.enabled);
+    syncChecked('dpr-periodic-weekly-enabled-true', settings.weekly.enabled);
+    syncChecked('dpr-periodic-weekly-enabled-false', !settings.weekly.enabled);
     syncValue('dpr-periodic-weekly-mode-select', settings.weekly.input_mode);
     syncValue('dpr-periodic-weekly-recrawl-input', settings.weekly.recrawl_days);
-    syncChecked('dpr-periodic-monthly-enabled-input', settings.monthly.enabled);
+    syncValue('dpr-periodic-weekly-max-candidates-input', settings.weekly.max_candidates);
+    syncValue('dpr-periodic-weekly-representative-input', settings.weekly.representative_papers);
+    syncValue('dpr-periodic-weekly-related-topics-input', settings.weekly.topic_limits.related_topics);
+    syncValue('dpr-periodic-weekly-topic-timeline-input', settings.weekly.topic_limits.topic_timeline);
+    syncValue('dpr-periodic-weekly-cooccurrence-topics-input', settings.weekly.topic_limits.cooccurrence_topics);
+    syncValue('dpr-periodic-weekly-cooccurrence-pairs-input', settings.weekly.topic_limits.cooccurrence_pairs);
+    syncValue('dpr-periodic-word-cloud-topics-input', settings.max_topics);
+    syncChecked('dpr-periodic-monthly-enabled-true', settings.monthly.enabled);
+    syncChecked('dpr-periodic-monthly-enabled-false', !settings.monthly.enabled);
     syncValue('dpr-periodic-monthly-mode-select', settings.monthly.input_mode);
     syncValue('dpr-periodic-monthly-recrawl-input', settings.monthly.recrawl_days);
-    syncChecked('dpr-periodic-chart-topics-input', settings.charts.topics);
-    syncChecked('dpr-periodic-chart-sources-input', settings.charts.sources);
-    syncChecked('dpr-periodic-chart-scores-input', settings.charts.score_distribution);
-    syncChecked('dpr-periodic-chart-timeline-input', settings.charts.timeline);
-    syncChecked('dpr-periodic-chart-topic-timeline-input', settings.charts.topic_timeline);
-    const aliasEl = document.getElementById('dpr-periodic-topic-aliases-input');
-    if (aliasEl && document.activeElement !== aliasEl) {
-      aliasEl.value = Object.keys(settings.topic_aliases || {}).length
-        ? JSON.stringify(settings.topic_aliases, null, 2)
-        : '';
-    }
+    syncValue('dpr-periodic-monthly-max-candidates-input', settings.monthly.max_candidates);
+    syncValue('dpr-periodic-monthly-representative-input', settings.monthly.representative_papers);
+    syncValue('dpr-periodic-monthly-topics-input', settings.monthly.topic_limits.topics);
+    syncValue('dpr-periodic-monthly-topic-timeline-input', settings.monthly.topic_limits.topic_timeline);
   };
 
   const renderSettingsSnapshot = () => {
@@ -958,22 +945,6 @@ window.SubscriptionsManager = (function () {
       : (fetchMode === 'skims' ? '30 天速览抓取任务' : `${days} 天抓取任务`);
     const tip = `已发起词条「${normalizedTag}」的${modeText}。`;
     return runQuickFetch(days, quickRunMsgEl || msgEl, tip, options);
-  };
-
-  const runQuickConferencePlaceholder = (yearSelectEl, confSelectEl, msgEl) => {
-    const year = (yearSelectEl && yearSelectEl.value) || '';
-    const conf = String((confSelectEl && confSelectEl.value) || '').trim();
-    if (!year || !conf) {
-      if (msgEl) {
-        msgEl.textContent = '请先选择年份和会议名。';
-        msgEl.style.color = '#c00';
-      }
-      return;
-    }
-    if (msgEl) {
-      msgEl.textContent = `${year} ${conf} 的会议论文抓取功能暂未接入。`;
-      msgEl.style.color = '#c90';
-    }
   };
 
   const runResetContent = (msgEl) => {
@@ -1531,6 +1502,10 @@ window.SubscriptionsManager = (function () {
                 <span class="dpr-settings-nav-icon">🔎</span>
                 <span class="dpr-settings-nav-text">检索配置</span>
               </button>
+              <button class="dpr-settings-nav-btn" type="button" data-settings-page="periodic" aria-selected="false">
+                <span class="dpr-settings-nav-icon">📊</span>
+                <span class="dpr-settings-nav-text">周期报告</span>
+              </button>
               <button class="dpr-settings-nav-btn" type="button" data-settings-page="quick" aria-selected="false">
                 <span class="dpr-settings-nav-icon">⚡</span>
                 <span class="dpr-settings-nav-text">快速使用</span>
@@ -1538,10 +1513,6 @@ window.SubscriptionsManager = (function () {
               <button class="dpr-settings-nav-btn" type="button" data-settings-page="workflow" aria-selected="false">
                 <span class="dpr-settings-nav-icon">▶</span>
                 <span class="dpr-settings-nav-text">工作流</span>
-              </button>
-              <button class="dpr-settings-nav-btn" type="button" data-settings-page="periodic" aria-selected="false">
-                <span class="dpr-settings-nav-icon">📊</span>
-                <span class="dpr-settings-nav-text">周期报告</span>
               </button>
               <button class="dpr-settings-nav-btn" type="button" data-settings-page="sources" aria-selected="false">
                 <span class="dpr-settings-nav-icon">📚</span>
@@ -1642,87 +1613,61 @@ window.SubscriptionsManager = (function () {
                   <p>选择常用抓取范围，直接触发日报工作流。存在未保存修改时会自动锁定。</p>
                 </div>
               </div>
-              <div id="arxiv-search-quick-run-side" class="dpr-settings-card dpr-quick-run-card">
-                <div class="dpr-settings-card-head">
-                  <div>
-                    <h3>快速抓取</h3>
-                    <p>按常见使用场景启动论文检索与报告生成。</p>
+              <div class="dpr-quick-run-layout">
+                <div id="arxiv-search-quick-run-side" class="dpr-settings-card dpr-quick-run-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>快速抓取</h3>
+                      <p>按常见使用场景启动论文检索与报告生成。</p>
+                    </div>
                   </div>
-                </div>
-                <div class="dpr-quick-run-grid">
-                  <button id="arxiv-admin-quick-run-today-btn" class="chat-quick-run-item" type="button">
-                    <span>默认日报</span>
-                    <small>使用检索配置回溯 <b data-dpr-default-window-days>5</b> 天，标准抓取</small>
-                  </button>
-                  <button id="arxiv-admin-quick-run-10d-btn" class="chat-quick-run-item" type="button">
-                    <span>十天内论文</span>
-                    <small>快速补齐近期遗漏论文</small>
-                  </button>
-                  <button id="arxiv-admin-quick-run-30d-btn" class="chat-quick-run-item" type="button">
-                    <span>三十天速览</span>
-                    <small>全速览模式，成本约 0.76</small>
-                  </button>
-                  <button id="arxiv-admin-quick-run-30d-standard-btn" class="chat-quick-run-item" type="button">
-                    <span>三十天标准 / 精读</span>
-                    <small>全标准模式，成本约 1.22</small>
-                  </button>
-                </div>
-                <div class="chat-quick-run-divider" aria-hidden="true"></div>
-                <div class="dpr-settings-card-head dpr-settings-card-head-compact">
-                  <div>
-                    <h3>周期报告</h3>
-                    <p>默认复用日报 artifact；重新抓取入口会扩大候选池，成本更高。</p>
+                  <div class="dpr-quick-run-grid">
+                    <button id="arxiv-admin-quick-run-today-btn" class="chat-quick-run-item" type="button">
+                      <span>默认日报</span>
+                      <small>使用检索配置回溯 <b data-dpr-default-window-days>5</b> 天，标准抓取</small>
+                    </button>
+                    <button id="arxiv-admin-quick-run-10d-btn" class="chat-quick-run-item" type="button">
+                      <span>十天内论文</span>
+                      <small>快速补齐近期遗漏论文</small>
+                    </button>
+                    <button id="arxiv-admin-quick-run-30d-btn" class="chat-quick-run-item" type="button">
+                      <span>三十天速览</span>
+                      <small>全速览模式，成本约 0.76</small>
+                    </button>
+                    <button id="arxiv-admin-quick-run-30d-standard-btn" class="chat-quick-run-item" type="button">
+                      <span>三十天标准 / 精读</span>
+                      <small>全标准模式，成本约 1.22</small>
+                    </button>
                   </div>
+                  <div id="arxiv-admin-quick-run-msg" class="chat-quick-run-msg"></div>
                 </div>
-                <div class="dpr-quick-run-grid dpr-periodic-quick-grid">
-                  <button id="arxiv-admin-weekly-report-btn" class="chat-quick-run-item" type="button">
-                    <span>生成本周周报</span>
-                    <small>artifact 模式：最省 token</small>
-                  </button>
-                  <button id="arxiv-admin-monthly-report-btn" class="chat-quick-run-item" type="button">
-                    <span>生成本月月报</span>
-                    <small>图表优先的 high-level 趋势</small>
-                  </button>
-                  <button id="arxiv-admin-weekly-recrawl-report-btn" class="chat-quick-run-item" type="button">
-                    <span>重抓本周候选池</span>
-                    <small>hybrid / 10 天窗口</small>
-                  </button>
-                  <button id="arxiv-admin-monthly-recrawl-report-btn" class="chat-quick-run-item" type="button">
-                    <span>重抓本月候选池</span>
-                    <small>hybrid / 30 天窗口</small>
-                  </button>
-                </div>
-                <div id="dpr-periodic-report-msg" class="chat-quick-run-msg"></div>
-                <div class="chat-quick-run-divider" aria-hidden="true"></div>
-                <div class="dpr-settings-card-head dpr-settings-card-head-compact">
-                  <div>
-                    <h3>会议论文</h3>
-                    <p>入口已预留，后续可接入会议专属抓取。</p>
+                <div class="dpr-settings-card dpr-periodic-quick-card">
+                  <div class="dpr-settings-card-head">
+                    <div>
+                      <h3>周期报告</h3>
+                      <p>默认复用日报 artifact；重新抓取入口会扩大候选池，成本更高。</p>
+                    </div>
                   </div>
+                  <div class="dpr-quick-run-grid dpr-periodic-quick-grid">
+                    <button id="arxiv-admin-weekly-report-btn" class="chat-quick-run-item" type="button">
+                      <span>生成本周周报</span>
+                      <small>artifact 模式：最省 token</small>
+                    </button>
+                    <button id="arxiv-admin-monthly-report-btn" class="chat-quick-run-item" type="button">
+                      <span>生成本月月报</span>
+                      <small>图表优先的 high-level 趋势</small>
+                    </button>
+                    <button id="arxiv-admin-weekly-recrawl-report-btn" class="chat-quick-run-item" type="button">
+                      <span>重抓本周候选池</span>
+                      <small>hybrid / 10 天窗口</small>
+                    </button>
+                    <button id="arxiv-admin-monthly-recrawl-report-btn" class="chat-quick-run-item" type="button">
+                      <span>重抓本月候选池</span>
+                      <small>hybrid / 30 天窗口</small>
+                    </button>
+                  </div>
+                  <div id="dpr-periodic-report-msg" class="chat-quick-run-msg"></div>
                 </div>
-                <div class="dpr-settings-form-grid">
-                  <label class="chat-quick-run-row" for="arxiv-admin-quick-run-year-select">
-                    <span>年份</span>
-                    <select id="arxiv-admin-quick-run-year-select" disabled>
-                      <option value="">选择年份</option>
-                    </select>
-                  </label>
-                  <label class="chat-quick-run-row" for="arxiv-admin-quick-run-conference-select">
-                    <span>会议名</span>
-                    <select id="arxiv-admin-quick-run-conference-select" disabled>
-                      <option value="">选择会议名</option>
-                    </select>
-                  </label>
-                </div>
-                <button
-                  id="arxiv-admin-quick-run-conference-run-btn"
-                  class="chat-quick-run-run-btn chat-quick-run-item--disabled"
-                  type="button"
-                  disabled
-                >
-                  运行会议抓取
-                </button>
-                <div id="arxiv-admin-quick-run-msg" class="chat-quick-run-msg"></div>
               </div>
             </section>
 
@@ -1771,78 +1716,62 @@ window.SubscriptionsManager = (function () {
                 </div>
               </div>
               <div class="dpr-periodic-settings-grid">
-                <div class="dpr-settings-card">
+                <div class="dpr-settings-card dpr-periodic-window-card">
                   <div class="dpr-settings-card-head">
                     <div>
-                      <h3>默认策略</h3>
-                      <p>artifacts 最省 token；hybrid/recrawl 会扩大候选池，适合人工触发。</p>
+                      <h3>周报配置</h3>
+                      <p>控制周报是否启用、输入模式和主题图表密度。</p>
                     </div>
                   </div>
-                  <div class="dpr-settings-form-grid">
-                    <label class="chat-quick-run-row" for="dpr-periodic-enabled-input">
-                      <span>启用周期报告</span>
-                      <input id="dpr-periodic-enabled-input" type="checkbox" />
-                    </label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-default-mode-select">
-                      <span>默认输入模式</span>
-                      <select id="dpr-periodic-default-mode-select">
-                        <option value="artifacts">artifacts</option>
-                        <option value="hybrid">hybrid</option>
-                        <option value="recrawl">recrawl</option>
+                  <div class="dpr-periodic-radio-group" role="radiogroup" aria-label="周报启用状态">
+                    <label><input id="dpr-periodic-weekly-enabled-true" name="dpr-periodic-weekly-enabled" type="radio" value="true" /> 启用周报</label>
+                    <label><input id="dpr-periodic-weekly-enabled-false" name="dpr-periodic-weekly-enabled" type="radio" value="false" /> 暂停周报</label>
+                  </div>
+                  <div class="dpr-settings-form-grid dpr-periodic-form-grid">
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-mode-select">
+                      <span>周报模式</span>
+                      <select id="dpr-periodic-weekly-mode-select">
+                        <option value="artifacts">artifacts（复用日报，最省 token）</option>
+                        <option value="hybrid">hybrid（补候选池后汇总）</option>
+                        <option value="recrawl">recrawl（重抓窗口，成本最高）</option>
                       </select>
                     </label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-language-input">
-                      <span>输出语言</span>
-                      <input id="dpr-periodic-language-input" type="text" placeholder="zh-CN" />
-                    </label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-max-candidates-input">
-                      <span>最大候选数</span>
-                      <input id="dpr-periodic-max-candidates-input" type="number" min="1" step="1" />
-                    </label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-max-topics-input">
-                      <span>最大主题数</span>
-                      <input id="dpr-periodic-max-topics-input" type="number" min="1" step="1" />
-                    </label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-representative-input">
-                      <span>代表论文数</span>
-                      <input id="dpr-periodic-representative-input" type="number" min="1" step="1" />
-                    </label>
-                  </div>
-                </div>
-                <div class="dpr-settings-card">
-                  <div class="dpr-settings-card-head">
-                    <div>
-                      <h3>周报 / 月报窗口</h3>
-                      <p>定时表达为 UTC cron；当前默认对应北京时间周六/月初早晨。</p>
-                    </div>
-                  </div>
-                  <div class="dpr-settings-form-grid">
-                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-enabled-input"><span>周报启用</span><input id="dpr-periodic-weekly-enabled-input" type="checkbox" /></label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-mode-select"><span>周报模式</span><select id="dpr-periodic-weekly-mode-select"><option value="artifacts">artifacts</option><option value="hybrid">hybrid</option><option value="recrawl">recrawl</option></select></label>
                     <label class="chat-quick-run-row" for="dpr-periodic-weekly-recrawl-input"><span>周报重抓天数</span><input id="dpr-periodic-weekly-recrawl-input" type="number" min="1" step="1" /></label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-enabled-input"><span>月报启用</span><input id="dpr-periodic-monthly-enabled-input" type="checkbox" /></label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-mode-select"><span>月报模式</span><select id="dpr-periodic-monthly-mode-select"><option value="artifacts">artifacts</option><option value="hybrid">hybrid</option><option value="recrawl">recrawl</option></select></label>
-                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-recrawl-input"><span>月报重抓天数</span><input id="dpr-periodic-monthly-recrawl-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-max-candidates-input"><span>最大候选数</span><input id="dpr-periodic-weekly-max-candidates-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-representative-input"><span>代表论文数</span><input id="dpr-periodic-weekly-representative-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-related-topics-input"><span>相关主题数</span><input id="dpr-periodic-weekly-related-topics-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-topic-timeline-input"><span>主题演化数</span><input id="dpr-periodic-weekly-topic-timeline-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-cooccurrence-topics-input"><span>共现主题数</span><input id="dpr-periodic-weekly-cooccurrence-topics-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-weekly-cooccurrence-pairs-input"><span>共现条目数</span><input id="dpr-periodic-weekly-cooccurrence-pairs-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-word-cloud-topics-input"><span>词频云主题数</span><input id="dpr-periodic-word-cloud-topics-input" type="number" min="1" step="1" /></label>
                   </div>
                 </div>
-                <div class="dpr-settings-card dpr-periodic-chart-settings-card">
+                <div class="dpr-settings-card dpr-periodic-window-card">
                   <div class="dpr-settings-card-head">
                     <div>
-                      <h3>图表与主题合并</h3>
-                      <p>关闭不需要的图表可降低页面密度；topic aliases 使用 JSON 对象。</p>
+                      <h3>月报配置</h3>
+                      <p>月报保留 dashboard 视角，适合按月汇总来源、主题和代表论文。</p>
                     </div>
                   </div>
-                  <div class="dpr-periodic-chart-toggle-grid">
-                    <label><input id="dpr-periodic-chart-topics-input" type="checkbox" /> 主题 TopN</label>
-                    <label><input id="dpr-periodic-chart-sources-input" type="checkbox" /> 来源分布</label>
-                    <label><input id="dpr-periodic-chart-scores-input" type="checkbox" /> 分数分布</label>
-                    <label><input id="dpr-periodic-chart-timeline-input" type="checkbox" /> 时间分布</label>
-                    <label><input id="dpr-periodic-chart-topic-timeline-input" type="checkbox" /> 主题演化</label>
+                  <div class="dpr-periodic-radio-group" role="radiogroup" aria-label="月报启用状态">
+                    <label><input id="dpr-periodic-monthly-enabled-true" name="dpr-periodic-monthly-enabled" type="radio" value="true" /> 启用月报</label>
+                    <label><input id="dpr-periodic-monthly-enabled-false" name="dpr-periodic-monthly-enabled" type="radio" value="false" /> 暂停月报</label>
                   </div>
-                  <label class="dpr-periodic-alias-field" for="dpr-periodic-topic-aliases-input">
-                    <span>主题别名 JSON</span>
-                    <textarea id="dpr-periodic-topic-aliases-input" rows="6" placeholder='{"LLM Agent":["agents","AI agents"]}'></textarea>
-                  </label>
+                  <div class="dpr-settings-form-grid dpr-periodic-form-grid">
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-mode-select">
+                      <span>月报模式</span>
+                      <select id="dpr-periodic-monthly-mode-select">
+                        <option value="artifacts">artifacts（复用日报，最省 token）</option>
+                        <option value="hybrid">hybrid（补候选池后汇总）</option>
+                        <option value="recrawl">recrawl（重抓窗口，成本最高）</option>
+                      </select>
+                    </label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-recrawl-input"><span>月报重抓天数</span><input id="dpr-periodic-monthly-recrawl-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-max-candidates-input"><span>最大候选数</span><input id="dpr-periodic-monthly-max-candidates-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-representative-input"><span>代表论文数</span><input id="dpr-periodic-monthly-representative-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-topics-input"><span>主题 Top 数</span><input id="dpr-periodic-monthly-topics-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-topic-timeline-input"><span>主题演化数</span><input id="dpr-periodic-monthly-topic-timeline-input" type="number" min="1" step="1" /></label>
+                  </div>
                 </div>
               </div>
               <div class="dpr-settings-save-row">
@@ -2282,38 +2211,16 @@ window.SubscriptionsManager = (function () {
   };
 
   const bindPeriodicReportInputs = () => {
-    bindPeriodicInput('dpr-periodic-enabled-input', (settings, el) => {
-      settings.enabled = !!el.checked;
-      return settings;
-    }, 'change');
-    bindPeriodicInput('dpr-periodic-default-mode-select', (settings, el) => {
-      const mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
-      settings.default_input_mode = mode;
-      return settings;
-    }, 'change');
-    bindPeriodicInput('dpr-periodic-language-input', (settings, el) => {
-      settings.language = normalizeText(el.value) || DEFAULT_PERIODIC_REPORTS.language;
-      return settings;
-    });
-    bindPeriodicInput('dpr-periodic-max-candidates-input', (settings, el) => {
-      settings.max_candidates = normalizePositiveInt(el.value, DEFAULT_PERIODIC_REPORTS.max_candidates);
-      return settings;
-    });
-    bindPeriodicInput('dpr-periodic-max-topics-input', (settings, el) => {
-      settings.max_topics = normalizePositiveInt(el.value, DEFAULT_PERIODIC_REPORTS.max_topics);
-      return settings;
-    });
-    bindPeriodicInput('dpr-periodic-representative-input', (settings, el) => {
-      settings.representative_papers = normalizePositiveInt(
-        el.value,
-        DEFAULT_PERIODIC_REPORTS.representative_papers,
-      );
-      return settings;
-    });
-    bindPeriodicInput('dpr-periodic-weekly-enabled-input', (settings, el) => {
-      settings.weekly.enabled = !!el.checked;
-      return settings;
-    }, 'change');
+    const bindEnabledRadio = (inputId, period, enabled) => {
+      bindPeriodicInput(inputId, (settings, el) => {
+        if (!el.checked) return settings;
+        settings[period].enabled = enabled;
+        settings.enabled = !!(settings.weekly.enabled || settings.monthly.enabled);
+        return settings;
+      }, 'change');
+    };
+    bindEnabledRadio('dpr-periodic-weekly-enabled-true', 'weekly', true);
+    bindEnabledRadio('dpr-periodic-weekly-enabled-false', 'weekly', false);
     bindPeriodicInput('dpr-periodic-weekly-mode-select', (settings, el) => {
       settings.weekly.input_mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
       return settings;
@@ -2325,10 +2232,54 @@ window.SubscriptionsManager = (function () {
       );
       return settings;
     });
-    bindPeriodicInput('dpr-periodic-monthly-enabled-input', (settings, el) => {
-      settings.monthly.enabled = !!el.checked;
+    bindPeriodicInput('dpr-periodic-weekly-max-candidates-input', (settings, el) => {
+      settings.weekly.max_candidates = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.max_candidates,
+      );
       return settings;
-    }, 'change');
+    });
+    bindPeriodicInput('dpr-periodic-weekly-representative-input', (settings, el) => {
+      settings.weekly.representative_papers = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.representative_papers,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-weekly-related-topics-input', (settings, el) => {
+      settings.weekly.topic_limits.related_topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.topic_limits.related_topics,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-weekly-topic-timeline-input', (settings, el) => {
+      settings.weekly.topic_limits.topic_timeline = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.topic_limits.topic_timeline,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-weekly-cooccurrence-topics-input', (settings, el) => {
+      settings.weekly.topic_limits.cooccurrence_topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.topic_limits.cooccurrence_topics,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-weekly-cooccurrence-pairs-input', (settings, el) => {
+      settings.weekly.topic_limits.cooccurrence_pairs = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.weekly.topic_limits.cooccurrence_pairs,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-word-cloud-topics-input', (settings, el) => {
+      settings.max_topics = normalizePositiveInt(el.value, DEFAULT_PERIODIC_REPORTS.max_topics);
+      return settings;
+    });
+    bindEnabledRadio('dpr-periodic-monthly-enabled-true', 'monthly', true);
+    bindEnabledRadio('dpr-periodic-monthly-enabled-false', 'monthly', false);
     bindPeriodicInput('dpr-periodic-monthly-mode-select', (settings, el) => {
       settings.monthly.input_mode = normalizePeriodicInputMode(el.value, settings.default_input_mode);
       return settings;
@@ -2340,37 +2291,34 @@ window.SubscriptionsManager = (function () {
       );
       return settings;
     });
-    [
-      ['dpr-periodic-chart-topics-input', 'topics'],
-      ['dpr-periodic-chart-sources-input', 'sources'],
-      ['dpr-periodic-chart-scores-input', 'score_distribution'],
-      ['dpr-periodic-chart-timeline-input', 'timeline'],
-      ['dpr-periodic-chart-topic-timeline-input', 'topic_timeline'],
-    ].forEach(([inputId, key]) => {
-      bindPeriodicInput(inputId, (settings, el) => {
-        settings.charts[key] = !!el.checked;
-        return settings;
-      }, 'change');
+    bindPeriodicInput('dpr-periodic-monthly-max-candidates-input', (settings, el) => {
+      settings.monthly.max_candidates = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.max_candidates,
+      );
+      return settings;
     });
-
-    const aliasEl = document.getElementById('dpr-periodic-topic-aliases-input');
-    if (aliasEl && !aliasEl._dprPeriodicAliasBound) {
-      aliasEl._dprPeriodicAliasBound = true;
-      aliasEl.addEventListener('blur', () => {
-        try {
-          const aliases = parsePeriodicAliases(aliasEl.value);
-          updatePeriodicReportSetting((settings) => {
-            settings.topic_aliases = aliases;
-            return settings;
-          }, {
-            message: '主题别名已更新，记得保存配置。',
-            renderSnapshot: true,
-          });
-        } catch (e) {
-          setPeriodicReportMessage((e && e.message) || '主题别名 JSON 无法解析。', '#c00');
-        }
-      });
-    }
+    bindPeriodicInput('dpr-periodic-monthly-representative-input', (settings, el) => {
+      settings.monthly.representative_papers = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.representative_papers,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-topics-input', (settings, el) => {
+      settings.monthly.topic_limits.topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.topics,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-topic-timeline-input', (settings, el) => {
+      settings.monthly.topic_limits.topic_timeline = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.topic_timeline,
+      );
+      return settings;
+    });
   };
 
   const bindBaseEvents = () => {
@@ -2479,13 +2427,6 @@ window.SubscriptionsManager = (function () {
     quickRunMonthlyRecrawlBtn = document.getElementById('arxiv-admin-monthly-recrawl-report-btn');
     periodicReportMsgEl = document.getElementById('dpr-periodic-report-msg');
     quickRunOpenWorkflowPanelBtn = document.getElementById('arxiv-admin-open-workflow-panel-btn');
-    quickRunConferenceBtn = document.getElementById(
-      'arxiv-admin-quick-run-conference-run-btn',
-    );
-    quickRunYearSelect = document.getElementById('arxiv-admin-quick-run-year-select');
-    quickRunConferenceSelect = document.getElementById(
-      'arxiv-admin-quick-run-conference-select',
-    );
     quickRunMsgEl = document.getElementById('arxiv-admin-quick-run-msg');
     resetContentBtn = document.getElementById('arxiv-admin-reset-content-btn');
     resetContentMsgEl = document.getElementById('arxiv-admin-reset-content-msg');
@@ -2493,18 +2434,6 @@ window.SubscriptionsManager = (function () {
     emailTestBtn = document.getElementById('dpr-email-test-btn');
     emailMsgEl = document.getElementById('dpr-email-settings-msg');
     syncEmailSettingsFields();
-    if (quickRunYearSelect) {
-      quickRunYearSelect.disabled = true;
-    }
-    if (quickRunConferenceSelect) {
-      quickRunConferenceSelect.disabled = true;
-    }
-    if (quickRunConferenceBtn) {
-      quickRunConferenceBtn.disabled = true;
-      quickRunConferenceBtn.classList.add('chat-quick-run-item--disabled');
-      quickRunConferenceBtn.title = '会议论文抓取功能暂未接入';
-    }
-    fillQuickRunOptions(quickRunYearSelect, quickRunConferenceSelect);
     [
       quickRunTodayBtn,
       quickRun10dBtn,
@@ -2614,17 +2543,6 @@ window.SubscriptionsManager = (function () {
           quickRunMsgEl.textContent = '工作流触发面板未加载，请刷新页面后重试。';
           quickRunMsgEl.style.color = '#c00';
         }
-      });
-    }
-
-    if (quickRunConferenceBtn && !quickRunConferenceBtn._bound) {
-      quickRunConferenceBtn._bound = true;
-      quickRunConferenceBtn.addEventListener('click', () => {
-        runQuickConferencePlaceholder(
-          quickRunYearSelect,
-          quickRunConferenceSelect,
-          quickRunMsgEl,
-        );
       });
     }
 

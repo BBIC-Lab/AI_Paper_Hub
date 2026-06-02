@@ -32,9 +32,15 @@ DEFAULT_DOCS_DIR = ROOT_DIR / "docs"
 DEFAULT_MAX_TOPICS = 10
 DEFAULT_REPRESENTATIVE_PAPERS = 12
 DEFAULT_MAX_CANDIDATES = 240
+DEFAULT_WEEKLY_RELATED_TOPICS = 10
+DEFAULT_WEEKLY_TOPIC_TIMELINE = 10
+DEFAULT_WEEKLY_COOCCURRENCE_TOPICS = 10
+DEFAULT_WEEKLY_COOCCURRENCE_PAIRS = 12
+DEFAULT_MONTHLY_TOPICS = 10
+DEFAULT_MONTHLY_TOPIC_TIMELINE = 10
 SUPPORTED_INPUT_MODES = {"artifacts", "recrawl", "hybrid"}
 SUPPORTED_PERIODS = {"weekly", "monthly"}
-REPORT_RENDER_VERSION = "periodic-weekly-v4"
+REPORT_RENDER_VERSION = "periodic-weekly-v5"
 FOCUS_TAG_KINDS = {"query", "profile", "intent", "reader", "research", "subscription"}
 WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五"]
 RADAR_AXES = [
@@ -179,6 +185,21 @@ def looks_like_broken_cjk(text: str) -> bool:
     return bool(value) and not has_cjk(value) and value.count("?") >= max(2, len(value) // 3)
 
 
+def looks_like_broken_body_text(text: str) -> bool:
+    value = normalize_text(text)
+    if not value or has_cjk(value):
+        return False
+    question_count = value.count("?")
+    return question_count >= 4 and question_count >= max(4, len(value) // 5)
+
+
+def clean_body_text(value: Any, fallback: str = "") -> str:
+    text = normalize_text(value)
+    if looks_like_broken_body_text(text):
+        return fallback
+    return text
+
+
 def clean_title_zh(value: Any) -> str:
     text = normalize_text(value)
     if looks_like_broken_cjk(text):
@@ -224,12 +245,26 @@ def default_periodic_config() -> dict[str, Any]:
             "schedule": "30 23 * * 5",
             "input_mode": "artifacts",
             "recrawl_days": 10,
+            "max_candidates": DEFAULT_MAX_CANDIDATES,
+            "representative_papers": DEFAULT_REPRESENTATIVE_PAPERS,
+            "topic_limits": {
+                "related_topics": DEFAULT_WEEKLY_RELATED_TOPICS,
+                "topic_timeline": DEFAULT_WEEKLY_TOPIC_TIMELINE,
+                "cooccurrence_topics": DEFAULT_WEEKLY_COOCCURRENCE_TOPICS,
+                "cooccurrence_pairs": DEFAULT_WEEKLY_COOCCURRENCE_PAIRS,
+            },
         },
         "monthly": {
             "enabled": True,
             "schedule": "30 23 1 * *",
             "input_mode": "artifacts",
             "recrawl_days": 30,
+            "max_candidates": DEFAULT_MAX_CANDIDATES,
+            "representative_papers": DEFAULT_REPRESENTATIVE_PAPERS,
+            "topic_limits": {
+                "topics": DEFAULT_MONTHLY_TOPICS,
+                "topic_timeline": DEFAULT_MONTHLY_TOPIC_TIMELINE,
+            },
         },
         "charts": {
             "topics": True,
@@ -265,6 +300,26 @@ def positive_int(value: Any, fallback: int) -> int:
         return parsed if parsed > 0 else fallback
     except Exception:
         return fallback
+
+
+def weekly_topic_limits(config: dict[str, Any] | None) -> dict[str, int]:
+    cfg = config if isinstance(config, dict) else {}
+    raw = cfg.get("topic_limits") if isinstance(cfg.get("topic_limits"), dict) else {}
+    return {
+        "related_topics": positive_int(raw.get("related_topics"), DEFAULT_WEEKLY_RELATED_TOPICS),
+        "topic_timeline": positive_int(raw.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE),
+        "cooccurrence_topics": positive_int(raw.get("cooccurrence_topics"), DEFAULT_WEEKLY_COOCCURRENCE_TOPICS),
+        "cooccurrence_pairs": positive_int(raw.get("cooccurrence_pairs"), DEFAULT_WEEKLY_COOCCURRENCE_PAIRS),
+    }
+
+
+def monthly_topic_limits(config: dict[str, Any] | None) -> dict[str, int]:
+    cfg = config if isinstance(config, dict) else {}
+    raw = cfg.get("topic_limits") if isinstance(cfg.get("topic_limits"), dict) else {}
+    return {
+        "topics": positive_int(raw.get("topics"), DEFAULT_MONTHLY_TOPICS),
+        "topic_timeline": positive_int(raw.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE),
+    }
 
 
 def normalize_input_mode(value: Any, fallback: str = "artifacts") -> str:
@@ -402,6 +457,38 @@ def apply_topic_alias(label: str, aliases: dict[str, Any]) -> str:
         if folded == str(target).casefold() or folded in {str(v).casefold() for v in candidates}:
             return normalize_text(target) or raw
     return raw
+
+
+def topic_key(label: Any) -> str:
+    return normalize_text(label).casefold()
+
+
+def is_excluded_topic(label: Any, excluded_labels: set[str] | None = None) -> bool:
+    key = topic_key(label)
+    return bool(key and excluded_labels and key in excluded_labels)
+
+
+def excluded_retrieval_tags(config: dict[str, Any] | None, aliases: dict[str, Any] | None = None, profile_tag: str = "") -> set[str]:
+    cfg = config if isinstance(config, dict) else {}
+    subs = cfg.get("subscriptions") if isinstance(cfg.get("subscriptions"), dict) else {}
+    profiles = subs.get("intent_profiles") if isinstance(subs.get("intent_profiles"), list) else []
+    labels: set[str] = set()
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            continue
+        tag = normalize_text(profile.get("tag"))
+        if tag:
+            labels.add(topic_key(tag))
+            aliased = apply_topic_alias(tag, aliases or {})
+            if aliased:
+                labels.add(topic_key(aliased))
+    explicit = normalize_text(profile_tag)
+    if explicit:
+        labels.add(topic_key(explicit))
+        aliased = apply_topic_alias(explicit, aliases or {})
+        if aliased:
+            labels.add(topic_key(aliased))
+    return {label for label in labels if label}
 
 
 def collect_item_tags(item: dict[str, Any], meta: dict[str, Any] | None, aliases: dict[str, Any]) -> list[dict[str, str]]:
@@ -680,7 +767,11 @@ def infer_taxonomy_topics(paper: dict[str, Any]) -> list[tuple[str, str]]:
     return out
 
 
-def paper_weekly_topics(paper: dict[str, Any], aliases: dict[str, Any] | None = None) -> tuple[list[str], list[str], list[str]]:
+def paper_weekly_topics(
+    paper: dict[str, Any],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> tuple[list[str], list[str], list[str]]:
     focus: list[str] = []
     context: list[str] = []
     axes: list[str] = []
@@ -688,7 +779,7 @@ def paper_weekly_topics(paper: dict[str, Any], aliases: dict[str, Any] | None = 
         if not isinstance(tag, dict):
             continue
         label = apply_topic_alias(tag.get("label") or "", aliases or {})
-        if not label:
+        if not label or is_excluded_topic(label, excluded_labels):
             continue
         kind = normalize_text(tag.get("kind") or "paper").casefold()
         if kind in FOCUS_TAG_KINDS:
@@ -696,7 +787,10 @@ def paper_weekly_topics(paper: dict[str, Any], aliases: dict[str, Any] | None = 
         else:
             context.append(label)
     for label, axis in infer_taxonomy_topics(paper):
-        context.append(apply_topic_alias(label, aliases or {}))
+        aliased = apply_topic_alias(label, aliases or {})
+        if is_excluded_topic(aliased, excluded_labels):
+            continue
+        context.append(aliased)
         axes.append(axis)
     focus = list(dict.fromkeys(focus))
     context = list(dict.fromkeys(label for label in context if label and label not in focus))
@@ -704,16 +798,21 @@ def paper_weekly_topics(paper: dict[str, Any], aliases: dict[str, Any] | None = 
     return focus, context, axes
 
 
-def word_cloud_items(papers: list[dict[str, Any]], limit: int = 36) -> list[dict[str, Any]]:
+def word_cloud_items(
+    papers: list[dict[str, Any]],
+    limit: int = 36,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> list[dict[str, Any]]:
     counter: Counter = Counter()
     for paper in papers:
-        focus, context, _axes = paper_weekly_topics(paper)
+        focus, context, _axes = paper_weekly_topics(paper, aliases, excluded_labels)
         for label in focus + context:
             counter[label] += 2
         text = paper_text_blob(paper)
         for token in re.findall(r"[A-Za-z][A-Za-z0-9+./-]{2,}", text):
             word = token.strip("-_.").casefold()
-            if len(word) < 3 or word in WORD_STOPWORDS or word.isdigit():
+            if len(word) < 3 or word in WORD_STOPWORDS or word.isdigit() or is_excluded_topic(word, excluded_labels):
                 continue
             counter[word] += 1
     max_count = max(counter.values() or [1])
@@ -729,6 +828,8 @@ def build_weekday_topic_timeline(
     topic_labels: list[str],
     aliases: dict[str, Any] | None = None,
     topic_kinds: dict[str, str] | None = None,
+    excluded_labels: set[str] | None = None,
+    topic_limit: int = DEFAULT_WEEKLY_TOPIC_TIMELINE,
 ) -> list[dict[str, Any]]:
     workdays: list[date] = []
     cur = window.start
@@ -743,11 +844,11 @@ def build_weekday_topic_timeline(
         day = normalize_text(paper.get("date"))
         if day not in counts:
             continue
-        focus, context, _axes = paper_weekly_topics(paper, aliases)
+        focus, context, _axes = paper_weekly_topics(paper, aliases, excluded_labels)
         for label in set(focus + context):
             counts[day][label] += 1
     rows = []
-    for label in topic_labels[:12]:
+    for label in topic_labels[:topic_limit]:
         rows.append(
             {
                 "topic": label,
@@ -780,6 +881,8 @@ def complete_weekday_topic_timeline(
     focus_topics: list[dict[str, Any]],
     context_topics: list[dict[str, Any]],
     window: PeriodWindow,
+    topic_limit: int = DEFAULT_WEEKLY_TOPIC_TIMELINE,
+    related_topics: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Backfill older cached weekly metrics so all ranked topics can render."""
     existing: dict[str, dict[str, Any]] = {}
@@ -790,7 +893,9 @@ def complete_weekday_topic_timeline(
 
     ordered_labels: list[str] = []
     topic_kinds: dict[str, str] = {}
-    for kind, items in (("focus", focus_topics), ("context", context_topics)):
+    topic_sources = [("related", related_topics)] if related_topics is not None else []
+    topic_sources.extend((("focus", focus_topics), ("context", context_topics)))
+    for kind, items in topic_sources:
         for item in items:
             label = normalize_text(item.get("label") if isinstance(item, dict) else item)
             if not label:
@@ -806,7 +911,7 @@ def complete_weekday_topic_timeline(
 
     template = blank_weekday_topic_points(window)
     completed: list[dict[str, Any]] = []
-    for label in ordered_labels[:12]:
+    for label in ordered_labels[:topic_limit]:
         source = existing.get(label) or {}
         counts_by_date = {
             normalize_text(point.get("date")): int(point.get("count") or 0)
@@ -826,20 +931,29 @@ def complete_weekday_topic_timeline(
 def build_weekly_chart_data(
     papers: list[dict[str, Any]],
     window: PeriodWindow,
-    max_topics: int,
+    word_cloud_limit: int,
     aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    topic_limits: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     focus_counter: Counter = Counter()
     context_counter: Counter = Counter()
+    related_counter: Counter = Counter()
     axis_counter: Counter = Counter()
     pair_counter: Counter = Counter()
+    limits = topic_limits or weekly_topic_limits({})
+    related_limit = positive_int(limits.get("related_topics"), DEFAULT_WEEKLY_RELATED_TOPICS)
+    timeline_limit = positive_int(limits.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE)
+    cooccurrence_pairs_limit = positive_int(limits.get("cooccurrence_pairs"), DEFAULT_WEEKLY_COOCCURRENCE_PAIRS)
 
     for paper in papers:
-        focus, context, axes = paper_weekly_topics(paper, aliases)
+        focus, context, axes = paper_weekly_topics(paper, aliases, excluded_labels)
         for label in focus:
             focus_counter[label] += 1
+            related_counter[label] += 1
         for label in context:
             context_counter[label] += 1
+            related_counter[label] += 1
         for axis in axes:
             axis_counter[axis] += 1
         labels = list(dict.fromkeys((focus + context)[:8]))
@@ -848,15 +962,17 @@ def build_weekly_chart_data(
                 pair_counter[tuple(sorted((left, right)))] += 1
 
     if not focus_counter and context_counter:
-        for label, count in context_counter.most_common(min(3, max_topics)):
+        for label, count in context_counter.most_common(min(3, related_limit)):
             focus_counter[label] += count
             context_counter.pop(label, None)
 
-    focus_topics = counter_to_ranked_items(focus_counter, max_topics)
-    context_topics = counter_to_ranked_items(context_counter, max_topics)
+    focus_topics = counter_to_ranked_items(focus_counter, related_limit)
+    context_topics = counter_to_ranked_items(context_counter, related_limit)
+    related_topics = counter_to_ranked_items(related_counter, related_limit)
     focus_labels = [item["label"] for item in focus_topics]
     context_labels = [item["label"] for item in context_topics if item["label"] not in set(focus_labels)]
-    topic_labels = (focus_labels + context_labels)[:12]
+    related_labels = [item["label"] for item in related_topics]
+    topic_labels = (related_labels + focus_labels + context_labels)[:timeline_limit]
     topic_kinds = {item["label"]: "focus" for item in focus_topics}
     topic_kinds.update({item["label"]: "context" for item in context_topics if item["label"] not in topic_kinds})
     radar = []
@@ -866,16 +982,26 @@ def build_weekly_chart_data(
         radar.append({"label": label, "key": key, "count": count, "score": round(count / max_axis, 3) if max_axis else 0})
     cooccurrence = [
         {"source": left, "target": right, "count": int(count)}
-        for (left, right), count in sorted(pair_counter.items(), key=lambda kv: (-kv[1], kv[0]))[:14]
+        for (left, right), count in sorted(pair_counter.items(), key=lambda kv: (-kv[1], kv[0]))[: max(14, cooccurrence_pairs_limit * 2)]
     ]
     return {
+        "related_topics": related_topics,
         "focus_topics": focus_topics,
         "context_topics": context_topics,
-        "weekday_topic_timeline": build_weekday_topic_timeline(papers, window, topic_labels, aliases, topic_kinds),
-        "word_cloud": word_cloud_items(papers),
+        "weekday_topic_timeline": build_weekday_topic_timeline(
+            papers,
+            window,
+            topic_labels,
+            aliases,
+            topic_kinds,
+            excluded_labels,
+            timeline_limit,
+        ),
+        "word_cloud": word_cloud_items(papers, word_cloud_limit, aliases, excluded_labels),
         "radar": radar,
         "cooccurrence": cooccurrence,
         "topic_breadth": len(set(focus_counter) | set(context_counter)),
+        "topic_limits": limits,
     }
 
 
@@ -895,9 +1021,11 @@ def build_metrics(
     papers: list[dict[str, Any]],
     artifacts: list[ArtifactFile],
     window: PeriodWindow,
-    max_topics: int,
+    word_cloud_limit: int,
     duplicate_stats: dict[str, int] | None = None,
     aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    topic_limits: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     topic_counter: Counter = Counter()
     source_counter: Counter = Counter()
@@ -914,13 +1042,20 @@ def build_metrics(
         date_counter[d] += 1
         for tag in paper.get("tags") or []:
             label = normalize_text(tag.get("label"))
-            if not label:
+            if not label or is_excluded_topic(label, excluded_labels):
                 continue
             topic_counter[label] += 1
             topic_by_time[d][label] += 1
 
-    top_topics = counter_to_items(topic_counter, max_topics)
-    topic_labels = [item["label"] for item in top_topics if item["label"] != "Other"][:max_topics]
+    limits = topic_limits or (weekly_topic_limits({}) if window.period == "weekly" else monthly_topic_limits({}))
+    if window.period == "weekly":
+        visible_topic_limit = positive_int(limits.get("related_topics"), DEFAULT_WEEKLY_RELATED_TOPICS)
+        timeline_topic_limit = positive_int(limits.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE)
+    else:
+        visible_topic_limit = positive_int(limits.get("topics"), DEFAULT_MONTHLY_TOPICS)
+        timeline_topic_limit = positive_int(limits.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE)
+    top_topics = counter_to_items(topic_counter, visible_topic_limit)
+    topic_labels = [item["label"] for item in top_topics if item["label"] != "Other"][:visible_topic_limit]
     timeline = []
     cur = window.start
     while cur <= window.end:
@@ -935,7 +1070,7 @@ def build_metrics(
         timeline = [{"date": k, "count": int(v)} for k, v in sorted(week_counts.items())]
 
     topic_timeline = []
-    for label in topic_labels[:8]:
+    for label in topic_labels[:timeline_topic_limit]:
         row = {"topic": label, "points": []}
         for point in timeline:
             bucket = point["date"]
@@ -963,7 +1098,14 @@ def build_metrics(
     }
     scores = [float(p.get("score") or 0) for p in papers]
     avg_score = round(sum(scores) / len(scores), 2) if scores else 0
-    weekly_chart_data = build_weekly_chart_data(papers, window, max_topics, aliases or {}) if window.period == "weekly" else {}
+    weekly_chart_data = build_weekly_chart_data(
+        papers,
+        window,
+        word_cloud_limit,
+        aliases or {},
+        excluded_labels,
+        limits,
+    ) if window.period == "weekly" else {}
     return {
         "coverage": coverage,
         "avg_score": avg_score,
@@ -983,11 +1125,11 @@ def build_fallback_interpretation(window: PeriodWindow, metrics: dict[str, Any],
     weekly_v2 = metrics.get("weekly_v2") or {}
     focus = weekly_v2.get("focus_topics") or []
     context = weekly_v2.get("context_topics") or []
+    related = weekly_v2.get("related_topics") or (focus + context)
     top_papers = papers[:3]
     topic_text = "、".join(str(t.get("label")) for t in topics[:3]) or "暂无明显主题"
     source_text = "、".join(str(s.get("label")) for s in sources[:3]) or "未知来源"
-    focus_text = "、".join(f"{t.get('label')}（{t.get('count')}）" for t in focus[:3]) or topic_text
-    context_text = "、".join(f"{t.get('label')}（{t.get('count')}）" for t in context[:3]) or "暂无明显其他主题"
+    related_text = "、".join(f"{t.get('label')}（{t.get('count')}）" for t in related[:5]) or topic_text
     must_read = sum(1 for p in papers if float(p.get("score") or 0) >= 8.0)
     evidence_ids = [
         normalize_text(p.get("paper_id") or p.get("dedupe_key") or f"paper-{idx}")
@@ -995,7 +1137,7 @@ def build_fallback_interpretation(window: PeriodWindow, metrics: dict[str, Any],
     ]
     weekly_summary = (
         f"本周去重样本共 {metrics['coverage']['unique_papers']} 篇，其中 {must_read} 篇达到 8.0 分以上。"
-        f"读者关注主题主要落在 {focus_text}；其他主题显示 {context_text} 也在本周样本中持续出现。"
+        f"相关主题主要落在 {related_text}，可作为本周阅读和下周检索微调的重点。"
     )
     if top_papers:
         weekly_summary += " 代表性证据包括 " + "、".join(
@@ -1064,13 +1206,8 @@ def normalize_interpretation(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any] | None:
-    api_key = env_text("DPR_LLM_API_KEY", "LLM_API_KEY", "OPENAI_API_KEY")
-    base_url = env_text("DPR_LLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL") or "https://api.openai.com/v1"
-    model = env_text("DPR_LLM_REPORT_MODEL", "DPR_LLM_SUMMARY_MODEL", "DPR_LLM_MODEL", "LLM_MODEL")
-    if not api_key or not model or LLMClient is None:
-        return None
-    evidence = [
+def build_llm_evidence_papers(papers: list[dict[str, Any]], limit: int = 18) -> list[dict[str, Any]]:
+    return [
         {
             "id": p.get("paper_id"),
             "title": p.get("title"),
@@ -1079,17 +1216,19 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
             "topics": [t.get("label") for t in (p.get("tags") or [])[:4]],
             "evidence": short_text(p.get("evidence") or p.get("tldr") or p.get("abstract"), 180),
         }
-        for p in papers[:18]
+        for p in papers[:limit]
     ]
-    system_prompt = "你是科研周期报告编辑。只基于给定 JSON 统计和 evidence papers 写中文洞察，不要编造未出现的论文、数量或趋势。返回 JSON。"
-    user_payload = {
+
+
+def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any]:
+    weekly = metrics.get("weekly_v2") or {}
+    payload = {
         "period": window.period,
         "label": window.label,
         "metrics": metrics,
-        "weekly_chart_data": metrics.get("weekly_v2") or {},
-        "evidence_papers": evidence,
+        "evidence_papers": build_llm_evidence_papers(papers),
         "schema": {
-            "weekly_summary": "one concise Chinese paragraph for weekly report, grounded in topic counts and evidence paper ids",
+            "weekly_summary": "中文单段 high-level 本周小结；目标约 300 字，硬上限 500 字；必须基于主题、词频、共现关系和代表论文",
             "summary_evidence_ids": ["paper ids cited by weekly_summary"],
             "highlights": ["2-4 concise Chinese bullets with counts or paper ids"],
             "rising_topics": ["topic trend bullets grounded in topic counts"],
@@ -1097,6 +1236,30 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
             "caveats": ["coverage and accuracy caveats"],
         },
     }
+    if window.period == "weekly":
+        payload["weekly_summary_inputs"] = {
+            "related_topics": weekly.get("related_topics") or [],
+            "word_cloud": weekly.get("word_cloud") or [],
+            "cooccurrence": weekly.get("cooccurrence") or [],
+            "representative_papers": build_llm_evidence_papers(papers, limit=12),
+            "instructions": [
+                "写成一个中文 high-level 本周小结段落，不要项目符号。",
+                "目标约 300 字；硬上限 500 字；不要为了凑字数重复统计口径。",
+                "必须综合本周提取到的相关主题、词频、主题共现关系与代表论文。",
+                "只基于输入证据，不要编造未出现的论文、数量或趋势。",
+            ],
+        }
+    return payload
+
+
+def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any] | None:
+    api_key = env_text("DPR_LLM_API_KEY", "LLM_API_KEY", "OPENAI_API_KEY")
+    base_url = env_text("DPR_LLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL") or "https://api.openai.com/v1"
+    model = env_text("DPR_LLM_REPORT_MODEL", "DPR_LLM_SUMMARY_MODEL", "DPR_LLM_MODEL", "LLM_MODEL")
+    if not api_key or not model or LLMClient is None:
+        return None
+    system_prompt = "你是科研周期报告编辑。只基于给定 JSON 统计和 evidence papers 写中文洞察，不要编造未出现的论文、数量或趋势。返回 JSON。"
+    user_payload = build_llm_interpretation_payload(window, metrics, papers)
     client = LLMClient(api_key=api_key, model=model, base_url=base_url)
     client.kwargs.update({"temperature": 0.2, "max_tokens": 1200})
     try:
@@ -1240,7 +1403,7 @@ def compact_topic_card_html(items: list[dict[str, Any]], title: str, class_name:
 
 
 def word_cloud_html(items: list[dict[str, Any]]) -> str:
-    words = layout_word_cloud(items[:40])
+    words = layout_word_cloud(items)
     if not words:
         return '<section class="dpr-weekly-bento-card dpr-weekly-word-card"><h2>词频云</h2><p class="dpr-weekly-empty">暂无词频数据。</p></section>'
     word_nodes = []
@@ -1273,7 +1436,7 @@ def mini_word_cloud_html(items: list[dict[str, Any]]) -> str:
             f'text-anchor="middle" dominant-baseline="middle">{label}</text>'
         )
     return (
-        '<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" role="img" aria-label="周报词频云">'
+        '<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="周报词频云">'
         f'<g transform="translate(450 210) scale(1.34) translate(-450 -210)">{"".join(nodes)}</g></svg>'
     )
 
@@ -1429,7 +1592,7 @@ def radar_svg_html(items: list[dict[str, Any]]) -> str:
     )
 
 
-def weekday_heatmap_html(rows: list[dict[str, Any]]) -> str:
+def weekday_heatmap_html(rows: list[dict[str, Any]], topic_limit: int = DEFAULT_WEEKLY_TOPIC_TIMELINE) -> str:
     if not rows:
         return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card"><h2>主题演化</h2><p class="dpr-weekly-empty">暂无工作日主题数据。</p></section>'
     max_count = max([int(point.get("count") or 0) for row in rows for point in row.get("points", [])] or [1])
@@ -1439,7 +1602,7 @@ def weekday_heatmap_html(rows: list[dict[str, Any]]) -> str:
         for point in header_points
     ) + "</div>"
     body = []
-    for row in rows[:12]:
+    for row in rows[:topic_limit]:
         cells = []
         for point in (row.get("points") or [])[:5]:
             count = int(point.get("count") or 0)
@@ -1464,7 +1627,11 @@ def arc_path(cx: float, cy: float, radius: float, start_angle: float, end_angle:
     return f"M{start_x:.1f},{start_y:.1f} A{radius:.1f},{radius:.1f} 0 {large} 1 {end_x:.1f},{end_y:.1f}"
 
 
-def cooccurrence_html(pairs: list[dict[str, Any]]) -> str:
+def cooccurrence_html(
+    pairs: list[dict[str, Any]],
+    topic_limit: int = DEFAULT_WEEKLY_COOCCURRENCE_TOPICS,
+    pair_limit: int = DEFAULT_WEEKLY_COOCCURRENCE_PAIRS,
+) -> str:
     if not pairs:
         return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
     degree: Counter = Counter()
@@ -1481,13 +1648,13 @@ def cooccurrence_html(pairs: list[dict[str, Any]]) -> str:
     if not pair_rows:
         return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
 
-    labels = [label for label, _count in degree.most_common(8)]
+    labels = [label for label, _count in degree.most_common(topic_limit)]
     label_set = set(labels)
     pair_rows = [(left, right, count) for left, right, count in pair_rows if left in label_set and right in label_set]
     if not pair_rows:
         return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
 
-    pair_rows = sorted(pair_rows, key=lambda row: row[2], reverse=True)[:16]
+    pair_rows = sorted(pair_rows, key=lambda row: row[2], reverse=True)[:pair_limit]
     degree = Counter()
     for left, right, count in pair_rows:
         degree[left] += count
@@ -1602,7 +1769,7 @@ def evidence_row_html(paper: dict[str, Any], idx: int) -> str:
         for tag in (paper.get("tags") or [])[:5]
         if tag.get("label")
     )
-    evidence = html.escape(short_text(paper.get("evidence") or paper.get("tldr") or paper.get("abstract"), 220))
+    evidence = html.escape(short_text(clean_body_text(paper.get("evidence") or paper.get("tldr") or paper.get("abstract")), 220))
     return (
         '<article class="dpr-weekly-evidence-row">'
         f'<div class="dpr-weekly-evidence-index">{idx:02d}</div>'
@@ -1646,29 +1813,31 @@ def build_weekly_report_markdown(
     weekly = metrics.get("weekly_v2") or {}
     focus_topics = weekly.get("focus_topics") or []
     context_topics = weekly.get("context_topics") or []
+    related_topics = weekly.get("related_topics") or (focus_topics + context_topics)
+    limits = weekly.get("topic_limits") if isinstance(weekly.get("topic_limits"), dict) else weekly_topic_limits({})
     top_papers = papers[: max(1, representative_papers)]
     timeline_rows = complete_weekday_topic_timeline(
         weekly.get("weekday_topic_timeline") or [],
         focus_topics,
         context_topics,
         window,
+        topic_limit=positive_int(limits.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE),
+        related_topics=related_topics,
     )
-    top_focus = focus_topics[0] if focus_topics else {"label": "暂无", "count": 0}
-    top_context = context_topics[0] if context_topics else {"label": "暂无", "count": 0}
+    top_related = related_topics[0] if related_topics else {"label": "暂无", "count": 0}
     hero_chips = [
         f"样本论文 {coverage.get('unique_papers', 0)} 篇",
         f"代表论文 {len(top_papers)} 篇",
         f"主题广度 {weekly.get('topic_breadth', 0)} 类",
-        f"关注 Top: {top_focus.get('label')} {top_focus.get('count')} 篇",
-        f"其他 Top: {top_context.get('label')} {top_context.get('count')} 篇",
+        f"相关 Top: {top_related.get('label')} {top_related.get('count')} 篇",
     ]
-    summary = html.escape(
-        normalize_text(interpretation.get("weekly_summary"))
-        or "本周摘要暂未生成；请检查 LLM 配置或日报 artifact 是否包含足够证据。"
-    )
+    summary_text = clean_body_text(interpretation.get("weekly_summary"))
+    if not summary_text and normalize_text(interpretation.get("weekly_summary")):
+        summary_text = build_fallback_interpretation(window, metrics, papers).get("weekly_summary") or ""
+    summary = html.escape(summary_text or "本周摘要暂未生成；请检查 LLM 配置或日报 artifact 是否包含足够证据。")
     evidence_rows = "".join(evidence_row_html(paper, idx) for idx, paper in enumerate(top_papers, start=1))
     lines = [
-        '<section class="dpr-periodic-report dpr-periodic-weekly dpr-periodic-weekly-v2 dpr-periodic-weekly-v3 dpr-periodic-weekly-v4">',
+        '<section class="dpr-periodic-report dpr-periodic-weekly dpr-periodic-weekly-v2 dpr-periodic-weekly-v3 dpr-periodic-weekly-v4 dpr-periodic-weekly-v5">',
         '<div class="dpr-weekly-hero">',
         '<div><div class="dpr-periodic-kicker">Weekly Research Bento</div>',
         f"<h1>{html.escape(window.label)}</h1></div>",
@@ -1676,14 +1845,17 @@ def build_weekly_report_markdown(
         "".join(f"<span>{html.escape(chip)}</span>" for chip in hero_chips),
         "</div></div>",
         '<div class="dpr-weekly-bento">',
-        '<section class="dpr-weekly-bento-card dpr-weekly-summary-card"><h2>本期重点</h2>',
+        '<section class="dpr-weekly-bento-card dpr-weekly-summary-card"><h2>本周小结</h2>',
         f"<p>{summary}</p>",
         "</section>",
-        compact_topic_card_html(focus_topics, "关注主题", "focus"),
-        compact_topic_card_html(context_topics, "其他主题", "context"),
-        weekday_heatmap_html(timeline_rows),
+        compact_topic_card_html(related_topics, "相关主题", "related"),
+        weekday_heatmap_html(timeline_rows, positive_int(limits.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE)),
         word_cloud_html(weekly.get("word_cloud") or []),
-        cooccurrence_html(weekly.get("cooccurrence") or []),
+        cooccurrence_html(
+            weekly.get("cooccurrence") or [],
+            positive_int(limits.get("cooccurrence_topics"), DEFAULT_WEEKLY_COOCCURRENCE_TOPICS),
+            positive_int(limits.get("cooccurrence_pairs"), DEFAULT_WEEKLY_COOCCURRENCE_PAIRS),
+        ),
         '<section class="dpr-weekly-evidence-strip is-collapsed" data-dpr-weekly-evidence>',
         '<header class="dpr-weekly-evidence-head">',
         '<div><span>代表论文证据</span></div>',
@@ -1820,7 +1992,9 @@ def load_report_entries(docs_dir: Path, period: str) -> list[dict[str, Any]]:
         coverage = metrics.get("coverage") if isinstance(metrics.get("coverage"), dict) else {}
         interpretation = payload.get("interpretation") if isinstance(payload.get("interpretation"), dict) else {}
         topics = (
-            payload.get("focus_topics")
+            payload.get("related_topics")
+            or (metrics.get("weekly_v2") or {}).get("related_topics")
+            or payload.get("focus_topics")
             or (metrics.get("weekly_v2") or {}).get("focus_topics")
             or metrics.get("topics")
             or []
@@ -1975,12 +2149,14 @@ def write_report(
         "charts": charts if isinstance(charts, dict) else {},
         "representative_papers": representative_papers,
         "evidence_index": evidence_index,
+        "related_topics": weekly_chart_data.get("related_topics") or [],
         "focus_topics": weekly_chart_data.get("focus_topics") or [],
         "context_topics": weekly_chart_data.get("context_topics") or [],
         "weekday_topic_timeline": weekly_chart_data.get("weekday_topic_timeline") or [],
         "word_cloud": weekly_chart_data.get("word_cloud") or [],
         "radar": weekly_chart_data.get("radar") or [],
         "cooccurrence": weekly_chart_data.get("cooccurrence") or [],
+        "topic_limits": weekly_chart_data.get("topic_limits") or {},
         "weekly_summary": normalize_text(interpretation.get("weekly_summary")),
         "artifacts": artifact_paths,
         "papers": papers,
@@ -2015,13 +2191,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     input_mode = normalize_input_mode(args.input_mode, fallback_mode)
     window = resolve_period_window(args.period, args.start_date, args.end_date)
     docs_dir = Path(args.docs_dir).resolve() if args.docs_dir else DEFAULT_DOCS_DIR
-    max_topics = positive_int(args.max_topics or periodic_cfg.get("max_topics"), DEFAULT_MAX_TOPICS)
-    max_candidates = positive_int(args.max_candidates or periodic_cfg.get("max_candidates"), DEFAULT_MAX_CANDIDATES)
-    representative_papers = positive_int(periodic_cfg.get("representative_papers"), DEFAULT_REPRESENTATIVE_PAPERS)
+    word_cloud_limit = positive_int(args.max_topics or periodic_cfg.get("max_topics"), DEFAULT_MAX_TOPICS)
+    max_candidates = positive_int(
+        args.max_candidates or period_cfg.get("max_candidates") or periodic_cfg.get("max_candidates"),
+        DEFAULT_MAX_CANDIDATES,
+    )
+    representative_papers = positive_int(
+        period_cfg.get("representative_papers") or periodic_cfg.get("representative_papers"),
+        DEFAULT_REPRESENTATIVE_PAPERS,
+    )
     charts = periodic_cfg.get("charts") if isinstance(periodic_cfg.get("charts"), dict) else {}
     aliases = periodic_cfg.get("topic_aliases") if isinstance(periodic_cfg.get("topic_aliases"), dict) else {}
+    excluded_labels = excluded_retrieval_tags(config, aliases, args.profile_tag or "")
+    limits = weekly_topic_limits(period_cfg) if window.period == "weekly" else monthly_topic_limits(period_cfg)
     papers, artifacts, duplicate_stats = collect_papers(ROOT_DIR, docs_dir, window, max_candidates, aliases, args.profile_tag or "")
-    metrics = build_metrics(papers, artifacts, window, max_topics, duplicate_stats, aliases)
+    metrics = build_metrics(papers, artifacts, window, word_cloud_limit, duplicate_stats, aliases, excluded_labels, limits)
     out_dir = report_output_dir(docs_dir, window)
     input_hash = compute_input_hash(window, input_mode, artifacts, papers, periodic_cfg)
     interpretation = load_existing_interpretation(out_dir, input_hash)
@@ -2059,7 +2243,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fetch-days", type=int, default=0, help="Recorded for workflow compatibility; recrawl is orchestrated by workflow.")
     parser.add_argument("--docs-dir", default="")
     parser.add_argument("--max-candidates", type=int, default=0)
-    parser.add_argument("--max-topics", type=int, default=0)
+    parser.add_argument("--max-topics", type=int, default=0, help="weekly word-cloud topic limit; defaults to periodic_reports.max_topics")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 

@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 global.window = global.window || {};
 global.document = global.document || {
@@ -256,7 +258,17 @@ function testNormalizeSubscriptionsAddsPeriodicReportDefaults() {
   assert.equal(reports.default_input_mode, 'artifacts');
   assert.equal(reports.weekly.input_mode, 'artifacts');
   assert.equal(reports.weekly.recrawl_days, 10);
+  assert.equal(reports.weekly.max_candidates, 240);
+  assert.equal(reports.weekly.representative_papers, 12);
+  assert.equal(reports.weekly.topic_limits.related_topics, 10);
+  assert.equal(reports.weekly.topic_limits.topic_timeline, 10);
+  assert.equal(reports.weekly.topic_limits.cooccurrence_topics, 10);
+  assert.equal(reports.weekly.topic_limits.cooccurrence_pairs, 12);
   assert.equal(reports.monthly.recrawl_days, 30);
+  assert.equal(reports.monthly.max_candidates, 240);
+  assert.equal(reports.monthly.representative_papers, 12);
+  assert.equal(reports.monthly.topic_limits.topics, 10);
+  assert.equal(reports.monthly.topic_limits.topic_timeline, 10);
   assert.equal(reports.charts.topic_timeline, true);
   assert.deepEqual(reports.topic_aliases, {});
 }
@@ -272,11 +284,25 @@ function testNormalizePeriodicReportsPreservesUserEdits() {
     weekly: {
       input_mode: 'recrawl',
       recrawl_days: '9',
+      max_candidates: '90',
+      representative_papers: '6',
+      topic_limits: {
+        related_topics: '8',
+        topic_timeline: '4',
+        cooccurrence_topics: '6',
+        cooccurrence_pairs: '11',
+      },
     },
     monthly: {
       enabled: false,
       input_mode: 'hybrid',
       recrawl_days: '45',
+      max_candidates: '180',
+      representative_papers: '9',
+      topic_limits: {
+        topics: '12',
+        topic_timeline: '5',
+      },
     },
     charts: {
       topics: false,
@@ -299,9 +325,19 @@ function testNormalizePeriodicReportsPreservesUserEdits() {
   assert.equal(reports.weekly.enabled, true);
   assert.equal(reports.weekly.input_mode, 'recrawl');
   assert.equal(reports.weekly.recrawl_days, 9);
+  assert.equal(reports.weekly.max_candidates, 90);
+  assert.equal(reports.weekly.representative_papers, 6);
+  assert.equal(reports.weekly.topic_limits.related_topics, 8);
+  assert.equal(reports.weekly.topic_limits.topic_timeline, 4);
+  assert.equal(reports.weekly.topic_limits.cooccurrence_topics, 6);
+  assert.equal(reports.weekly.topic_limits.cooccurrence_pairs, 11);
   assert.equal(reports.monthly.enabled, false);
   assert.equal(reports.monthly.input_mode, 'hybrid');
   assert.equal(reports.monthly.recrawl_days, 45);
+  assert.equal(reports.monthly.max_candidates, 180);
+  assert.equal(reports.monthly.representative_papers, 9);
+  assert.equal(reports.monthly.topic_limits.topics, 12);
+  assert.equal(reports.monthly.topic_limits.topic_timeline, 5);
   assert.equal(reports.charts.topics, false);
   assert.equal(reports.charts.score_distribution, false);
   assert.equal(reports.charts.topic_timeline, false);
@@ -323,6 +359,29 @@ function testResolvePeriodicReportsFallsBackFromConfig() {
   assert.equal(reports.monthly.input_mode, 'artifacts');
 }
 
+function testPeriodicSettingsUiRemovesDeprecatedControls() {
+  const source = fs.readFileSync(path.join(__dirname, '../app/subscriptions.manager.js'), 'utf8');
+
+  assert.ok(source.includes('周报配置'));
+  assert.ok(source.includes('月报配置'));
+  assert.ok(source.includes('dpr-periodic-weekly-enabled-true'));
+  assert.ok(source.includes('artifacts（复用日报，最省 token）'));
+  assert.ok(!source.includes('输出语言'));
+  assert.ok(!source.includes('图表与主题合并'));
+  assert.ok(!source.includes('会议论文'));
+}
+
+function testQuickRunCssKeepsButtonsAligned() {
+  const css = fs.readFileSync(path.join(__dirname, '../app/app.css'), 'utf8');
+
+  assert.ok(css.includes('--dpr-quick-run-button-height: 86px;'));
+  assert.ok(css.includes('--dpr-quick-run-grid-height: 380px;'));
+  assert.ok(css.includes('.dpr-quick-run-layout #arxiv-search-quick-run-side'));
+  assert.ok(css.includes('.dpr-quick-run-layout .dpr-periodic-quick-card'));
+  assert.ok(css.includes('grid-template-rows: repeat(4, var(--dpr-quick-run-button-height));'));
+  assert.ok(css.includes('margin: 0;'));
+}
+
 testNormalizeSubscriptionsAddsBiorxivBackend();
 testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
@@ -341,5 +400,7 @@ testResolveResearchDirectionsPrefersConfiguredValues();
 testNormalizeSubscriptionsAddsPeriodicReportDefaults();
 testNormalizePeriodicReportsPreservesUserEdits();
 testResolvePeriodicReportsFallsBackFromConfig();
+testPeriodicSettingsUiRemovesDeprecatedControls();
+testQuickRunCssKeepsButtonsAligned();
 
 console.log('subscriptions manager tests passed');

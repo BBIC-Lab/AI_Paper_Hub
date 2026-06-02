@@ -21,11 +21,23 @@ periodic_reports:
     schedule: "30 23 * * 5"
     input_mode: artifacts
     recrawl_days: 10
+    max_candidates: 240
+    representative_papers: 12
+    topic_limits:
+      related_topics: 10
+      topic_timeline: 10
+      cooccurrence_topics: 10
+      cooccurrence_pairs: 12
   monthly:
     enabled: true
     schedule: "30 23 1 * *"
     input_mode: artifacts
     recrawl_days: 30
+    max_candidates: 240
+    representative_papers: 12
+    topic_limits:
+      topics: 10
+      topic_timeline: 10
   charts:
     topics: true
     sources: true
