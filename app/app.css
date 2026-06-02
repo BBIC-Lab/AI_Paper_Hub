@@ -11265,6 +11265,7 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 .dpr-weekly-summary-card {
   grid-column: span 12;
   display: grid;
+  gap: 10px;
   align-content: start;
   background: rgba(255, 255, 255, 0.95);
 }
@@ -11277,7 +11278,11 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 }
 
 .dpr-weekly-summary-card small {
-  display: none;
+  display: block;
+  color: #6b7788;
+  font-size: 12.5px;
+  font-weight: 680;
+  line-height: 1.45;
 }
 
 .dpr-weekly-topic-card.focus,
@@ -11328,6 +11333,13 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 
 .dpr-weekly-word-card {
   grid-column: span 14;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.dpr-weekly-word-card h2 {
+  margin-bottom: 0;
 }
 
 .dpr-weekly-network-card,
@@ -11381,7 +11393,7 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   width: 100%;
   height: auto;
   aspect-ratio: 15 / 7;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .dpr-weekly-word-cloud text {
@@ -11895,7 +11907,7 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   height: clamp(190px, 24vw, 238px);
   min-height: 0;
   align-self: stretch;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .dpr-periodic-index-mini-cloud text {

@@ -2546,6 +2546,12 @@ def _parse_generated_md_to_meta(
             title_en = h1s[0]
     if not title_en:
         title_en = legacy_meta.get("title", "")
+    title_zh = str(
+        fm_meta.get("title_zh")
+        or fm_meta.get("zh_title")
+        or fm_meta.get("title_cn")
+        or ""
+    ).strip()
 
     # tags：优先 front matter tags，次选旧式 HTML
     tags_typed: List[Dict[str, str]] = []
@@ -2639,6 +2645,7 @@ def _parse_generated_md_to_meta(
         "paper_id": paper_id,
         "section": section,
         "title_en": title_en,
+        "title_zh": title_zh,
         "authors": authors_line,
         "date": str(date_value or "").strip(),
         "pdf": str(pdf_value or "").strip(),

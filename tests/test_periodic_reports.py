@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -94,6 +95,51 @@ class PeriodicReportsTest(unittest.TestCase):
             self.assertEqual(len(papers), 1)
             self.assertEqual(papers[0]["href"], "#/202605/25/2505.00001-demo-paper")
             self.assertEqual([t["label"] for t in papers[0]["tags"]], ["agents", "benchmark"])
+
+    def test_collect_papers_backfills_title_zh_from_markdown_front_matter(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs = root / "docs"
+            meta_dir = docs / "202605" / "25"
+            meta_dir.mkdir(parents=True)
+            paper_id = "202605/25/2505.00002-title-demo"
+            (docs / f"{paper_id}.md").write_text(
+                "\n".join(
+                    [
+                        "---",
+                        "title: Title Demo",
+                        "title_zh: 中文标题回填",
+                        "---",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (meta_dir / "papers.meta.json").write_text(
+                json.dumps(
+                    {
+                        "papers": [
+                            {
+                                "paper_id": paper_id,
+                                "title_en": "Title Demo",
+                                "score": "8.7",
+                                "tags": "paper:benchmark",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            self._write_recommend(
+                root,
+                "20260525",
+                {"deep_dive": [{"id": "2505.00002v1", "title": "Title Demo", "llm_score": 8.7}], "quick_skim": []},
+            )
+            window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
+
+            papers, _artifacts, _stats = self.mod.collect_papers(root, docs, window, 20, {}, "")
+
+            self.assertEqual(papers[0]["title_zh"], "中文标题回填")
 
     def test_dedupe_prefers_deep_and_arxiv_base_id(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -243,10 +289,14 @@ class PeriodicReportsTest(unittest.TestCase):
         cloud_html = self.mod.word_cloud_html(words)
         self.assertIn("<svg", cloud_html)
         self.assertIn('viewBox="0 0 900 420"', cloud_html)
+        self.assertIn('preserveAspectRatio="xMidYMid meet"', cloud_html)
         self.assertIn("dominant-baseline", cloud_html)
         self.assertNotIn("<span", cloud_html)
         self.assertNotIn("dpr-weekly-word-cloud-glow", cloud_html)
         self.assertNotIn("<ellipse", cloud_html)
+        self.assertNotIn("scale(1.34)", cloud_html)
+        mini_cloud = self.mod.mini_word_cloud_html(words)
+        self.assertNotIn("scale(1.34)", mini_cloud)
 
         network_html = self.mod.cooccurrence_html(
             [
@@ -315,16 +365,18 @@ class PeriodicReportsTest(unittest.TestCase):
             papers.append(
                 {
                     "paper_id": f"p{idx}",
-                    "title": f"AI4ND topic-{idx} topic-{(idx + 1) % 14} cooccurrence",
+                    "title": f"AI4ND ai4nd:composite topic-{idx} topic-{(idx + 1) % 14} cooccurrence",
                     "date": f"2026-05-{25 + (idx % 5):02d}",
                     "score": 8.0,
                     "source": "arxiv",
                     "tags": [
                         {"kind": "query", "label": "AI4ND" if idx % 2 else "ai4nd"},
+                        {"kind": "paper", "label": "ai4nd:composite"},
+                        {"kind": "ai4nd", "label": "composite"},
                         {"kind": "paper", "label": f"topic-{idx}"},
                         {"kind": "paper", "label": f"topic-{(idx + 1) % 14}"},
                     ],
-                    "evidence": f"evidence for topic-{idx}",
+                    "evidence": f"evidence for ai4nd:composite topic-{idx}",
                 }
             )
         limits = {
@@ -352,6 +404,8 @@ class PeriodicReportsTest(unittest.TestCase):
         for bucket in ("related_topics", "weekday_topic_timeline", "word_cloud"):
             labels = [str(item.get("label") or item.get("topic")).casefold() for item in weekly[bucket]]
             self.assertNotIn("ai4nd", labels)
+            self.assertNotIn("ai4nd:composite", labels)
+            self.assertNotIn("composite", labels)
         network_html = self.mod.cooccurrence_html(
             weekly["cooccurrence"],
             topic_limit=limits["cooccurrence_topics"],
@@ -361,6 +415,7 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertLessEqual(network_html.count("dpr-weekly-chord-table-row"), 6)
         self.assertNotIn("AI4ND", network_html)
         self.assertNotIn("ai4nd", network_html)
+        self.assertNotIn("ai4nd:composite", network_html)
 
     def test_llm_prompt_includes_weekly_summary_inputs_without_truncation_policy(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
@@ -394,6 +449,65 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertIn("目标约 300 字", prompt_json)
         self.assertIn("硬上限 500 字", prompt_json)
         self.assertIn("Agent Retrieval", prompt_json)
+
+    def test_llm_interpretation_retries_reasoning_only_response_and_marks_source(self):
+        window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
+        metrics = {
+            "coverage": {"artifact_files": 1, "unique_papers": 1},
+            "weekly_v2": {
+                "related_topics": [{"label": "agents", "count": 1}],
+                "word_cloud": [{"label": "agents", "count": 2}],
+                "cooccurrence": [],
+            },
+        }
+        papers = [{"paper_id": "p1", "title": "Agent Memory", "score": 8.5, "source": "arxiv"}]
+        attempts = []
+
+        class DummyLLMClient:
+            def __init__(self, *args, **kwargs):
+                self.kwargs = {}
+
+            @staticmethod
+            def build_json_object_response_format():
+                return {"type": "json_object"}
+
+            @staticmethod
+            def parse_json_content(text):
+                return json.loads(text)
+
+            def chat(self, _messages, response_format=None):
+                attempts.append(self.kwargs.get("max_tokens"))
+                if len(attempts) < 3:
+                    return {"content": "", "reasoning_content": "thinking only"}
+                return {
+                    "content": json.dumps({"weekly_summary": "这是 LLM 生成的小结。"}, ensure_ascii=False),
+                    "reasoning_content": "",
+                }
+
+        old_client = self.mod.LLMClient
+        env_names = ("DPR_LLM_API_KEY", "DPR_LLM_REPORT_MODEL", "DPR_LLM_SUMMARY_MODEL", "DPR_LLM_MODEL")
+        old_env = {name: os.environ.get(name) for name in env_names}
+        try:
+            self.mod.LLMClient = DummyLLMClient
+            os.environ["DPR_LLM_API_KEY"] = "demo-key"
+            os.environ["DPR_LLM_REPORT_MODEL"] = "demo-report-model"
+            os.environ.pop("DPR_LLM_SUMMARY_MODEL", None)
+            os.environ.pop("DPR_LLM_MODEL", None)
+
+            interpretation = self.mod.try_llm_interpretation(window, metrics, papers)
+        finally:
+            self.mod.LLMClient = old_client
+            for name, value in old_env.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+
+        self.assertEqual(attempts, [2400, 3600, 5200])
+        self.assertIsNotNone(interpretation)
+        self.assertEqual(interpretation["weekly_summary_source"], "llm")
+        self.assertEqual(interpretation["weekly_summary_model"], "demo-report-model")
+        self.assertIn("demo-report-model", interpretation["weekly_summary_note"])
 
     def test_broken_chinese_title_is_not_rendered_as_question_marks(self):
         row = self.mod.evidence_row_html(
@@ -444,6 +558,7 @@ class PeriodicReportsTest(unittest.TestCase):
         )
 
         self.assertIn("本周去重样本共", html)
+        self.assertIn("模板小结，非 LLM 生成", html)
         self.assertIn("暂无推荐证据。", html)
         self.assertNotIn("????????", html)
 
@@ -466,6 +581,7 @@ class PeriodicReportsTest(unittest.TestCase):
 
         self.assertIn("weekly_summary", interpretation)
         self.assertTrue(interpretation["weekly_summary"])
+        self.assertEqual(interpretation["weekly_summary_source"], "fallback")
         self.assertIn("summary_evidence_ids", interpretation)
 
 

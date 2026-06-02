@@ -44,6 +44,7 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                     [
                         "---",
                         'title: "Attention Is All You Need"',
+                        "title_zh: 注意力即一切",
                         "authors: Ashish Vaswani, Noam Shazeer",
                         'tags: ["query:transformer", "paper:attention"]',
                         "date: 20170612",
@@ -59,6 +60,7 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
             item = self.mod._parse_generated_md_to_meta(str(path), "pid", "quick")
             self.assertEqual(item["title_en"], "Attention Is All You Need")
+            self.assertEqual(item["title_zh"], "注意力即一切")
             self.assertTrue(item["authors"].startswith("Ashish Vaswani"))
             self.assertIn("query:transformer", item["tags"])
             self.assertEqual(item["date"], "20170612")

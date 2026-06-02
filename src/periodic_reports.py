@@ -40,7 +40,9 @@ DEFAULT_MONTHLY_TOPICS = 10
 DEFAULT_MONTHLY_TOPIC_TIMELINE = 10
 SUPPORTED_INPUT_MODES = {"artifacts", "recrawl", "hybrid"}
 SUPPORTED_PERIODS = {"weekly", "monthly"}
-REPORT_RENDER_VERSION = "periodic-weekly-v5"
+REPORT_RENDER_VERSION = "periodic-weekly-v6"
+LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS = (2400, 3600, 5200)
+WORD_CLOUD_PADDING = 10.0
 FOCUS_TAG_KINDS = {"query", "profile", "intent", "reader", "research", "subscription"}
 WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五"]
 RADAR_AXES = [
@@ -465,7 +467,19 @@ def topic_key(label: Any) -> str:
 
 def is_excluded_topic(label: Any, excluded_labels: set[str] | None = None) -> bool:
     key = topic_key(label)
-    return bool(key and excluded_labels and key in excluded_labels)
+    if not key or not excluded_labels:
+        return False
+    for excluded in excluded_labels:
+        excluded = topic_key(excluded)
+        if not excluded:
+            continue
+        if key == excluded:
+            return True
+        if key.startswith(excluded) and len(key) > len(excluded):
+            boundary = key[len(excluded)]
+            if boundary in {":", "/", "|", "#", ".", "_", "-", " "}:
+                return True
+    return False
 
 
 def excluded_retrieval_tags(config: dict[str, Any] | None, aliases: dict[str, Any] | None = None, profile_tag: str = "") -> set[str]:
@@ -555,6 +569,56 @@ def load_meta_indexes(docs_dir: Path) -> dict[str, dict[str, Any]]:
     return index
 
 
+def markdown_front_matter(path: Path) -> dict[str, Any]:
+    try:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    except Exception:
+        return {}
+    if not lines or lines[0].strip() != "---":
+        return {}
+    body: list[str] = []
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        body.append(line)
+    if not body:
+        return {}
+    text = "\n".join(body)
+    if yaml is not None:
+        try:
+            payload = yaml.safe_load(text)
+            return payload if isinstance(payload, dict) else {}
+        except Exception:
+            pass
+    parsed: dict[str, str] = {}
+    for line in body:
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        parsed[key.strip()] = value.strip().strip("\"'")
+    return parsed
+
+
+def title_zh_from_markdown_meta(meta: dict[str, Any] | None, docs_dir: Path) -> str:
+    if not meta:
+        return ""
+    candidates: list[Path] = []
+    paper_id = normalize_text(meta.get("paper_id"))
+    if paper_id:
+        rel = paper_id.strip().lstrip("/\\")
+        candidates.append(docs_dir / rel)
+        if not rel.lower().endswith(".md"):
+            candidates.append(docs_dir / f"{rel}.md")
+    for path in candidates:
+        if not path.exists() or not path.is_file():
+            continue
+        fm = markdown_front_matter(path)
+        title_zh = first_clean_title_zh(fm.get("title_zh"), fm.get("zh_title"), fm.get("title_cn"))
+        if title_zh:
+            return title_zh
+    return ""
+
+
 def find_meta(item: dict[str, Any], meta_index: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
     candidates = []
     for value in (item.get("id"), item.get("paper_id"), item.get("arxiv_id"), item.get("link"), item.get("pdf_url")):
@@ -611,6 +675,7 @@ def build_paper_record(
     artifact: ArtifactFile,
     meta_index: dict[str, dict[str, Any]],
     aliases: dict[str, Any],
+    docs_dir: Path = DEFAULT_DOCS_DIR,
     root: Path = ROOT_DIR,
 ) -> dict[str, Any]:
     meta = find_meta(item, meta_index)
@@ -624,6 +689,8 @@ def build_paper_record(
         (meta or {}).get("zh_title"),
         (meta or {}).get("title_cn"),
     )
+    if not title_zh:
+        title_zh = title_zh_from_markdown_meta(meta, docs_dir)
     score = score_value(item.get("llm_score") if item.get("llm_score") is not None else (meta or {}).get("score"))
     published = normalize_text(item.get("published") or item.get("date") or (meta or {}).get("date"))
     evidence = normalize_text(item.get("evidence") or item.get("reason") or item.get("recommend_reason") or (meta or {}).get("evidence"))
@@ -701,7 +768,7 @@ def collect_papers(
                     tag_text += " " + " ".join(tag.get("label", "").casefold() for tag in collect_item_tags(item, None, aliases or {}))
                     if profile_filter not in tag_text:
                         continue
-                raw_records.append(build_paper_record(item, section, artifact, meta_index, aliases or {}, root=root))
+                raw_records.append(build_paper_record(item, section, artifact, meta_index, aliases or {}, docs_dir=docs_dir, root=root))
 
     by_key: dict[str, dict[str, Any]] = {}
     duplicate_count = 0
@@ -741,7 +808,7 @@ def counter_to_ranked_items(counter: Counter, limit: int) -> list[dict[str, Any]
     return [{"label": str(k), "count": int(v)} for k, v in items[:limit] if v > 0]
 
 
-def paper_text_blob(paper: dict[str, Any]) -> str:
+def paper_text_blob(paper: dict[str, Any], excluded_labels: set[str] | None = None) -> str:
     parts = [
         paper.get("title"),
         paper.get("title_zh"),
@@ -750,12 +817,19 @@ def paper_text_blob(paper: dict[str, Any]) -> str:
         paper.get("tldr"),
         paper.get("selection_source"),
     ]
-    parts.extend(tag.get("label") for tag in (paper.get("tags") or []) if isinstance(tag, dict))
+    for tag in paper.get("tags") or []:
+        if not isinstance(tag, dict):
+            continue
+        kind = normalize_text(tag.get("kind") or "paper").casefold()
+        label = normalize_text(tag.get("label"))
+        if not label or is_excluded_topic(label, excluded_labels) or is_excluded_topic(kind, excluded_labels):
+            continue
+        parts.append(label)
     return " ".join(normalize_text(part) for part in parts if normalize_text(part))
 
 
-def infer_taxonomy_topics(paper: dict[str, Any]) -> list[tuple[str, str]]:
-    text = paper_text_blob(paper).casefold()
+def infer_taxonomy_topics(paper: dict[str, Any], excluded_labels: set[str] | None = None) -> list[tuple[str, str]]:
+    text = paper_text_blob(paper, excluded_labels).casefold()
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
     for label, axis, keywords in CS_TAXONOMY_SEEDS:
@@ -779,14 +853,14 @@ def paper_weekly_topics(
         if not isinstance(tag, dict):
             continue
         label = apply_topic_alias(tag.get("label") or "", aliases or {})
-        if not label or is_excluded_topic(label, excluded_labels):
-            continue
         kind = normalize_text(tag.get("kind") or "paper").casefold()
+        if not label or is_excluded_topic(label, excluded_labels) or is_excluded_topic(kind, excluded_labels):
+            continue
         if kind in FOCUS_TAG_KINDS:
             focus.append(label)
         else:
             context.append(label)
-    for label, axis in infer_taxonomy_topics(paper):
+    for label, axis in infer_taxonomy_topics(paper, excluded_labels):
         aliased = apply_topic_alias(label, aliases or {})
         if is_excluded_topic(aliased, excluded_labels):
             continue
@@ -809,9 +883,9 @@ def word_cloud_items(
         focus, context, _axes = paper_weekly_topics(paper, aliases, excluded_labels)
         for label in focus + context:
             counter[label] += 2
-        text = paper_text_blob(paper)
-        for token in re.findall(r"[A-Za-z][A-Za-z0-9+./-]{2,}", text):
-            word = token.strip("-_.").casefold()
+        text = paper_text_blob(paper, excluded_labels)
+        for token in re.findall(r"[A-Za-z][A-Za-z0-9+./:_#|\-]{2,}", text):
+            word = token.strip("-_.:/|#").casefold()
             if len(word) < 3 or word in WORD_STOPWORDS or word.isdigit() or is_excluded_topic(word, excluded_labels):
                 continue
             counter[word] += 1
@@ -1041,8 +1115,9 @@ def build_metrics(
         d = normalize_text(paper.get("date")) or "unknown"
         date_counter[d] += 1
         for tag in paper.get("tags") or []:
+            kind = normalize_text(tag.get("kind") or "paper").casefold()
             label = normalize_text(tag.get("label"))
-            if not label or is_excluded_topic(label, excluded_labels):
+            if not label or is_excluded_topic(label, excluded_labels) or is_excluded_topic(kind, excluded_labels):
                 continue
             topic_counter[label] += 1
             topic_by_time[d][label] += 1
@@ -1166,6 +1241,9 @@ def build_fallback_interpretation(window: PeriodWindow, metrics: dict[str, Any],
     ]
     return {
         "weekly_summary": weekly_summary,
+        "weekly_summary_source": "fallback",
+        "weekly_summary_model": "",
+        "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
         "summary_evidence_ids": evidence_ids,
         "highlights": highlights,
         "rising_topics": rising,
@@ -1203,6 +1281,9 @@ def normalize_interpretation(data: dict[str, Any]) -> dict[str, Any]:
     if not weekly_summary and out.get("highlights"):
         weekly_summary = " ".join(out["highlights"][:3])
     out["weekly_summary"] = weekly_summary
+    out["weekly_summary_source"] = normalize_text(data.get("weekly_summary_source") or data.get("summary_source"))
+    out["weekly_summary_model"] = normalize_text(data.get("weekly_summary_model") or data.get("model"))
+    out["weekly_summary_note"] = normalize_text(data.get("weekly_summary_note") or data.get("summary_note"))
     return out
 
 
@@ -1218,6 +1299,23 @@ def build_llm_evidence_papers(papers: list[dict[str, Any]], limit: int = 18) -> 
         }
         for p in papers[:limit]
     ]
+
+
+def mark_llm_interpretation(data: dict[str, Any], model: str) -> dict[str, Any]:
+    out = dict(data)
+    out["weekly_summary_source"] = "llm"
+    out["weekly_summary_model"] = model
+    out["weekly_summary_note"] = f"本周小结由 {model} 生成。"
+    return out
+
+
+def weekly_summary_source_note(interpretation: dict[str, Any]) -> str:
+    source = normalize_text(interpretation.get("weekly_summary_source"))
+    model = normalize_text(interpretation.get("weekly_summary_model"))
+    note = normalize_text(interpretation.get("weekly_summary_note"))
+    if source == "llm":
+        return note or f"本周小结由 {model or 'LLM'} 生成。"
+    return note or "模板小结，非 LLM 生成，需要检查 LLM 可用性。"
 
 
 def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1257,25 +1355,56 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
     base_url = env_text("DPR_LLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL") or "https://api.openai.com/v1"
     model = env_text("DPR_LLM_REPORT_MODEL", "DPR_LLM_SUMMARY_MODEL", "DPR_LLM_MODEL", "LLM_MODEL")
     if not api_key or not model or LLMClient is None:
+        missing = []
+        if not api_key:
+            missing.append("api_key")
+        if not model:
+            missing.append("model")
+        if LLMClient is None:
+            missing.append("LLMClient")
+        log(f"[WARN] LLM interpretation unavailable ({', '.join(missing)}); using fallback summary.")
         return None
     system_prompt = "你是科研周期报告编辑。只基于给定 JSON 统计和 evidence papers 写中文洞察，不要编造未出现的论文、数量或趋势。返回 JSON。"
     user_payload = build_llm_interpretation_payload(window, metrics, papers)
-    client = LLMClient(api_key=api_key, model=model, base_url=base_url)
-    client.kwargs.update({"temperature": 0.2, "max_tokens": 1200})
-    try:
-        response = client.chat(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-            ],
-            response_format=LLMClient.build_json_object_response_format(),
-        )
-        content = (((response.get("choices") or [{}])[0].get("message") or {}).get("content") or "")
-        parsed = LLMClient.parse_json_content(content)
-        return normalize_interpretation(parsed) if isinstance(parsed, dict) else None
-    except Exception as exc:
-        log(f"[WARN] LLM interpretation failed, using fallback: {exc}")
-        return None
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
+    for attempt, max_tokens in enumerate(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS, start=1):
+        client = LLMClient(api_key=api_key, model=model, base_url=base_url)
+        client.kwargs.update({"temperature": 0.2, "max_tokens": max_tokens})
+        try:
+            response = client.chat(
+                messages,
+                response_format=LLMClient.build_json_object_response_format(),
+            )
+            content = normalize_text(response.get("content"))
+            reasoning_content = normalize_text(response.get("reasoning_content"))
+            if not content:
+                if reasoning_content:
+                    log(
+                        f"[WARN] LLM interpretation attempt {attempt}/{len(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS)} "
+                        f"returned reasoning_content but empty content (max_tokens={max_tokens}); retrying."
+                    )
+                else:
+                    log(
+                        f"[WARN] LLM interpretation attempt {attempt}/{len(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS)} "
+                        f"returned empty content (max_tokens={max_tokens}); retrying."
+                    )
+                continue
+            parsed = LLMClient.parse_json_content(content)
+            if not isinstance(parsed, dict):
+                log(f"[WARN] LLM interpretation attempt {attempt} returned non-object JSON; retrying.")
+                continue
+            interpretation = normalize_interpretation(parsed)
+            if not normalize_text(interpretation.get("weekly_summary")):
+                log(f"[WARN] LLM interpretation attempt {attempt} returned no weekly_summary; retrying.")
+                continue
+            return mark_llm_interpretation(interpretation, model)
+        except Exception as exc:
+            log(f"[WARN] LLM interpretation attempt {attempt}/{len(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS)} failed: {exc}")
+    log("[WARN] LLM interpretation failed after retries; using fallback summary.")
+    return None
 
 
 def compute_input_hash(window: PeriodWindow, input_mode: str, artifacts: list[ArtifactFile], papers: list[dict[str, Any]], config: dict[str, Any]) -> str:
@@ -1418,8 +1547,8 @@ def word_cloud_html(items: list[dict[str, Any]]) -> str:
         )
     return (
         '<section class="dpr-weekly-bento-card dpr-weekly-word-card"><h2>词频云</h2>'
-        '<svg class="dpr-weekly-word-cloud" viewBox="0 0 900 420" role="img" aria-label="词频云">'
-        f'<g transform="translate(450 210) scale(1.34) translate(-450 -210)">{"".join(word_nodes)}</g></svg></section>'
+        '<svg class="dpr-weekly-word-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="词频云">'
+        f'{"".join(word_nodes)}</svg></section>'
     )
 
 
@@ -1437,7 +1566,7 @@ def mini_word_cloud_html(items: list[dict[str, Any]]) -> str:
         )
     return (
         '<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="周报词频云">'
-        f'<g transform="translate(450 210) scale(1.34) translate(-450 -210)">{"".join(nodes)}</g></svg>'
+        f'{"".join(nodes)}</svg>'
     )
 
 
@@ -1529,7 +1658,12 @@ def layout_word_cloud(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         chosen: tuple[float, float] | None = None
         for x, y in candidates:
             rect = (x - text_width / 2, y - text_height / 2, x + text_width / 2, y + text_height / 2)
-            if rect[0] < 12 or rect[2] > width - 12 or rect[1] < 14 or rect[3] > height - 14:
+            if (
+                rect[0] < WORD_CLOUD_PADDING
+                or rect[2] > width - WORD_CLOUD_PADDING
+                or rect[1] < WORD_CLOUD_PADDING
+                or rect[3] > height - WORD_CLOUD_PADDING
+            ):
                 continue
             if not overlaps(rect, placed_rects, pad=2.5):
                 chosen = (x, y)
@@ -1835,6 +1969,7 @@ def build_weekly_report_markdown(
     if not summary_text and normalize_text(interpretation.get("weekly_summary")):
         summary_text = build_fallback_interpretation(window, metrics, papers).get("weekly_summary") or ""
     summary = html.escape(summary_text or "本周摘要暂未生成；请检查 LLM 配置或日报 artifact 是否包含足够证据。")
+    summary_source = html.escape(weekly_summary_source_note(interpretation))
     evidence_rows = "".join(evidence_row_html(paper, idx) for idx, paper in enumerate(top_papers, start=1))
     lines = [
         '<section class="dpr-periodic-report dpr-periodic-weekly dpr-periodic-weekly-v2 dpr-periodic-weekly-v3 dpr-periodic-weekly-v4 dpr-periodic-weekly-v5">',
@@ -1847,6 +1982,7 @@ def build_weekly_report_markdown(
         '<div class="dpr-weekly-bento">',
         '<section class="dpr-weekly-bento-card dpr-weekly-summary-card"><h2>本周小结</h2>',
         f"<p>{summary}</p>",
+        f'<small class="dpr-weekly-summary-source">{summary_source}</small>',
         "</section>",
         compact_topic_card_html(related_topics, "相关主题", "related"),
         weekday_heatmap_html(timeline_rows, positive_int(limits.get("topic_timeline"), DEFAULT_WEEKLY_TOPIC_TIMELINE)),
@@ -1965,7 +2101,9 @@ def load_existing_interpretation(out_dir: Path, input_hash: str) -> dict[str, An
     except Exception:
         return None
     if payload.get("input_hash") == input_hash and isinstance(payload.get("interpretation"), dict):
-        return normalize_interpretation(payload["interpretation"])
+        interpretation = normalize_interpretation(payload["interpretation"])
+        if normalize_text(interpretation.get("weekly_summary_source")) == "llm":
+            return interpretation
     return None
 
 
@@ -2127,6 +2265,7 @@ def write_report(
             {
                 "paper_id": paper.get("paper_id") or paper.get("dedupe_key"),
                 "title": paper.get("title"),
+                "title_zh": paper.get("title_zh"),
                 "href": paper.get("href") or paper.get("external_url"),
                 "artifact_path": paper.get("artifact_path"),
                 "score": paper.get("score"),
@@ -2158,6 +2297,9 @@ def write_report(
         "cooccurrence": weekly_chart_data.get("cooccurrence") or [],
         "topic_limits": weekly_chart_data.get("topic_limits") or {},
         "weekly_summary": normalize_text(interpretation.get("weekly_summary")),
+        "weekly_summary_source": normalize_text(interpretation.get("weekly_summary_source")),
+        "weekly_summary_model": normalize_text(interpretation.get("weekly_summary_model")),
+        "weekly_summary_note": weekly_summary_source_note(interpretation),
         "artifacts": artifact_paths,
         "papers": papers,
     }
