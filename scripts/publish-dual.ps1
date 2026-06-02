@@ -1,13 +1,13 @@
 #requires -Version 5.1
 <#
-Publishes one scoped change to both repository roles:
-1. Commit and push to the private remote (origin/main by default).
-2. Re-apply the same commit on top of the public remote (public/main by default)
-   from a disposable worktree, then push it.
+Commits one scoped public-safe change to the primary repo, then runs
+the origin-to-private sync script.
 
 The script is intentionally conservative:
-- It never stages ignored/unrelated private runtime paths.
-- It aborts if the public worktree is dirty.
+- It commits and pushes only to the primary public remote first (origin/main by default).
+- It runs the privacy guard before the primary public commit is created.
+- It delegates private updates to scripts/sync-origin-to-private.ps1, which
+  preserves private/runtime paths.
 - It uses per-command proxy overrides for pushes.
 - Use -UseApiPushFallback to recover from GitHub HTTPS push resets after fast-forward checks.
 - Use -DryRun to inspect the plan without staging, committing, or pushing.
@@ -20,11 +20,11 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$Message,
 
-  [string]$PrivateRemote = "origin",
-  [string]$PublicRemote = "public",
+  [string]$PrimaryRemote = "origin",
+  [string]$PrivateSyncRemote = "private",
   [string]$Branch = "main",
-  [string]$PublicBranch = "codex/public-sync",
-  [string]$PublicWorktree = (Join-Path $env:USERPROFILE ".codex\worktrees\AI_Daily_Paper_Reader_public_sync"),
+  [string]$PrivateSyncBranch = "codex/private-sync",
+  [string]$PrivateSyncWorktree = (Join-Path $env:USERPROFILE ".codex\worktrees\AI_Daily_Paper_Reader_private_sync"),
 
   [Parameter(ValueFromRemainingArguments = $true)]
   [string[]]$Paths = @(),
@@ -405,19 +405,19 @@ function Invoke-Validation {
   }
 }
 
-function Invoke-PublicPrivacyGuard {
+function Invoke-PrimaryPrivacyGuard {
   param([string]$Cwd)
   $guard = Join-Path $Cwd "scripts\privacy_guard.py"
   if (-not (Test-Path $guard)) {
-    Write-Host "WARN: scripts\privacy_guard.py not found; skipped public privacy guard." -ForegroundColor Yellow
+    Write-Host "WARN: scripts\privacy_guard.py not found; skipped primary privacy guard." -ForegroundColor Yellow
     return
   }
   $python = Resolve-PythonExe
   if (-not $python) {
-    Write-Host "WARN: python not found; skipped public privacy guard." -ForegroundColor Yellow
+    Write-Host "WARN: python not found; skipped primary privacy guard." -ForegroundColor Yellow
     return
   }
-  Write-Step "Run public privacy guard"
+  Write-Step "Run primary privacy guard"
   Invoke-External -Exe $python -Args @("scripts\privacy_guard.py") -Cwd $Cwd
 }
 
@@ -434,8 +434,14 @@ function Is-HardDeniedPath {
   param([string]$RepoPath)
   $patterns = @(
     "^secret\.private$",
+    "^config\.yaml$",
     "^docs/config\.yaml$",
+    "^docs/\d{6}/",
+    "^docs/reports/",
+    "^docs/assets/figures/",
     "^archive/",
+    "^\.codex/",
+    "^TODO\.md$",
     "^\.env($|\.)",
     "(^|/)\.env($|\.)"
   )
@@ -448,7 +454,7 @@ function Is-HardDeniedPath {
 function Is-AutoExcludedPath {
   param([string]$RepoPath)
   $patterns = @(
-    "^AGENTS\.md$",
+    "^docs/reports/",
     "^docs/config\.yaml$",
     "^codex-httpserver\.(out|err)\.log$",
     "(^|/)__pycache__/",
@@ -478,9 +484,9 @@ $Paths = @(
 
 Write-Step "Repository"
 Write-Host "Root: $Root"
-Write-Host "Private remote: $PrivateRemote/$Branch"
-Write-Host "Public remote:  $PublicRemote/$Branch"
-Write-Host "Public worktree: $PublicWorktree"
+Write-Host "Primary remote: $PrimaryRemote/$Branch"
+Write-Host "Private sync remote:  $PrivateSyncRemote/$Branch"
+Write-Host "Private sync worktree: $PrivateSyncWorktree"
 if ($DryRun) { Write-Host "Mode: dry-run (no staging, commits, worktree writes, or pushes)" -ForegroundColor Yellow }
 if ($UseApiPushFallback) { Write-Host "GitHub API push fallback: enabled" -ForegroundColor Yellow }
 
@@ -489,24 +495,24 @@ if ($currentBranch -ne $Branch) {
   throw "Current branch is '$currentBranch'; expected '$Branch'. Switch branches or pass -Branch."
 }
 
-Invoke-GitRead -GitArgs @("remote", "get-url", $PrivateRemote) -Cwd $Root | Out-Null
-Invoke-GitRead -GitArgs @("remote", "get-url", $PublicRemote) -Cwd $Root | Out-Null
+Invoke-GitRead -GitArgs @("remote", "get-url", $PrimaryRemote) -Cwd $Root | Out-Null
+Invoke-GitRead -GitArgs @("remote", "get-url", $PrivateSyncRemote) -Cwd $Root | Out-Null
 
 Write-Step "Refresh remotes"
-Invoke-GitWrite -GitArgs @("fetch", $PrivateRemote, $Branch) -Cwd $Root
-Invoke-GitWrite -GitArgs @("fetch", $PublicRemote, $Branch) -Cwd $Root
+Invoke-GitWrite -GitArgs @("fetch", $PrimaryRemote, $Branch) -Cwd $Root
+Invoke-GitWrite -GitArgs @("fetch", $PrivateSyncRemote, $Branch) -Cwd $Root
 
 $trackedDirty = (Invoke-GitRead -GitArgs @("status", "--porcelain", "--untracked-files=no") -Cwd $Root).Output
-$behindText = (Invoke-GitRead -GitArgs @("rev-list", "--count", "HEAD..$PrivateRemote/$Branch") -Cwd $Root).Output[0].Trim()
+$behindText = (Invoke-GitRead -GitArgs @("rev-list", "--count", "HEAD..$PrimaryRemote/$Branch") -Cwd $Root).Output[0].Trim()
 $behind = [int]$behindText
 if ($behind -gt 0) {
   if ($trackedDirty.Count -gt 0) {
-    throw "Local $Branch is behind $PrivateRemote/$Branch and has tracked changes. Commit/stash or pull before publishing."
+    throw "Local $Branch is behind $PrimaryRemote/$Branch and has tracked changes. Commit/stash or pull before publishing."
   }
-  Write-Step "Fast-forward private branch"
-  Invoke-GitWrite -GitArgs @("pull", "--ff-only", $PrivateRemote, $Branch) -Cwd $Root
+  Write-Step "Fast-forward primary branch"
+  Invoke-GitWrite -GitArgs @("pull", "--ff-only", $PrimaryRemote, $Branch) -Cwd $Root
 }
-$privateBaseForPublish = (Invoke-GitRead -GitArgs @("rev-parse", "$PrivateRemote/$Branch") -Cwd $Root).Output[0].Trim()
+$primaryBaseForSync = (Invoke-GitRead -GitArgs @("rev-parse", "$PrimaryRemote/$Branch") -Cwd $Root).Output[0].Trim()
 
 Write-Step "Select files"
 $explicitPaths = $Paths.Count -gt 0
@@ -550,68 +556,50 @@ if ($excludedFiles.Count -gt 0) {
 }
 
 if ($DryRun) {
-  Write-Host "[dry-run] Would stage, validate, commit, push private, cherry-pick to public worktree, validate, and push public." -ForegroundColor DarkGray
+  Write-Host "[dry-run] Would stage, validate, privacy-check, commit, push primary, then run sync-origin-to-private.ps1." -ForegroundColor DarkGray
   exit 0
 }
 
-Write-Step "Stage private commit"
+Write-Step "Stage primary commit"
 Invoke-GitWrite -GitArgs (@("add", "--") + [string[]]$publishFiles) -Cwd $Root
 $stagedFiles = (Invoke-GitRead -GitArgs @("diff", "--cached", "--name-only") -Cwd $Root).Output
 if ($stagedFiles.Count -eq 0) { throw "No staged changes after git add." }
 
 Invoke-Validation -Cwd $Root -Files ([string[]]$publishFiles) -StagedDiff
+Invoke-PrimaryPrivacyGuard -Cwd $Root
 
-Write-Step "Commit private"
+Write-Step "Commit primary"
 Invoke-GitWrite -GitArgs @("commit", "-m", $Message) -Cwd $Root
-$privateCommit = (Invoke-GitRead -GitArgs @("rev-parse", "--short", "HEAD") -Cwd $Root).Output[0].Trim()
-$privateCommitFull = (Invoke-GitRead -GitArgs @("rev-parse", "HEAD") -Cwd $Root).Output[0].Trim()
-Write-Host "Private commit: $privateCommit"
+$primaryCommit = (Invoke-GitRead -GitArgs @("rev-parse", "--short", "HEAD") -Cwd $Root).Output[0].Trim()
+$primaryCommitFull = (Invoke-GitRead -GitArgs @("rev-parse", "HEAD") -Cwd $Root).Output[0].Trim()
+Write-Host "Primary commit: $primaryCommit"
 
 if (-not $NoPush) {
-  Write-Step "Push private"
-  Invoke-GitPush -Remote $PrivateRemote -Branch $Branch -RefSpec $Branch -Cwd $Root
+  Write-Step "Push primary"
+  Invoke-GitPush -Remote $PrimaryRemote -Branch $Branch -RefSpec $Branch -Cwd $Root
 } else {
-  Write-Host "Private push skipped by -NoPush." -ForegroundColor Yellow
+  Write-Host "Primary push skipped by -NoPush." -ForegroundColor Yellow
 }
-
-Write-Step "Prepare public worktree"
-if (-not (Test-Path $PublicWorktree)) {
-  $parent = Split-Path -Parent $PublicWorktree
-  if (-not (Test-Path $parent)) {
-    New-Item -ItemType Directory -Path $parent | Out-Null
-  }
-  Invoke-GitWrite -GitArgs @("worktree", "add", "-B", $PublicBranch, $PublicWorktree, "$PublicRemote/$Branch") -Cwd $Root
-} else {
-  Invoke-GitRead -GitArgs @("rev-parse", "--is-inside-work-tree") -Cwd $PublicWorktree | Out-Null
-  $publicDirty = (Invoke-GitRead -GitArgs @("status", "--porcelain") -Cwd $PublicWorktree).Output
-  if ($publicDirty.Count -gt 0) {
-    throw "Public worktree is dirty: $PublicWorktree"
-  }
-  Invoke-GitWrite -GitArgs @("fetch", $PublicRemote, $Branch) -Cwd $PublicWorktree
-  Invoke-GitWrite -GitArgs @("switch", "-C", $PublicBranch, "$PublicRemote/$Branch") -Cwd $PublicWorktree
-}
-
-Write-Step "Apply commit to public"
-$commitsForPublic = @((Invoke-GitRead -GitArgs @("rev-list", "--reverse", "$privateBaseForPublish..$privateCommitFull") -Cwd $Root).Output | Where-Object { $_ })
-if ($commitsForPublic.Count -eq 0) {
-  throw "No private commits found to apply to public from $privateBaseForPublish to $privateCommitFull."
-}
-foreach ($commitForPublic in $commitsForPublic) {
-  Invoke-GitWrite -GitArgs @("cherry-pick", $commitForPublic) -Cwd $PublicWorktree
-}
-$publicCommit = (Invoke-GitRead -GitArgs @("rev-parse", "--short", "HEAD") -Cwd $PublicWorktree).Output[0].Trim()
-Write-Host "Public commit: $publicCommit"
-
-Invoke-Validation -Cwd $PublicWorktree -Files ([string[]]$publishFiles)
-Invoke-PublicPrivacyGuard -Cwd $PublicWorktree
 
 if (-not $NoPush) {
-  Write-Step "Push public"
-  Invoke-GitPush -Remote $PublicRemote -Branch $Branch -RefSpec "HEAD:$Branch" -Cwd $PublicWorktree
+  Write-Step "Sync private from origin"
+  $syncScript = Join-Path $Root "scripts\sync-origin-to-private.ps1"
+  if (-not (Test-Path $syncScript)) {
+    throw "Missing sync script: $syncScript"
+  }
+  Invoke-External -Exe "powershell" -Args @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $syncScript,
+    "-OriginRemote", $PrimaryRemote,
+    "-PrivateRemote", $PrivateSyncRemote,
+    "-Branch", $Branch,
+    "-SyncBranch", $PrivateSyncBranch,
+    "-Worktree", $PrivateSyncWorktree,
+    "-Message", "chore: sync private with origin main"
+  ) -Cwd $Root
 } else {
-  Write-Host "Public push skipped by -NoPush." -ForegroundColor Yellow
+  Write-Host "Private sync skipped by -NoPush." -ForegroundColor Yellow
 }
 
 Write-Step "Done"
-Write-Host "Private: $PrivateRemote/$Branch @ $privateCommit"
-Write-Host "Public:  $PublicRemote/$Branch @ $publicCommit"
+Write-Host "Primary: $PrimaryRemote/$Branch @ $primaryCommit"
+Write-Host "Private sync: run scripts/sync-origin-to-private.ps1 for $PrivateSyncRemote/$Branch"

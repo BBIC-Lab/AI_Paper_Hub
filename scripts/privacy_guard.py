@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env python3
-"""Fail if private runtime artifacts are tracked in the public template."""
+"""Fail if private runtime artifacts are tracked in the primary public repo."""
 from __future__ import annotations
 
 import re
@@ -29,6 +29,8 @@ def main() -> int:
             failures.append(f"tracked private secret file: {path}")
         if re.match(r"^docs/\d{6}/", path):
             failures.append(f"tracked generated dated docs page: {path}")
+        if path.startswith("docs/reports/"):
+            failures.append(f"tracked generated periodic report page: {path}")
         if path.startswith("docs/assets/figures/"):
             failures.append(f"tracked generated paper figure asset: {path}")
         if path.startswith("archive/") and path != "archive/.gitkeep":

@@ -11,6 +11,7 @@ from private:
 - docs/README.md, which is the private runtime homepage
 - docs/_sidebar.md; only the local PDF upload entry may be inserted
 - dated generated docs: docs/YYYYMM/**
+- generated periodic reports: docs/reports/**
 - local PDF runtime artifacts: docs/local-pdf/** and docs/assets/local_pdfs/**
 - generated figures: docs/assets/figures/**
 - archive/**
@@ -96,6 +97,7 @@ function Test-ProtectedPrivatePath {
     "^docs/README\.md$",
     "^docs/_sidebar\.md$",
     "^docs/\d{6}/",
+    "^docs/reports/",
     "^docs/local-pdf/",
     "^docs/assets/local_pdfs/",
     "^docs/assets/figures/",
