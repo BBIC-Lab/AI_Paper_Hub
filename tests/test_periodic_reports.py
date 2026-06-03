@@ -343,6 +343,7 @@ class PeriodicReportsTest(unittest.TestCase):
             css,
         )
         self.assertIn(".dpr-weekly-heat-cells {\n  display: grid;", css)
+        self.assertIn("  grid-template-columns: repeat(5, minmax(0, 1fr));", css)
         self.assertNotIn(".dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level", css)
 
         many_heat_html = self.mod.weekday_heatmap_html(
