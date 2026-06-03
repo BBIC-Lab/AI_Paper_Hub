@@ -268,7 +268,12 @@ function testNormalizeSubscriptionsAddsPeriodicReportDefaults() {
   assert.equal(reports.monthly.max_candidates, 240);
   assert.equal(reports.monthly.representative_papers, 12);
   assert.equal(reports.monthly.topic_limits.topics, 10);
-  assert.equal(reports.monthly.topic_limits.topic_timeline, 10);
+  assert.equal(reports.monthly.topic_limits.related_topics, 12);
+  assert.equal(reports.monthly.topic_limits.topic_timeline, 12);
+  assert.equal(reports.monthly.topic_limits.word_cloud_terms, 36);
+  assert.equal(reports.monthly.topic_limits.cooccurrence_topics, 12);
+  assert.equal(reports.monthly.topic_limits.cooccurrence_pairs, 18);
+  assert.equal(reports.monthly.topic_limits.comparison_topics, 10);
   assert.equal(reports.charts.topic_timeline, true);
   assert.deepEqual(reports.topic_aliases, {});
 }
@@ -301,7 +306,12 @@ function testNormalizePeriodicReportsPreservesUserEdits() {
       representative_papers: '9',
       topic_limits: {
         topics: '12',
+        related_topics: '11',
         topic_timeline: '5',
+        word_cloud_terms: '30',
+        cooccurrence_topics: '9',
+        cooccurrence_pairs: '14',
+        comparison_topics: '7',
       },
     },
     charts: {
@@ -337,7 +347,12 @@ function testNormalizePeriodicReportsPreservesUserEdits() {
   assert.equal(reports.monthly.max_candidates, 180);
   assert.equal(reports.monthly.representative_papers, 9);
   assert.equal(reports.monthly.topic_limits.topics, 12);
+  assert.equal(reports.monthly.topic_limits.related_topics, 11);
   assert.equal(reports.monthly.topic_limits.topic_timeline, 5);
+  assert.equal(reports.monthly.topic_limits.word_cloud_terms, 30);
+  assert.equal(reports.monthly.topic_limits.cooccurrence_topics, 9);
+  assert.equal(reports.monthly.topic_limits.cooccurrence_pairs, 14);
+  assert.equal(reports.monthly.topic_limits.comparison_topics, 7);
   assert.equal(reports.charts.topics, false);
   assert.equal(reports.charts.score_distribution, false);
   assert.equal(reports.charts.topic_timeline, false);
@@ -365,6 +380,10 @@ function testPeriodicSettingsUiRemovesDeprecatedControls() {
   assert.ok(source.includes('周报配置'));
   assert.ok(source.includes('月报配置'));
   assert.ok(source.includes('dpr-periodic-weekly-enabled-true'));
+  assert.ok(source.includes('dpr-periodic-monthly-related-topics-input'));
+  assert.ok(source.includes('dpr-periodic-monthly-word-cloud-input'));
+  assert.ok(source.includes('dpr-periodic-monthly-cooccurrence-topics-input'));
+  assert.ok(source.includes('dpr-periodic-monthly-comparison-topics-input'));
   assert.ok(source.includes('artifacts（复用日报，最省 token）'));
   assert.ok(!source.includes('输出语言'));
   assert.ok(!source.includes('图表与主题合并'));

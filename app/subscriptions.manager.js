@@ -46,7 +46,12 @@ window.SubscriptionsManager = (function () {
       representative_papers: 12,
       topic_limits: {
         topics: 10,
-        topic_timeline: 10,
+        related_topics: 12,
+        topic_timeline: 12,
+        word_cloud_terms: 36,
+        cooccurrence_topics: 12,
+        cooccurrence_pairs: 18,
+        comparison_topics: 10,
       },
     },
     charts: {
@@ -715,7 +720,12 @@ window.SubscriptionsManager = (function () {
     syncValue('dpr-periodic-monthly-max-candidates-input', settings.monthly.max_candidates);
     syncValue('dpr-periodic-monthly-representative-input', settings.monthly.representative_papers);
     syncValue('dpr-periodic-monthly-topics-input', settings.monthly.topic_limits.topics);
+    syncValue('dpr-periodic-monthly-related-topics-input', settings.monthly.topic_limits.related_topics);
     syncValue('dpr-periodic-monthly-topic-timeline-input', settings.monthly.topic_limits.topic_timeline);
+    syncValue('dpr-periodic-monthly-word-cloud-input', settings.monthly.topic_limits.word_cloud_terms);
+    syncValue('dpr-periodic-monthly-cooccurrence-topics-input', settings.monthly.topic_limits.cooccurrence_topics);
+    syncValue('dpr-periodic-monthly-cooccurrence-pairs-input', settings.monthly.topic_limits.cooccurrence_pairs);
+    syncValue('dpr-periodic-monthly-comparison-topics-input', settings.monthly.topic_limits.comparison_topics);
   };
 
   const renderSettingsSnapshot = () => {
@@ -1770,7 +1780,12 @@ window.SubscriptionsManager = (function () {
                     <label class="chat-quick-run-row" for="dpr-periodic-monthly-max-candidates-input"><span>最大候选数</span><input id="dpr-periodic-monthly-max-candidates-input" type="number" min="1" step="1" /></label>
                     <label class="chat-quick-run-row" for="dpr-periodic-monthly-representative-input"><span>代表论文数</span><input id="dpr-periodic-monthly-representative-input" type="number" min="1" step="1" /></label>
                     <label class="chat-quick-run-row" for="dpr-periodic-monthly-topics-input"><span>主题 Top 数</span><input id="dpr-periodic-monthly-topics-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-related-topics-input"><span>相关主题数</span><input id="dpr-periodic-monthly-related-topics-input" type="number" min="1" step="1" /></label>
                     <label class="chat-quick-run-row" for="dpr-periodic-monthly-topic-timeline-input"><span>主题演化数</span><input id="dpr-periodic-monthly-topic-timeline-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-word-cloud-input"><span>词频云词数</span><input id="dpr-periodic-monthly-word-cloud-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-cooccurrence-topics-input"><span>共现主题数</span><input id="dpr-periodic-monthly-cooccurrence-topics-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-cooccurrence-pairs-input"><span>共现条目数</span><input id="dpr-periodic-monthly-cooccurrence-pairs-input" type="number" min="1" step="1" /></label>
+                    <label class="chat-quick-run-row" for="dpr-periodic-monthly-comparison-topics-input"><span>环比主题数</span><input id="dpr-periodic-monthly-comparison-topics-input" type="number" min="1" step="1" /></label>
                   </div>
                 </div>
               </div>
@@ -2312,10 +2327,45 @@ window.SubscriptionsManager = (function () {
       );
       return settings;
     });
+    bindPeriodicInput('dpr-periodic-monthly-related-topics-input', (settings, el) => {
+      settings.monthly.topic_limits.related_topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.related_topics,
+      );
+      return settings;
+    });
     bindPeriodicInput('dpr-periodic-monthly-topic-timeline-input', (settings, el) => {
       settings.monthly.topic_limits.topic_timeline = normalizePositiveInt(
         el.value,
         DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.topic_timeline,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-word-cloud-input', (settings, el) => {
+      settings.monthly.topic_limits.word_cloud_terms = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.word_cloud_terms,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-cooccurrence-topics-input', (settings, el) => {
+      settings.monthly.topic_limits.cooccurrence_topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.cooccurrence_topics,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-cooccurrence-pairs-input', (settings, el) => {
+      settings.monthly.topic_limits.cooccurrence_pairs = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.cooccurrence_pairs,
+      );
+      return settings;
+    });
+    bindPeriodicInput('dpr-periodic-monthly-comparison-topics-input', (settings, el) => {
+      settings.monthly.topic_limits.comparison_topics = normalizePositiveInt(
+        el.value,
+        DEFAULT_PERIODIC_REPORTS.monthly.topic_limits.comparison_topics,
       );
       return settings;
     });

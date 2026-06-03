@@ -11730,6 +11730,177 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   line-height: 1.55;
 }
 
+.dpr-periodic-monthly-v1 {
+  max-width: 1540px;
+}
+
+.dpr-monthly-summary-card,
+.dpr-monthly-change-card {
+  grid-column: span 12;
+}
+
+.dpr-monthly-heat-card {
+  grid-column: span 10;
+}
+
+.dpr-monthly-word-card {
+  grid-column: span 14;
+}
+
+.dpr-monthly-topic-board-card,
+.dpr-monthly-network-card,
+.dpr-monthly-evidence-strip,
+.dpr-monthly-watchlist-card,
+.dpr-monthly-report-nav {
+  grid-column: 1 / -1;
+}
+
+.dpr-monthly-change-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dpr-monthly-change-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(23, 50, 77, 0.08);
+  border-radius: 16px;
+  background: rgba(248, 251, 247, 0.74);
+}
+
+.dpr-monthly-change-group h3 {
+  margin: 0 0 8px;
+  color: #17324d;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.dpr-monthly-change-group ul,
+.dpr-monthly-watchlist {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dpr-monthly-change-group li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  color: #334155;
+  font-size: 14px;
+}
+
+.dpr-monthly-change-group li span,
+.dpr-monthly-topic-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dpr-monthly-change-group li em {
+  color: #657286;
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.dpr-monthly-change-group li b {
+  color: #0f766e;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dpr-monthly-heat-head,
+.dpr-monthly-heat-row {
+  grid-template-columns: minmax(112px, 0.9fr) repeat(6, minmax(34px, 0.42fr));
+}
+
+.dpr-monthly-word-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dpr-monthly-word-legend span,
+.dpr-monthly-status,
+.dpr-monthly-pair-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #31465e;
+  font-size: 12.5px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.dpr-monthly-topic-row {
+  grid-template-columns: minmax(108px, 0.95fr) minmax(120px, 1fr) 36px minmax(90px, auto) auto;
+}
+
+.dpr-monthly-topic-row em {
+  color: #657286;
+  font-size: 13.5px;
+  font-style: normal;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.dpr-monthly-status.is-new,
+.dpr-monthly-pair-status.is-new,
+.dpr-monthly-status.is-rising,
+.dpr-monthly-pair-status.is-rising {
+  border-color: rgba(15, 118, 110, 0.18);
+  background: rgba(15, 118, 110, 0.1);
+  color: #0f766e;
+}
+
+.dpr-monthly-status.is-declining,
+.dpr-monthly-pair-status.is-declining,
+.dpr-monthly-status.is-faded,
+.dpr-monthly-pair-status.is-faded {
+  border-color: rgba(167, 101, 41, 0.2);
+  background: rgba(228, 161, 47, 0.12);
+  color: #8a4d16;
+}
+
+.dpr-monthly-pair-status {
+  min-height: 20px;
+  margin-left: 8px;
+  font-size: 11.5px;
+}
+
+.dpr-monthly-evidence-group {
+  display: grid;
+  gap: 10px;
+}
+
+.dpr-monthly-evidence-group + .dpr-monthly-evidence-group {
+  margin-top: 18px;
+}
+
+.dpr-monthly-evidence-group h3 {
+  margin: 0;
+  color: #0f766e;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.dpr-monthly-watchlist li {
+  color: #25364a;
+  font-size: 17px;
+  line-height: 1.66;
+}
+
 @media (max-width: 900px) {
   body.dpr-periodic-report-page .markdown-section,
   body:not(.close).dpr-periodic-report-page .markdown-section {
@@ -11756,8 +11927,23 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   .dpr-weekly-word-card,
   .dpr-weekly-network-card,
   .dpr-weekly-evidence-strip,
-  .dpr-weekly-report-nav {
+  .dpr-weekly-report-nav,
+  .dpr-monthly-summary-card,
+  .dpr-monthly-change-card,
+  .dpr-monthly-topic-board-card,
+  .dpr-monthly-watchlist-card {
     grid-column: 1 / -1;
+  }
+
+  .dpr-monthly-change-grid,
+  .dpr-monthly-topic-row,
+  .dpr-monthly-heat-head,
+  .dpr-monthly-heat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dpr-monthly-status {
+    justify-self: start;
   }
 
   .dpr-weekly-chord-layout {

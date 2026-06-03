@@ -445,6 +445,151 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertNotIn("ai4nd", network_html)
         self.assertNotIn("ai4nd:composite", network_html)
 
+    def test_monthly_v1_uses_weekly_visual_language_and_baseline(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "_sidebar.md").write_text("* 首页\n* Daily Papers\n", encoding="utf-8")
+            window = self.mod.resolve_period_window("monthly", "2026-05-01", "2026-05-31")
+            papers = [
+                {
+                    "paper_id": "p1",
+                    "title": "Agent Memory Systems",
+                    "date": "2026-05-01",
+                    "score": 9.0,
+                    "source": "arxiv",
+                    "tags": [{"kind": "paper", "label": "agents"}, {"kind": "paper", "label": "memory"}],
+                    "evidence": "agent memory improves long-horizon tool use",
+                    "href": "#/p1",
+                },
+                {
+                    "paper_id": "p2",
+                    "title": "Retrieval Evaluation Benchmark",
+                    "date": "2026-05-15",
+                    "score": 8.2,
+                    "source": "arxiv",
+                    "tags": [{"kind": "paper", "label": "retrieval"}, {"kind": "paper", "label": "benchmark"}],
+                    "evidence": "retrieval benchmarks compare evaluation protocols",
+                    "href": "#/p2",
+                },
+            ]
+            limits = self.mod.monthly_topic_limits(
+                {
+                    "topic_limits": {
+                        "related_topics": 12,
+                        "topic_timeline": 12,
+                        "word_cloud_terms": 36,
+                        "cooccurrence_topics": 12,
+                        "cooccurrence_pairs": 18,
+                        "comparison_topics": 10,
+                    }
+                }
+            )
+            metrics = self.mod.build_metrics(papers, [], window, 36, {}, {}, set(), limits)
+            interpretation = self.mod.build_fallback_interpretation(window, metrics, papers)
+            result = self.mod.write_report(
+                docs,
+                window,
+                "artifacts",
+                metrics,
+                papers,
+                [],
+                interpretation,
+                "hash",
+            )
+
+            readme = Path(result["readme"]).read_text(encoding="utf-8")
+            meta = json.loads(Path(result["meta"]).read_text(encoding="utf-8"))
+
+            self.assertIn("dpr-periodic-monthly-v1", readme)
+            self.assertIn("dpr-weekly-hero dpr-monthly-hero", readme)
+            self.assertIn("dpr-weekly-bento dpr-monthly-bento", readme)
+            self.assertIn("dpr-monthly-change-card", readme)
+            self.assertIn("dpr-monthly-word-card", readme)
+            self.assertIn("dpr-monthly-topic-board-card", readme)
+            self.assertIn("dpr-monthly-network-card", readme)
+            self.assertIn("dpr-monthly-evidence-strip", readme)
+            self.assertIn("dpr-monthly-watchlist-card", readme)
+            self.assertIn("首月基线", readme)
+            self.assertNotIn("dpr-periodic-layout", readme)
+            self.assertNotIn("Source Mix", readme)
+            self.assertIn("monthly_v1", meta)
+            self.assertTrue(meta["monthly_summary"])
+            self.assertEqual(meta["monthly_summary_source"], "fallback")
+            self.assertGreaterEqual(len(meta["monthly_v1"]["word_cloud"]), 4)
+            self.assertLessEqual(len(meta["monthly_v1"]["word_cloud"]), 36)
+
+    def test_monthly_v1_compares_previous_month_topics(self):
+        window = self.mod.resolve_period_window("monthly", "2026-05-01", "2026-05-31")
+        previous_meta = {
+            "key": "2026-04",
+            "input_hash": "prev-hash",
+            "metrics": {
+                "monthly_v1": {
+                    "related_topics": [
+                        {"label": "vision", "count": 4, "rank": 1},
+                        {"label": "retrieval", "count": 3, "rank": 2},
+                        {"label": "agents", "count": 2, "rank": 3},
+                    ],
+                    "cooccurrence": [
+                        {"source": "vision", "target": "retrieval", "count": 2},
+                    ],
+                }
+            },
+        }
+        papers = [
+            {
+                "paper_id": "p1",
+                "title": "Agent Benchmark",
+                "date": "2026-05-01",
+                "score": 9.0,
+                "tags": [{"kind": "paper", "label": "agents"}, {"kind": "paper", "label": "benchmark"}],
+            },
+            {
+                "paper_id": "p2",
+                "title": "Agent Retrieval",
+                "date": "2026-05-08",
+                "score": 8.5,
+                "tags": [{"kind": "paper", "label": "agents"}, {"kind": "paper", "label": "retrieval"}],
+            },
+            {
+                "paper_id": "p3",
+                "title": "Agent Evaluation",
+                "date": "2026-05-15",
+                "score": 8.0,
+                "tags": [{"kind": "paper", "label": "agents"}, {"kind": "paper", "label": "evaluation"}],
+            },
+            {
+                "paper_id": "p4",
+                "title": "Agent Planning",
+                "date": "2026-05-22",
+                "score": 7.8,
+                "tags": [{"kind": "paper", "label": "agents"}, {"kind": "paper", "label": "retrieval"}],
+            },
+        ]
+
+        metrics = self.mod.build_metrics(
+            papers,
+            [],
+            window,
+            36,
+            {},
+            {},
+            set(),
+            self.mod.monthly_topic_limits({}),
+            previous_meta,
+        )
+        monthly = metrics["monthly_v1"]
+        comparison = monthly["comparison"]
+
+        self.assertEqual(comparison["previous_key"], "2026-04")
+        self.assertTrue(comparison["has_previous"])
+        self.assertIn("agents", [item["label"] for item in comparison["groups"]["rising"]])
+        self.assertIn("benchmark", [item["label"] for item in comparison["groups"]["new"]])
+        self.assertIn("vision", [item["label"] for item in comparison["groups"]["faded"]])
+        self.assertEqual(len(monthly["topic_timeline"][0]["points"]), 5)
+
     def test_llm_prompt_includes_weekly_summary_inputs_without_truncation_policy(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
         metrics = {
@@ -477,6 +622,33 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertIn("目标约 300 字", prompt_json)
         self.assertIn("硬上限 500 字", prompt_json)
         self.assertIn("Agent Retrieval", prompt_json)
+
+    def test_llm_prompt_includes_monthly_summary_inputs(self):
+        window = self.mod.resolve_period_window("monthly", "2026-05-01", "2026-05-31")
+        metrics = {
+            "coverage": {"artifact_files": 4, "unique_papers": 12},
+            "monthly_v1": {
+                "related_topics": [{"label": "agents", "count": 4}],
+                "topic_timeline": [{"topic": "agents", "points": [{"week": "W1", "count": 1}]}],
+                "word_cloud": [{"label": "agents", "count": 8}],
+                "cooccurrence": [{"source": "agents", "target": "retrieval", "count": 3}],
+                "comparison": {"has_previous": True, "rising_count": 1, "new_count": 0},
+                "watchlist": ["继续观察 agents"],
+            },
+        }
+        papers = [{"paper_id": "p1", "title": "Agent Retrieval", "score": 9.0, "tags": [{"label": "agents"}]}]
+
+        payload = self.mod.build_llm_interpretation_payload(window, metrics, papers)
+
+        self.assertIn("monthly_summary_inputs", payload)
+        monthly_inputs = payload["monthly_summary_inputs"]
+        self.assertIn("related_topics", monthly_inputs)
+        self.assertIn("topic_timeline", monthly_inputs)
+        self.assertIn("word_cloud", monthly_inputs)
+        self.assertIn("cooccurrence", monthly_inputs)
+        self.assertIn("comparison", monthly_inputs)
+        self.assertIn("watchlist", monthly_inputs)
+        self.assertNotIn("sources", monthly_inputs)
 
     def test_llm_interpretation_retries_reasoning_only_response_and_marks_source(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")

@@ -37,10 +37,15 @@ DEFAULT_WEEKLY_TOPIC_TIMELINE = 10
 DEFAULT_WEEKLY_COOCCURRENCE_TOPICS = 10
 DEFAULT_WEEKLY_COOCCURRENCE_PAIRS = 12
 DEFAULT_MONTHLY_TOPICS = 10
-DEFAULT_MONTHLY_TOPIC_TIMELINE = 10
+DEFAULT_MONTHLY_RELATED_TOPICS = 12
+DEFAULT_MONTHLY_TOPIC_TIMELINE = 12
+DEFAULT_MONTHLY_WORD_CLOUD_TERMS = 36
+DEFAULT_MONTHLY_COOCCURRENCE_TOPICS = 12
+DEFAULT_MONTHLY_COOCCURRENCE_PAIRS = 18
+DEFAULT_MONTHLY_COMPARISON_TOPICS = 10
 SUPPORTED_INPUT_MODES = {"artifacts", "recrawl", "hybrid"}
 SUPPORTED_PERIODS = {"weekly", "monthly"}
-REPORT_RENDER_VERSION = "periodic-weekly-v6"
+REPORT_RENDER_VERSION = "periodic-weekly-v6-monthly-v1"
 LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS = (2400, 3600, 5200)
 WORD_CLOUD_PADDING = 10.0
 FOCUS_TAG_KINDS = {"query", "profile", "intent", "reader", "research", "subscription"}
@@ -267,7 +272,12 @@ def default_periodic_config() -> dict[str, Any]:
             "representative_papers": DEFAULT_REPRESENTATIVE_PAPERS,
             "topic_limits": {
                 "topics": DEFAULT_MONTHLY_TOPICS,
+                "related_topics": DEFAULT_MONTHLY_RELATED_TOPICS,
                 "topic_timeline": DEFAULT_MONTHLY_TOPIC_TIMELINE,
+                "word_cloud_terms": DEFAULT_MONTHLY_WORD_CLOUD_TERMS,
+                "cooccurrence_topics": DEFAULT_MONTHLY_COOCCURRENCE_TOPICS,
+                "cooccurrence_pairs": DEFAULT_MONTHLY_COOCCURRENCE_PAIRS,
+                "comparison_topics": DEFAULT_MONTHLY_COMPARISON_TOPICS,
             },
         },
         "charts": {
@@ -322,7 +332,12 @@ def monthly_topic_limits(config: dict[str, Any] | None) -> dict[str, int]:
     raw = cfg.get("topic_limits") if isinstance(cfg.get("topic_limits"), dict) else {}
     return {
         "topics": positive_int(raw.get("topics"), DEFAULT_MONTHLY_TOPICS),
+        "related_topics": positive_int(raw.get("related_topics"), DEFAULT_MONTHLY_RELATED_TOPICS),
         "topic_timeline": positive_int(raw.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE),
+        "word_cloud_terms": positive_int(raw.get("word_cloud_terms"), DEFAULT_MONTHLY_WORD_CLOUD_TERMS),
+        "cooccurrence_topics": positive_int(raw.get("cooccurrence_topics"), DEFAULT_MONTHLY_COOCCURRENCE_TOPICS),
+        "cooccurrence_pairs": positive_int(raw.get("cooccurrence_pairs"), DEFAULT_MONTHLY_COOCCURRENCE_PAIRS),
+        "comparison_topics": positive_int(raw.get("comparison_topics"), DEFAULT_MONTHLY_COMPARISON_TOPICS),
     }
 
 
@@ -807,7 +822,11 @@ def counter_to_items(counter: Counter, limit: int) -> list[dict[str, Any]]:
 
 def counter_to_ranked_items(counter: Counter, limit: int) -> list[dict[str, Any]]:
     items = sorted(counter.items(), key=lambda kv: (-kv[1], str(kv[0]).casefold()))
-    return [{"label": str(k), "count": int(v)} for k, v in items[:limit] if v > 0]
+    return [
+        {"label": str(k), "count": int(v), "rank": idx}
+        for idx, (k, v) in enumerate(items[:limit], start=1)
+        if v > 0
+    ]
 
 
 def paper_text_blob(paper: dict[str, Any], excluded_labels: set[str] | None = None) -> str:
@@ -1003,6 +1022,297 @@ def complete_weekday_topic_timeline(
     return completed
 
 
+def month_week_buckets(window: PeriodWindow) -> list[dict[str, Any]]:
+    buckets: list[dict[str, Any]] = []
+    cur = window.start
+    idx = 1
+    while cur <= window.end:
+        end = min(window.end, cur + timedelta(days=6))
+        buckets.append(
+            {
+                "label": f"W{idx}",
+                "start": cur,
+                "end": end,
+                "range": f"{fmt_date(cur)} ~ {fmt_date(end)}",
+            }
+        )
+        cur = end + timedelta(days=1)
+        idx += 1
+    return buckets
+
+
+def paper_topic_labels(
+    paper: dict[str, Any],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> list[str]:
+    focus, context, _axes = paper_weekly_topics(paper, aliases, excluded_labels)
+    return list(dict.fromkeys(focus + context))
+
+
+def previous_month_key(window: PeriodWindow) -> str:
+    first = window.start.replace(day=1)
+    prev = first - timedelta(days=1)
+    return f"{prev.year:04d}-{prev.month:02d}"
+
+
+def adjacent_month_key(window: PeriodWindow, delta_months: int) -> str:
+    month = window.start.month - 1 + delta_months
+    year = window.start.year + month // 12
+    month = month % 12 + 1
+    return f"{year:04d}-{month:02d}"
+
+
+def load_previous_month_meta(docs_dir: Path, window: PeriodWindow) -> dict[str, Any] | None:
+    if window.period != "monthly":
+        return None
+    path = docs_dir / "reports" / "monthly" / previous_month_key(window) / "report.meta.json"
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def report_meta_fingerprint(meta: dict[str, Any] | None) -> str:
+    if not isinstance(meta, dict):
+        return ""
+    metrics = meta.get("metrics") if isinstance(meta.get("metrics"), dict) else {}
+    monthly = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+    payload = {
+        "key": meta.get("key"),
+        "input_hash": meta.get("input_hash"),
+        "monthly_v1": monthly,
+        "topics": metrics.get("topics") or [],
+    }
+    return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def previous_monthly_topics(previous_meta: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(previous_meta, dict):
+        return []
+    metrics = previous_meta.get("metrics") if isinstance(previous_meta.get("metrics"), dict) else {}
+    monthly = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+    topics = monthly.get("related_topics") or metrics.get("topics") or previous_meta.get("related_topics") or []
+    return [item for item in topics if isinstance(item, dict)]
+
+
+def previous_monthly_cooccurrence(previous_meta: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(previous_meta, dict):
+        return []
+    metrics = previous_meta.get("metrics") if isinstance(previous_meta.get("metrics"), dict) else {}
+    monthly = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+    pairs = monthly.get("cooccurrence") or previous_meta.get("cooccurrence") or []
+    return [item for item in pairs if isinstance(item, dict)]
+
+
+def topic_status(current_count: int, previous_count: int, has_previous: bool) -> str:
+    if not has_previous:
+        return "baseline"
+    if current_count <= 0 and previous_count > 0:
+        return "faded"
+    if previous_count <= 0 and current_count > 0:
+        return "new"
+    delta = current_count - previous_count
+    if delta >= 2 or (previous_count > 0 and current_count >= previous_count * 1.5):
+        return "rising"
+    if delta <= -2 or (previous_count > 0 and current_count <= previous_count * 0.5 and current_count < previous_count):
+        return "declining"
+    return "stable"
+
+
+def build_monthly_topic_comparison(
+    current_topics: list[dict[str, Any]],
+    previous_topics: list[dict[str, Any]],
+    limit: int,
+) -> dict[str, Any]:
+    has_previous = bool(previous_topics)
+    current_map = {normalize_text(item.get("label")).casefold(): item for item in current_topics if normalize_text(item.get("label"))}
+    previous_map = {normalize_text(item.get("label")).casefold(): item for item in previous_topics if normalize_text(item.get("label"))}
+    labels: list[str] = []
+    for item in current_topics:
+        label = normalize_text(item.get("label"))
+        if label and label.casefold() not in labels:
+            labels.append(label.casefold())
+    for item in previous_topics[:limit]:
+        label = normalize_text(item.get("label"))
+        key = label.casefold()
+        if label and key not in labels:
+            labels.append(key)
+
+    items: list[dict[str, Any]] = []
+    for key in labels:
+        current = current_map.get(key) or {}
+        previous = previous_map.get(key) or {}
+        label = normalize_text(current.get("label") or previous.get("label"))
+        current_count = int(current.get("count") or 0)
+        previous_count = int(previous.get("count") or 0)
+        status = topic_status(current_count, previous_count, has_previous)
+        if not has_previous and current_count <= 0:
+            continue
+        if status == "faded" and len(items) >= limit * 2:
+            continue
+        items.append(
+            {
+                "label": label,
+                "count": current_count,
+                "previous_count": previous_count,
+                "delta": current_count - previous_count,
+                "rank": int(current.get("rank") or 0),
+                "previous_rank": int(previous.get("rank") or 0),
+                "status": status,
+            }
+        )
+
+    groups: dict[str, list[dict[str, Any]]] = {key: [] for key in ("new", "rising", "stable", "declining", "faded", "baseline")}
+    for item in items:
+        groups.setdefault(str(item.get("status") or "stable"), []).append(item)
+    for key, values in groups.items():
+        groups[key] = sorted(values, key=lambda item: (-int(item.get("count") or 0), normalize_text(item.get("label")).casefold()))[:limit]
+    return {
+        "previous_key": "",
+        "has_previous": has_previous,
+        "items": items[: max(limit, len(current_topics))],
+        "groups": groups,
+        "new_count": len(groups.get("new") or []),
+        "rising_count": len(groups.get("rising") or []),
+        "declining_count": len(groups.get("declining") or []),
+        "faded_count": len(groups.get("faded") or []),
+    }
+
+
+def pair_key(left: str, right: str) -> tuple[str, str]:
+    return tuple(sorted((normalize_text(left), normalize_text(right)), key=str.casefold))
+
+
+def build_monthly_topic_timeline(
+    papers: list[dict[str, Any]],
+    window: PeriodWindow,
+    topic_labels: list[str],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    topic_limit: int = DEFAULT_MONTHLY_TOPIC_TIMELINE,
+) -> list[dict[str, Any]]:
+    buckets = month_week_buckets(window)
+    counts: dict[str, Counter] = {bucket["label"]: Counter() for bucket in buckets}
+    for paper in papers:
+        try:
+            paper_date = parse_date(paper.get("date"))
+        except Exception:
+            continue
+        bucket = next((item for item in buckets if item["start"] <= paper_date <= item["end"]), None)
+        if not bucket:
+            continue
+        for label in paper_topic_labels(paper, aliases, excluded_labels):
+            counts[bucket["label"]][label] += 1
+    rows = []
+    for label in topic_labels[:topic_limit]:
+        rows.append(
+            {
+                "topic": label,
+                "points": [
+                    {
+                        "date": bucket["label"],
+                        "week": bucket["label"],
+                        "range": bucket["range"],
+                        "count": int(counts[bucket["label"]].get(label, 0)),
+                    }
+                    for bucket in buckets
+                ],
+            }
+        )
+    return rows
+
+
+def build_monthly_watchlist(comparison: dict[str, Any], cooccurrence: list[dict[str, Any]]) -> list[str]:
+    groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
+    out: list[str] = []
+    for item in (groups.get("new") or [])[:2]:
+        out.append(f"关注新增主题 {item.get('label')}：本月出现 {item.get('count', 0)} 篇代表样本。")
+    for item in (groups.get("rising") or [])[:2]:
+        out.append(
+            f"持续跟踪上升主题 {item.get('label')}：较上月增加 {max(0, int(item.get('delta') or 0))} 篇。"
+        )
+    for pair in cooccurrence[:2]:
+        if len(out) >= 5:
+            break
+        out.append(
+            f"观察 {pair.get('source')} 与 {pair.get('target')} 的交叉关系：本月共现 {pair.get('count', 0)} 次。"
+        )
+    return out[:5] or ["本月样本较少，建议先累积下一期月报后再判断连续趋势。"]
+
+
+def build_monthly_chart_data(
+    papers: list[dict[str, Any]],
+    window: PeriodWindow,
+    word_cloud_limit: int,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    topic_limits: dict[str, int] | None = None,
+    previous_meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    limits = topic_limits or monthly_topic_limits({})
+    related_limit = positive_int(limits.get("related_topics"), DEFAULT_MONTHLY_RELATED_TOPICS)
+    timeline_limit = positive_int(limits.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE)
+    cooccurrence_pairs_limit = positive_int(limits.get("cooccurrence_pairs"), DEFAULT_MONTHLY_COOCCURRENCE_PAIRS)
+    comparison_limit = positive_int(limits.get("comparison_topics"), DEFAULT_MONTHLY_COMPARISON_TOPICS)
+    topic_counter: Counter = Counter()
+    pair_counter: Counter = Counter()
+    for paper in papers:
+        labels = paper_topic_labels(paper, aliases, excluded_labels)
+        for label in labels:
+            topic_counter[label] += 1
+        for i, left in enumerate(labels[:10]):
+            for right in labels[i + 1 : 10]:
+                pair_counter[pair_key(left, right)] += 1
+
+    related_topics = counter_to_ranked_items(topic_counter, related_limit)
+    topic_labels = [item["label"] for item in related_topics][:timeline_limit]
+    previous_topics = previous_monthly_topics(previous_meta)
+    comparison = build_monthly_topic_comparison(related_topics, previous_topics, comparison_limit)
+    comparison["previous_key"] = previous_meta.get("key") if isinstance(previous_meta, dict) else previous_month_key(window)
+
+    previous_pairs = {
+        pair_key(item.get("source"), item.get("target")): int(item.get("count") or 0)
+        for item in previous_monthly_cooccurrence(previous_meta)
+    }
+    cooccurrence = []
+    for (left, right), count in sorted(pair_counter.items(), key=lambda kv: (-kv[1], kv[0]))[: max(18, cooccurrence_pairs_limit * 2)]:
+        previous_count = int(previous_pairs.get((left, right), 0))
+        status = topic_status(int(count), previous_count, bool(previous_pairs))
+        cooccurrence.append(
+            {
+                "source": left,
+                "target": right,
+                "count": int(count),
+                "previous_count": previous_count,
+                "delta": int(count) - previous_count,
+                "status": status,
+            }
+        )
+
+    word_limit = positive_int(word_cloud_limit, DEFAULT_MONTHLY_WORD_CLOUD_TERMS)
+    return {
+        "related_topics": related_topics,
+        "topic_timeline": build_monthly_topic_timeline(
+            papers,
+            window,
+            topic_labels,
+            aliases,
+            excluded_labels,
+            timeline_limit,
+        ),
+        "word_cloud": word_cloud_items(papers, word_limit, aliases, excluded_labels),
+        "cooccurrence": cooccurrence,
+        "comparison": comparison,
+        "watchlist": build_monthly_watchlist(comparison, cooccurrence),
+        "topic_breadth": len(topic_counter),
+        "topic_limits": limits,
+    }
+
+
 def build_weekly_chart_data(
     papers: list[dict[str, Any]],
     window: PeriodWindow,
@@ -1101,6 +1411,7 @@ def build_metrics(
     aliases: dict[str, Any] | None = None,
     excluded_labels: set[str] | None = None,
     topic_limits: dict[str, int] | None = None,
+    previous_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     topic_counter: Counter = Counter()
     source_counter: Counter = Counter()
@@ -1182,6 +1493,15 @@ def build_metrics(
         excluded_labels,
         limits,
     ) if window.period == "weekly" else {}
+    monthly_chart_data = build_monthly_chart_data(
+        papers,
+        window,
+        word_cloud_limit,
+        aliases or {},
+        excluded_labels,
+        limits,
+        previous_meta,
+    ) if window.period == "monthly" else {}
     return {
         "coverage": coverage,
         "avg_score": avg_score,
@@ -1192,6 +1512,7 @@ def build_metrics(
         "timeline": timeline,
         "topic_timeline": topic_timeline,
         "weekly_v2": weekly_chart_data,
+        "monthly_v1": monthly_chart_data,
     }
 
 
@@ -1240,11 +1561,34 @@ def build_fallback_interpretation(window: PeriodWindow, metrics: dict[str, Any],
         "本报告只基于已生成的日报/候选 artifact，不代表全领域完整统计。",
         "趋势判断以本地统计为准，LLM 仅参与解读文本。",
     ]
+    monthly = metrics.get("monthly_v1") or {}
+    monthly_related = monthly.get("related_topics") or topics
+    comparison = monthly.get("comparison") if isinstance(monthly.get("comparison"), dict) else {}
+    monthly_watchlist = monthly.get("watchlist") or []
+    monthly_topic_text = "、".join(str(t.get("label")) for t in monthly_related[:4]) or "暂无明显主题"
+    if comparison.get("has_previous"):
+        monthly_change_text = (
+            f"新增 {comparison.get('new_count', 0)} 个主题、"
+            f"上升 {comparison.get('rising_count', 0)} 个主题、"
+            f"下降 {comparison.get('declining_count', 0)} 个主题"
+        )
+    else:
+        monthly_change_text = "当前为首月基线，暂无上月环比"
+    monthly_summary = (
+        f"本月去重样本共 {metrics['coverage']['unique_papers']} 篇，主题广度 {monthly.get('topic_breadth', len(monthly_related))} 类。"
+        f"主要相关主题集中在 {monthly_topic_text}；{monthly_change_text}。"
+        "下月可优先观察新增与持续上升主题，并结合主题共现关系确认是否形成稳定研究线索。"
+    )
     return {
         "weekly_summary": weekly_summary,
         "weekly_summary_source": "fallback",
         "weekly_summary_model": "",
         "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
+        "monthly_summary": monthly_summary,
+        "monthly_summary_source": "fallback",
+        "monthly_summary_model": "",
+        "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+        "watchlist": monthly_watchlist,
         "summary_evidence_ids": evidence_ids,
         "highlights": highlights,
         "rising_topics": rising,
@@ -1264,6 +1608,7 @@ def env_text(*names: str) -> str:
 def normalize_interpretation(data: dict[str, Any]) -> dict[str, Any]:
     out = {}
     weekly_summary = normalize_text(data.get("weekly_summary") or data.get("summary"))
+    monthly_summary = normalize_text(data.get("monthly_summary") or data.get("summary"))
     evidence_ids = data.get("summary_evidence_ids") or data.get("evidence_ids") or []
     if isinstance(evidence_ids, list):
         out["summary_evidence_ids"] = [normalize_text(v) for v in evidence_ids if normalize_text(v)][:8]
@@ -1281,10 +1626,23 @@ def normalize_interpretation(data: dict[str, Any]) -> dict[str, Any]:
             out[key] = []
     if not weekly_summary and out.get("highlights"):
         weekly_summary = " ".join(out["highlights"][:3])
+    if not monthly_summary and out.get("highlights"):
+        monthly_summary = " ".join(out["highlights"][:3])
     out["weekly_summary"] = weekly_summary
     out["weekly_summary_source"] = normalize_text(data.get("weekly_summary_source") or data.get("summary_source"))
     out["weekly_summary_model"] = normalize_text(data.get("weekly_summary_model") or data.get("model"))
     out["weekly_summary_note"] = normalize_text(data.get("weekly_summary_note") or data.get("summary_note"))
+    out["monthly_summary"] = monthly_summary
+    out["monthly_summary_source"] = normalize_text(data.get("monthly_summary_source") or data.get("summary_source"))
+    out["monthly_summary_model"] = normalize_text(data.get("monthly_summary_model") or data.get("model"))
+    out["monthly_summary_note"] = normalize_text(data.get("monthly_summary_note") or data.get("summary_note"))
+    watchlist = data.get("watchlist") or data.get("monthly_watchlist") or []
+    if isinstance(watchlist, list):
+        out["watchlist"] = [normalize_text(v) for v in watchlist if normalize_text(v)][:5]
+    elif normalize_text(watchlist):
+        out["watchlist"] = [normalize_text(watchlist)]
+    else:
+        out["watchlist"] = []
     return out
 
 
@@ -1302,11 +1660,16 @@ def build_llm_evidence_papers(papers: list[dict[str, Any]], limit: int = 18) -> 
     ]
 
 
-def mark_llm_interpretation(data: dict[str, Any], model: str) -> dict[str, Any]:
+def mark_llm_interpretation(data: dict[str, Any], model: str, period: str = "weekly") -> dict[str, Any]:
     out = dict(data)
-    out["weekly_summary_source"] = "llm"
-    out["weekly_summary_model"] = model
-    out["weekly_summary_note"] = f"本周小结由 {model} 生成。"
+    if period == "monthly":
+        out["monthly_summary_source"] = "llm"
+        out["monthly_summary_model"] = model
+        out["monthly_summary_note"] = f"本月小结由 {model} 生成。"
+    else:
+        out["weekly_summary_source"] = "llm"
+        out["weekly_summary_model"] = model
+        out["weekly_summary_note"] = f"本周小结由 {model} 生成。"
     return out
 
 
@@ -1319,8 +1682,18 @@ def weekly_summary_source_note(interpretation: dict[str, Any]) -> str:
     return note or "模板小结，非 LLM 生成，需要检查 LLM 可用性。"
 
 
+def monthly_summary_source_note(interpretation: dict[str, Any]) -> str:
+    source = normalize_text(interpretation.get("monthly_summary_source"))
+    model = normalize_text(interpretation.get("monthly_summary_model"))
+    note = normalize_text(interpretation.get("monthly_summary_note"))
+    if source == "llm":
+        return note or f"本月小结由 {model or 'LLM'} 生成。"
+    return note or "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。"
+
+
 def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any]:
     weekly = metrics.get("weekly_v2") or {}
+    monthly = metrics.get("monthly_v1") or {}
     payload = {
         "period": window.period,
         "label": window.label,
@@ -1346,6 +1719,22 @@ def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, An
                 "目标约 300 字；硬上限 500 字；不要为了凑字数重复统计口径。",
                 "必须综合本周提取到的相关主题、词频、主题共现关系与代表论文。",
                 "只基于输入证据，不要编造未出现的论文、数量或趋势。",
+            ],
+        }
+    if window.period == "monthly":
+        payload["monthly_summary_inputs"] = {
+            "related_topics": monthly.get("related_topics") or [],
+            "topic_timeline": monthly.get("topic_timeline") or [],
+            "word_cloud": monthly.get("word_cloud") or [],
+            "cooccurrence": monthly.get("cooccurrence") or [],
+            "comparison": monthly.get("comparison") or {},
+            "watchlist": monthly.get("watchlist") or [],
+            "representative_papers": build_llm_evidence_papers(papers, limit=12),
+            "instructions": [
+                "写成一个中文 high-level 本月小结段落，不要输出论文清单。",
+                "必须围绕主题环比、周际演化、词频云、主题共现和代表论文证据。",
+                "只基于输入证据，不要编造未出现的论文、数量、来源效果或订阅建议。",
+                "额外返回 watchlist，列出 3-5 条下月观察建议。",
             ],
         }
     return payload
@@ -1398,17 +1787,25 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
                 log(f"[WARN] LLM interpretation attempt {attempt} returned non-object JSON; retrying.")
                 continue
             interpretation = normalize_interpretation(parsed)
-            if not normalize_text(interpretation.get("weekly_summary")):
-                log(f"[WARN] LLM interpretation attempt {attempt} returned no weekly_summary; retrying.")
+            required_key = "monthly_summary" if window.period == "monthly" else "weekly_summary"
+            if not normalize_text(interpretation.get(required_key)):
+                log(f"[WARN] LLM interpretation attempt {attempt} returned no {required_key}; retrying.")
                 continue
-            return mark_llm_interpretation(interpretation, model)
+            return mark_llm_interpretation(interpretation, model, window.period)
         except Exception as exc:
             log(f"[WARN] LLM interpretation attempt {attempt}/{len(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS)} failed: {exc}")
     log("[WARN] LLM interpretation failed after retries; using fallback summary.")
     return None
 
 
-def compute_input_hash(window: PeriodWindow, input_mode: str, artifacts: list[ArtifactFile], papers: list[dict[str, Any]], config: dict[str, Any]) -> str:
+def compute_input_hash(
+    window: PeriodWindow,
+    input_mode: str,
+    artifacts: list[ArtifactFile],
+    papers: list[dict[str, Any]],
+    config: dict[str, Any],
+    history_hash: str = "",
+) -> str:
     payload = {
         "period": window.__dict__,
         "renderer_version": REPORT_RENDER_VERSION,
@@ -1419,6 +1816,7 @@ def compute_input_hash(window: PeriodWindow, input_mode: str, artifacts: list[Ar
             for p in papers
         ],
         "config": config,
+        "history_hash": history_hash,
     }
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
@@ -1761,13 +2159,31 @@ def arc_path(cx: float, cy: float, radius: float, start_angle: float, end_angle:
     return f"M{start_x:.1f},{start_y:.1f} A{radius:.1f},{radius:.1f} 0 {large} 1 {end_x:.1f},{end_y:.1f}"
 
 
+def monthly_status_label(status: Any) -> str:
+    return {
+        "new": "新增",
+        "rising": "上升",
+        "stable": "稳定",
+        "declining": "下降",
+        "faded": "消退",
+        "baseline": "基线",
+    }.get(normalize_text(status), "稳定")
+
+
 def cooccurrence_html(
     pairs: list[dict[str, Any]],
     topic_limit: int = DEFAULT_WEEKLY_COOCCURRENCE_TOPICS,
     pair_limit: int = DEFAULT_WEEKLY_COOCCURRENCE_PAIRS,
+    title: str = "主题共现",
+    section_extra_class: str = "",
+    show_status: bool = False,
 ) -> str:
+    section_class = " ".join(
+        part for part in ("dpr-weekly-bento-card dpr-weekly-network-card", section_extra_class) if part
+    )
+    safe_title = html.escape(title)
     if not pairs:
-        return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
+        return f'<section class="{html.escape(section_class)}"><h2>{safe_title}</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
     degree: Counter = Counter()
     pair_rows = []
     for pair in pairs:
@@ -1780,13 +2196,13 @@ def cooccurrence_html(
         degree[right] += count
         pair_rows.append((left, right, count))
     if not pair_rows:
-        return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
+        return f'<section class="{html.escape(section_class)}"><h2>{safe_title}</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
 
     labels = [label for label, _count in degree.most_common(topic_limit)]
     label_set = set(labels)
     pair_rows = [(left, right, count) for left, right, count in pair_rows if left in label_set and right in label_set]
     if not pair_rows:
-        return '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
+        return f'<section class="{html.escape(section_class)}"><h2>{safe_title}</h2><p class="dpr-weekly-empty">暂无足够共现关系。</p></section>'
 
     pair_rows = sorted(pair_rows, key=lambda row: row[2], reverse=True)[:pair_limit]
     degree = Counter()
@@ -1871,15 +2287,22 @@ def cooccurrence_html(
         right_safe = html.escape(right)
         label = html.escape(f"{left} ↔ {right}")
         color = colors.get(left, "#0e9f8f")
+        pair_meta = next((pair for pair in pairs if pair_key(pair.get("source"), pair.get("target")) == pair_key(left, right)), {})
+        status = normalize_text(pair_meta.get("status"))
+        status_html = (
+            f'<small class="dpr-monthly-pair-status is-{html.escape(status or "stable")}">{html.escape(monthly_status_label(status))}</small>'
+            if show_status
+            else ""
+        )
         legend.append(
             '<div class="dpr-weekly-chord-table-row">'
-            f'<span title="{label}"><i style="background:{html.escape(color, quote=True)}"></i>{left_safe}<em>↔</em>{right_safe}</span>'
+            f'<span title="{label}"><i style="background:{html.escape(color, quote=True)}"></i>{left_safe}<em>↔</em>{right_safe}{status_html}</span>'
             f"<b>{int(count)} 篇</b>"
             "</div>"
         )
 
     return (
-        '<section class="dpr-weekly-bento-card dpr-weekly-network-card"><h2>主题共现</h2>'
+        f'<section class="{html.escape(section_class)}"><h2>{safe_title}</h2>'
         '<div class="dpr-weekly-chord-layout">'
         '<div class="dpr-weekly-chord-figure">'
         f'<svg class="dpr-weekly-network dpr-weekly-chord" viewBox="0 0 {width} {height}" role="img" aria-label="主题共现 Chord diagram">'
@@ -1932,6 +2355,262 @@ def weekly_report_nav_html(window: PeriodWindow) -> str:
         f'<a class="is-next" href="#/reports/weekly/{html.escape(next_key)}/README"><em>下一周报</em><span class="dpr-weekly-nav-arrow is-right" aria-hidden="true">➡</span></a>'
         "</nav>"
     )
+
+
+def monthly_display_label(window: PeriodWindow) -> str:
+    return f"{window.start.year:04d} 年 {window.start.month} 月研究月报"
+
+
+def monthly_report_nav_html(window: PeriodWindow) -> str:
+    prev_key = adjacent_month_key(window, -1)
+    next_key = adjacent_month_key(window, 1)
+    return (
+        '<nav class="dpr-weekly-report-nav dpr-monthly-report-nav" aria-label="月报翻页">'
+        f'<a class="is-prev" href="#/reports/monthly/{html.escape(prev_key)}/README"><span class="dpr-weekly-nav-arrow is-left" aria-hidden="true">⬅</span><em>上一月报</em></a>'
+        f'<a class="is-next" href="#/reports/monthly/{html.escape(next_key)}/README"><em>下一月报</em><span class="dpr-weekly-nav-arrow is-right" aria-hidden="true">➡</span></a>'
+        "</nav>"
+    )
+
+
+def monthly_status_badge(status: Any) -> str:
+    safe_status = html.escape(normalize_text(status) or "stable")
+    return f'<small class="dpr-monthly-status is-{safe_status}">{html.escape(monthly_status_label(status))}</small>'
+
+
+def monthly_change_card_html(comparison: dict[str, Any]) -> str:
+    if not comparison.get("has_previous"):
+        return (
+            '<section class="dpr-weekly-bento-card dpr-monthly-change-card"><h2>月度变化</h2>'
+            '<p class="dpr-weekly-empty">首月基线：暂无上月月报可用于环比，后续月份会自动展示新增、上升、稳定和下降主题。</p>'
+            "</section>"
+        )
+    groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
+    specs = [("new", "新增"), ("rising", "上升"), ("stable", "稳定"), ("declining", "下降")]
+    blocks = []
+    for key, title in specs:
+        items = groups.get(key) or []
+        rows = []
+        for item in items[:3]:
+            label = html.escape(str(item.get("label") or ""))
+            count = int(item.get("count") or 0)
+            previous = int(item.get("previous_count") or 0)
+            delta = int(item.get("delta") or 0)
+            delta_text = f"+{delta}" if delta > 0 else str(delta)
+            rows.append(
+                '<li>'
+                f'<span title="{label}">{label}</span>'
+                f'<em>{count} / 上月 {previous}</em>'
+                f'<b>{html.escape(delta_text)}</b>'
+                "</li>"
+            )
+        blocks.append(
+            f'<div class="dpr-monthly-change-group is-{html.escape(key)}"><h3>{html.escape(title)}</h3>'
+            f'<ul>{"".join(rows) if rows else "<li><span>暂无</span><em></em><b>0</b></li>"}</ul></div>'
+        )
+    return (
+        '<section class="dpr-weekly-bento-card dpr-monthly-change-card"><h2>月度变化</h2>'
+        f'<div class="dpr-monthly-change-grid">{"".join(blocks)}</div></section>'
+    )
+
+
+def monthly_topic_timeline_html(rows: list[dict[str, Any]], topic_limit: int = DEFAULT_MONTHLY_TOPIC_TIMELINE) -> str:
+    if not rows:
+        return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card dpr-monthly-heat-card"><h2>周际主题演化</h2><p class="dpr-weekly-empty">暂无月度主题数据。</p></section>'
+    max_count = max([int(point.get("count") or 0) for row in rows for point in row.get("points", [])] or [1])
+    header_points = (rows[0].get("points") or [])[:6]
+    header = '<div class="dpr-weekly-heat-head dpr-monthly-heat-head"><span></span>' + "".join(
+        f'<b title="{html.escape(str(point.get("range") or ""))}">{html.escape(str(point.get("week") or point.get("date") or ""))}</b>'
+        for point in header_points
+    ) + "</div>"
+    body = []
+    for row in rows[:topic_limit]:
+        cells = []
+        for point in (row.get("points") or [])[:6]:
+            count = int(point.get("count") or 0)
+            level = 0 if count <= 0 else max(1, min(5, round(count * 5 / max_count)))
+            title = f"{point.get('week') or point.get('date')} {point.get('range')}: {count}"
+            cells.append(f'<span class="dpr-periodic-heat-cell level-{level}" title="{html.escape(title)}">{count if count else ""}</span>')
+        topic = html.escape(str(row.get("topic") or ""))
+        body.append(f'<div class="dpr-weekly-heat-row dpr-monthly-heat-row"><strong title="{topic}">{topic}</strong>{"".join(cells)}</div>')
+    return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card dpr-monthly-heat-card"><h2>周际主题演化</h2>' + header + "".join(body) + "</section>"
+
+
+def monthly_word_cloud_html(items: list[dict[str, Any]], comparison: dict[str, Any]) -> str:
+    words = layout_word_cloud(items)
+    if not words:
+        return '<section class="dpr-weekly-bento-card dpr-weekly-word-card dpr-monthly-word-card"><h2>词频云</h2><p class="dpr-weekly-empty">暂无词频数据。</p></section>'
+    word_nodes = []
+    for word in words:
+        label = html.escape(word["label"])
+        count = int(word["count"])
+        word_nodes.append(
+            f'<text x="{word["x"]:.1f}" y="{word["y"]:.1f}" '
+            f'font-size="{word["font_size"]:.1f}" fill="{word["color"]}" '
+            f'text-anchor="middle" dominant-baseline="middle" '
+            f'class="{word["class_name"]}">{label}<title>{label}: {count}</title></text>'
+        )
+    groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
+    legend_specs = [("new", "新增词线索"), ("rising", "上升主题"), ("stable", "持续高频")]
+    legends = []
+    for key, title in legend_specs:
+        labels = [html.escape(str(item.get("label") or "")) for item in (groups.get(key) or [])[:4]]
+        if labels:
+            legends.append(f'<span>{html.escape(title)}：{"、".join(labels)}</span>')
+    legend_html = f'<div class="dpr-monthly-word-legend">{"".join(legends)}</div>' if legends else ""
+    return (
+        '<section class="dpr-weekly-bento-card dpr-weekly-word-card dpr-monthly-word-card"><h2>词频云</h2>'
+        '<svg class="dpr-weekly-word-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="词频云">'
+        f'{"".join(word_nodes)}</svg>{legend_html}</section>'
+    )
+
+
+def monthly_topic_board_html(monthly: dict[str, Any]) -> str:
+    topics = monthly.get("related_topics") or []
+    comparison = monthly.get("comparison") if isinstance(monthly.get("comparison"), dict) else {}
+    comparison_items = {
+        normalize_text(item.get("label")).casefold(): item
+        for item in comparison.get("items", [])
+        if isinstance(item, dict) and normalize_text(item.get("label"))
+    }
+    max_count = max([int(item.get("count") or 0) for item in topics] or [0])
+    rows = []
+    for item in topics[: positive_int((monthly.get("topic_limits") or {}).get("related_topics"), DEFAULT_MONTHLY_RELATED_TOPICS)]:
+        label = normalize_text(item.get("label"))
+        change = comparison_items.get(label.casefold()) or {}
+        count = int(item.get("count") or 0)
+        previous = int(change.get("previous_count") or 0)
+        delta = int(change.get("delta") or 0)
+        status = change.get("status") or ("baseline" if not comparison.get("has_previous") else "stable")
+        delta_text = "首月基线" if status == "baseline" else f"{'+' if delta > 0 else ''}{delta} / 上月 {previous}"
+        safe = html.escape(label or "Unknown")
+        rows.append(
+            '<div class="dpr-weekly-topic-row dpr-monthly-topic-row">'
+            f'<span title="{safe}">{safe}</span>'
+            f'<i style="--w:{pct_width(count, max_count)}"></i>'
+            f"<b>{count}</b>"
+            f'<em>{html.escape(delta_text)}</em>'
+            f'{monthly_status_badge(status)}'
+            "</div>"
+        )
+    body = "".join(rows) if rows else '<p class="dpr-weekly-empty">暂无可归类主题。</p>'
+    return f'<section class="dpr-weekly-bento-card dpr-monthly-topic-board-card"><h2>相关主题版图</h2>{body}</section>'
+
+
+def monthly_evidence_strip_html(papers: list[dict[str, Any]], related_topics: list[dict[str, Any]], representative_papers: int) -> str:
+    top_papers = papers[: max(1, representative_papers)]
+    topic_order = [normalize_text(item.get("label")) for item in related_topics if normalize_text(item.get("label"))]
+    topic_set = {label.casefold() for label in topic_order}
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for paper in top_papers:
+        labels = [
+            normalize_text(tag.get("label"))
+            for tag in (paper.get("tags") or [])
+            if isinstance(tag, dict) and normalize_text(tag.get("label"))
+        ]
+        group = next((label for label in labels if label.casefold() in topic_set), labels[0] if labels else "其他主题")
+        groups[group].append(paper)
+    ordered_groups = [label for label in topic_order if groups.get(label)]
+    ordered_groups.extend(label for label in groups if label not in set(ordered_groups))
+    blocks = []
+    idx = 1
+    for label in ordered_groups:
+        rows = []
+        for paper in groups[label]:
+            rows.append(evidence_row_html(paper, idx))
+            idx += 1
+        blocks.append(
+            f'<section class="dpr-monthly-evidence-group"><h3>{html.escape(label)}</h3>{"".join(rows)}</section>'
+        )
+    evidence_rows = "".join(blocks)
+    return (
+        '<section class="dpr-weekly-evidence-strip dpr-monthly-evidence-strip is-collapsed" data-dpr-weekly-evidence>'
+        '<header class="dpr-weekly-evidence-head">'
+        '<div><span>代表论文证据</span></div>'
+        '<div class="dpr-weekly-evidence-actions">'
+        f'<span class="dpr-weekly-evidence-count">{len(top_papers)} 篇</span>'
+        '<button type="button" class="dpr-weekly-evidence-toggle" aria-expanded="false" aria-controls="dpr-monthly-evidence-list">展开</button>'
+        "</div>"
+        "</header>"
+        f'<div id="dpr-monthly-evidence-list" class="dpr-weekly-evidence-list" hidden>{evidence_rows if evidence_rows else "<p>暂无代表论文。</p>"}</div>'
+        "</section>"
+    )
+
+
+def monthly_watchlist_html(watchlist: list[Any]) -> str:
+    items = [normalize_text(item) for item in watchlist if normalize_text(item)][:5]
+    body = "".join(f"<li>{html.escape(item)}</li>" for item in items) if items else "<li>暂无下月观察建议。</li>"
+    return f'<section class="dpr-weekly-bento-card dpr-monthly-watchlist-card"><h2>下月观察</h2><ul class="dpr-monthly-watchlist">{body}</ul></section>'
+
+
+def build_monthly_report_markdown(
+    window: PeriodWindow,
+    input_mode: str,
+    metrics: dict[str, Any],
+    papers: list[dict[str, Any]],
+    interpretation: dict[str, Any],
+    generated_at: str,
+    representative_papers: int = DEFAULT_REPRESENTATIVE_PAPERS,
+) -> str:
+    coverage = metrics.get("coverage") or {}
+    monthly = metrics.get("monthly_v1") or {}
+    comparison = monthly.get("comparison") if isinstance(monthly.get("comparison"), dict) else {}
+    related_topics = monthly.get("related_topics") or metrics.get("topics") or []
+    limits = monthly.get("topic_limits") if isinstance(monthly.get("topic_limits"), dict) else monthly_topic_limits({})
+    top_related = related_topics[0] if related_topics else {"label": "暂无", "count": 0}
+    if comparison.get("has_previous"):
+        change_chips = [
+            f"上升主题 {comparison.get('rising_count', 0)} 个",
+            f"新增主题 {comparison.get('new_count', 0)} 个",
+        ]
+    else:
+        change_chips = ["首月基线", "暂无环比"]
+    hero_chips = [
+        f"去重论文 {coverage.get('unique_papers', 0)} 篇",
+        f"代表论文 {min(len(papers), max(1, representative_papers))} 篇",
+        f"主题广度 {monthly.get('topic_breadth', len(related_topics))} 类",
+        *change_chips,
+    ]
+    summary_text = clean_body_text(interpretation.get("monthly_summary"))
+    if not summary_text and normalize_text(interpretation.get("monthly_summary")):
+        summary_text = build_fallback_interpretation(window, metrics, papers).get("monthly_summary") or ""
+    summary = html.escape(summary_text or build_fallback_interpretation(window, metrics, papers).get("monthly_summary") or "本月小结暂未生成。")
+    summary_source = html.escape(monthly_summary_source_note(interpretation))
+    watchlist = interpretation.get("watchlist") or monthly.get("watchlist") or []
+    lines = [
+        '<section class="dpr-periodic-report dpr-periodic-monthly dpr-periodic-monthly-v1">',
+        '<div class="dpr-weekly-hero dpr-monthly-hero">',
+        '<div><div class="dpr-periodic-kicker">Monthly Research Dashboard</div>',
+        f"<h1>{html.escape(monthly_display_label(window))}</h1></div>",
+        '<div class="dpr-weekly-hero-chip-row is-primary">',
+        "".join(f"<span>{html.escape(chip)}</span>" for chip in hero_chips),
+        "</div></div>",
+        '<div class="dpr-weekly-bento dpr-monthly-bento">',
+        '<section class="dpr-weekly-bento-card dpr-weekly-summary-card dpr-monthly-summary-card"><h2>本月小结</h2>',
+        f"<p>{summary}</p>",
+        f'<small class="dpr-weekly-summary-source">{summary_source}</small>',
+        "</section>",
+        monthly_change_card_html(comparison),
+        monthly_topic_timeline_html(
+            monthly.get("topic_timeline") or [],
+            positive_int(limits.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE),
+        ),
+        monthly_word_cloud_html(monthly.get("word_cloud") or [], comparison),
+        monthly_topic_board_html(monthly),
+        cooccurrence_html(
+            monthly.get("cooccurrence") or [],
+            positive_int(limits.get("cooccurrence_topics"), DEFAULT_MONTHLY_COOCCURRENCE_TOPICS),
+            positive_int(limits.get("cooccurrence_pairs"), DEFAULT_MONTHLY_COOCCURRENCE_PAIRS),
+            title="主题共现图谱",
+            section_extra_class="dpr-monthly-network-card",
+            show_status=True,
+        ),
+        monthly_evidence_strip_html(papers, related_topics, representative_papers),
+        monthly_watchlist_html(watchlist),
+        monthly_report_nav_html(window),
+        "</div>",
+        "</section>",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def build_weekly_report_markdown(
@@ -2021,6 +2700,16 @@ def build_report_markdown(
 ) -> str:
     if window.period == "weekly":
         return build_weekly_report_markdown(
+            window,
+            input_mode,
+            metrics,
+            papers,
+            interpretation,
+            generated_at,
+            representative_papers=representative_papers,
+        )
+    if window.period == "monthly":
+        return build_monthly_report_markdown(
             window,
             input_mode,
             metrics,
@@ -2274,6 +2963,8 @@ def write_report(
             }
         )
     weekly_chart_data = metrics.get("weekly_v2") if isinstance(metrics.get("weekly_v2"), dict) else {}
+    monthly_chart_data = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+    active_chart_data = weekly_chart_data if window.period == "weekly" else monthly_chart_data
     payload = {
         "period": window.period,
         "key": window.key,
@@ -2288,18 +2979,23 @@ def write_report(
         "charts": charts if isinstance(charts, dict) else {},
         "representative_papers": representative_papers,
         "evidence_index": evidence_index,
-        "related_topics": weekly_chart_data.get("related_topics") or [],
+        "monthly_v1": monthly_chart_data,
+        "related_topics": active_chart_data.get("related_topics") or [],
         "focus_topics": weekly_chart_data.get("focus_topics") or [],
         "context_topics": weekly_chart_data.get("context_topics") or [],
         "weekday_topic_timeline": weekly_chart_data.get("weekday_topic_timeline") or [],
-        "word_cloud": weekly_chart_data.get("word_cloud") or [],
+        "word_cloud": active_chart_data.get("word_cloud") or [],
         "radar": weekly_chart_data.get("radar") or [],
-        "cooccurrence": weekly_chart_data.get("cooccurrence") or [],
-        "topic_limits": weekly_chart_data.get("topic_limits") or {},
+        "cooccurrence": active_chart_data.get("cooccurrence") or [],
+        "topic_limits": active_chart_data.get("topic_limits") or {},
         "weekly_summary": normalize_text(interpretation.get("weekly_summary")),
         "weekly_summary_source": normalize_text(interpretation.get("weekly_summary_source")),
         "weekly_summary_model": normalize_text(interpretation.get("weekly_summary_model")),
         "weekly_summary_note": weekly_summary_source_note(interpretation),
+        "monthly_summary": normalize_text(interpretation.get("monthly_summary")),
+        "monthly_summary_source": normalize_text(interpretation.get("monthly_summary_source")),
+        "monthly_summary_model": normalize_text(interpretation.get("monthly_summary_model")),
+        "monthly_summary_note": monthly_summary_source_note(interpretation),
         "artifacts": artifact_paths,
         "papers": papers,
     }
@@ -2333,7 +3029,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     input_mode = normalize_input_mode(args.input_mode, fallback_mode)
     window = resolve_period_window(args.period, args.start_date, args.end_date)
     docs_dir = Path(args.docs_dir).resolve() if args.docs_dir else DEFAULT_DOCS_DIR
-    word_cloud_limit = positive_int(args.max_topics or periodic_cfg.get("max_topics"), DEFAULT_MAX_TOPICS)
+    limits = weekly_topic_limits(period_cfg) if window.period == "weekly" else monthly_topic_limits(period_cfg)
+    if args.max_topics:
+        word_cloud_limit = positive_int(args.max_topics, DEFAULT_MAX_TOPICS)
+    elif window.period == "monthly":
+        word_cloud_limit = positive_int(limits.get("word_cloud_terms"), DEFAULT_MONTHLY_WORD_CLOUD_TERMS)
+    else:
+        word_cloud_limit = positive_int(periodic_cfg.get("max_topics"), DEFAULT_MAX_TOPICS)
     max_candidates = positive_int(
         args.max_candidates or period_cfg.get("max_candidates") or periodic_cfg.get("max_candidates"),
         DEFAULT_MAX_CANDIDATES,
@@ -2345,11 +3047,22 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     charts = periodic_cfg.get("charts") if isinstance(periodic_cfg.get("charts"), dict) else {}
     aliases = periodic_cfg.get("topic_aliases") if isinstance(periodic_cfg.get("topic_aliases"), dict) else {}
     excluded_labels = excluded_retrieval_tags(config, aliases, args.profile_tag or "")
-    limits = weekly_topic_limits(period_cfg) if window.period == "weekly" else monthly_topic_limits(period_cfg)
     papers, artifacts, duplicate_stats = collect_papers(ROOT_DIR, docs_dir, window, max_candidates, aliases, args.profile_tag or "")
-    metrics = build_metrics(papers, artifacts, window, word_cloud_limit, duplicate_stats, aliases, excluded_labels, limits)
+    previous_meta = load_previous_month_meta(docs_dir, window)
+    history_hash = report_meta_fingerprint(previous_meta)
+    metrics = build_metrics(
+        papers,
+        artifacts,
+        window,
+        word_cloud_limit,
+        duplicate_stats,
+        aliases,
+        excluded_labels,
+        limits,
+        previous_meta,
+    )
     out_dir = report_output_dir(docs_dir, window)
-    input_hash = compute_input_hash(window, input_mode, artifacts, papers, periodic_cfg)
+    input_hash = compute_input_hash(window, input_mode, artifacts, papers, periodic_cfg, history_hash)
     interpretation = load_existing_interpretation(out_dir, input_hash)
     if interpretation is None:
         interpretation = try_llm_interpretation(window, metrics, papers) or build_fallback_interpretation(window, metrics, papers)
@@ -2385,7 +3098,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fetch-days", type=int, default=0, help="Recorded for workflow compatibility; recrawl is orchestrated by workflow.")
     parser.add_argument("--docs-dir", default="")
     parser.add_argument("--max-candidates", type=int, default=0)
-    parser.add_argument("--max-topics", type=int, default=0, help="weekly word-cloud topic limit; defaults to periodic_reports.max_topics")
+    parser.add_argument("--max-topics", type=int, default=0, help="word-cloud topic limit; weekly defaults to periodic_reports.max_topics, monthly defaults to monthly.topic_limits.word_cloud_terms")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
