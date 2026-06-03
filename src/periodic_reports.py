@@ -2284,10 +2284,10 @@ def weekday_heatmap_html(rows: list[dict[str, Any]], topic_limit: int = DEFAULT_
         return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card"><h2>主题演化</h2><p class="dpr-weekly-empty">暂无工作日主题数据。</p></section>'
     max_count = max([int(point.get("count") or 0) for row in rows for point in row.get("points", [])] or [1])
     header_points = (rows[0].get("points") or [])[:5]
-    header = '<div class="dpr-weekly-heat-head"><span></span>' + "".join(
+    header = '<div class="dpr-weekly-heat-head"><span></span><div class="dpr-weekly-heat-cells">' + "".join(
         f'<b title="{html.escape(str(point.get("date") or ""))}">{html.escape(str(point.get("weekday") or ""))}</b>'
         for point in header_points
-    ) + "</div>"
+    ) + "</div></div>"
     body = []
     for row in rows[:topic_limit]:
         cells = []
@@ -2297,7 +2297,7 @@ def weekday_heatmap_html(rows: list[dict[str, Any]], topic_limit: int = DEFAULT_
             title = f"{point.get('weekday')} {point.get('date')}: {count}"
             cells.append(f'<span class="dpr-periodic-heat-cell level-{level}" title="{html.escape(title)}">{count if count else ""}</span>')
         topic = html.escape(str(row.get("topic") or ""))
-        body.append(f'<div class="dpr-weekly-heat-row"><strong title="{topic}">{topic}</strong>{"".join(cells)}</div>')
+        body.append(f'<div class="dpr-weekly-heat-row"><strong title="{topic}">{topic}</strong><div class="dpr-weekly-heat-cells">{"".join(cells)}</div></div>')
     return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card"><h2>主题演化</h2>' + header + "".join(body) + "</section>"
 
 

@@ -329,10 +329,20 @@ class PeriodicReportsTest(unittest.TestCase):
         )
         self.assertNotIn("is-context", heat_html)
         self.assertNotIn("is-focus", heat_html)
+        self.assertIn("dpr-weekly-heat-cells", heat_html)
+        self.assertEqual(heat_html.count("dpr-weekly-heat-cells"), 3)
         for label in ["周一", "周二", "周三", "周四", "周五"]:
             self.assertIn(label, heat_html)
         self.assertEqual(heat_html.count("dpr-periodic-heat-cell"), 10)
-        css = (Path(__file__).resolve().parents[1] / "app" / "app.css").read_text(encoding="utf-8")
+        css = (Path(__file__).resolve().parents[1] / "app" / "app.css").read_text(encoding="utf-8").replace("\r\n", "\n")
+        self.assertIn(
+            ".dpr-weekly-heat-head,\n"
+            ".dpr-weekly-heat-row {\n"
+            "  display: grid;\n"
+            "  grid-template-columns: minmax(0, 40%) minmax(0, 60%);",
+            css,
+        )
+        self.assertIn(".dpr-weekly-heat-cells {\n  display: grid;", css)
         self.assertNotIn(".dpr-weekly-heat-row.is-context .dpr-periodic-heat-cell.level", css)
 
         many_heat_html = self.mod.weekday_heatmap_html(

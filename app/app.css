@@ -11354,7 +11354,7 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 .dpr-weekly-heat-head,
 .dpr-weekly-heat-row {
   display: grid;
-  grid-template-columns: minmax(112px, 0.9fr) repeat(5, minmax(34px, 0.42fr));
+  grid-template-columns: minmax(0, 40%) minmax(0, 60%);
   gap: 6px;
   align-items: center;
 }
@@ -11377,6 +11377,19 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   font-weight: 740;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dpr-weekly-heat-cells {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(34px, 1fr);
+  gap: 6px;
+  justify-content: stretch;
+  width: 100%;
+}
+
+.dpr-weekly-heat-cells b {
+  text-align: center;
 }
 
 .dpr-weekly-heat-row .dpr-periodic-heat-cell {
@@ -12155,11 +12168,14 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   .dpr-monthly-baseline-grid,
   .dpr-monthly-topic-feature-grid,
   .dpr-monthly-topic-board-row,
+  .dpr-weekly-heat-head,
+  .dpr-weekly-heat-row,
   .dpr-monthly-heat-head,
   .dpr-monthly-heat-row {
     grid-template-columns: 1fr;
   }
 
+  .dpr-weekly-heat-cells,
   .dpr-monthly-heat-cells {
     justify-content: start;
   }
