@@ -12273,10 +12273,9 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 }
 
 .dpr-periodic-index-card.is-monthly {
-  grid-template-rows: auto auto auto auto auto;
-  gap: 10px;
-  min-height: 320px;
-  padding: 10px;
+  grid-template-rows: auto auto minmax(180px, 1fr) auto auto;
+  min-height: 360px;
+  padding: 18px;
 }
 
 .dpr-periodic-index-card:hover {
@@ -12323,7 +12322,6 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 
 .dpr-periodic-index-card.is-monthly .dpr-periodic-index-summary {
   min-height: 42px;
-  color: #000000;
   font-size: 14px;
 }
 
@@ -12362,7 +12360,17 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 .dpr-periodic-index-card.is-monthly .dpr-periodic-index-monthly-meta b,
 .dpr-periodic-index-card.is-monthly .dpr-periodic-index-monthly-meta span,
 .dpr-periodic-index-card.is-monthly .dpr-periodic-index-topic-tags span {
-  color: #000000;
+  color: #000000 !important;
+}
+
+.markdown-section .dpr-periodic-index-card.is-monthly,
+.markdown-section .dpr-periodic-index-card.is-monthly strong,
+.markdown-section .dpr-periodic-index-card.is-monthly .dpr-periodic-index-summary,
+.markdown-section .dpr-periodic-index-card.is-monthly .dpr-periodic-index-monthly-meta em,
+.markdown-section .dpr-periodic-index-card.is-monthly .dpr-periodic-index-monthly-meta b,
+.markdown-section .dpr-periodic-index-card.is-monthly .dpr-periodic-index-monthly-meta span,
+.markdown-section .dpr-periodic-index-card.is-monthly .dpr-periodic-index-topic-tags span {
+  color: #000000 !important;
 }
 
 .dpr-periodic-index-mini-cloud {
@@ -12377,6 +12385,9 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 .dpr-periodic-index-card.is-monthly .dpr-periodic-index-mini-cloud {
   aspect-ratio: 16 / 5;
   height: auto;
+  width: calc(100% - 20px);
+  margin: 10px;
+  align-self: center;
 }
 
 .dpr-periodic-index-mini-cloud text {
