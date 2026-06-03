@@ -652,6 +652,7 @@ class PeriodicReportsTest(unittest.TestCase):
             self.assertNotIn("Source Mix", readme)
             self.assertIn("dpr-periodic-index-card is-monthly", monthly_index)
             self.assertIn("dpr-periodic-index-mini-cloud", monthly_index)
+            self.assertIn('viewBox="0 0 960 300"', monthly_index)
             self.assertIn("aria-label=\"月报词频云\"", monthly_index)
             self.assertIn("dpr-periodic-index-monthly-meta", monthly_index)
             self.assertIn("篇去重样本", monthly_index)

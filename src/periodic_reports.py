@@ -2105,8 +2105,13 @@ def word_cloud_html(items: list[dict[str, Any]]) -> str:
     )
 
 
-def mini_word_cloud_html(items: list[dict[str, Any]], aria_label: str = "报告词频云") -> str:
-    words = layout_word_cloud(items[:24])[:18]
+def mini_word_cloud_html(
+    items: list[dict[str, Any]],
+    aria_label: str = "报告词频云",
+    view_width: float = 900.0,
+    view_height: float = 420.0,
+) -> str:
+    words = layout_word_cloud(items[:24], width=view_width, height=view_height)[:18]
     if not words:
         return '<div class="dpr-periodic-index-mini-cloud is-empty"><span>暂无词频</span></div>'
     nodes = []
@@ -2118,7 +2123,7 @@ def mini_word_cloud_html(items: list[dict[str, Any]], aria_label: str = "报告�
             f'text-anchor="middle" dominant-baseline="middle">{label}</text>'
         )
     return (
-        f'<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{html.escape(aria_label, quote=True)}">'
+        f'<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 {view_width:.0f} {view_height:.0f}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{html.escape(aria_label, quote=True)}">'
         f'{"".join(nodes)}</svg>'
     )
 
@@ -2178,7 +2183,11 @@ def overlaps(rect: tuple[float, float, float, float], placed: list[tuple[float, 
     return False
 
 
-def layout_word_cloud(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def layout_word_cloud(
+    items: list[dict[str, Any]],
+    width: float = 900.0,
+    height: float = 420.0,
+) -> list[dict[str, Any]]:
     clean = [
         {"label": normalize_text(item.get("label")), "count": int(item.get("count") or 0)}
         for item in items
@@ -2189,7 +2198,6 @@ def layout_word_cloud(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     clean.sort(key=lambda item: (-item["count"], item["label"].casefold()))
     max_count = max(item["count"] for item in clean) or 1
     min_count = min(item["count"] for item in clean) or 0
-    width, height = 900.0, 420.0
     cx, cy = width / 2, height / 2
     placed_rects: list[tuple[float, float, float, float]] = []
     out = []
@@ -3110,7 +3118,7 @@ def build_periodic_index_markdown(period: str, entries: list[dict[str, Any]]) ->
                 f'<span>{entry.get("topic_breadth", 0)} 类主题</span>'
                 f'<span>{html.escape(entry.get("change_label") or "月报")}</span>'
                 "</div>"
-                f'{mini_word_cloud_html(entry.get("word_cloud") or [], "月报词频云")}'
+                f'{mini_word_cloud_html(entry.get("word_cloud") or [], "月报词频云", view_width=960.0, view_height=300.0)}'
                 f'<p class="dpr-periodic-index-summary">{html.escape(entry.get("summary") or "暂无摘要。")}</p>'
                 f'<div class="dpr-periodic-index-topic-tags">{topic_tags or "<span>暂无主题</span>"}</div>'
             )
