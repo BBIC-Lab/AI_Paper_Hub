@@ -11263,7 +11263,7 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 }
 
 .dpr-weekly-summary-card {
-  grid-column: span 12;
+  grid-column: span 14;
   display: grid;
   gap: 10px;
   align-content: start;
@@ -11286,9 +11286,12 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 }
 
 .dpr-weekly-topic-card.focus,
-.dpr-weekly-topic-card.context,
-.dpr-weekly-topic-card.related {
+.dpr-weekly-topic-card.context {
   grid-column: span 12;
+}
+
+.dpr-weekly-topic-card.related {
+  grid-column: span 10;
 }
 
 .dpr-weekly-topic-row {

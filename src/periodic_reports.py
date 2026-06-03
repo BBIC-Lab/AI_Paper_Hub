@@ -47,10 +47,12 @@ MIN_MONTHLY_WATCHLIST_ITEMS = 5
 MAX_MONTHLY_WATCHLIST_ITEMS = 10
 SUPPORTED_INPUT_MODES = {"artifacts", "recrawl", "hybrid"}
 SUPPORTED_PERIODS = {"weekly", "monthly"}
-REPORT_RENDER_VERSION = "periodic-weekly-v7-monthly-v2"
+REPORT_RENDER_VERSION = "periodic-weekly-v8-monthly-v2"
 MONTHLY_INTERPRETATION_VERSION = "monthly-watchlist-v3"
-WEEKLY_INTERPRETATION_VERSION = "weekly-summary-v2"
+WEEKLY_INTERPRETATION_VERSION = "weekly-summary-v3"
 LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS = (2400, 3600, 5200)
+WEEKLY_SUMMARY_MIN_CHARS = 200
+WEEKLY_SUMMARY_MAX_CHARS = 400
 WORD_CLOUD_PADDING = 10.0
 FOCUS_TAG_KINDS = {"query", "profile", "intent", "reader", "research", "subscription"}
 WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五"]
@@ -1821,7 +1823,10 @@ def build_llm_interpretation_payload(
             related_topics=related_topics,
         ),
         "schema": {
-            "weekly_summary": "中文单段 high-level 本周小结；目标约 300 字，硬上限 500 字；必须基于主题、词频、共现关系和代表论文",
+            "weekly_summary": (
+                f"中文单段 high-level 本周小结；长度控制在 {WEEKLY_SUMMARY_MIN_CHARS}-{WEEKLY_SUMMARY_MAX_CHARS} 字；"
+                "必须基于主题、词频、共现关系和代表论文"
+            ),
             "monthly_summary": "中文单段 high-level 本月小结；必须基于主题环比、周际演化、词频云、主题共现和代表论文",
             "summary_evidence_ids": ["paper ids cited by weekly_summary"],
             "watchlist": ["5-10 条中文下月观察要点，渲染层使用 Markdown/HTML 列表圆点"],
@@ -1845,7 +1850,10 @@ def build_llm_interpretation_payload(
             ),
             "instructions": [
                 "写成一个中文 high-level 本周小结段落，不要项目符号。",
-                "目标约 300 字；硬上限 500 字；不要为了凑字数重复统计口径。",
+                (
+                    f"控制在 {WEEKLY_SUMMARY_MIN_CHARS}-{WEEKLY_SUMMARY_MAX_CHARS} 字；"
+                    "不要为了凑字数重复统计口径。"
+                ),
                 "必须综合本周提取到的相关主题、词频、主题共现关系与代表论文。",
                 "只基于输入证据，不要编造未出现的论文、数量或趋势。",
             ],

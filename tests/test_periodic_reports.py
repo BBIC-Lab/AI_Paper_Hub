@@ -721,7 +721,7 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertIn("vision", [item["label"] for item in comparison["groups"]["faded"]])
         self.assertEqual(len(monthly["topic_timeline"][0]["points"]), 5)
 
-    def test_llm_prompt_includes_weekly_summary_inputs_without_truncation_policy(self):
+    def test_llm_prompt_includes_weekly_summary_inputs_with_length_policy(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
         metrics = {
             "coverage": {"artifact_files": 1, "unique_papers": 2},
@@ -750,9 +750,22 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertIn("word_cloud", payload["weekly_summary_inputs"])
         self.assertIn("cooccurrence", payload["weekly_summary_inputs"])
         self.assertIn("representative_papers", payload["weekly_summary_inputs"])
-        self.assertIn("目标约 300 字", prompt_json)
-        self.assertIn("硬上限 500 字", prompt_json)
+        self.assertIn("200-400 字", prompt_json)
+        self.assertNotIn("硬上限 400 字", prompt_json)
+        self.assertNotIn("硬上限 500 字", prompt_json)
         self.assertIn("Agent Retrieval", prompt_json)
+
+    def test_weekly_llm_summary_is_not_hard_truncated(self):
+        long_summary = "这是一个用于测试周报小结长度限制的句子。" * 45
+        interpretation = self.mod.normalize_interpretation({"weekly_summary": long_summary})
+
+        self.assertEqual(interpretation["weekly_summary"], long_summary)
+
+    def test_weekly_summary_and_related_topics_use_seven_to_five_grid_ratio(self):
+        css = (self.mod.ROOT_DIR / "app" / "app.css").read_text(encoding="utf-8").replace("\r\n", "\n")
+
+        self.assertIn(".dpr-weekly-summary-card {\n  grid-column: span 14;", css)
+        self.assertIn(".dpr-weekly-topic-card.related {\n  grid-column: span 10;", css)
 
     def test_llm_prompt_includes_monthly_summary_inputs(self):
         window = self.mod.resolve_period_window("monthly", "2026-05-01", "2026-05-31")
