@@ -43,9 +43,13 @@ DEFAULT_MONTHLY_WORD_CLOUD_TERMS = 36
 DEFAULT_MONTHLY_COOCCURRENCE_TOPICS = 12
 DEFAULT_MONTHLY_COOCCURRENCE_PAIRS = 18
 DEFAULT_MONTHLY_COMPARISON_TOPICS = 10
+MIN_MONTHLY_WATCHLIST_ITEMS = 5
+MAX_MONTHLY_WATCHLIST_ITEMS = 10
 SUPPORTED_INPUT_MODES = {"artifacts", "recrawl", "hybrid"}
 SUPPORTED_PERIODS = {"weekly", "monthly"}
-REPORT_RENDER_VERSION = "periodic-weekly-v6-monthly-v1"
+REPORT_RENDER_VERSION = "periodic-weekly-v7-monthly-v2"
+MONTHLY_INTERPRETATION_VERSION = "monthly-watchlist-v3"
+WEEKLY_INTERPRETATION_VERSION = "weekly-summary-v2"
 LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS = (2400, 3600, 5200)
 WORD_CLOUD_PADDING = 10.0
 FOCUS_TAG_KINDS = {"query", "profile", "intent", "reader", "research", "subscription"}
@@ -229,6 +233,11 @@ def short_text(value: Any, limit: int = 220) -> str:
     if len(text) <= limit:
         return text
     return text[: max(0, limit - 1)].rstrip() + "..."
+
+
+def normalize_watchlist_item(value: Any) -> str:
+    text = normalize_text(value)
+    return re.sub(r"^\s*(?:[-*•]\s+|\d+[.)、]\s*)", "", text).strip()
 
 
 def load_yaml_config(path: Path = CONFIG_FILE) -> dict[str, Any]:
@@ -1050,6 +1059,74 @@ def paper_topic_labels(
     return list(dict.fromkeys(focus + context))
 
 
+def topic_labels_from_items(items: list[dict[str, Any]] | None) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for item in items or []:
+        label = normalize_text(item.get("label") if isinstance(item, dict) else item)
+        key = label.casefold()
+        if label and key not in seen:
+            seen.add(key)
+            labels.append(label)
+    return labels
+
+
+def order_topic_labels(labels: list[str], related_topics: list[dict[str, Any]] | None = None) -> list[str]:
+    order = {label.casefold(): idx for idx, label in enumerate(topic_labels_from_items(related_topics))}
+    original = {label.casefold(): idx for idx, label in enumerate(labels)}
+    return sorted(
+        labels,
+        key=lambda label: (
+            0 if label.casefold() in order else 1,
+            order.get(label.casefold(), original.get(label.casefold(), 0)),
+        ),
+    )
+
+
+def paper_display_topic_labels(
+    paper: dict[str, Any],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    related_topics: list[dict[str, Any]] | None = None,
+    limit: int = 5,
+) -> list[str]:
+    focus, context, _axes = paper_weekly_topics(paper, aliases, excluded_labels)
+    primary: list[str] = []
+    fallback: list[str] = []
+    seen: set[str] = set()
+
+    def append(target: list[str], label: Any) -> None:
+        clean = apply_topic_alias(normalize_text(label), aliases or {})
+        key = clean.casefold()
+        if not clean or key in seen or is_excluded_topic(clean, excluded_labels):
+            return
+        seen.add(key)
+        target.append(clean)
+
+    for label in context:
+        append(primary, label)
+    for label in focus:
+        append(fallback, label)
+    labels = primary or fallback
+    if not labels:
+        return []
+    ordered = order_topic_labels(labels, related_topics)
+    related_keys = {label.casefold() for label in topic_labels_from_items(related_topics)}
+    if related_keys:
+        matched = [label for label in ordered if label.casefold() in related_keys]
+        if matched:
+            ordered = matched
+    return ordered[: max(1, limit)]
+
+
+def active_related_topics(metrics: dict[str, Any], window: PeriodWindow) -> list[dict[str, Any]]:
+    if window.period == "weekly":
+        chart_data = metrics.get("weekly_v2") if isinstance(metrics.get("weekly_v2"), dict) else {}
+    else:
+        chart_data = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+    return chart_data.get("related_topics") or metrics.get("topics") or []
+
+
 def previous_month_key(window: PeriodWindow) -> str:
     first = window.start.replace(day=1)
     prev = first - timedelta(days=1)
@@ -1229,19 +1306,37 @@ def build_monthly_topic_timeline(
 def build_monthly_watchlist(comparison: dict[str, Any], cooccurrence: list[dict[str, Any]]) -> list[str]:
     groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
     out: list[str] = []
-    for item in (groups.get("new") or [])[:2]:
-        out.append(f"关注新增主题 {item.get('label')}：本月出现 {item.get('count', 0)} 篇代表样本。")
-    for item in (groups.get("rising") or [])[:2]:
-        out.append(
-            f"持续跟踪上升主题 {item.get('label')}：较上月增加 {max(0, int(item.get('delta') or 0))} 篇。"
-        )
-    for pair in cooccurrence[:2]:
-        if len(out) >= 5:
+
+    def append(text: str) -> None:
+        item = normalize_watchlist_item(text)
+        if item and item not in out and len(out) < MAX_MONTHLY_WATCHLIST_ITEMS:
+            out.append(item)
+
+    for item in (groups.get("new") or [])[:3]:
+        append(f"关注新增主题 {item.get('label')}：本月出现 {item.get('count', 0)} 篇代表样本。")
+    for item in (groups.get("rising") or [])[:3]:
+        append(f"持续跟踪上升主题 {item.get('label')}：较上月增加 {max(0, int(item.get('delta') or 0))} 篇。")
+    for item in (groups.get("baseline") or [])[:3]:
+        append(f"建立首月主题基线 {item.get('label')}：记录 {item.get('count', 0)} 篇样本作为后续环比参照。")
+    for item in (groups.get("stable") or [])[:2]:
+        append(f"复查稳定主题 {item.get('label')}：确认它是否在下月继续维持高频出现。")
+    for pair in cooccurrence[:4]:
+        if len(out) >= MAX_MONTHLY_WATCHLIST_ITEMS:
             break
-        out.append(
-            f"观察 {pair.get('source')} 与 {pair.get('target')} 的交叉关系：本月共现 {pair.get('count', 0)} 次。"
-        )
-    return out[:5] or ["本月样本较少，建议先累积下一期月报后再判断连续趋势。"]
+        append(f"观察 {pair.get('source')} 与 {pair.get('target')} 的交叉关系：本月共现 {pair.get('count', 0)} 次。")
+
+    fallback = [
+        "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+        "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+        "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+        "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+        "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。",
+    ]
+    for item in fallback:
+        if len(out) >= MIN_MONTHLY_WATCHLIST_ITEMS:
+            break
+        append(item)
+    return out[:MAX_MONTHLY_WATCHLIST_ITEMS]
 
 
 def build_monthly_chart_data(
@@ -1638,22 +1733,28 @@ def normalize_interpretation(data: dict[str, Any]) -> dict[str, Any]:
     out["monthly_summary_note"] = normalize_text(data.get("monthly_summary_note") or data.get("summary_note"))
     watchlist = data.get("watchlist") or data.get("monthly_watchlist") or []
     if isinstance(watchlist, list):
-        out["watchlist"] = [normalize_text(v) for v in watchlist if normalize_text(v)][:5]
+        out["watchlist"] = [normalize_watchlist_item(v) for v in watchlist if normalize_watchlist_item(v)][:MAX_MONTHLY_WATCHLIST_ITEMS]
     elif normalize_text(watchlist):
-        out["watchlist"] = [normalize_text(watchlist)]
+        out["watchlist"] = [normalize_watchlist_item(watchlist)]
     else:
         out["watchlist"] = []
     return out
 
 
-def build_llm_evidence_papers(papers: list[dict[str, Any]], limit: int = 18) -> list[dict[str, Any]]:
+def build_llm_evidence_papers(
+    papers: list[dict[str, Any]],
+    limit: int = 18,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    related_topics: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     return [
         {
             "id": p.get("paper_id"),
             "title": p.get("title"),
             "score": p.get("score"),
             "source": p.get("source"),
-            "topics": [t.get("label") for t in (p.get("tags") or [])[:4]],
+            "topics": paper_display_topic_labels(p, aliases, excluded_labels, related_topics, limit=4),
             "evidence": short_text(p.get("evidence") or p.get("tldr") or p.get("abstract"), 180),
         }
         for p in papers[:limit]
@@ -1691,17 +1792,39 @@ def monthly_summary_source_note(interpretation: dict[str, Any]) -> str:
     return note or "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。"
 
 
-def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any]:
+def monthly_watchlist_source_note(interpretation: dict[str, Any]) -> str:
+    source = normalize_text(interpretation.get("monthly_summary_source"))
+    model = normalize_text(interpretation.get("monthly_summary_model"))
+    if source == "llm":
+        return f"下月观察由 {model or 'LLM'} 生成。"
+    return "模板观察建议，非 LLM 生成；基于月报统计、主题变化与共现线索。"
+
+
+def build_llm_interpretation_payload(
+    window: PeriodWindow,
+    metrics: dict[str, Any],
+    papers: list[dict[str, Any]],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> dict[str, Any]:
     weekly = metrics.get("weekly_v2") or {}
     monthly = metrics.get("monthly_v1") or {}
+    related_topics = active_related_topics(metrics, window)
     payload = {
         "period": window.period,
         "label": window.label,
         "metrics": metrics,
-        "evidence_papers": build_llm_evidence_papers(papers),
+        "evidence_papers": build_llm_evidence_papers(
+            papers,
+            aliases=aliases,
+            excluded_labels=excluded_labels,
+            related_topics=related_topics,
+        ),
         "schema": {
             "weekly_summary": "中文单段 high-level 本周小结；目标约 300 字，硬上限 500 字；必须基于主题、词频、共现关系和代表论文",
+            "monthly_summary": "中文单段 high-level 本月小结；必须基于主题环比、周际演化、词频云、主题共现和代表论文",
             "summary_evidence_ids": ["paper ids cited by weekly_summary"],
+            "watchlist": ["5-10 条中文下月观察要点，渲染层使用 Markdown/HTML 列表圆点"],
             "highlights": ["2-4 concise Chinese bullets with counts or paper ids"],
             "rising_topics": ["topic trend bullets grounded in topic counts"],
             "reading_route": ["ordered reading suggestions"],
@@ -1713,7 +1836,13 @@ def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, An
             "related_topics": weekly.get("related_topics") or [],
             "word_cloud": weekly.get("word_cloud") or [],
             "cooccurrence": weekly.get("cooccurrence") or [],
-            "representative_papers": build_llm_evidence_papers(papers, limit=12),
+            "representative_papers": build_llm_evidence_papers(
+                papers,
+                limit=12,
+                aliases=aliases,
+                excluded_labels=excluded_labels,
+                related_topics=weekly.get("related_topics") or related_topics,
+            ),
             "instructions": [
                 "写成一个中文 high-level 本周小结段落，不要项目符号。",
                 "目标约 300 字；硬上限 500 字；不要为了凑字数重复统计口径。",
@@ -1729,18 +1858,31 @@ def build_llm_interpretation_payload(window: PeriodWindow, metrics: dict[str, An
             "cooccurrence": monthly.get("cooccurrence") or [],
             "comparison": monthly.get("comparison") or {},
             "watchlist": monthly.get("watchlist") or [],
-            "representative_papers": build_llm_evidence_papers(papers, limit=12),
+            "representative_papers": build_llm_evidence_papers(
+                papers,
+                limit=12,
+                aliases=aliases,
+                excluded_labels=excluded_labels,
+                related_topics=monthly.get("related_topics") or related_topics,
+            ),
             "instructions": [
                 "写成一个中文 high-level 本月小结段落，不要输出论文清单。",
                 "必须围绕主题环比、周际演化、词频云、主题共现和代表论文证据。",
                 "只基于输入证据，不要编造未出现的论文、数量、来源效果或订阅建议。",
-                "额外返回 watchlist，列出 3-5 条下月观察建议。",
+                "额外返回 watchlist，列出 5-10 条下月观察建议。",
+                "watchlist 每条写成一个独立中文要点；可以带或不带 '- ' 前缀，渲染层会清理前缀并用圆点列表展示。",
             ],
         }
     return payload
 
 
-def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers: list[dict[str, Any]]) -> dict[str, Any] | None:
+def try_llm_interpretation(
+    window: PeriodWindow,
+    metrics: dict[str, Any],
+    papers: list[dict[str, Any]],
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> dict[str, Any] | None:
     api_key = env_text("DPR_LLM_API_KEY", "LLM_API_KEY", "OPENAI_API_KEY")
     base_url = env_text("DPR_LLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL") or "https://api.openai.com/v1"
     model = env_text("DPR_LLM_REPORT_MODEL", "DPR_LLM_SUMMARY_MODEL", "DPR_LLM_MODEL", "LLM_MODEL")
@@ -1755,7 +1897,7 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
         log(f"[WARN] LLM interpretation unavailable ({', '.join(missing)}); using fallback summary.")
         return None
     system_prompt = "你是科研周期报告编辑。只基于给定 JSON 统计和 evidence papers 写中文洞察，不要编造未出现的论文、数量或趋势。返回 JSON。"
-    user_payload = build_llm_interpretation_payload(window, metrics, papers)
+    user_payload = build_llm_interpretation_payload(window, metrics, papers, aliases, excluded_labels)
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
@@ -1791,6 +1933,9 @@ def try_llm_interpretation(window: PeriodWindow, metrics: dict[str, Any], papers
             if not normalize_text(interpretation.get(required_key)):
                 log(f"[WARN] LLM interpretation attempt {attempt} returned no {required_key}; retrying.")
                 continue
+            if window.period == "monthly" and len(interpretation.get("watchlist") or []) < MIN_MONTHLY_WATCHLIST_ITEMS:
+                log(f"[WARN] LLM interpretation attempt {attempt} returned fewer than {MIN_MONTHLY_WATCHLIST_ITEMS} watchlist items; retrying.")
+                continue
             return mark_llm_interpretation(interpretation, model, window.period)
         except Exception as exc:
             log(f"[WARN] LLM interpretation attempt {attempt}/{len(LLM_INTERPRETATION_MAX_TOKEN_ATTEMPTS)} failed: {exc}")
@@ -1809,6 +1954,7 @@ def compute_input_hash(
     payload = {
         "period": window.__dict__,
         "renderer_version": REPORT_RENDER_VERSION,
+        "interpretation_version": MONTHLY_INTERPRETATION_VERSION if window.period == "monthly" else WEEKLY_INTERPRETATION_VERSION,
         "input_mode": input_mode,
         "artifacts": [str(a.path) for a in artifacts],
         "papers": [
@@ -1951,7 +2097,7 @@ def word_cloud_html(items: list[dict[str, Any]]) -> str:
     )
 
 
-def mini_word_cloud_html(items: list[dict[str, Any]]) -> str:
+def mini_word_cloud_html(items: list[dict[str, Any]], aria_label: str = "报告词频云") -> str:
     words = layout_word_cloud(items[:24])[:18]
     if not words:
         return '<div class="dpr-periodic-index-mini-cloud is-empty"><span>暂无词频</span></div>'
@@ -1964,7 +2110,7 @@ def mini_word_cloud_html(items: list[dict[str, Any]]) -> str:
             f'text-anchor="middle" dominant-baseline="middle">{label}</text>'
         )
     return (
-        '<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="周报词频云">'
+        f'<svg class="dpr-periodic-index-mini-cloud" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{html.escape(aria_label, quote=True)}">'
         f'{"".join(nodes)}</svg>'
     )
 
@@ -2281,8 +2427,11 @@ def cooccurrence_html(
             f'<path class="dpr-weekly-chord-ribbon" d="M{sx:.1f},{sy:.1f} C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {tx:.1f},{ty:.1f}" '
             f'stroke="url(#{grad_id})" stroke-width="{width_px:.1f}" stroke-opacity="{opacity:.2f}"><title>{title}</title></path>'
         )
+    max_visible_legend_rows = 10 if show_status else len(legend_rows)
+    visible_legend_rows = legend_rows[:max_visible_legend_rows]
+    truncated_legend_count = max(0, len(legend_rows) - len(visible_legend_rows))
     legend = []
-    for left, right, count in legend_rows:
+    for left, right, count in visible_legend_rows:
         left_safe = html.escape(left)
         right_safe = html.escape(right)
         label = html.escape(f"{left} ↔ {right}")
@@ -2300,6 +2449,11 @@ def cooccurrence_html(
             f"<b>{int(count)} 篇</b>"
             "</div>"
         )
+    legend_note = (
+        f'<p class="dpr-weekly-chord-table-note">标签数过多，已截断 {truncated_legend_count} 条。</p>'
+        if truncated_legend_count
+        else ""
+    )
 
     return (
         f'<section class="{html.escape(section_class)}"><h2>{safe_title}</h2>'
@@ -2312,19 +2466,24 @@ def cooccurrence_html(
         f'<g class="dpr-weekly-chord-labels">{"".join(label_nodes)}</g>'
         '</svg></div>'
         '<div class="dpr-weekly-chord-table" aria-label="主题共现标签表">'
-        f'{"".join(legend)}'
+        f'{"".join(legend)}{legend_note}'
         '</div></div></section>'
     )
 
-def evidence_row_html(paper: dict[str, Any], idx: int) -> str:
+def evidence_row_html(
+    paper: dict[str, Any],
+    idx: int,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+    related_topics: list[dict[str, Any]] | None = None,
+) -> str:
     title = html.escape(str(paper.get("title") or "Untitled"))
     title_zh = html.escape(clean_title_zh(paper.get("title_zh")))
     title_zh_html = f'<div class="dpr-weekly-evidence-title-zh">{title_zh}</div>' if title_zh else ""
     href = html.escape(str(paper.get("href") or paper.get("external_url") or "#"), quote=True)
     tags = "".join(
-        f'<span>{html.escape(str(tag.get("label") or ""))}</span>'
-        for tag in (paper.get("tags") or [])[:5]
-        if tag.get("label")
+        f'<span>{html.escape(label)}</span>'
+        for label in paper_display_topic_labels(paper, aliases, excluded_labels, related_topics, limit=5)
     )
     evidence = html.escape(short_text(clean_body_text(paper.get("evidence") or paper.get("tldr") or paper.get("abstract")), 220))
     return (
@@ -2377,11 +2536,35 @@ def monthly_status_badge(status: Any) -> str:
     return f'<small class="dpr-monthly-status is-{safe_status}">{html.escape(monthly_status_label(status))}</small>'
 
 
-def monthly_change_card_html(comparison: dict[str, Any]) -> str:
+def monthly_change_card_html(monthly: dict[str, Any], coverage: dict[str, Any] | None = None) -> str:
+    comparison = monthly.get("comparison") if isinstance(monthly.get("comparison"), dict) else {}
     if not comparison.get("has_previous"):
+        groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
+        related_topics = groups.get("baseline") or monthly.get("related_topics") or []
+        cooccurrence = monthly.get("cooccurrence") or []
+        topic_rows = []
+        for idx, item in enumerate(related_topics[:4], start=1):
+            label = html.escape(normalize_text(item.get("label")) or "Unknown")
+            count = int(item.get("count") or 0)
+            topic_rows.append(f'<li><span title="{label}">{label}</span><em>{count} 篇</em><b>#{idx}</b></li>')
+        pair_rows = []
+        for pair in cooccurrence[:3]:
+            left = html.escape(normalize_text(pair.get("source")) or "Unknown")
+            right = html.escape(normalize_text(pair.get("target")) or "Unknown")
+            count = int(pair.get("count") or 0)
+            pair_rows.append(f'<li><span title="{left} ↔ {right}">{left} ↔ {right}</span><em>{count} 次</em><b>首月</b></li>')
+        if not topic_rows:
+            topic_rows.append("<li><span>暂无主题</span><em></em><b>0</b></li>")
+        if not pair_rows:
+            pair_rows.append("<li><span>暂无共现线索</span><em></em><b>0</b></li>")
         return (
             '<section class="dpr-weekly-bento-card dpr-monthly-change-card"><h2>月度变化</h2>'
-            '<p class="dpr-weekly-empty">首月基线：暂无上月月报可用于环比，后续月份会自动展示新增、上升、稳定和下降主题。</p>'
+            '<div class="dpr-monthly-baseline-grid">'
+            '<div class="dpr-monthly-baseline-panel"><h3>首月主题基线</h3>'
+            f'<ul>{"".join(topic_rows)}</ul></div>'
+            '<div class="dpr-monthly-baseline-panel"><h3>首月共现线索</h3>'
+            f'<ul>{"".join(pair_rows)}</ul></div>'
+            "</div>"
             "</section>"
         )
     groups = comparison.get("groups") if isinstance(comparison.get("groups"), dict) else {}
@@ -2418,10 +2601,10 @@ def monthly_topic_timeline_html(rows: list[dict[str, Any]], topic_limit: int = D
         return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card dpr-monthly-heat-card"><h2>周际主题演化</h2><p class="dpr-weekly-empty">暂无月度主题数据。</p></section>'
     max_count = max([int(point.get("count") or 0) for row in rows for point in row.get("points", [])] or [1])
     header_points = (rows[0].get("points") or [])[:6]
-    header = '<div class="dpr-weekly-heat-head dpr-monthly-heat-head"><span></span>' + "".join(
+    header = '<div class="dpr-weekly-heat-head dpr-monthly-heat-head"><span></span><div class="dpr-monthly-heat-cells">' + "".join(
         f'<b title="{html.escape(str(point.get("range") or ""))}">{html.escape(str(point.get("week") or point.get("date") or ""))}</b>'
         for point in header_points
-    ) + "</div>"
+    ) + "</div></div>"
     body = []
     for row in rows[:topic_limit]:
         cells = []
@@ -2431,7 +2614,7 @@ def monthly_topic_timeline_html(rows: list[dict[str, Any]], topic_limit: int = D
             title = f"{point.get('week') or point.get('date')} {point.get('range')}: {count}"
             cells.append(f'<span class="dpr-periodic-heat-cell level-{level}" title="{html.escape(title)}">{count if count else ""}</span>')
         topic = html.escape(str(row.get("topic") or ""))
-        body.append(f'<div class="dpr-weekly-heat-row dpr-monthly-heat-row"><strong title="{topic}">{topic}</strong>{"".join(cells)}</div>')
+        body.append(f'<div class="dpr-weekly-heat-row dpr-monthly-heat-row"><strong title="{topic}">{topic}</strong><div class="dpr-monthly-heat-cells">{"".join(cells)}</div></div>')
     return '<section class="dpr-weekly-bento-card dpr-weekly-heat-card dpr-monthly-heat-card"><h2>周际主题演化</h2>' + header + "".join(body) + "</section>"
 
 
@@ -2473,8 +2656,10 @@ def monthly_topic_board_html(monthly: dict[str, Any]) -> str:
         if isinstance(item, dict) and normalize_text(item.get("label"))
     }
     max_count = max([int(item.get("count") or 0) for item in topics] or [0])
+    visible_topics = topics[: positive_int((monthly.get("topic_limits") or {}).get("related_topics"), DEFAULT_MONTHLY_RELATED_TOPICS)]
     rows = []
-    for item in topics[: positive_int((monthly.get("topic_limits") or {}).get("related_topics"), DEFAULT_MONTHLY_RELATED_TOPICS)]:
+    featured = []
+    for idx, item in enumerate(visible_topics, start=1):
         label = normalize_text(item.get("label"))
         change = comparison_items.get(label.casefold()) or {}
         count = int(item.get("count") or 0)
@@ -2483,8 +2668,17 @@ def monthly_topic_board_html(monthly: dict[str, Any]) -> str:
         status = change.get("status") or ("baseline" if not comparison.get("has_previous") else "stable")
         delta_text = "首月基线" if status == "baseline" else f"{'+' if delta > 0 else ''}{delta} / 上月 {previous}"
         safe = html.escape(label or "Unknown")
+        if idx <= 3:
+            featured.append(
+                '<article class="dpr-monthly-topic-feature">'
+                f'<small>{html.escape(monthly_status_label(status))}</small>'
+                f'<strong title="{safe}">{safe}</strong>'
+                f'<em>{count} 篇</em>'
+                f'<i style="--w:{pct_width(count, max_count)}"></i>'
+                "</article>"
+            )
         rows.append(
-            '<div class="dpr-weekly-topic-row dpr-monthly-topic-row">'
+            '<div class="dpr-monthly-topic-board-row">'
             f'<span title="{safe}">{safe}</span>'
             f'<i style="--w:{pct_width(count, max_count)}"></i>'
             f"<b>{count}</b>"
@@ -2492,21 +2686,37 @@ def monthly_topic_board_html(monthly: dict[str, Any]) -> str:
             f'{monthly_status_badge(status)}'
             "</div>"
         )
-    body = "".join(rows) if rows else '<p class="dpr-weekly-empty">暂无可归类主题。</p>'
+    if not rows:
+        body = '<p class="dpr-weekly-empty">暂无可归类主题。</p>'
+    else:
+        summary = (
+            '<div class="dpr-monthly-topic-board-summary">'
+            f'<span>展示 {len(visible_topics)} 个主题</span>'
+            f'<span>主题广度 {int(monthly.get("topic_breadth") or len(topics) or 0)} 类</span>'
+            f'<span>{html.escape("首月基线" if not comparison.get("has_previous") else "含环比状态")}</span>'
+            "</div>"
+        )
+        body = (
+            summary
+            + f'<div class="dpr-monthly-topic-feature-grid">{"".join(featured)}</div>'
+            + f'<div class="dpr-monthly-topic-board-list">{"".join(rows)}</div>'
+        )
     return f'<section class="dpr-weekly-bento-card dpr-monthly-topic-board-card"><h2>相关主题版图</h2>{body}</section>'
 
 
-def monthly_evidence_strip_html(papers: list[dict[str, Any]], related_topics: list[dict[str, Any]], representative_papers: int) -> str:
+def monthly_evidence_strip_html(
+    papers: list[dict[str, Any]],
+    related_topics: list[dict[str, Any]],
+    representative_papers: int,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
+) -> str:
     top_papers = papers[: max(1, representative_papers)]
     topic_order = [normalize_text(item.get("label")) for item in related_topics if normalize_text(item.get("label"))]
     topic_set = {label.casefold() for label in topic_order}
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for paper in top_papers:
-        labels = [
-            normalize_text(tag.get("label"))
-            for tag in (paper.get("tags") or [])
-            if isinstance(tag, dict) and normalize_text(tag.get("label"))
-        ]
+        labels = paper_display_topic_labels(paper, aliases, excluded_labels, related_topics, limit=5)
         group = next((label for label in labels if label.casefold() in topic_set), labels[0] if labels else "其他主题")
         groups[group].append(paper)
     ordered_groups = [label for label in topic_order if groups.get(label)]
@@ -2516,7 +2726,7 @@ def monthly_evidence_strip_html(papers: list[dict[str, Any]], related_topics: li
     for label in ordered_groups:
         rows = []
         for paper in groups[label]:
-            rows.append(evidence_row_html(paper, idx))
+            rows.append(evidence_row_html(paper, idx, aliases, excluded_labels, related_topics))
             idx += 1
         blocks.append(
             f'<section class="dpr-monthly-evidence-group"><h3>{html.escape(label)}</h3>{"".join(rows)}</section>'
@@ -2536,10 +2746,11 @@ def monthly_evidence_strip_html(papers: list[dict[str, Any]], related_topics: li
     )
 
 
-def monthly_watchlist_html(watchlist: list[Any]) -> str:
-    items = [normalize_text(item) for item in watchlist if normalize_text(item)][:5]
+def monthly_watchlist_html(watchlist: list[Any], interpretation: dict[str, Any]) -> str:
+    items = [normalize_watchlist_item(item) for item in watchlist if normalize_watchlist_item(item)][:MAX_MONTHLY_WATCHLIST_ITEMS]
     body = "".join(f"<li>{html.escape(item)}</li>" for item in items) if items else "<li>暂无下月观察建议。</li>"
-    return f'<section class="dpr-weekly-bento-card dpr-monthly-watchlist-card"><h2>下月观察</h2><ul class="dpr-monthly-watchlist">{body}</ul></section>'
+    note = html.escape(monthly_watchlist_source_note(interpretation))
+    return f'<section class="dpr-weekly-bento-card dpr-monthly-watchlist-card"><h2>下月观察</h2><ul class="dpr-monthly-watchlist">{body}</ul><small class="dpr-monthly-watchlist-source">{note}</small></section>'
 
 
 def build_monthly_report_markdown(
@@ -2550,6 +2761,8 @@ def build_monthly_report_markdown(
     interpretation: dict[str, Any],
     generated_at: str,
     representative_papers: int = DEFAULT_REPRESENTATIVE_PAPERS,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
 ) -> str:
     coverage = metrics.get("coverage") or {}
     monthly = metrics.get("monthly_v1") or {}
@@ -2589,7 +2802,7 @@ def build_monthly_report_markdown(
         f"<p>{summary}</p>",
         f'<small class="dpr-weekly-summary-source">{summary_source}</small>',
         "</section>",
-        monthly_change_card_html(comparison),
+        monthly_change_card_html(monthly, coverage),
         monthly_topic_timeline_html(
             monthly.get("topic_timeline") or [],
             positive_int(limits.get("topic_timeline"), DEFAULT_MONTHLY_TOPIC_TIMELINE),
@@ -2604,8 +2817,8 @@ def build_monthly_report_markdown(
             section_extra_class="dpr-monthly-network-card",
             show_status=True,
         ),
-        monthly_evidence_strip_html(papers, related_topics, representative_papers),
-        monthly_watchlist_html(watchlist),
+        monthly_evidence_strip_html(papers, related_topics, representative_papers, aliases, excluded_labels),
+        monthly_watchlist_html(watchlist, interpretation),
         monthly_report_nav_html(window),
         "</div>",
         "</section>",
@@ -2621,6 +2834,8 @@ def build_weekly_report_markdown(
     interpretation: dict[str, Any],
     generated_at: str,
     representative_papers: int = DEFAULT_REPRESENTATIVE_PAPERS,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
 ) -> str:
     coverage = metrics.get("coverage") or {}
     weekly = metrics.get("weekly_v2") or {}
@@ -2649,7 +2864,10 @@ def build_weekly_report_markdown(
         summary_text = build_fallback_interpretation(window, metrics, papers).get("weekly_summary") or ""
     summary = html.escape(summary_text or "本周摘要暂未生成；请检查 LLM 配置或日报 artifact 是否包含足够证据。")
     summary_source = html.escape(weekly_summary_source_note(interpretation))
-    evidence_rows = "".join(evidence_row_html(paper, idx) for idx, paper in enumerate(top_papers, start=1))
+    evidence_rows = "".join(
+        evidence_row_html(paper, idx, aliases, excluded_labels, related_topics)
+        for idx, paper in enumerate(top_papers, start=1)
+    )
     lines = [
         '<section class="dpr-periodic-report dpr-periodic-weekly dpr-periodic-weekly-v2 dpr-periodic-weekly-v3 dpr-periodic-weekly-v4 dpr-periodic-weekly-v5">',
         '<div class="dpr-weekly-hero">',
@@ -2697,6 +2915,8 @@ def build_report_markdown(
     generated_at: str,
     charts: dict[str, Any] | None = None,
     representative_papers: int = DEFAULT_REPRESENTATIVE_PAPERS,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
 ) -> str:
     if window.period == "weekly":
         return build_weekly_report_markdown(
@@ -2707,6 +2927,8 @@ def build_report_markdown(
             interpretation,
             generated_at,
             representative_papers=representative_papers,
+            aliases=aliases,
+            excluded_labels=excluded_labels,
         )
     if window.period == "monthly":
         return build_monthly_report_markdown(
@@ -2717,6 +2939,8 @@ def build_report_markdown(
             interpretation,
             generated_at,
             representative_papers=representative_papers,
+            aliases=aliases,
+            excluded_labels=excluded_labels,
         )
     coverage = metrics.get("coverage") or {}
     period_class = f"dpr-periodic-{window.period}"
@@ -2791,7 +3015,14 @@ def load_existing_interpretation(out_dir: Path, input_hash: str) -> dict[str, An
         return None
     if payload.get("input_hash") == input_hash and isinstance(payload.get("interpretation"), dict):
         interpretation = normalize_interpretation(payload["interpretation"])
-        if normalize_text(interpretation.get("weekly_summary_source")) == "llm":
+        period = normalize_text(payload.get("period"))
+        if period == "monthly":
+            if (
+                normalize_text(interpretation.get("monthly_summary_source")) == "llm"
+                and len(interpretation.get("watchlist") or []) >= MIN_MONTHLY_WATCHLIST_ITEMS
+            ):
+                return interpretation
+        elif normalize_text(interpretation.get("weekly_summary_source")) == "llm":
             return interpretation
     return None
 
@@ -2816,17 +3047,24 @@ def load_report_entries(docs_dir: Path, period: str) -> list[dict[str, Any]]:
             continue
         key = normalize_text(payload.get("key") or meta_path.parent.name)
         metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+        monthly = metrics.get("monthly_v1") if isinstance(metrics.get("monthly_v1"), dict) else {}
+        weekly = metrics.get("weekly_v2") if isinstance(metrics.get("weekly_v2"), dict) else {}
         coverage = metrics.get("coverage") if isinstance(metrics.get("coverage"), dict) else {}
         interpretation = payload.get("interpretation") if isinstance(payload.get("interpretation"), dict) else {}
-        topics = (
-            payload.get("related_topics")
-            or (metrics.get("weekly_v2") or {}).get("related_topics")
-            or payload.get("focus_topics")
-            or (metrics.get("weekly_v2") or {}).get("focus_topics")
-            or metrics.get("topics")
-            or []
-        )
-        summary = normalize_text(payload.get("weekly_summary") or interpretation.get("weekly_summary") or " ".join((interpretation.get("highlights") or [])[:2]))
+        if period == "monthly":
+            topics = payload.get("related_topics") or monthly.get("related_topics") or metrics.get("topics") or []
+            word_cloud = payload.get("word_cloud") or monthly.get("word_cloud") or []
+            comparison = monthly.get("comparison") if isinstance(monthly.get("comparison"), dict) else {}
+            summary = normalize_text(payload.get("monthly_summary") or interpretation.get("monthly_summary") or " ".join((interpretation.get("highlights") or [])[:2]))
+            if comparison.get("has_previous"):
+                change_label = f"新增 {comparison.get('new_count', 0)} / 上升 {comparison.get('rising_count', 0)}"
+            else:
+                change_label = "首月基线"
+        else:
+            topics = payload.get("related_topics") or weekly.get("related_topics") or payload.get("focus_topics") or weekly.get("focus_topics") or metrics.get("topics") or []
+            word_cloud = payload.get("word_cloud") or weekly.get("word_cloud") or []
+            summary = normalize_text(payload.get("weekly_summary") or interpretation.get("weekly_summary") or " ".join((interpretation.get("highlights") or [])[:2]))
+            change_label = ""
         entries.append(
             {
                 "key": key,
@@ -2836,8 +3074,10 @@ def load_report_entries(docs_dir: Path, period: str) -> list[dict[str, Any]]:
                 "end_date": normalize_text(payload.get("end_date") or coverage.get("end_date")),
                 "unique_papers": int(coverage.get("unique_papers") or 0),
                 "topics": [item for item in topics if isinstance(item, dict)][:4],
-                "word_cloud": [item for item in (payload.get("word_cloud") or (metrics.get("weekly_v2") or {}).get("word_cloud") or []) if isinstance(item, dict)][:24],
+                "word_cloud": [item for item in word_cloud if isinstance(item, dict)][:24],
                 "summary": short_text(summary, 160),
+                "topic_breadth": int(monthly.get("topic_breadth") or len(topics) or 0),
+                "change_label": change_label,
             }
         )
     return sorted(entries, key=lambda item: (item.get("start_date") or "", item.get("key") or ""), reverse=True)
@@ -2852,17 +3092,23 @@ def build_periodic_index_markdown(period: str, entries: list[dict[str, Any]]) ->
             for item in entry.get("topics") or []
             if item.get("label")
         )
-        card_body = (
-            mini_word_cloud_html(entry.get("word_cloud") or [])
-            if period == "weekly"
-            else f'<p>{html.escape(entry.get("summary") or "暂无摘要。")}</p><div>{topic_tags or "<span>暂无主题</span>"}</div>'
-        )
-        card_meta = ""
-        if period != "weekly":
-            card_meta = (
+        if period == "weekly":
+            card_body = mini_word_cloud_html(entry.get("word_cloud") or [], "周报词频云")
+        else:
+            card_body = (
+                '<div class="dpr-periodic-index-monthly-meta">'
                 f'<em>{html.escape(entry.get("start_date") or "")} ~ {html.escape(entry.get("end_date") or "")}</em>'
                 f'<b>{entry.get("unique_papers", 0)} 篇去重样本</b>'
+                f'<span>{entry.get("topic_breadth", 0)} 类主题</span>'
+                f'<span>{html.escape(entry.get("change_label") or "月报")}</span>'
+                "</div>"
+                f'{mini_word_cloud_html(entry.get("word_cloud") or [], "月报词频云")}'
+                f'<p class="dpr-periodic-index-summary">{html.escape(entry.get("summary") or "暂无摘要。")}</p>'
+                f'<div class="dpr-periodic-index-topic-tags">{topic_tags or "<span>暂无主题</span>"}</div>'
             )
+        card_meta = ""
+        if period != "weekly":
+            card_meta = ""
         cards.append(
             f'<a class="dpr-periodic-index-card is-{html.escape(period)}" '
             f'href="{html.escape(entry.get("href") or "#", quote=True)}">'
@@ -2936,6 +3182,8 @@ def write_report(
     input_hash: str,
     charts: dict[str, Any] | None = None,
     representative_papers: int = DEFAULT_REPRESENTATIVE_PAPERS,
+    aliases: dict[str, Any] | None = None,
+    excluded_labels: set[str] | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     generated_at = datetime.now(BEIJING_TZ).isoformat(timespec="seconds")
@@ -2948,6 +3196,7 @@ def write_report(
             artifact_paths.append(str(artifact.path.relative_to(ROOT_DIR)))
         except Exception:
             artifact_paths.append(str(artifact.path))
+    related_topics = active_related_topics(metrics, window)
     evidence_index = []
     for paper in papers:
         evidence_index.append(
@@ -2959,7 +3208,7 @@ def write_report(
                 "artifact_path": paper.get("artifact_path"),
                 "score": paper.get("score"),
                 "source": paper.get("source"),
-                "topics": [tag.get("label") for tag in (paper.get("tags") or []) if tag.get("label")],
+                "topics": paper_display_topic_labels(paper, aliases, excluded_labels, related_topics, limit=5),
             }
         )
     weekly_chart_data = metrics.get("weekly_v2") if isinstance(metrics.get("weekly_v2"), dict) else {}
@@ -3012,6 +3261,8 @@ def write_report(
             generated_at,
             charts=charts,
             representative_papers=representative_papers,
+            aliases=aliases,
+            excluded_labels=excluded_labels,
         ),
         encoding="utf-8",
     )
@@ -3065,7 +3316,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     input_hash = compute_input_hash(window, input_mode, artifacts, papers, periodic_cfg, history_hash)
     interpretation = load_existing_interpretation(out_dir, input_hash)
     if interpretation is None:
-        interpretation = try_llm_interpretation(window, metrics, papers) or build_fallback_interpretation(window, metrics, papers)
+        interpretation = (
+            try_llm_interpretation(window, metrics, papers, aliases, excluded_labels)
+            or build_fallback_interpretation(window, metrics, papers)
+        )
     result = write_report(
         docs_dir,
         window,
@@ -3077,6 +3331,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         input_hash,
         charts=charts,
         representative_papers=representative_papers,
+        aliases=aliases,
+        excluded_labels=excluded_labels,
         dry_run=args.dry_run,
     )
     log(f"[OK] periodic report {window.period}:{window.key} papers={len(papers)} artifacts={len(artifacts)}")

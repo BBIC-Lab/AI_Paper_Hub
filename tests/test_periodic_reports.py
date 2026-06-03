@@ -445,6 +445,119 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertNotIn("ai4nd", network_html)
         self.assertNotIn("ai4nd:composite", network_html)
 
+    def test_representative_evidence_uses_filtered_paper_topics(self):
+        window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
+        paper = {
+            "paper_id": "p1",
+            "title": "Retrieval Benchmark",
+            "date": "2026-05-25",
+            "score": 9.0,
+            "source": "arxiv",
+            "href": "#/p1",
+            "tags": [
+                {"kind": "query", "label": "AI4ND"},
+                {"kind": "paper", "label": "ai4nd:composite"},
+                {"kind": "ai4nd", "label": "composite"},
+                {"kind": "paper", "label": "retrieval"},
+                {"kind": "paper", "label": "benchmark"},
+            ],
+            "evidence": "This paper compares retrieval benchmark protocols.",
+        }
+        papers = [paper]
+        excluded = {"ai4nd"}
+        metrics = self.mod.build_metrics(
+            papers,
+            [],
+            window,
+            10,
+            {"raw_records": 1, "duplicates_removed": 0},
+            {},
+            excluded,
+            self.mod.weekly_topic_limits({}),
+        )
+        related_topics = metrics["weekly_v2"]["related_topics"]
+
+        display_topics = self.mod.paper_display_topic_labels(paper, {}, excluded, related_topics)
+        self.assertIn("retrieval", display_topics)
+        self.assertIn("benchmark", display_topics)
+        self.assertNotIn("AI4ND", display_topics)
+        self.assertNotIn("ai4nd:composite", display_topics)
+        self.assertNotIn("composite", display_topics)
+
+        row = self.mod.evidence_row_html(paper, 1, {}, excluded, related_topics)
+        monthly_strip = self.mod.monthly_evidence_strip_html(papers, related_topics, 1, {}, excluded)
+        for rendered in (row, monthly_strip):
+            self.assertIn("retrieval", rendered)
+            self.assertIn("benchmark", rendered)
+            self.assertNotIn("AI4ND", rendered)
+            self.assertNotIn("ai4nd:composite", rendered)
+            self.assertNotIn(">composite<", rendered)
+
+        payload = self.mod.build_llm_interpretation_payload(window, metrics, papers, {}, excluded)
+        evidence_topics = payload["weekly_summary_inputs"]["representative_papers"][0]["topics"]
+        self.assertIn("retrieval", evidence_topics)
+        self.assertIn("benchmark", evidence_topics)
+        self.assertNotIn("AI4ND", evidence_topics)
+        self.assertNotIn("ai4nd:composite", evidence_topics)
+
+        monthly_window = self.mod.resolve_period_window("monthly", "2026-05-01", "2026-05-31")
+        monthly_metrics = self.mod.build_metrics(
+            papers,
+            [],
+            monthly_window,
+            10,
+            {"raw_records": 1, "duplicates_removed": 0},
+            {},
+            excluded,
+            self.mod.monthly_topic_limits({}),
+        )
+        monthly_payload = self.mod.build_llm_interpretation_payload(monthly_window, monthly_metrics, papers, {}, excluded)
+        monthly_evidence_topics = monthly_payload["monthly_summary_inputs"]["representative_papers"][0]["topics"]
+        self.assertIn("retrieval", monthly_evidence_topics)
+        self.assertIn("benchmark", monthly_evidence_topics)
+        self.assertNotIn("AI4ND", monthly_evidence_topics)
+        self.assertNotIn("ai4nd:composite", monthly_evidence_topics)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = self.mod.write_report(
+                Path(tmpdir),
+                window,
+                "artifacts",
+                metrics,
+                papers,
+                [],
+                {"weekly_summary": "summary"},
+                "hash",
+                representative_papers=1,
+                aliases={},
+                excluded_labels=excluded,
+                dry_run=True,
+            )
+        evidence_index_topics = result["payload"]["evidence_index"][0]["topics"]
+        self.assertIn("retrieval", evidence_index_topics)
+        self.assertIn("benchmark", evidence_index_topics)
+        self.assertNotIn("AI4ND", evidence_index_topics)
+        self.assertNotIn("ai4nd:composite", evidence_index_topics)
+
+    def test_monthly_cooccurrence_legend_truncates_long_label_list(self):
+        pairs = [
+            {"source": "agents", "target": f"topic-{idx:02d}", "count": 20 - idx, "status": "stable"}
+            for idx in range(14)
+        ]
+
+        network_html = self.mod.cooccurrence_html(
+            pairs,
+            topic_limit=20,
+            pair_limit=18,
+            title="主题共现图谱",
+            section_extra_class="dpr-monthly-network-card",
+            show_status=True,
+        )
+
+        self.assertEqual(network_html.count("dpr-weekly-chord-table-row"), 10)
+        self.assertIn("dpr-weekly-chord-table-note", network_html)
+        self.assertIn("标签数过多，已截断 4 条。", network_html)
+
     def test_monthly_v1_uses_weekly_visual_language_and_baseline(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -501,19 +614,37 @@ class PeriodicReportsTest(unittest.TestCase):
 
             readme = Path(result["readme"]).read_text(encoding="utf-8")
             meta = json.loads(Path(result["meta"]).read_text(encoding="utf-8"))
+            monthly_index = (docs / "reports" / "monthly" / "README.md").read_text(encoding="utf-8")
 
             self.assertIn("dpr-periodic-monthly-v1", readme)
             self.assertIn("dpr-weekly-hero dpr-monthly-hero", readme)
             self.assertIn("dpr-weekly-bento dpr-monthly-bento", readme)
             self.assertIn("dpr-monthly-change-card", readme)
+            self.assertIn("dpr-monthly-baseline-grid", readme)
+            self.assertIn("首月主题基线", readme)
+            self.assertIn("首月共现线索", readme)
+            self.assertNotIn("暂无上月月报可用于环比", readme)
+            self.assertIn("dpr-monthly-heat-cells", readme)
             self.assertIn("dpr-monthly-word-card", readme)
             self.assertIn("dpr-monthly-topic-board-card", readme)
+            self.assertIn("dpr-monthly-topic-feature-grid", readme)
+            self.assertIn("dpr-monthly-topic-board-row", readme)
             self.assertIn("dpr-monthly-network-card", readme)
             self.assertIn("dpr-monthly-evidence-strip", readme)
             self.assertIn("dpr-monthly-watchlist-card", readme)
+            self.assertIn('<ul class="dpr-monthly-watchlist"><li>', readme)
+            self.assertIn("dpr-monthly-watchlist-source", readme)
+            self.assertIn("模板观察建议，非 LLM 生成", readme)
+            self.assertNotIn("dpr-monthly-watchlist-dash", readme)
             self.assertIn("首月基线", readme)
             self.assertNotIn("dpr-periodic-layout", readme)
             self.assertNotIn("Source Mix", readme)
+            self.assertIn("dpr-periodic-index-card is-monthly", monthly_index)
+            self.assertIn("dpr-periodic-index-mini-cloud", monthly_index)
+            self.assertIn("aria-label=\"月报词频云\"", monthly_index)
+            self.assertIn("dpr-periodic-index-monthly-meta", monthly_index)
+            self.assertIn("篇去重样本", monthly_index)
+            self.assertIn("dpr-periodic-index-summary", monthly_index)
             self.assertIn("monthly_v1", meta)
             self.assertTrue(meta["monthly_summary"])
             self.assertEqual(meta["monthly_summary_source"], "fallback")
@@ -639,6 +770,7 @@ class PeriodicReportsTest(unittest.TestCase):
         papers = [{"paper_id": "p1", "title": "Agent Retrieval", "score": 9.0, "tags": [{"label": "agents"}]}]
 
         payload = self.mod.build_llm_interpretation_payload(window, metrics, papers)
+        prompt_json = json.dumps(payload, ensure_ascii=False)
 
         self.assertIn("monthly_summary_inputs", payload)
         monthly_inputs = payload["monthly_summary_inputs"]
@@ -648,7 +780,54 @@ class PeriodicReportsTest(unittest.TestCase):
         self.assertIn("cooccurrence", monthly_inputs)
         self.assertIn("comparison", monthly_inputs)
         self.assertIn("watchlist", monthly_inputs)
+        self.assertIn("5-10 条下月观察建议", prompt_json)
+        self.assertIn("圆点列表展示", prompt_json)
         self.assertNotIn("sources", monthly_inputs)
+
+    def test_monthly_llm_cache_requires_monthly_source_and_watchlist(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir)
+            meta_path = out_dir / "report.meta.json"
+            meta_path.write_text(
+                json.dumps(
+                    {
+                        "period": "monthly",
+                        "input_hash": "hash",
+                        "interpretation": {
+                            "monthly_summary": "LLM 月报小结",
+                            "monthly_summary_source": "llm",
+                            "watchlist": [f"- 观察主题 {idx}" for idx in range(1, 6)],
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            cached = self.mod.load_existing_interpretation(out_dir, "hash")
+
+            self.assertIsNotNone(cached)
+            self.assertEqual(cached["monthly_summary_source"], "llm")
+            self.assertEqual(len(cached["watchlist"]), 5)
+            self.assertEqual(cached["watchlist"][0], "观察主题 1")
+
+            meta_path.write_text(
+                json.dumps(
+                    {
+                        "period": "monthly",
+                        "input_hash": "hash",
+                        "interpretation": {
+                            "monthly_summary": "LLM 月报小结",
+                            "monthly_summary_source": "llm",
+                            "watchlist": ["观察主题"],
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertIsNone(self.mod.load_existing_interpretation(out_dir, "hash"))
 
     def test_llm_interpretation_retries_reasoning_only_response_and_marks_source(self):
         window = self.mod.resolve_period_window("weekly", "2026-05-25", "2026-05-31")
