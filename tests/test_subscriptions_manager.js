@@ -19,6 +19,7 @@ const {
   resolveResearchDirections,
   normalizePeriodicReports,
   resolvePeriodicReports,
+  clearUnsavedRunMessage,
 } = global.window.SubscriptionsManager.__test;
 
 function buildBaseConfig() {
@@ -401,6 +402,24 @@ function testQuickRunCssKeepsButtonsAligned() {
   assert.ok(css.includes('margin: 0;'));
 }
 
+function testClearUnsavedRunMessageOnlyClearsStaleDirtyWarnings() {
+  const stale = {
+    textContent: '检测到未保存修改，请先保存后再发起快速抓取。',
+    style: { color: '#c00' },
+  };
+  const active = {
+    textContent: '已发起默认日报任务。',
+    style: { color: '#080' },
+  };
+
+  assert.equal(clearUnsavedRunMessage(stale), true);
+  assert.equal(stale.textContent, '');
+  assert.equal(stale.style.color, '#666');
+  assert.equal(clearUnsavedRunMessage(active), false);
+  assert.equal(active.textContent, '已发起默认日报任务。');
+  assert.equal(active.style.color, '#080');
+}
+
 testNormalizeSubscriptionsAddsBiorxivBackend();
 testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
@@ -421,5 +440,6 @@ testNormalizePeriodicReportsPreservesUserEdits();
 testResolvePeriodicReportsFallsBackFromConfig();
 testPeriodicSettingsUiRemovesDeprecatedControls();
 testQuickRunCssKeepsButtonsAligned();
+testClearUnsavedRunMessageOnlyClearsStaleDirtyWarnings();
 
 console.log('subscriptions manager tests passed');

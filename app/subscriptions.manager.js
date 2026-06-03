@@ -670,6 +670,15 @@ window.SubscriptionsManager = (function () {
     }
   };
 
+  const clearUnsavedRunMessage = (el) => {
+    if (!el) return false;
+    const text = normalizeText(el.textContent);
+    if (!text.startsWith('检测到未保存修改')) return false;
+    el.textContent = '';
+    el.style.color = '#666';
+    return true;
+  };
+
   const activateSettingsPage = (pageKey) => {
     const key = normalizeText(pageKey) || 'search';
     activeSettingsPage = key;
@@ -855,6 +864,10 @@ window.SubscriptionsManager = (function () {
     if (blocked && periodicReportMsgEl) {
       periodicReportMsgEl.textContent = '检测到未保存修改，请先保存后再发起周期报告。';
       periodicReportMsgEl.style.color = '#c00';
+    }
+    if (!blocked) {
+      clearUnsavedRunMessage(quickRunMsgEl);
+      clearUnsavedRunMessage(periodicReportMsgEl);
     }
     updateSettingsChrome();
     if (options.renderSnapshot !== false) {
@@ -2676,6 +2689,7 @@ window.SubscriptionsManager = (function () {
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
       normalizePeriodicReports: (value) => normalizePeriodicReports(cloneDeep(value || {})),
       resolvePeriodicReports: (config) => resolvePeriodicReports(cloneDeep(config || {})),
+      clearUnsavedRunMessage: (el) => clearUnsavedRunMessage(el),
     },
   };
 })();
