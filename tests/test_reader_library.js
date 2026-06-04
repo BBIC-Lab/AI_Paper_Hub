@@ -15,6 +15,10 @@ require('../app/reader-library.js');
 const library = window.DPRReaderLibrary.__test;
 
 assert.equal(library.FILTERS.some((item) => item.key === 'read' || item.label === '已读'), false);
+assert.deepEqual(
+  library.FILTERS.slice(0, 3).map((item) => item.key),
+  ['all', 'source:local-pdf', 'favorite'],
+);
 assert.equal(library.isExcludedRouteId('tutorial/README'), true);
 assert.equal(library.isExcludedRouteId('tutorial/quick-start'), true);
 assert.equal(library.isExcludedRouteId('tutorial/workflow'), true);
@@ -48,7 +52,10 @@ const fallbackTopics = library.topicTagsForPaper({
   tags: [{ kind: 'query', label: 'ai4nd' }],
 });
 
-assert.deepEqual(fallbackTopics, []);
+assert.deepEqual(
+  fallbackTopics.map((tag) => tag.label),
+  ['cross-modal alignment', 'video semantic priors', 'EEG motor decoding'],
+);
 assert.equal(fallbackTopics.some((tag) => tag.label.toLowerCase() === 'ai4nd'), false);
 
 const generatedTopics = library.topicTagsForPaper({
@@ -94,6 +101,7 @@ const rendered = library.renderPaper(
     title_zh: '论文库卡片标题',
     date: '2026-06-04',
     score: '9.0',
+    reader_section: 'deep',
     evidence: 'matches the reader profile',
     topic_tags: ['planning', 'agents'],
     tags: [
@@ -109,9 +117,29 @@ assert.match(rendered, /class="dpr-reader-card-title"/);
 assert.match(rendered, /class="dpr-reader-card-index">08</);
 assert.match(rendered, /2026-06-04/);
 assert.match(rendered, /9\.0\/10/);
+assert.match(rendered, />精读</);
 assert.match(rendered, /planning/);
 assert.match(rendered, /agents/);
 assert.doesNotMatch(rendered, />retrieval</);
 assert.doesNotMatch(rendered, />打开</);
+
+const renderedLocal = library.renderPaper(
+  {
+    paperId: 'local-pdf/20260527/paper-a',
+    route: '#/local-pdf/20260527/paper-a',
+    title: 'Local PDF Paper',
+    date: '2026-05-27',
+    source: 'local-pdf',
+    score: '8.0',
+    reader_section: 'deep',
+    evidence: '本地上传 PDF，使用后端精读流程生成。',
+    tags: [{ kind: 'paper', label: '本地PDF' }],
+  },
+  1,
+);
+
+assert.match(renderedLocal, />本地PDF</);
+assert.doesNotMatch(renderedLocal, />精读</);
+assert.doesNotMatch(renderedLocal, />本地上传 PDF</);
 
 console.log('reader library tests passed');

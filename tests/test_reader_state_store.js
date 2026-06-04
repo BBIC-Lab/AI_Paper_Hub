@@ -76,11 +76,35 @@ async function run() {
         paperId: '202606/04/catalog-new',
         title: 'Newer Catalog Paper',
         date: '2026-06-04',
+        reader_section: 'deep',
         topic_tags: ['planning', 'memory'],
         tags: [
           { kind: 'paper', label: 'library' },
           { kind: 'query', label: 'retrieval' },
         ],
+      },
+      {
+        paperId: '202606/03/local-source',
+        title: 'Local Source Paper',
+        date: '2026-06-03',
+        source: 'local-pdf',
+      },
+      {
+        paperId: 'local-pdf/20260604/local-route',
+        title: 'Local Route Paper',
+        date: '2026-06-04',
+      },
+      {
+        paperId: '202606/02/local-tag',
+        title: 'Local Tag Paper',
+        date: '2026-06-02',
+        tags: [{ kind: 'paper', label: '本地PDF' }],
+      },
+      {
+        paperId: '202606/04/not-local',
+        title: 'Regular Local Topic Paper',
+        date: '2026-06-04',
+        tags: [{ kind: 'paper', label: 'local' }],
       },
       {
         paperId: 'tutorial/workflow',
@@ -98,6 +122,7 @@ async function run() {
   const catalogState = store.getState();
   assert.equal(catalogState.dirty, false);
   assert.equal(catalogState.papers['202606/04/catalog-new'].read, false);
+  assert.equal(catalogState.papers['202606/04/catalog-new'].reader_section, 'deep');
   assert.deepEqual(
     catalogState.papers['202606/04/catalog-new'].topic_tags.map((tag) => tag.label),
     ['planning', 'memory'],
@@ -112,6 +137,15 @@ async function run() {
     store.listPapers({ filter: 'tag:planning', sort: 'date' })[0].paperId,
     '202606/04/catalog-new',
   );
+  assert.equal(
+    store.listPapers({ query: '精读' }).some((paper) => paper.paperId === '202606/04/catalog-new'),
+    true,
+  );
+  const localIds = new Set(store.listPapers({ filter: 'source:local-pdf' }).map((paper) => paper.paperId));
+  assert.equal(localIds.has('202606/03/local-source'), true);
+  assert.equal(localIds.has('local-pdf/20260604/local-route'), true);
+  assert.equal(localIds.has('202606/02/local-tag'), true);
+  assert.equal(localIds.has('202606/04/not-local'), false);
 
   store.setMarker(
     '202605/25/paper-c',

@@ -1521,7 +1521,15 @@ def extract_reader_topic_tags(paper: Dict[str, Any], limit: int = 5) -> List[str
             if len(out) >= limit:
                 return out
 
-    for field in ("llm_evidence_en", "evidence_en"):
+    for field in (
+        "llm_evidence_en",
+        "evidence_en",
+        "llm_evidence_cn",
+        "evidence_cn",
+        "llm_evidence",
+        "canonical_evidence",
+        "evidence",
+    ):
         for kind, candidate in _iter_reader_topic_candidates(paper.get(field), "paper"):
             _add_reader_topic(out, seen, candidate, kind, limit)
             if len(out) >= limit:
@@ -2119,6 +2127,7 @@ def update_sidebar(
         route_href: str,
         evidence: str = "",
         topic_tags: List[str] | None = None,
+        reader_section: str = "",
     ) -> str:
         score_text = "-"
         clean_tags: List[Dict[str, str]] = []
@@ -2156,6 +2165,9 @@ def update_sidebar(
                 break
         if clean_topic_tags:
             payload["topic_tags"] = clean_topic_tags
+        safe_reader_section = str(reader_section or "").strip().lower()
+        if safe_reader_section in {"deep", "quick"}:
+            payload["reader_section"] = safe_reader_section
         safe_title_zh = str(title_zh or "").strip()
         if safe_title_zh:
             payload["title_zh"] = safe_title_zh
@@ -2327,7 +2339,16 @@ def update_sidebar(
             href = f"#/{paper_id}"
             evidence = paper_evidence_by_id.get(str(paper_id).strip(), "")
             topic_tags = (paper_topic_tags_by_id or {}).get(str(paper_id).strip(), [])
-            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence, topic_tags)
+            payload_json = build_sidebar_item_payload(
+                paper_id,
+                title,
+                title_zh,
+                tags,
+                href,
+                evidence,
+                topic_tags,
+                "deep",
+            )
             block.append(
                 "      * "
                 f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" data-sidebar-item="{payload_json}">{safe_title}</a>\n'
@@ -2340,7 +2361,16 @@ def update_sidebar(
             href = f"#/{paper_id}"
             evidence = paper_evidence_by_id.get(str(paper_id).strip(), "")
             topic_tags = (paper_topic_tags_by_id or {}).get(str(paper_id).strip(), [])
-            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence, topic_tags)
+            payload_json = build_sidebar_item_payload(
+                paper_id,
+                title,
+                title_zh,
+                tags,
+                href,
+                evidence,
+                topic_tags,
+                "quick",
+            )
             block.append(
                 "      * "
                 f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" data-sidebar-item="{payload_json}">{safe_title}</a>\n'

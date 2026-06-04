@@ -89,6 +89,7 @@ class LocalPdfBackendScoringTest(unittest.TestCase):
             payload = json.loads(html.unescape(encoded))
             self.assertEqual(payload["score"], "8.5 订阅评分")
             self.assertEqual(payload["evidence"], "匹配当前订阅方向")
+            self.assertNotIn("reader_section", payload)
 
 
     def test_batch_manifest_loads_ordered_items_under_upload_root(self):

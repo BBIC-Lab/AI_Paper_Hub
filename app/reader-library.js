@@ -3,6 +3,7 @@ window.DPRReaderLibrary = (function () {
   const PAGE_SIZE = 10;
   const FILTERS = [
     { key: 'all', label: '全部' },
+    { key: 'source:local-pdf', label: '本地' },
     { key: 'favorite', label: '收藏' },
     { key: 'marker:good', label: 'Core' },
     { key: 'marker:blue', label: 'Novel' },
@@ -95,6 +96,20 @@ window.DPRReaderLibrary = (function () {
     return inferReaderPaperDate(paperId);
   };
 
+  const normalizeReaderSection = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    if (['deep', 'deep_dive', 'deep-dive', '精读', '精读区'].includes(text)) return 'deep';
+    if (['quick', 'quick_skim', 'quick-skim', 'skim', '速读', '速读区'].includes(text)) return 'quick';
+    return '';
+  };
+
+  const readerSectionLabel = (value) => {
+    const section = normalizeReaderSection(value);
+    if (section === 'deep') return '精读';
+    if (section === 'quick') return '速读';
+    return '';
+  };
+
   const parseSidebarPayload = (anchor) => {
     const raw = anchor && anchor.getAttribute ? anchor.getAttribute('data-sidebar-item') || '' : '';
     if (!raw) return {};
@@ -166,6 +181,18 @@ window.DPRReaderLibrary = (function () {
       })
       .filter(Boolean);
 
+  const paperTagLabels = (paper) =>
+    [...(paper && paper.topic_tags ? paper.topic_tags : []), ...(paper && paper.tags ? paper.tags : [])]
+      .map((tag) => normalizeText(tag && tag.label))
+      .filter(Boolean);
+
+  const isLocalPdfPaper = (paper) => {
+    const id = normalizePaperId(paper && paper.paperId).toLowerCase();
+    if (id.startsWith('local-pdf/')) return true;
+    if (normalizeText(paper && paper.source).toLowerCase() === 'local-pdf') return true;
+    return paperTagLabels(paper).some((label) => label.toLowerCase() === '本地pdf');
+  };
+
   const tagsFromSidebarDom = (anchor) => {
     if (!anchor || !anchor.querySelectorAll) return [];
     return Array.from(anchor.querySelectorAll('.dpr-sidebar-tag'))
@@ -214,6 +241,7 @@ window.DPRReaderLibrary = (function () {
       pdf: normalizeText(payload.pdf || payload.pdf_url),
       score: normalizeText(payload.score || scoreFromSidebarDom(anchor)),
       source: normalizeText(payload.source || (isLocalPdf ? 'local-pdf' : '')),
+      reader_section: normalizeReaderSection(payload.reader_section || payload.readerSection),
       evidence: normalizeText(payload.evidence),
       topic_tags: normalizeTopicTags(payload.topic_tags || payload.topicTags),
       tags: normalizeTags(payload.tags && payload.tags.length ? payload.tags : tagsFromSidebarDom(anchor)),
@@ -242,6 +270,7 @@ window.DPRReaderLibrary = (function () {
           paper.title,
           paper.title_zh,
           paper.score,
+          paper.reader_section,
           paper.evidence,
           (paper.topic_tags || []).map((tag) => `${tag.kind}:${tag.label}`).join('|'),
           (paper.tags || []).map((tag) => `${tag.kind}:${tag.label}`).join('|'),
@@ -290,6 +319,23 @@ window.DPRReaderLibrary = (function () {
     };
     const topicTags = normalizeTopicTags(paper.topic_tags).map(addSeen).filter(Boolean).slice(0, 5);
     if (topicTags.length >= 5) return topicTags;
+    const evidenceTags = isLocalPdfPaper(paper)
+      ? []
+      : normalizeTopicTags(
+          [
+            paper.evidence,
+            paper.canonical_evidence,
+            paper.llm_evidence,
+            paper.llm_evidence_en,
+            paper.llm_evidence_cn,
+          ]
+            .filter(Boolean)
+            .join(', '),
+        )
+          .map(addSeen)
+          .filter(Boolean)
+          .slice(0, 5 - topicTags.length);
+    if (topicTags.length + evidenceTags.length >= 5) return topicTags.concat(evidenceTags);
     const explicitTags = normalizeTags(paper.tags)
       .filter((tag) => {
         const kind = normalizeText(tag.kind).toLowerCase();
@@ -302,8 +348,8 @@ window.DPRReaderLibrary = (function () {
         seen.add(key);
         return true;
       })
-      .slice(0, 5 - topicTags.length);
-    return topicTags.concat(explicitTags);
+      .slice(0, 5 - topicTags.length - evidenceTags.length);
+    return topicTags.concat(evidenceTags, explicitTags);
   };
 
   const renderTags = (paper) => {
@@ -314,6 +360,13 @@ window.DPRReaderLibrary = (function () {
     const score = formatScore(paper.score);
     if (score) {
       tags.push(`<span class="dpr-reader-card-tag is-score">${escapeHtml(score)}</span>`);
+    }
+    const sectionLabel = isLocalPdfPaper(paper) ? '' : readerSectionLabel(paper.reader_section);
+    if (sectionLabel) {
+      const section = normalizeReaderSection(paper.reader_section);
+      tags.push(
+        `<span class="dpr-reader-card-tag is-section is-${escapeHtml(section)}">${escapeHtml(sectionLabel)}</span>`,
+      );
     }
     topicTagsForPaper(paper).forEach((tag) => {
       const kind = cssToken(tag.kind);

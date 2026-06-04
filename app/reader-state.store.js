@@ -36,6 +36,18 @@ window.DPRReaderStateStore = (function () {
   const normalizeText = (value) => String(value || '').trim();
   const isColorMarkerKey = (value) => COLOR_MARKER_KEYS.includes(value);
   const normalizeReaction = (value) => (REACTION_KEYS.includes(value) ? value : '');
+  const normalizeReaderSection = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    if (['deep', 'deep_dive', 'deep-dive', '精读', '精读区'].includes(text)) return 'deep';
+    if (['quick', 'quick_skim', 'quick-skim', 'skim', '速读', '速读区'].includes(text)) return 'quick';
+    return '';
+  };
+  const readerSectionLabel = (value) => {
+    const section = normalizeReaderSection(value);
+    if (section === 'deep') return '精读';
+    if (section === 'quick') return '速读';
+    return '';
+  };
   const normalizeRepoPath = (value) =>
     normalizeText(value).replace(/^\/+/, '').replace(/\/{2,}/g, '/') || DEFAULT_REPO_PATH;
 
@@ -173,6 +185,7 @@ window.DPRReaderStateStore = (function () {
       date: normalizeDate(source.date || source.published || source.publication_date, paperId),
       source: normalizeText(source.source),
       selection_source: normalizeText(source.selection_source),
+      reader_section: normalizeReaderSection(source.reader_section || source.readerSection),
       route: routeForPaperId(paperId, source.route || source.href),
       link: normalizeText(source.link || source.url),
       pdf: normalizeText(source.pdf || source.pdf_url),
@@ -550,6 +563,8 @@ window.DPRReaderStateStore = (function () {
     if (!key || key === 'all') return true;
     if (key === 'read') return !!paper.read;
     if (key === 'favorite' || key === 'dislike') return paper.reaction === key;
+    if (key === 'source:local-pdf') return isLocalPdfPaper(paper);
+    if (key.startsWith('reader:')) return normalizeReaderSection(paper.reader_section) === key.slice(7);
     if (key.startsWith('marker:')) return paper.marker === key.slice(7);
     if (key.startsWith('tag:')) {
       const needle = key.slice(4);
@@ -566,6 +581,18 @@ window.DPRReaderStateStore = (function () {
     );
   };
 
+  const paperTagLabels = (paper) =>
+    [...(paper && paper.topic_tags ? paper.topic_tags : []), ...(paper && paper.tags ? paper.tags : [])]
+      .map((item) => normalizeText(item && item.label))
+      .filter(Boolean);
+
+  const isLocalPdfPaper = (paper) => {
+    const id = normalizePaperId(paper && paper.paperId).toLowerCase();
+    if (id.startsWith('local-pdf/')) return true;
+    if (normalizeText(paper && paper.source).toLowerCase() === 'local-pdf') return true;
+    return paperTagLabels(paper).some((label) => label.toLowerCase() === '本地pdf');
+  };
+
   const paperMatchesQuery = (paper, query) => {
     const needle = normalizeText(query).toLowerCase();
     if (!needle) return true;
@@ -573,6 +600,8 @@ window.DPRReaderStateStore = (function () {
       paper.title,
       paper.title_zh,
       paper.source,
+      paper.reader_section,
+      readerSectionLabel(paper.reader_section),
       paper.evidence,
       paper.score,
       ...(paper.topic_tags || []).map((item) => item.label),

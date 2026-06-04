@@ -12536,6 +12536,14 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   font-weight: 700;
 }
 
+.markdown-section .dpr-reader-tabs button[data-reader-filter="source:local-pdf"] {
+  --dpr-reader-filter-color: #526274;
+  --dpr-reader-filter-border: rgba(82, 98, 116, 0.34);
+  --dpr-reader-filter-active-color: #334155;
+  --dpr-reader-filter-active-border: rgba(82, 98, 116, 0.48);
+  --dpr-reader-filter-active-bg: rgba(148, 163, 184, 0.26);
+}
+
 .markdown-section .dpr-reader-tabs button[data-reader-filter="favorite"] {
   --dpr-reader-filter-color: #b45309;
   --dpr-reader-filter-border: rgba(217, 119, 6, 0.34);
@@ -12721,6 +12729,22 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   background: rgba(146, 64, 14, 0.06);
   color: #7c3f0f;
   font-weight: 700;
+}
+
+.markdown-section .dpr-reader-card-tag.is-section {
+  font-weight: 700;
+}
+
+.markdown-section .dpr-reader-card-tag.is-section.is-deep {
+  border-color: rgba(15, 118, 110, 0.18);
+  background: rgba(15, 118, 110, 0.07);
+  color: #0f766e;
+}
+
+.markdown-section .dpr-reader-card-tag.is-section.is-quick {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.07);
+  color: #1d4ed8;
 }
 
 .markdown-section .dpr-reader-card-evidence {

@@ -176,6 +176,10 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         )
         self.assertNotIn("ai4nd", " ".join(topics).lower())
         self.assertFalse(any("使用偏信息" in topic for topic in topics))
+        self.assertEqual(
+            self.mod.extract_reader_topic_tags({"canonical_evidence": "symbolic regression, equation discovery"}),
+            ["symbolic regression", "equation discovery"],
+        )
 
     def test_update_sidebar_payload_includes_short_topic_tags(self):
         with tempfile.TemporaryDirectory() as d:
@@ -193,23 +197,40 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                         [("score", "9.0"), ("query", "ai4nd")],
                     )
                 ],
-                [],
-                {"202605/22/test-paper": "使用偏信息分解分析多模态语言模型中的模态交互"},
+                [
+                    (
+                        "202605/22/quick-paper",
+                        "Quick Paper",
+                        "速读论文",
+                        [("score", "7.0"), ("paper", "bridge")],
+                    )
+                ],
+                {
+                    "202605/22/test-paper": "使用偏信息分解分析多模态语言模型中的模态交互",
+                    "202605/22/quick-paper": "methodological bridge",
+                },
                 "2026-05-22",
                 paper_topic_tags_by_id={
                     "202605/22/test-paper": [
                         "持续学习",
                         "域泛化",
                         "使用偏信息分解分析多模态语言模型中的模态交互",
-                    ]
+                    ],
+                    "202605/22/quick-paper": ["methodological bridge"],
                 },
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
-            encoded = content.split('data-sidebar-item="', 1)[1].split('"', 1)[0]
-            payload = json.loads(html.unescape(encoded))
+            payloads = [
+                json.loads(html.unescape(chunk.split('"', 1)[0]))
+                for chunk in content.split('data-sidebar-item="')[1:]
+            ]
+            payload_by_title = {payload["title"]: payload for payload in payloads}
+            payload = payload_by_title["Test Paper"]
             self.assertEqual(payload["topic_tags"], ["持续学习", "域泛化"])
+            self.assertEqual(payload["reader_section"], "deep")
             self.assertEqual(payload["tags"], [{"kind": "query", "label": "ai4nd"}])
+            self.assertEqual(payload_by_title["Quick Paper"]["reader_section"], "quick")
 
     def test_build_markdown_content_writes_figures_json_front_matter(self):
         paper = {
