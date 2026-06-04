@@ -12624,6 +12624,10 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 
 .markdown-section .dpr-reader-card {
   position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
   border: 1px solid rgba(18, 62, 90, 0.12);
   border-left: 4px solid rgba(18, 62, 90, 0.18);
   border-radius: 18px;
@@ -12642,6 +12646,20 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
 .markdown-section .dpr-reader-card.marker-blue { border-left-color: #1890ff; }
 .markdown-section .dpr-reader-card.marker-orange { border-left-color: #8a63d2; }
 .markdown-section .dpr-reader-card.marker-bad { border-left-color: #f5222d; }
+
+.markdown-section .dpr-reader-card-index {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--dpr-quiet-surface-soft, rgba(18, 62, 90, 0.06));
+  color: var(--dpr-heading-color, #123e5a);
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1;
+}
 
 .markdown-section .dpr-reader-card-title,
 .markdown-section .dpr-reader-card-title:link,
@@ -12767,7 +12785,16 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   }
 
   .markdown-section .dpr-reader-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 11px;
     padding: 13px 14px;
+  }
+
+  .markdown-section .dpr-reader-card-index {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 0.88rem;
   }
 
   .markdown-section .dpr-reader-card-evidence {

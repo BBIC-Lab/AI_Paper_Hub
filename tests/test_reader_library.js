@@ -26,6 +26,7 @@ const topics = library.topicTagsForPaper({
     { kind: 'search', label: 'agent search' },
     { kind: 'paper', label: 'benchmark' },
     { kind: 'paper', label: 'benchmark' },
+    { kind: 'keyword', label: 'memory' },
     { kind: 'other', label: 'evaluation' },
     { kind: 'paper', label: 'ai4nd:composite' },
   ],
@@ -33,26 +34,32 @@ const topics = library.topicTagsForPaper({
 
 assert.deepEqual(
   topics.map((tag) => tag.label),
-  ['benchmark', 'evaluation'],
+  ['benchmark', 'memory', 'evaluation'],
 );
 
-const rendered = library.renderPaper({
-  paperId: '202606/04/paper-a',
-  route: '#/202606/04/paper-a',
-  title: 'Library Card Title',
-  title_zh: '论文库卡片标题',
-  date: '2026-06-04',
-  score: '9.0',
-  evidence: 'matches the reader profile',
-  tags: [
-    { kind: 'query', label: 'retrieval' },
-    { kind: 'paper', label: 'agents' },
-  ],
-});
+const rendered = library.renderPaper(
+  {
+    paperId: '202606/04/paper-a',
+    route: '#/202606/04/paper-a',
+    title: 'Library Card Title',
+    title_zh: '论文库卡片标题',
+    date: '2026-06-04',
+    score: '9.0',
+    evidence: 'matches the reader profile',
+    tags: [
+      { kind: 'query', label: 'retrieval' },
+      { kind: 'keyword', label: 'planning' },
+      { kind: 'paper', label: 'agents' },
+    ],
+  },
+  7,
+);
 
 assert.match(rendered, /class="dpr-reader-card-title"/);
+assert.match(rendered, /class="dpr-reader-card-index">08</);
 assert.match(rendered, /2026-06-04/);
 assert.match(rendered, /9\.0\/10/);
+assert.match(rendered, /planning/);
 assert.match(rendered, /agents/);
 assert.doesNotMatch(rendered, />retrieval</);
 assert.doesNotMatch(rendered, />打开</);

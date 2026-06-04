@@ -237,7 +237,7 @@ window.DPRReaderLibrary = (function () {
 
   const topicTagsForPaper = (paper) => {
     const seen = new Set();
-    const blockedKinds = new Set(['query', 'keyword', 'score', 'reader', 'search']);
+    const blockedKinds = new Set(['query', 'score', 'reader', 'search']);
     return normalizeTags(paper.tags)
       .filter((tag) => {
         const kind = normalizeText(tag.kind).toLowerCase();
@@ -271,14 +271,16 @@ window.DPRReaderLibrary = (function () {
     return tags.join('');
   };
 
-  const renderPaper = (paper) => {
+  const renderPaper = (paper, index = 0) => {
     const route = paper.route || routeForPaperId(paper.paperId);
     const title = paper.title || paper.paperId || 'Untitled paper';
     const titleZh = normalizeText(paper.title_zh);
     const evidence = normalizeText(paper.evidence);
     const tagsHtml = renderTags(paper);
+    const indexText = String((Number.parseInt(index, 10) || 0) + 1).padStart(2, '0');
     return `
       <article class="dpr-reader-card${markerClass(paper.marker)}">
+        <div class="dpr-reader-card-index">${escapeHtml(indexText)}</div>
         <div class="dpr-reader-card-main">
           <a class="dpr-reader-card-title" href="${escapeHtml(route)}">${escapeHtml(title)}</a>
           ${titleZh ? `<div class="dpr-reader-card-title-zh">${escapeHtml(titleZh)}</div>` : ''}
@@ -365,7 +367,7 @@ window.DPRReaderLibrary = (function () {
         </div>
         <div class="dpr-reader-count">当前论文数 ${currentCount} / 总论文数 ${completeItems.length}</div>
         <div class="dpr-reader-list">
-          ${pageItems.length ? pageItems.map(renderPaper).join('') : '<div class="dpr-reader-empty">当前视图暂无论文。</div>'}
+          ${pageItems.length ? pageItems.map((paper, index) => renderPaper(paper, start + index)).join('') : '<div class="dpr-reader-empty">当前视图暂无论文。</div>'}
         </div>
         ${renderPagination(totalPages)}
       </section>
