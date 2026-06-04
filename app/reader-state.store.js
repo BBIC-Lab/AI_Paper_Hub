@@ -57,7 +57,11 @@ window.DPRReaderStateStore = (function () {
   };
 
   const normalizeTags = (tags) =>
-    (Array.isArray(tags) ? tags : [])
+    (Array.isArray(tags)
+      ? tags
+      : typeof tags === 'string'
+        ? tags.split(/[,\u3001]/)
+        : [])
       .map((item) => {
         if (typeof item === 'string') {
           const text = normalizeText(item);
@@ -80,6 +84,25 @@ window.DPRReaderStateStore = (function () {
   const normalizePaperId = (paperId) =>
     normalizeText(paperId).replace(/^#\//, '').replace(/\.md$/i, '').replace(/\/$/, '');
 
+  const inferPaperDate = (paperId) => {
+    const id = normalizePaperId(paperId);
+    let m = id.match(/^(\d{6})\/(\d{2})(?:\/|$)/);
+    if (m) return `${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[2]}`;
+    m = id.match(/^local-pdf\/(\d{8})(?:\/|$)/i) || id.match(/^(\d{8})-\d{8}(?:\/|$)/);
+    if (!m) return '';
+    const raw = m[1];
+    return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+  };
+
+  const normalizeDate = (value, paperId) => {
+    const text = normalizeText(value);
+    const compact = text.match(/(\d{4})(\d{2})(\d{2})/);
+    if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
+    const iso = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    return inferPaperDate(paperId);
+  };
+
   const routeForPaperId = (paperId, route) => {
     const cleanRoute = normalizeText(route);
     if (cleanRoute) return cleanRoute.startsWith('#/') ? cleanRoute : `#/${cleanRoute.replace(/^\/+/, '')}`;
@@ -98,7 +121,7 @@ window.DPRReaderStateStore = (function () {
       paperId,
       title: normalizeText(source.title || source.title_en),
       title_zh: normalizeText(source.title_zh || source.titleZh),
-      date: normalizeText(source.date),
+      date: normalizeDate(source.date || source.published || source.publication_date, paperId),
       source: normalizeText(source.source),
       selection_source: normalizeText(source.selection_source),
       route: routeForPaperId(paperId, source.route || source.href),
@@ -337,6 +360,42 @@ window.DPRReaderStateStore = (function () {
     state.papers[id] = merged;
     if (options.dirty) {
       state.updatedAt = options.updatedAt || nowIso();
+      state.dirty = true;
+    }
+    saveLocalState(state);
+    if (options.dirty && options.sync !== false) scheduleSync();
+    return getState();
+  };
+
+  const recordsAreEqual = (left, right) =>
+    JSON.stringify(normalizePaperRecord(left || {}, left && left.paperId)) ===
+    JSON.stringify(normalizePaperRecord(right || {}, right && right.paperId));
+
+  const upsertPaperCatalog = (papers = [], options = {}) => {
+    const rows = Array.isArray(papers) ? papers : [];
+    if (!rows.length) return getState();
+    const state = ensureState();
+    const updatedAt = options.updatedAt || nowIso();
+    let changed = false;
+    rows.forEach((meta) => {
+      const source = isPlainObject(meta) ? meta : {};
+      const id = normalizePaperId(source.paperId || source.paper_id);
+      if (!id) return;
+      const prev = state.papers[id] || normalizePaperRecord({ paperId: id });
+      const merged = normalizePaperRecord(
+        Object.assign({}, prev, source, {
+          paperId: id,
+          updatedAt: options.dirty ? updatedAt : (prev && prev.updatedAt) || updatedAt,
+        }),
+        id,
+      );
+      if (!merged || recordsAreEqual(prev, merged)) return;
+      state.papers[id] = merged;
+      changed = true;
+    });
+    if (!changed) return getState();
+    if (options.dirty) {
+      state.updatedAt = updatedAt;
       state.dirty = true;
     }
     saveLocalState(state);
@@ -722,6 +781,7 @@ window.DPRReaderStateStore = (function () {
     setRead,
     subscribe,
     syncNow,
+    upsertPaperCatalog,
     upsertPaperMeta,
     __test: {
       base64ToBytes,

@@ -64,6 +64,34 @@ async function run() {
   assert.equal(migrated.papers['202605/24/paper-a'].reaction, 'favorite');
   assert.equal(store.getMarkerLabels().good, 'MustRead');
 
+  store.upsertPaperCatalog(
+    [
+      {
+        paperId: '202605/20/catalog-old',
+        title: 'Older Catalog Paper',
+        date: '2026-05-20',
+        tags: [{ kind: 'paper', label: 'library' }],
+      },
+      {
+        paperId: '202606/04/catalog-new',
+        title: 'Newer Catalog Paper',
+        date: '2026-06-04',
+        tags: [
+          { kind: 'paper', label: 'library' },
+          { kind: 'query', label: 'retrieval' },
+        ],
+      },
+    ],
+    { dirty: false },
+  );
+  const catalogState = store.getState();
+  assert.equal(catalogState.dirty, false);
+  assert.equal(catalogState.papers['202606/04/catalog-new'].read, false);
+  assert.equal(
+    store.listPapers({ filter: 'tag:library', sort: 'date' })[0].paperId,
+    '202606/04/catalog-new',
+  );
+
   store.setMarker(
     '202605/25/paper-c',
     'blue',
