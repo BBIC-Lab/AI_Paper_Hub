@@ -13,6 +13,12 @@ window.SubscriptionsManager = (function () {
   const DEFAULT_CARRYOVER_WINDOW_DAYS = 7;
   const LONG_WINDOW_WARNING_THRESHOLD_DAYS = 7;
   const LONG_WINDOW_WARNING_TEXT = '窗口较长，可能增加旧论文反复进入候选池的概率，提高token消耗。';
+  const DEFAULT_DAILY_REPORTS = {
+    enabled: true,
+  };
+  const DAILY_AUTO_SCHEDULE_LABEL = '每周一至周五 北京时间 02:30';
+  const DAILY_AUTO_DEFAULT_MESSAGE = '仅影响 GitHub Actions 定时 schedule；“快速使用”的手动抓取仍可运行。';
+  const DAILY_AUTO_DIRTY_MESSAGE = '检测到未保存修改，请先保存后再切换自动日报。';
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
   const DEFAULT_EMAIL_PUSH_TIME = '08:30';
   const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
@@ -79,6 +85,11 @@ window.SubscriptionsManager = (function () {
   let quickRunMonthlyRecrawlBtn = null;
   let periodicReportMsgEl = null;
   let quickRunOpenWorkflowPanelBtn = null;
+  let dailyAutoToggleBtn = null;
+  let dailyAutoCardEl = null;
+  let dailyAutoStatusEl = null;
+  let dailyAutoSummaryEl = null;
+  let dailyAutoMsgEl = null;
   let quickRunMsgEl = null;
   let resetContentBtn = null;
   let resetContentMsgEl = null;
@@ -330,6 +341,20 @@ window.SubscriptionsManager = (function () {
     normalizeWindowDays(value, DEFAULT_DAILY_RECALL_WINDOW_DAYS) > LONG_WINDOW_WARNING_THRESHOLD_DAYS
       ? LONG_WINDOW_WARNING_TEXT
       : ''
+  );
+
+  const normalizeDailyReports = (value) => {
+    const raw = isPlainObject(value) ? value : {};
+    const defaults = DEFAULT_DAILY_REPORTS;
+    return {
+      enabled: Object.prototype.hasOwnProperty.call(raw, 'enabled')
+        ? raw.enabled !== false
+        : defaults.enabled,
+    };
+  };
+
+  const resolveDailyReports = (config) => normalizeDailyReports(
+    isPlainObject(config) ? config.daily_reports : {},
   );
 
   const normalizePositiveInt = (value, fallback) => {
@@ -737,6 +762,43 @@ window.SubscriptionsManager = (function () {
     syncValue('dpr-periodic-monthly-comparison-topics-input', settings.monthly.topic_limits.comparison_topics);
   };
 
+  const setDailyAutoMessage = (text, color) => {
+    if (dailyAutoMsgEl) {
+      dailyAutoMsgEl.textContent = text || DAILY_AUTO_DEFAULT_MESSAGE;
+      dailyAutoMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const syncDailyReportFields = () => {
+    const settings = resolveDailyReports(draftConfig || {});
+    const enabled = settings.enabled !== false;
+    const blocked = hasUnsavedChanges && !isSavingDraftConfig;
+    if (dailyAutoCardEl) {
+      dailyAutoCardEl.classList.toggle('is-paused', !enabled);
+    }
+    if (dailyAutoStatusEl) {
+      dailyAutoStatusEl.textContent = enabled ? '已开启' : '已暂停';
+    }
+    if (dailyAutoSummaryEl) {
+      dailyAutoSummaryEl.textContent = enabled
+        ? `${DAILY_AUTO_SCHEDULE_LABEL} 自动生成日报。`
+        : '定时运行会跳过，不会自动生成新日报。';
+    }
+    if (dailyAutoToggleBtn) {
+      dailyAutoToggleBtn.textContent = enabled ? '暂停自动日报' : '恢复自动日报';
+      dailyAutoToggleBtn.disabled = blocked || isSavingDraftConfig;
+      dailyAutoToggleBtn.classList.toggle('is-paused', !enabled);
+      dailyAutoToggleBtn.title = blocked
+        ? DAILY_AUTO_DIRTY_MESSAGE
+        : (enabled ? '暂停 scheduled 自动日报；手动快速抓取不受影响。' : '恢复 scheduled 自动日报。');
+    }
+    if (blocked && dailyAutoMsgEl) {
+      setDailyAutoMessage(DAILY_AUTO_DIRTY_MESSAGE, '#c00');
+    } else if (dailyAutoMsgEl && dailyAutoMsgEl.textContent === DAILY_AUTO_DIRTY_MESSAGE) {
+      setDailyAutoMessage(DAILY_AUTO_DEFAULT_MESSAGE, '#666');
+    }
+  };
+
   const renderSettingsSnapshot = () => {
     if (!panel) return;
     const cfg = isPlainObject(draftConfig) ? draftConfig : {};
@@ -772,6 +834,7 @@ window.SubscriptionsManager = (function () {
     });
     syncEmailSettingsFields();
     syncPeriodicReportFields();
+    syncDailyReportFields();
     renderResearchDirections();
 
     if (profileCountEl) {
@@ -869,6 +932,7 @@ window.SubscriptionsManager = (function () {
       clearUnsavedRunMessage(quickRunMsgEl);
       clearUnsavedRunMessage(periodicReportMsgEl);
     }
+    syncDailyReportFields();
     updateSettingsChrome();
     if (options.renderSnapshot !== false) {
       renderSettingsSnapshot();
@@ -1346,6 +1410,7 @@ window.SubscriptionsManager = (function () {
     paperSetting.days_window = windows.daysWindow;
     paperSetting.carryover_days = windows.carryoverDays;
     next.arxiv_paper_setting = paperSetting;
+    next.daily_reports = normalizeDailyReports(next.daily_reports);
     next.periodic_reports = normalizePeriodicReports(next.periodic_reports);
 
     if (!subs.schema_migration || typeof subs.schema_migration !== 'object') {
@@ -1704,6 +1769,21 @@ window.SubscriptionsManager = (function () {
                 <button id="arxiv-admin-open-workflow-panel-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开工作流面板</button>
               </div>
               <div class="dpr-workflow-settings-layout">
+                <div id="dpr-daily-auto-card" class="dpr-settings-card dpr-daily-auto-card">
+                  <div class="dpr-daily-auto-main">
+                    <div class="dpr-daily-auto-icon" aria-hidden="true">☀️</div>
+                    <div class="dpr-daily-auto-copy">
+                      <div class="dpr-daily-auto-kicker">Scheduled Daily Report</div>
+                      <h3>自动日报</h3>
+                      <p id="dpr-daily-auto-summary">${DAILY_AUTO_SCHEDULE_LABEL} 自动生成日报。</p>
+                    </div>
+                  </div>
+                  <div class="dpr-daily-auto-actions">
+                    <span id="dpr-daily-auto-status" class="dpr-daily-auto-status">已开启</span>
+                    <button id="dpr-daily-auto-toggle-btn" class="arxiv-tool-btn dpr-settings-primary-btn dpr-daily-auto-toggle-btn" type="button">暂停自动日报</button>
+                  </div>
+                  <div id="dpr-daily-auto-msg" class="dpr-settings-message dpr-daily-auto-msg">${DAILY_AUTO_DEFAULT_MESSAGE}</div>
+                </div>
                 <div class="dpr-settings-card dpr-workflow-guide-card">
                   <div class="dpr-workflow-guide-step">
                     <span>1</span>
@@ -2021,6 +2101,11 @@ window.SubscriptionsManager = (function () {
     closeBtn = document.getElementById('arxiv-search-close-btn');
     msgEl = document.getElementById('dpr-smart-msg');
     settingsDirtyBadge = document.getElementById('dpr-settings-unsaved-badge');
+    dailyAutoToggleBtn = document.getElementById('dpr-daily-auto-toggle-btn');
+    dailyAutoCardEl = document.getElementById('dpr-daily-auto-card');
+    dailyAutoStatusEl = document.getElementById('dpr-daily-auto-status');
+    dailyAutoSummaryEl = document.getElementById('dpr-daily-auto-summary');
+    dailyAutoMsgEl = document.getElementById('dpr-daily-auto-msg');
     if (window.DPRStorageManager) {
       window.DPRStorageManager.mount(document.getElementById('dpr-storage-manager-root'));
     }
@@ -2082,18 +2167,19 @@ window.SubscriptionsManager = (function () {
     }
   };
 
-  const saveDraftConfig = async () => {
+  const saveDraftConfig = async (options = {}) => {
+    const notify = typeof options.messageSetter === 'function' ? options.messageSetter : setMessage;
     if (isSavingDraftConfig) {
-      setMessage('正在保存中，请稍后...', '#666');
-      return;
+      notify('正在保存中，请稍后...', '#666');
+      return false;
     }
     if (!window.SubscriptionsGithubToken || !window.SubscriptionsGithubToken.saveConfig) {
-      setMessage('当前无法保存配置，请先完成 GitHub 登录。', '#c00');
-      return;
+      notify('当前无法保存配置，请先完成 GitHub 登录。', '#c00');
+      return false;
     }
     if (!draftConfig) {
-      setMessage('配置尚未加载完成，请先等待配置读取完成后再试。', '#c00');
-      return;
+      notify('配置尚未加载完成，请先等待配置读取完成后再试。', '#c00');
+      return false;
     }
     try {
       isSavingDraftConfig = true;
@@ -2103,13 +2189,13 @@ window.SubscriptionsManager = (function () {
       const toSave = normalizeSubscriptions(draftConfig || {});
       const validationError = validateIntentProfiles(toSave);
       if (validationError) {
-        setMessage(validationError, '#c00');
-        return;
+        notify(validationError, '#c00');
+        return false;
       }
-      setMessage('正在保存配置...', '#666');
+      notify('正在保存配置...', '#666');
       await window.SubscriptionsGithubToken.saveConfig(
         toSave,
-        'chore: save smart query config from dashboard',
+        options.commitMessage || 'chore: save smart query config from dashboard',
       );
       draftConfig = toSave;
       hasUnsavedChanges = false;
@@ -2117,17 +2203,20 @@ window.SubscriptionsManager = (function () {
       if (window.SubscriptionsSmartQuery && window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds) {
         window.SubscriptionsSmartQuery.clearPendingDeletedProfileIds();
       }
-      setMessage('配置已保存。', '#080');
+      notify(options.successMessage || '配置已保存。', '#080');
       renderSettingsSnapshot();
+      return true;
     } catch (e) {
       console.error(e);
       const msg = e && e.message ? e.message : '未知错误';
-      setMessage(`保存配置失败：${msg}`.slice(0, 180), '#c00');
+      notify(`保存配置失败：${msg}`.slice(0, 180), '#c00');
+      return false;
     } finally {
       isSavingDraftConfig = false;
       if (saveBtn) {
         saveBtn.disabled = false;
       }
+      syncDailyReportFields();
     }
   };
 
@@ -2186,6 +2275,43 @@ window.SubscriptionsManager = (function () {
     draftConfig = normalizeSubscriptions(next);
     hasUnsavedChanges = true;
     refreshQuickRunButtons();
+  };
+
+  const toggleDailyAutoReport = async () => {
+    if (!draftConfig) {
+      setDailyAutoMessage('配置尚未加载完成，请先等待配置读取完成后再试。', '#c00');
+      return;
+    }
+    if (hasUnsavedChanges) {
+      setDailyAutoMessage(DAILY_AUTO_DIRTY_MESSAGE, '#c00');
+      return;
+    }
+    const current = resolveDailyReports(draftConfig || {});
+    const nextEnabled = current.enabled === false;
+    const previousDraft = cloneDeep(draftConfig || {});
+    const next = cloneDeep(draftConfig || {});
+    next.daily_reports = normalizeDailyReports({
+      ...current,
+      enabled: nextEnabled,
+    });
+    draftConfig = normalizeSubscriptions(next);
+    hasUnsavedChanges = true;
+    syncDailyReportFields();
+    setDailyAutoMessage('正在保存自动日报状态...', '#666');
+    const ok = await saveDraftConfig({
+      commitMessage: nextEnabled
+        ? 'chore: resume scheduled daily reports'
+        : 'chore: pause scheduled daily reports',
+      successMessage: nextEnabled
+        ? `自动日报已恢复；${DAILY_AUTO_SCHEDULE_LABEL} 将继续运行。`
+        : '自动日报已暂停；定时运行会跳过，手动快速抓取仍可使用。',
+      messageSetter: setDailyAutoMessage,
+    });
+    if (!ok) {
+      draftConfig = previousDraft;
+      hasUnsavedChanges = false;
+      refreshQuickRunButtons();
+    }
   };
 
   const bindWindowInput = (inputId, field) => {
@@ -2609,6 +2735,11 @@ window.SubscriptionsManager = (function () {
       });
     }
 
+    if (dailyAutoToggleBtn && !dailyAutoToggleBtn._bound) {
+      dailyAutoToggleBtn._bound = true;
+      dailyAutoToggleBtn.addEventListener('click', toggleDailyAutoReport);
+    }
+
     if (resetContentBtn && !resetContentBtn._bound) {
       resetContentBtn._bound = true;
       resetContentBtn.addEventListener('click', () => {
@@ -2684,6 +2815,8 @@ window.SubscriptionsManager = (function () {
       normalizeWindowDays: (value, fallback) => normalizeWindowDays(value, fallback),
       resolvePaperWindows: (config) => resolvePaperWindows(cloneDeep(config || {})),
       getWindowWarningText: (value) => getWindowWarningText(value),
+      normalizeDailyReports: (value) => normalizeDailyReports(cloneDeep(value || {})),
+      resolveDailyReports: (config) => resolveDailyReports(cloneDeep(config || {})),
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
       normalizeResearchDirections: (value) => normalizeResearchDirections(value),
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),

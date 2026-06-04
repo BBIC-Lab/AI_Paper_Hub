@@ -46,30 +46,80 @@ jobs:
       PYTHONUNBUFFERED: "1"
 
     steps:
-      - name: Random delay to spread scheduled runs
-        if: github.event_name == 'schedule'
-        run: |
-          DELAY=$(shuf -i 0-3599 -n 1)
-          echo "Sleeping ${DELAY}s (≈$((DELAY/60))min) to stagger fork runs over 1 hour …"
-          sleep $DELAY
-
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      - name: Check auto daily status
+        id: daily_auto
+        if: github.event_name == 'schedule'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def parse_bool(value):
+              token = str(value or "").split("#", 1)[0].strip().strip("'\"").lower()
+              if token in {"false", "no", "off", "0"}:
+                  return False
+              if token in {"true", "yes", "on", "1"}:
+                  return True
+              return None
+
+          enabled = True
+          section = None
+          config_path = Path("config.yaml")
+          if config_path.exists():
+              for raw in config_path.read_text(encoding="utf-8").splitlines():
+                  stripped = raw.strip()
+                  if not stripped or stripped.startswith("#"):
+                      continue
+                  indent = len(raw) - len(raw.lstrip(" "))
+                  if indent == 0 and stripped.endswith(":"):
+                      section = stripped[:-1].strip()
+                      continue
+                  if indent == 0:
+                      section = None
+                  if section == "daily_reports" and indent > 0 and stripped.startswith("enabled:"):
+                      parsed = parse_bool(stripped.split(":", 1)[1])
+                      if parsed is not None:
+                          enabled = parsed
+                      break
+
+          value = "true" if enabled else "false"
+          with open(Path.cwd() / ".github_output_daily", "w", encoding="utf-8") as tmp:
+              tmp.write(f"enabled={value}\n")
+          print(f"daily_reports.enabled={value}")
+          PY
+          cat .github_output_daily >> "$GITHUB_OUTPUT"
+          rm -f .github_output_daily
+
+      - name: Stop scheduled auto daily
+        if: github.event_name == 'schedule' && steps.daily_auto.outputs.enabled == 'false'
+        run: echo "Scheduled daily report is paused by config.yaml daily_reports.enabled=false."
+
+      - name: Random delay to spread scheduled runs
+        if: github.event_name == 'schedule' && steps.daily_auto.outputs.enabled != 'false'
+        run: |
+          DELAY=$(shuf -i 0-3599 -n 1)
+          echo "Sleeping ${DELAY}s (≈$((DELAY/60))min) to stagger fork runs over 1 hour …"
+          sleep $DELAY
+
       - name: Setup Python
+        if: steps.daily_auto.outputs.enabled != 'false'
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
       - name: Setup Java
+        if: steps.daily_auto.outputs.enabled != 'false'
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Cache Python deps
+        if: steps.daily_auto.outputs.enabled != 'false'
         uses: actions/cache@v5
         with:
           path: |
@@ -83,6 +133,7 @@ jobs:
           key: ${{ runner.os }}-dpr-embed-deps-v1-${{ hashFiles('requirements.txt') }}
 
       - name: Install deps (skip sqlite3)
+        if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           python - <<'PY'
           import re
@@ -95,6 +146,7 @@ jobs:
           uv pip install --system -r /tmp/req.txt
 
       - name: Prepare pdffigures2
+        if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           set -euo pipefail
 
@@ -116,6 +168,7 @@ jobs:
           echo "PDFFIGURES2_JAR=$JAR_PATH" >> "$GITHUB_ENV"
 
       - name: Run Retrieval and Embedding
+        if: steps.daily_auto.outputs.enabled != 'false'
         env:
           HF_HOME: ${{ github.workspace }}/hf_cache
           HUGGINGFACE_HUB_CACHE: ${{ github.workspace }}/hf_cache
@@ -206,10 +259,12 @@ jobs:
           find "$HF_HOME" -xtype l | head -n 50 || true
 
       - name: Cleanup non-recommend archives
+        if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           find archive -mindepth 2 -maxdepth 2 -type d \( -name raw -o -name filtered -o -name rank \) -exec rm -rf {} +
 
       - name: Commit results
+        if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

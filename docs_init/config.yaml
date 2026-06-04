@@ -9,6 +9,8 @@ arxiv_paper_setting:
   carryover_days: 7
   docs_dir: docs
   prefer_supabase_read: true
+daily_reports:
+  enabled: true
 periodic_reports:
   enabled: true
   default_input_mode: artifacts

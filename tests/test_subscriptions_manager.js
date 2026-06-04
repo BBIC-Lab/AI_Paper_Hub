@@ -14,6 +14,8 @@ const {
   normalizeSubscriptions,
   resolvePaperWindows,
   getWindowWarningText,
+  normalizeDailyReports,
+  resolveDailyReports,
   buildEmailWorkflowCron,
   normalizeResearchDirections,
   resolveResearchDirections,
@@ -148,6 +150,21 @@ function testNormalizeSubscriptionsDefaultsPaperWindows() {
 
   assert.equal(normalized.arxiv_paper_setting.days_window, 5);
   assert.equal(normalized.arxiv_paper_setting.carryover_days, 7);
+}
+
+function testNormalizeSubscriptionsDefaultsDailyReportToggle() {
+  const normalized = normalizeSubscriptions(buildBaseConfig());
+
+  assert.deepEqual(normalized.daily_reports, { enabled: true });
+}
+
+function testNormalizeDailyReportsPreservesPausedState() {
+  const reports = normalizeDailyReports({
+    enabled: false,
+  });
+
+  assert.equal(reports.enabled, false);
+  assert.equal(resolveDailyReports({ daily_reports: reports }).enabled, false);
 }
 
 function testResolvePaperWindowsKeepsSeparateCarryoverWindow() {
@@ -391,6 +408,30 @@ function testPeriodicSettingsUiRemovesDeprecatedControls() {
   assert.ok(!source.includes('会议论文'));
 }
 
+function testWorkflowSettingsUiIncludesDailyAutoToggle() {
+  const source = fs.readFileSync(path.join(__dirname, '../app/subscriptions.manager.js'), 'utf8');
+
+  assert.ok(source.includes('dpr-daily-auto-card'));
+  assert.ok(source.includes('自动日报'));
+  assert.ok(source.includes('暂停自动日报'));
+  assert.ok(source.includes('恢复自动日报'));
+  assert.ok(source.includes('手动抓取仍可运行'));
+}
+
+function testDailyWorkflowHonorsAutoRunToggle() {
+  const workflow = fs.readFileSync(
+    path.join(__dirname, '../.github/workflows/daily-paper-reader.yml'),
+    'utf8',
+  );
+
+  assert.ok(workflow.includes('Check auto daily status'));
+  assert.ok(workflow.includes('daily_reports'));
+  assert.ok(workflow.includes('id: daily_auto'));
+  assert.ok(workflow.includes('enabled={value}'));
+  assert.ok(workflow.includes("steps.daily_auto.outputs.enabled == 'false'"));
+  assert.ok(workflow.includes("steps.daily_auto.outputs.enabled != 'false'"));
+}
+
 function testQuickRunCssKeepsButtonsAligned() {
   const css = fs.readFileSync(path.join(__dirname, '../app/app.css'), 'utf8');
 
@@ -400,6 +441,15 @@ function testQuickRunCssKeepsButtonsAligned() {
   assert.ok(css.includes('.dpr-quick-run-layout .dpr-periodic-quick-card'));
   assert.ok(css.includes('grid-template-rows: repeat(4, var(--dpr-quick-run-button-height));'));
   assert.ok(css.includes('margin: 0;'));
+}
+
+function testDailyAutoToggleCssExists() {
+  const css = fs.readFileSync(path.join(__dirname, '../app/app.css'), 'utf8');
+
+  assert.ok(css.includes('.dpr-daily-auto-card'));
+  assert.ok(css.includes('.dpr-daily-auto-card.is-paused'));
+  assert.ok(css.includes('.dpr-daily-auto-status'));
+  assert.ok(css.includes('.dpr-daily-auto-toggle-btn.is-paused'));
 }
 
 function testClearUnsavedRunMessageOnlyClearsStaleDirtyWarnings() {
@@ -426,6 +476,8 @@ testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
 testNormalizeSubscriptionsKeepsSectionDailyPaperLimits();
 testNormalizeSubscriptionsDefaultsDailyPaperLimits();
 testNormalizeSubscriptionsDefaultsPaperWindows();
+testNormalizeSubscriptionsDefaultsDailyReportToggle();
+testNormalizeDailyReportsPreservesPausedState();
 testResolvePaperWindowsKeepsSeparateCarryoverWindow();
 testResolvePaperWindowsFallsBackCarryoverToLegacyDaysWindow();
 testWindowWarningOnlyAppearsForLongWindow();
@@ -439,7 +491,10 @@ testNormalizeSubscriptionsAddsPeriodicReportDefaults();
 testNormalizePeriodicReportsPreservesUserEdits();
 testResolvePeriodicReportsFallsBackFromConfig();
 testPeriodicSettingsUiRemovesDeprecatedControls();
+testWorkflowSettingsUiIncludesDailyAutoToggle();
+testDailyWorkflowHonorsAutoRunToggle();
 testQuickRunCssKeepsButtonsAligned();
+testDailyAutoToggleCssExists();
 testClearUnsavedRunMessageOnlyClearsStaleDirtyWarnings();
 
 console.log('subscriptions manager tests passed');
