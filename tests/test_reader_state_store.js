@@ -81,12 +81,24 @@ async function run() {
           { kind: 'query', label: 'retrieval' },
         ],
       },
+      {
+        paperId: 'tutorial/workflow',
+        title: 'Workflow Tutorial',
+        tags: [{ kind: 'paper', label: 'library' }],
+      },
+      {
+        paperId: 'AI_Daily_Paper_Reader/README',
+        title: 'Project README',
+        tags: [{ kind: 'paper', label: 'library' }],
+      },
     ],
     { dirty: false },
   );
   const catalogState = store.getState();
   assert.equal(catalogState.dirty, false);
   assert.equal(catalogState.papers['202606/04/catalog-new'].read, false);
+  assert.equal(catalogState.papers['tutorial/workflow'], undefined);
+  assert.equal(catalogState.papers['AI_Daily_Paper_Reader/README'], undefined);
   assert.equal(
     store.listPapers({ filter: 'tag:library', sort: 'date' })[0].paperId,
     '202606/04/catalog-new',
@@ -112,16 +124,40 @@ async function run() {
   const older = store.normalizeState({
     updatedAt: '2026-01-01T00:00:00.000Z',
     papers: {
-      p: { paperId: 'p', title: 'old', updatedAt: '2026-01-01T00:00:00.000Z' },
+      '202606/05/paper-p': {
+        paperId: '202606/05/paper-p',
+        title: 'old',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
     },
   });
   const newer = store.normalizeState({
     updatedAt: '2026-01-02T00:00:00.000Z',
     papers: {
-      p: { paperId: 'p', title: 'new', updatedAt: '2026-01-02T00:00:00.000Z' },
+      '202606/05/paper-p': {
+        paperId: '202606/05/paper-p',
+        title: 'new',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
     },
   });
-  assert.equal(store.mergeStates(older, newer).papers.p.title, 'new');
+  assert.equal(store.mergeStates(older, newer).papers['202606/05/paper-p'].title, 'new');
+
+  const normalized = store.normalizeState({
+    papers: {
+      '202606/04/README': { paperId: '202606/04/README', title: 'Daily Index' },
+      'tutorial/quick-start': { paperId: 'tutorial/quick-start', title: 'Quick Start' },
+      'AI_Daily_Paper_Reader_Private/README': {
+        paperId: 'AI_Daily_Paper_Reader_Private/README',
+        title: 'Private README',
+      },
+      '202606/04/paper-ok': { paperId: '202606/04/paper-ok', title: 'Paper OK' },
+    },
+  });
+  assert.equal(normalized.papers['202606/04/README'], undefined);
+  assert.equal(normalized.papers['tutorial/quick-start'], undefined);
+  assert.equal(normalized.papers['AI_Daily_Paper_Reader_Private/README'], undefined);
+  assert.equal(normalized.papers['202606/04/paper-ok'].title, 'Paper OK');
 
   const key = Buffer.alloc(32, 7).toString('base64');
   const encrypted = await store.encryptState(store.getState(), key);

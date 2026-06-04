@@ -57,14 +57,19 @@ window.DPRReaderLibrary = (function () {
     return id ? `#/${id}` : '#/';
   };
 
-  const isExcludedRouteId = (paperId) => {
+  const isReaderPaperRouteId = (paperId) => {
     const id = normalizePaperId(paperId).toLowerCase();
-    if (!id) return true;
-    if (id === 'readme' || id === 'reader-library' || id === 'local-pdf') return true;
-    if (/^tutorial(?:\/|$)/i.test(id)) return true;
-    if (/^reports(?:\/|$)/i.test(id)) return true;
-    if (/^(?:config|settings)(?:\/|$)/i.test(id)) return true;
-    return false;
+    if (!id) return false;
+    if (id === 'readme' || id === 'reader-library' || id === 'local-pdf') return false;
+    if (/(?:^|\/)readme$/i.test(id)) return false;
+    if (/^(?:tutorial|reports|config|settings)(?:\/|$)/i.test(id)) return false;
+    if (/^ai_daily_paper_reader(?:_private)?(?:\/|$)/i.test(id)) return false;
+    if (/^local-pdf\/\d{8}\/[^/]+$/i.test(id)) return true;
+    return /^\d{6}\/\d{2}\/[^/]+$/i.test(id);
+  };
+
+  const isExcludedRouteId = (paperId) => {
+    return !isReaderPaperRouteId(paperId);
   };
 
   const inferReaderPaperDate = (paperId) => {
@@ -207,12 +212,12 @@ window.DPRReaderLibrary = (function () {
       )
       .join('\u0002');
 
-  const syncSidebarCatalog = (store) => {
+  const syncSidebarCatalog = (store, options = {}) => {
     if (!store) return;
     const catalog = collectSidebarCatalog();
     if (!catalog.length) return;
     const fingerprint = catalogFingerprint(catalog);
-    if (fingerprint === state.catalogFingerprint) return;
+    if (!options.force && fingerprint === state.catalogFingerprint) return;
     state.catalogFingerprint = fingerprint;
     if (typeof store.upsertPaperCatalog === 'function') {
       store.upsertPaperCatalog(catalog, { dirty: false });
@@ -235,10 +240,70 @@ window.DPRReaderLibrary = (function () {
     return label ? `${scoreText}/10 ${label}` : `${scoreText}/10`;
   };
 
+  const cleanFallbackTopicLabel = (value) => {
+    let label = normalizeText(value)
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/^[\s:：,，;；、.!?？'"“”‘’()[\]{}-]+/, '')
+      .replace(/[\s:：,，;；、.!?？'"“”‘’()[\]{}-]+$/, '');
+    if (!label) return '';
+    const lower = label.toLowerCase();
+    if (/^(query|search|score)\s*:/i.test(label)) return '';
+    if (lower === 'ai4nd' || lower === 'composite' || /:composite$/i.test(label)) return '';
+    const words = label.split(/\s+/).filter(Boolean);
+    if (words.length > 6) {
+      const stopwords = new Set([
+        'a',
+        'an',
+        'and',
+        'are',
+        'at',
+        'benchmarking',
+        'for',
+        'from',
+        'in',
+        'of',
+        'on',
+        'the',
+        'to',
+        'towards',
+        'understanding',
+        'via',
+        'with',
+      ]);
+      const compact = words.filter((word) => {
+        const key = word.toLowerCase().replace(/[^a-z0-9]+/g, '');
+        return key && !stopwords.has(key);
+      });
+      if (compact.length >= 2) label = compact.slice(0, 5).join(' ');
+    }
+    if (label.length > 42) label = `${label.slice(0, 39).trim()}...`;
+    return label.length >= 3 ? label : '';
+  };
+
+  const fallbackTopicTagsForPaper = (paper, seen, limit) => {
+    const out = [];
+    const add = (candidate) => {
+      if (out.length >= limit) return;
+      const label = cleanFallbackTopicLabel(candidate);
+      if (!label) return;
+      const key = label.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({ kind: 'paper', label });
+    };
+    [paper.evidence, paper.title_zh, paper.title].forEach((source) => {
+      if (out.length >= limit) return;
+      normalizeText(source)
+        .split(/(?:\s+-\s+)|[|/;；,，、。.!?？]+|[:：]+/)
+        .forEach(add);
+    });
+    return out;
+  };
+
   const topicTagsForPaper = (paper) => {
     const seen = new Set();
     const blockedKinds = new Set(['query', 'score', 'reader', 'search']);
-    return normalizeTags(paper.tags)
+    const explicitTags = normalizeTags(paper.tags)
       .filter((tag) => {
         const kind = normalizeText(tag.kind).toLowerCase();
         const label = normalizeText(tag.label);
@@ -251,6 +316,8 @@ window.DPRReaderLibrary = (function () {
         return true;
       })
       .slice(0, 5);
+    if (explicitTags.length >= 5) return explicitTags;
+    return explicitTags.concat(fallbackTopicTagsForPaper(paper, seen, 5 - explicitTags.length));
   };
 
   const renderTags = (paper) => {
@@ -428,7 +495,10 @@ window.DPRReaderLibrary = (function () {
     const store = getStore();
     if (store) syncSidebarCatalog(store);
     if (!state.unsubscribe && store && typeof store.subscribe === 'function') {
-      state.unsubscribe = store.subscribe(() => render());
+      state.unsubscribe = store.subscribe(() => {
+        syncSidebarCatalog(store, { force: true });
+        render();
+      });
     }
     render();
   };
@@ -439,8 +509,10 @@ window.DPRReaderLibrary = (function () {
       FILTERS,
       PAGE_SIZE,
       collectSidebarCatalog,
+      fallbackTopicTagsForPaper,
       formatScore,
       isExcludedRouteId,
+      isReaderPaperRouteId,
       paperMetaFromSidebarAnchor,
       renderPaper,
       topicTagsForPaper,

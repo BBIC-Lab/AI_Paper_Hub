@@ -17,7 +17,12 @@ const library = window.DPRReaderLibrary.__test;
 assert.equal(library.FILTERS.some((item) => item.key === 'read' || item.label === '已读'), false);
 assert.equal(library.isExcludedRouteId('tutorial/README'), true);
 assert.equal(library.isExcludedRouteId('tutorial/quick-start'), true);
+assert.equal(library.isExcludedRouteId('tutorial/workflow'), true);
+assert.equal(library.isExcludedRouteId('AI_Daily_Paper_Reader/README'), true);
+assert.equal(library.isExcludedRouteId('AI_Daily_Paper_Reader_Private/README'), true);
+assert.equal(library.isExcludedRouteId('202606/04/README'), true);
 assert.equal(library.isExcludedRouteId('202606/04/paper-a'), false);
+assert.equal(library.isExcludedRouteId('local-pdf/20260527/paper-a'), false);
 assert.equal(library.formatScore('8.5 订阅评分'), '8.5/10 订阅评分');
 
 const topics = library.topicTagsForPaper({
@@ -36,6 +41,18 @@ assert.deepEqual(
   topics.map((tag) => tag.label),
   ['benchmark', 'memory', 'evaluation'],
 );
+
+const fallbackTopics = library.topicTagsForPaper({
+  title: 'EVA-Net: Subject-Independent EEG Motor Decoding with Video-Derived Motor Priors',
+  evidence: 'cross-modal alignment, video semantic priors, EEG motor decoding',
+  tags: [{ kind: 'query', label: 'ai4nd' }],
+});
+
+assert.deepEqual(
+  fallbackTopics.map((tag) => tag.label).slice(0, 3),
+  ['cross-modal alignment', 'video semantic priors', 'EEG motor decoding'],
+);
+assert.equal(fallbackTopics.some((tag) => tag.label.toLowerCase() === 'ai4nd'), false);
 
 const rendered = library.renderPaper(
   {

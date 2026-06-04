@@ -84,6 +84,17 @@ window.DPRReaderStateStore = (function () {
   const normalizePaperId = (paperId) =>
     normalizeText(paperId).replace(/^#\//, '').replace(/\.md$/i, '').replace(/\/$/, '');
 
+  const isReaderPaperId = (paperId) => {
+    const id = normalizePaperId(paperId).toLowerCase();
+    if (!id) return false;
+    if (id === 'readme' || id === 'reader-library' || id === 'local-pdf') return false;
+    if (/(?:^|\/)readme$/i.test(id)) return false;
+    if (/^(?:tutorial|reports|config|settings)(?:\/|$)/i.test(id)) return false;
+    if (/^ai_daily_paper_reader(?:_private)?(?:\/|$)/i.test(id)) return false;
+    if (/^local-pdf\/\d{8}\/[^/]+$/i.test(id)) return true;
+    return /^\d{6}\/\d{2}\/[^/]+$/i.test(id);
+  };
+
   const inferPaperDate = (paperId) => {
     const id = normalizePaperId(paperId);
     let m = id.match(/^(\d{6})\/(\d{2})(?:\/|$)/);
@@ -113,7 +124,7 @@ window.DPRReaderStateStore = (function () {
   const normalizePaperRecord = (raw, fallbackPaperId = '') => {
     const source = isPlainObject(raw) ? raw : {};
     const paperId = normalizePaperId(source.paperId || source.paper_id || fallbackPaperId);
-    if (!paperId) return null;
+    if (!isReaderPaperId(paperId)) return null;
     const marker = isColorMarkerKey(source.marker) ? source.marker : '';
     const reaction = normalizeReaction(source.reaction);
     const read = source.read === false ? false : !!(source.read || marker || reaction);
@@ -325,7 +336,7 @@ window.DPRReaderStateStore = (function () {
 
   const mutatePaper = (paperId, patch, meta, options = {}) => {
     const id = normalizePaperId(paperId);
-    if (!id) return getState();
+    if (!isReaderPaperId(id)) return getState();
     const state = ensureState();
     const prev = state.papers[id] || normalizePaperRecord({ paperId: id });
     const merged = normalizePaperRecord(
@@ -346,7 +357,7 @@ window.DPRReaderStateStore = (function () {
 
   const upsertPaperMeta = (paperId, meta = {}, options = {}) => {
     const id = normalizePaperId(paperId || meta.paperId || meta.paper_id);
-    if (!id) return getState();
+    if (!isReaderPaperId(id)) return getState();
     const state = ensureState();
     const prev = state.papers[id] || normalizePaperRecord({ paperId: id });
     const merged = normalizePaperRecord(
@@ -380,7 +391,7 @@ window.DPRReaderStateStore = (function () {
     rows.forEach((meta) => {
       const source = isPlainObject(meta) ? meta : {};
       const id = normalizePaperId(source.paperId || source.paper_id);
-      if (!id) return;
+      if (!isReaderPaperId(id)) return;
       const prev = state.papers[id] || normalizePaperRecord({ paperId: id });
       const merged = normalizePaperRecord(
         Object.assign({}, prev, source, {
@@ -449,7 +460,7 @@ window.DPRReaderStateStore = (function () {
     });
     Object.keys(normalized).forEach((rawId) => {
       const paperId = normalizePaperId(rawId);
-      if (!paperId || state.papers[paperId]) return;
+      if (!isReaderPaperId(paperId) || state.papers[paperId]) return;
       const status = normalized[rawId];
       const marker = isColorMarkerKey(status) ? status : '';
       const read = !!(marker || status === true || status === 'read');
@@ -478,7 +489,7 @@ window.DPRReaderStateStore = (function () {
     });
     Object.keys(normalized).forEach((rawId) => {
       const paperId = normalizePaperId(rawId);
-      if (!paperId || state.papers[paperId]) return;
+      if (!isReaderPaperId(paperId) || state.papers[paperId]) return;
       const reaction = normalizeReaction(normalized[rawId]);
       if (!reaction) return;
       state.papers[paperId] = normalizePaperRecord({
@@ -764,6 +775,7 @@ window.DPRReaderStateStore = (function () {
     getState,
     init,
     isColorMarkerKey,
+    isReaderPaperId,
     listByTag,
     listPapers,
     loadRemoteAndMerge,
@@ -788,6 +800,7 @@ window.DPRReaderStateStore = (function () {
       bytesToBase64,
       compareUpdatedAt,
       emptyState,
+      isReaderPaperId,
       mergeStates,
       normalizePaperRecord,
       normalizeState,
