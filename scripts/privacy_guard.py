@@ -31,6 +31,8 @@ def main() -> int:
             failures.append(f"tracked generated dated docs page: {path}")
         if path.startswith("docs/reports/"):
             failures.append(f"tracked generated periodic report page: {path}")
+        if path.startswith("docs/reader-db/") and not path.endswith(".enc.json"):
+            failures.append(f"tracked plaintext reader database artifact: {path}")
         if path.startswith("docs/assets/figures/"):
             failures.append(f"tracked generated paper figure asset: {path}")
         if path.startswith("archive/") and path != "archive/.gitkeep":

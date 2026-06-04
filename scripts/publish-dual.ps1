@@ -438,6 +438,7 @@ function Is-HardDeniedPath {
     "^docs/config\.yaml$",
     "^docs/\d{6}/",
     "^docs/reports/",
+    "^docs/reader-db/",
     "^docs/assets/figures/",
     "^archive/",
     "^\.codex/",
@@ -455,6 +456,7 @@ function Is-AutoExcludedPath {
   param([string]$RepoPath)
   $patterns = @(
     "^docs/reports/",
+    "^docs/reader-db/",
     "^docs/config\.yaml$",
     "^codex-httpserver\.(out|err)\.log$",
     "(^|/)__pycache__/",

@@ -39,13 +39,23 @@ CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
 RANGE_DATE_RE = re.compile(r"^(\d{8})-(\d{8})$")
 BEIJING_TZ = timezone(timedelta(hours=8))
 TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip()
-SIDEBAR_HOME_LINK = '* <a class="dpr-sidebar-root-link" href="#/">首页</a>\n'
+SIDEBAR_HOME_LINK = '* <a class="dpr-sidebar-root-link" href="#/">🏠 首页</a>\n'
 SIDEBAR_TUTORIAL_LINK = (
     '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" '
-    'href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>\n'
+    'href="javascript:void(0)" data-dpr-hash="#/tutorial/README">📘 使用教程</a>\n'
 )
-SIDEBAR_LOCAL_PDF_ROOT = "* 本地 PDF 解析\n"
-SIDEBAR_LOCAL_PDF_UPLOAD_LINK = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n'
+SIDEBAR_READER_LIBRARY_LINK = '* <a class="dpr-sidebar-root-link" href="#/reader-library">📚 个人论文库</a>\n'
+SIDEBAR_WEEKLY_REPORT_LINK = (
+    '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" '
+    'href="#/reports/weekly/README">🗓️ 研究周报</a> <!--dpr-periodic-root:weekly-->\n'
+)
+SIDEBAR_MONTHLY_REPORT_LINK = (
+    '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" '
+    'href="#/reports/monthly/README">📈 研究月报</a> <!--dpr-periodic-root:monthly-->\n'
+)
+SIDEBAR_LOCAL_PDF_ROOT = "* 📄 本地 PDF 解析\n"
+SIDEBAR_LOCAL_PDF_UPLOAD_LINK = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n'
+SIDEBAR_DAILY_PAPERS_ROOT = "* 🗂️ Daily Papers\n"
 
 # LLM 配置（通用 OpenAI-compatible Chat Completions）
 LLM_CLIENT = None
@@ -2020,7 +2030,7 @@ def update_sidebar(
     lines = [line if line.endswith("\n") else f"{line}\n" for line in lines]
     repaired_lines: List[str] = []
     for line in lines:
-        match = re.match(r"^(\s*\*\s+Daily Papers)\s+(\*\s+.+)$", line.rstrip("\n"))
+        match = re.match(r"^(\s*\*\s+(?:🗂️\s*)?Daily Papers)\s+(\*\s+.+)$", line.rstrip("\n"))
         if match:
             repaired_lines.append(f"{match.group(1).rstrip()}\n")
             repaired_lines.append(f"  {match.group(2).strip()}\n")
@@ -2028,9 +2038,59 @@ def update_sidebar(
             repaired_lines.append(line)
     lines = repaired_lines
 
+    def is_daily_root(line: str) -> bool:
+        stripped = line.strip()
+        return stripped.startswith("* ") and "Daily Papers" in stripped
+
     def is_local_pdf_root(line: str) -> bool:
         stripped = line.strip()
-        return stripped == "* 本地 PDF 解析" or (line.startswith("* ") and 'href="#/local-pdf"' in line)
+        return (line.startswith("* ") and "本地 PDF 解析" in stripped) or (
+            line.startswith("* ") and 'href="#/local-pdf"' in line
+        )
+
+    def ensure_leading_sidebar_links(daily_index: int) -> int:
+        specs = [(SIDEBAR_HOME_LINK, 'href="#/"'), (SIDEBAR_TUTORIAL_LINK, "tutorial/README")]
+
+        def leading_insert_index() -> int:
+            candidates = [
+                idx
+                for idx, line in enumerate(lines)
+                if is_local_pdf_root(line) or is_daily_root(line)
+            ]
+            return min(candidates) if candidates else len(lines)
+
+        for link, needle in specs:
+            if any(needle in line for line in lines):
+                continue
+            insert_at = leading_insert_index()
+            lines.insert(insert_at, link)
+            if daily_index >= insert_at:
+                daily_index += 1
+        return daily_index
+
+    def ensure_trailing_sidebar_links(daily_index: int) -> int:
+        specs = [
+            (SIDEBAR_WEEKLY_REPORT_LINK, "#/reports/weekly/README"),
+            (SIDEBAR_MONTHLY_REPORT_LINK, "#/reports/monthly/README"),
+            (SIDEBAR_READER_LIBRARY_LINK, "#/reader-library"),
+        ]
+
+        def daily_block_end() -> int:
+            if daily_index < 0:
+                return len(lines)
+            end = daily_index + 1
+            while end < len(lines):
+                if lines[end].startswith("* "):
+                    break
+                end += 1
+            return end
+
+        for link, needle in specs:
+            if any(needle in line for line in lines):
+                continue
+            insert_at = daily_block_end()
+            lines.insert(insert_at, link)
+        return daily_index
 
     def ensure_local_pdf_section(daily_index: int) -> int:
         root_idx = next((idx for idx, line in enumerate(lines) if is_local_pdf_root(line)), -1)
@@ -2040,34 +2100,36 @@ def update_sidebar(
             lines.insert(insert_at + 1, SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
             return daily_index + 2 if daily_index >= 0 else daily_index
 
-        if 'href="#/local-pdf"' in lines[root_idx]:
+        if lines[root_idx] != SIDEBAR_LOCAL_PDF_ROOT:
             lines[root_idx] = SIDEBAR_LOCAL_PDF_ROOT
 
         next_top = next((idx for idx in range(root_idx + 1, len(lines)) if lines[idx].startswith("* ")), len(lines))
-        has_upload = any('href="#/local-pdf"' in lines[idx] for idx in range(root_idx + 1, next_top))
-        if not has_upload:
+        upload_idx = next(
+            (idx for idx in range(root_idx + 1, next_top) if 'href="#/local-pdf"' in lines[idx]),
+            -1,
+        )
+        if upload_idx == -1:
             lines.insert(root_idx + 1, SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
             if daily_index > root_idx:
                 daily_index += 1
+        else:
+            lines[upload_idx] = SIDEBAR_LOCAL_PDF_UPLOAD_LINK
         return daily_index
 
     daily_idx = -1
     for i, line in enumerate(lines):
-        if line.strip().startswith("* Daily Papers"):
+        if is_daily_root(line):
             daily_idx = i
             break
     if daily_idx == -1:
-        if not any('href="#/"' in line or "[首页]" in line for line in lines):
-            lines.append(SIDEBAR_HOME_LINK)
-        if not any("tutorial/README" in line for line in lines):
-            lines.append(SIDEBAR_TUTORIAL_LINK)
-        if not any(is_local_pdf_root(line) for line in lines):
-            lines.append(SIDEBAR_LOCAL_PDF_ROOT)
-            lines.append(SIDEBAR_LOCAL_PDF_UPLOAD_LINK)
-        lines.append("* Daily Papers\n")
+        lines.append(SIDEBAR_DAILY_PAPERS_ROOT)
         daily_idx = len(lines) - 1
     else:
-        daily_idx = ensure_local_pdf_section(daily_idx)
+        lines[daily_idx] = SIDEBAR_DAILY_PAPERS_ROOT
+
+    daily_idx = ensure_leading_sidebar_links(daily_idx)
+    daily_idx = ensure_local_pdf_section(daily_idx)
+    daily_idx = ensure_trailing_sidebar_links(daily_idx)
 
     day_idx = -1
     for i in range(daily_idx + 1, len(lines)):

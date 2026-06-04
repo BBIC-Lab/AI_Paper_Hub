@@ -314,8 +314,11 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             content = sidebar_path.read_text(encoding="utf-8")
             self.assertNotIn("暂无日报", content)
             self.assertIn("2026-05-22 <!--dpr-date:20260522-->", content)
-            self.assertIn("* 本地 PDF 解析", content)
-            self.assertIn('href="#/local-pdf">上传解析</a>', content)
+            self.assertIn("* 📄 本地 PDF 解析", content)
+            self.assertIn('href="#/local-pdf">📝 上传解析</a>', content)
+            self.assertIn("#/reader-library", content)
+            self.assertIn("#/reports/weekly/README", content)
+            self.assertIn("#/reports/monthly/README", content)
             self.assertIn(
                 '<a class="dpr-sidebar-brief-link" href="#/202605/22/README">📝 今日简报</a>',
                 content,
@@ -338,8 +341,8 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
-            self.assertIn('* 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n* Daily Papers', content)
-            self.assertIn("* Daily Papers\n  * 2026-05-22", content)
+            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ Daily Papers', content)
+            self.assertIn("* 🗂️ Daily Papers\n  * 2026-05-22", content)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)
 
@@ -368,8 +371,8 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
-            self.assertIn('* 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n* Daily Papers', content)
-            self.assertIn("* Daily Papers\n  * 2026-05-22", content)
+            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ Daily Papers', content)
+            self.assertIn("* 🗂️ Daily Papers\n  * 2026-05-22", content)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)
             self.assertNotIn("旧条目", content)

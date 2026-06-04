@@ -1672,8 +1672,8 @@ window.$docsify = {
 
         const markDayPapersUnrecommended = (paperItems) => {
           if (!Array.isArray(paperItems) || !paperItems.length) return;
-          let readState = loadReadState();
-          if (!readState || typeof readState !== 'object') readState = {};
+        let readState = loadReadState();
+        if (!readState || typeof readState !== 'object') readState = {};
           const toClear = new Set(['good', 'blue', 'orange', 'bad']);
           let changed = false;
           paperItems.forEach((item) => {
@@ -1805,8 +1805,6 @@ window.$docsify = {
             latestDay = dayKey;
           }
         });
-
-        if (!dayItems.length) return;
 
         // 判断是否出现了“更新后的新一天”
         const prevLatest =
@@ -2357,15 +2355,19 @@ window.$docsify = {
         };
 
         Array.from(nav.querySelectorAll('li')).forEach((li) => {
-          const childUl = li.querySelector(':scope > ul');
+          let childUl = li.querySelector(':scope > ul');
           const directLink = li.querySelector(':scope > a');
-          if (!childUl || directLink || li.querySelector(':scope > .sidebar-day-toggle')) {
+          if (directLink || li.querySelector(':scope > .sidebar-day-toggle')) {
             return;
           }
 
           const { text: rawText, firstTextNode } = getGroupTextAndNode(li);
           const groupType = getGroupType(rawText);
           if (!groupType) return;
+          if (!childUl) {
+            childUl = document.createElement('ul');
+            li.appendChild(childUl);
+          }
 
           const storageKey =
             groupType === 'daily-root'
@@ -2483,6 +2485,10 @@ window.$docsify = {
       }, {});
 
       const isColorMarkerKey = (value) => COLOR_MARKER_KEYS.includes(value);
+      const getReaderStateStore = () =>
+        window.DPRReaderStateStore && typeof window.DPRReaderStateStore.getState === 'function'
+          ? window.DPRReaderStateStore
+          : null;
 
       const normalizeReadStateObject = (obj) => {
         const normalized = {};
@@ -2511,6 +2517,10 @@ window.$docsify = {
       };
 
       const loadReadState = () => {
+        const store = getReaderStateStore();
+        if (store && typeof store.getReadStateObject === 'function') {
+          return store.getReadStateObject();
+        }
         try {
           if (!window.localStorage) return {};
           const raw = window.localStorage.getItem(READ_STORAGE_KEY);
@@ -2522,6 +2532,11 @@ window.$docsify = {
       };
 
       const saveReadState = (state) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.replaceReadStateObject === 'function') {
+          store.replaceReadStateObject(state || {});
+          return;
+        }
         try {
           if (!window.localStorage) return;
           window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(state || {}));
@@ -2531,6 +2546,10 @@ window.$docsify = {
       };
 
       const loadPaperReactionState = () => {
+        const store = getReaderStateStore();
+        if (store && typeof store.getReactionStateObject === 'function') {
+          return store.getReactionStateObject();
+        }
         try {
           if (!window.localStorage) return {};
           const raw = window.localStorage.getItem(PAPER_REACTION_STORAGE_KEY);
@@ -2542,6 +2561,11 @@ window.$docsify = {
       };
 
       const savePaperReactionState = (state) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.replaceReactionStateObject === 'function') {
+          store.replaceReactionStateObject(state || {});
+          return;
+        }
         try {
           if (!window.localStorage) return;
           window.localStorage.setItem(
@@ -2571,6 +2595,10 @@ window.$docsify = {
       };
 
       const loadMarkerLabels = () => {
+        const store = getReaderStateStore();
+        if (store && typeof store.getMarkerLabels === 'function') {
+          return store.getMarkerLabels();
+        }
         try {
           if (!window.localStorage) return getDefaultMarkerLabels();
           const raw = window.localStorage.getItem(MARKER_LABEL_STORAGE_KEY);
@@ -2582,6 +2610,11 @@ window.$docsify = {
       };
 
       const saveMarkerLabels = (labels) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.setMarkerLabels === 'function') {
+          store.setMarkerLabels(labels || {});
+          return;
+        }
         try {
           if (!window.localStorage) return;
           window.localStorage.setItem(
@@ -2638,9 +2671,98 @@ window.$docsify = {
         return badges;
       };
 
+      const inferReaderPaperDate = (paperId) => {
+        const id = String(paperId || '').trim();
+        let m = id.match(/^(\d{6})\/(\d{2})(?:\/|$)/);
+        if (m) {
+          return `${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[2]}`;
+        }
+        m = id.match(/^local-pdf\/(\d{8})(?:\/|$)/i) || id.match(/^(\d{8})-\d{8}(?:\/|$)/);
+        if (m) {
+          const raw = m[1];
+          return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+        }
+        return '';
+      };
+
+      const findSidebarAnchorForPaperId = (paperId) => {
+        const nav = document.querySelector('.sidebar-nav');
+        if (!nav) return null;
+        const target = String(paperId || '').replace(/\/$/, '');
+        const links = Array.from(nav.querySelectorAll('a[href*="#/"]'));
+        return links.find((a) => {
+          const href = String(a.getAttribute('href') || '').trim();
+          const m = href.match(/#\/(.+)$/);
+          return m && decodeURIComponent(m[1]).replace(/\/$/, '') === target;
+        }) || null;
+      };
+
+      const parseSidebarPayloadForReader = (anchor) => {
+        if (!anchor) return {};
+        const raw = anchor.getAttribute('data-sidebar-item') || '';
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') return parsed;
+          } catch {
+            // fall back to hydrated DOM
+          }
+        }
+        const tags = [];
+        anchor.querySelectorAll('.dpr-sidebar-tag').forEach((node) => {
+          if (node.classList.contains('dpr-sidebar-tag-score')) return;
+          const label = String(node.textContent || '').trim();
+          if (!label) return;
+          let kind = 'other';
+          if (node.classList.contains('dpr-sidebar-tag-keyword')) kind = 'keyword';
+          if (node.classList.contains('dpr-sidebar-tag-query')) kind = 'query';
+          if (node.classList.contains('dpr-sidebar-tag-paper')) kind = 'paper';
+          tags.push({ kind, label });
+        });
+        const titleNode = anchor.querySelector('.dpr-sidebar-title');
+        const scoreNode = anchor.querySelector('.dpr-sidebar-tag-score .dpr-stars');
+        const scoreTitle = String((scoreNode && scoreNode.getAttribute('title')) || '');
+        const scoreMatch = scoreTitle.match(/([0-9]+(?:\.[0-9]+)?)/);
+        return {
+          title: String((titleNode && titleNode.textContent) || anchor.textContent || '').trim(),
+          score: scoreMatch ? scoreMatch[1] : '',
+          tags,
+        };
+      };
+
+      const collectPaperMetaForState = (paperId) => {
+        const id = String(paperId || '').trim().replace(/^#\//, '').replace(/\/$/, '');
+        if (!id) return {};
+        const anchor = findSidebarAnchorForPaperId(id);
+        const payload = parseSidebarPayloadForReader(anchor);
+        const titleEl =
+          document.querySelector('.markdown-section .paper-title-en') ||
+          document.querySelector('.markdown-section h1');
+        const titleZhEl = document.querySelector('.markdown-section .paper-title-zh');
+        const pdfMeta = document.querySelector('meta[name="citation_pdf_url"]');
+        const route = `#/${id}`;
+        const lastSegment = id.split('/').filter(Boolean).slice(-1)[0] || '';
+        const isLocalPdf = /^local-pdf\//i.test(id);
+        const fallbackLink = !isLocalPdf && lastSegment ? `https://arxiv.org/abs/${lastSegment}` : route;
+        return {
+          paperId: id,
+          route,
+          date: inferReaderPaperDate(id),
+          title: String(payload.title || (titleEl && titleEl.textContent) || lastSegment || id).trim(),
+          title_zh: String(payload.title_zh || (titleZhEl && titleZhEl.textContent) || '').trim(),
+          link: String(payload.link || fallbackLink).trim(),
+          pdf: String((pdfMeta && pdfMeta.getAttribute('content')) || payload.pdf || '').trim(),
+          score: String(payload.score || '').trim(),
+          source: String(payload.source || (isLocalPdf ? 'local-pdf' : '')).trim(),
+          evidence: String(payload.evidence || '').trim(),
+          tags: Array.isArray(payload.tags) ? payload.tags : [],
+        };
+      };
+
       window.DPRPaperActions = Object.assign({}, window.DPRPaperActions || {}, {
         COLOR_MARKERS,
         buildPaperStateBadges,
+        collectPaperMetaForState,
         getDefaultMarkerLabels,
         normalizeMarkerLabels,
         normalizePaperReactionState,
@@ -3088,6 +3210,51 @@ window.$docsify = {
         });
       };
 
+      if (!window.__DPR_READER_STATE_PLUGIN_BOUND__) {
+        window.__DPR_READER_STATE_PLUGIN_BOUND__ = true;
+        document.addEventListener('dpr-reader-state-changed', () => {
+          refreshPaperActionToolbarState();
+          markSidebarReadState(null);
+          requestAnimationFrame(() => {
+            syncSidebarActiveIndicator({ animate: false });
+          });
+        });
+      }
+
+      const setReaderStoreReaction = (paperId, reaction) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.setReaction === 'function') {
+          store.setReaction(paperId, reaction, collectPaperMetaForState(paperId));
+          return true;
+        }
+        return false;
+      };
+
+      const setReaderStoreMarker = (paperId, marker) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.setMarker === 'function') {
+          store.setMarker(paperId, marker, collectPaperMetaForState(paperId));
+          return true;
+        }
+        return false;
+      };
+
+      const setReaderStoreRead = (paperId) => {
+        const store = getReaderStateStore();
+        if (store && typeof store.setRead === 'function') {
+          const meta = collectPaperMetaForState(paperId);
+          const current =
+            typeof store.getPaper === 'function' ? store.getPaper(paperId) : {};
+          if (current && current.read && typeof store.upsertPaperMeta === 'function') {
+            store.upsertPaperMeta(paperId, meta, { dirty: false });
+          } else {
+            store.setRead(paperId, meta);
+          }
+          return true;
+        }
+        return false;
+      };
+
       const renderMarkerPopover = (popover) => {
         const paperId = PAPER_ACTIONS_STATE.paperId;
         const readState = loadReadState();
@@ -3153,7 +3320,9 @@ window.$docsify = {
             row.addEventListener('click', (e) => {
               e.preventDefault();
               e.stopPropagation();
-              saveReadState(setPaperColorMarkerState(loadReadState(), paperId, marker.key));
+              if (!setReaderStoreMarker(paperId, marker.key)) {
+                saveReadState(setPaperColorMarkerState(loadReadState(), paperId, marker.key));
+              }
               closePaperActionPopover();
               syncPaperStateDisplays(paperId);
             });
@@ -3316,12 +3485,14 @@ window.$docsify = {
             if (!currentPaperId) return;
             if (action === 'favorite' || action === 'dislike') {
               closePaperActionPopover();
-              const next = togglePaperReactionState(
-                loadPaperReactionState(),
-                currentPaperId,
-                action,
-              );
-              savePaperReactionState(next);
+              if (!setReaderStoreReaction(currentPaperId, action)) {
+                const next = togglePaperReactionState(
+                  loadPaperReactionState(),
+                  currentPaperId,
+                  action,
+                );
+                savePaperReactionState(next);
+              }
               syncPaperStateDisplays(currentPaperId);
               return;
             }
@@ -3378,10 +3549,12 @@ window.$docsify = {
         const reactions = loadPaperReactionState();
         const markerLabels = loadMarkerLabels();
         if (currentPaperId) {
-          if (!state[currentPaperId]) {
+          if (setReaderStoreRead(currentPaperId)) {
+            Object.assign(state, loadReadState());
+          } else if (!state[currentPaperId]) {
             state[currentPaperId] = 'read';
+            saveReadState(state);
           }
-          saveReadState(state);
         }
 
         const applyLiState = (li, paperIdFromHref) => {
@@ -4043,7 +4216,14 @@ window.$docsify = {
         nav.querySelectorAll('a.dpr-sidebar-root-link').forEach((a) => {
           const raw = stripEmoji(a.dataset.dprRawLabel || a.textContent || '');
           if (!raw) return;
-          const emoji = raw === '首页' ? '🏠' : raw === '使用教程' ? '📘' : '';
+          const emojiByLabel = {
+            首页: '🏠',
+            使用教程: '📘',
+            个人论文库: '📚',
+            研究周报: '🗓️',
+            研究月报: '📈',
+          };
+          const emoji = emojiByLabel[raw] || '';
           if (emoji) setLinkLabel(a, emoji, raw);
           const href = a.getAttribute('data-dpr-hash') || a.getAttribute('href') || '';
           const target = normalizeHref(href);
@@ -4053,7 +4233,8 @@ window.$docsify = {
 
         nav.querySelectorAll('a.dpr-sidebar-brief-link').forEach((a) => {
           const raw = stripEmoji(a.dataset.dprRawLabel || a.textContent || '今日简报');
-          setLinkLabel(a, '📝', raw || '今日简报');
+          const label = raw || '今日简报';
+          setLinkLabel(a, label === '上传解析' ? '📝' : '📑', label);
           const target = normalizeHref(a.getAttribute('href') || '');
           setJumpLinkActive(a, !!target && current === target);
         });
@@ -5183,7 +5364,9 @@ window.$docsify = {
           const m = current.match(/^#\/(.+)$/);
           if (!m) return;
           const paperId = m[1];
-          saveReadState(setPaperColorMarkerState(loadReadState(), paperId, 'good'));
+          if (!setReaderStoreMarker(paperId, 'good')) {
+            saveReadState(setPaperColorMarkerState(loadReadState(), paperId, 'good'));
+          }
           syncPaperStateDisplays(paperId);
         };
 
@@ -5194,7 +5377,9 @@ window.$docsify = {
           const m = current.match(/^#\/(.+)$/);
           if (!m) return;
           const paperId = m[1];
-          saveReadState(setPaperColorMarkerState(loadReadState(), paperId, bookmarkType));
+          if (!setReaderStoreMarker(paperId, bookmarkType)) {
+            saveReadState(setPaperColorMarkerState(loadReadState(), paperId, bookmarkType));
+          }
           syncPaperStateDisplays(paperId);
           if (document.activeElement && document.activeElement.blur) {
             document.activeElement.blur();
@@ -6294,7 +6479,8 @@ window.$docsify = {
         );
         const normalizedLandingFile = String(file || routePath || paperId || '').replace(/^\/+/, '');
         const isLocalPdfToolPage = /^local-pdf(?:\.md)?$/i.test(normalizedLandingFile);
-        const isLandingLikePage = isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage;
+        const isReaderLibraryPage = /^reader-library(?:\.md)?$/i.test(normalizedLandingFile);
+        const isLandingLikePage = isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage || isReaderLibraryPage;
         syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage, isPeriodicReportPage });
 
         // A. 对正文区域进行一次全局公式渲染（支持 $...$ / $$...$$）
@@ -6388,6 +6574,13 @@ window.$docsify = {
         ensureSidebarEntryDeleteButtons();
 
         ensurePaperActionToolbar(paperId, isPaperPage);
+        if (
+          isReaderLibraryPage &&
+          window.DPRReaderLibrary &&
+          typeof window.DPRReaderLibrary.mount === 'function'
+        ) {
+          window.DPRReaderLibrary.mount();
+        }
 
         // 让滑动高亮层跟随当前 active 项（点击、路由变化后会更新 active 类）
         try {

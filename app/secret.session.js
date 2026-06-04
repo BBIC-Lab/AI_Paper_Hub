@@ -733,6 +733,89 @@
     };
   }
 
+  const getGithubTokenForSecretSave = () => {
+    const secret = window.decoded_secret_private || {};
+    if (secret.github && secret.github.token) {
+      return String(secret.github.token || '').trim();
+    }
+    try {
+      if (!window.localStorage) return '';
+      const raw = window.localStorage.getItem('github_token_data');
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && parsed.token ? String(parsed.token || '').trim() : '';
+    } catch {
+      return '';
+    }
+  };
+
+  const randomBase64 = (size) => {
+    const bytes = crypto.getRandomValues(new Uint8Array(size));
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
+  const normalizeReaderDatabaseConfig = (cfg) => {
+    const source = cfg && typeof cfg === 'object' ? cfg : {};
+    return {
+      enabled: source.enabled !== false,
+      path: String(source.path || 'docs/reader-db/state.enc.json').replace(/^\/+/, ''),
+      key_b64: String(source.key_b64 || '').trim(),
+    };
+  };
+
+  async function ensureReaderDatabaseConfig() {
+    if (String(window.DPR_ACCESS_MODE || '').toLowerCase() !== 'full') {
+      throw new Error('Reader database sync requires full access mode.');
+    }
+    const secret =
+      window.decoded_secret_private && typeof window.decoded_secret_private === 'object'
+        ? window.decoded_secret_private
+        : null;
+    if (!secret) {
+      throw new Error('secret.private is not unlocked.');
+    }
+    const current = normalizeReaderDatabaseConfig(secret.reader_database);
+    if (current.enabled === false) return current;
+    if (current.key_b64) return current;
+
+    const password = loadSavedPassword();
+    if (!password) {
+      throw new Error('No saved unlock password is available for reader database setup.');
+    }
+    const token = getGithubTokenForSecretSave();
+    if (!token) {
+      throw new Error('No GitHub token is available for saving reader database settings.');
+    }
+
+    const next = Object.assign({}, current, {
+      enabled: true,
+      key_b64: randomBase64(32),
+    });
+    secret.reader_database = next;
+    const encrypted = await createEncryptedSecret(password, secret);
+    const ok = await saveSecretPrivateToGithubRepo(token, encrypted);
+    if (!ok) {
+      secret.reader_database = current;
+      throw new Error('Failed to save reader database settings to secret.private.');
+    }
+    window.decoded_secret_private = secret;
+    return next;
+  }
+
+  window.DPRSecretSession = Object.assign({}, window.DPRSecretSession || {}, {
+    ensureReaderDatabaseConfig,
+    getReaderDatabaseConfig() {
+      const secret =
+        window.decoded_secret_private && typeof window.decoded_secret_private === 'object'
+          ? window.decoded_secret_private
+          : {};
+      return normalizeReaderDatabaseConfig(secret.reader_database);
+    },
+  });
+
   // 初始化模式：已有 secret.private -> 解锁 / 游客；无 secret.private -> 首次配置向导
   function setupOverlay(hasSecretFile) {
     const overlay = document.getElementById('secret-gate-overlay');

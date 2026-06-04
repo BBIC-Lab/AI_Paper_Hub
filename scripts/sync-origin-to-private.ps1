@@ -12,6 +12,7 @@ from private:
 - docs/_sidebar.md; only the local PDF upload entry may be inserted
 - dated generated docs: docs/YYYYMM/**
 - generated periodic reports: docs/reports/**
+- personal reader database: docs/reader-db/**
 - local PDF runtime artifacts: docs/local-pdf/** and docs/assets/local_pdfs/**
 - generated figures: docs/assets/figures/**
 - archive/**
@@ -98,6 +99,7 @@ function Test-ProtectedPrivatePath {
     "^docs/_sidebar\.md$",
     "^docs/\d{6}/",
     "^docs/reports/",
+    "^docs/reader-db/",
     "^docs/local-pdf/",
     "^docs/assets/local_pdfs/",
     "^docs/assets/figures/",
@@ -141,24 +143,31 @@ function Ensure-LocalPdfSidebarEntry {
 
   $rootLabel = [System.Text.Encoding]::UTF8.GetString([byte[]](0xE6,0x9C,0xAC,0xE5,0x9C,0xB0,0x20,0x50,0x44,0x46,0x20,0xE8,0xA7,0xA3,0xE6,0x9E,0x90))
   $uploadLabel = [System.Text.Encoding]::UTF8.GetString([byte[]](0xE4,0xB8,0x8A,0xE4,0xBC,0xA0,0xE8,0xA7,0xA3,0xE6,0x9E,0x90))
-  $rootLine = "* $rootLabel"
-  $uploadLine = "  * <a class=`"dpr-sidebar-brief-link`" href=`"#/local-pdf`">$uploadLabel</a>"
+  $docEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x93,0x84))
+  $noteEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x93,0x9D))
+  $folderEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x97,0x82,0xEF,0xB8,0x8F))
+  $rootLine = "* $docEmoji $rootLabel"
+  $uploadLine = "  * <a class=`"dpr-sidebar-brief-link`" href=`"#/local-pdf`">$noteEmoji $uploadLabel</a>"
+  $dailyLine = "* $folderEmoji Daily Papers"
   $rootIdx = -1
   for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i].Trim() -eq $rootLine -or $lines[$i].Contains('href="#/local-pdf"')) {
+    if (($lines[$i].StartsWith("* ") -and $lines[$i].Contains($rootLabel)) -or $lines[$i].Contains('href="#/local-pdf"')) {
       $rootIdx = $i
       break
     }
   }
+  $dailyIdx = -1
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i].Trim().StartsWith("* ") -and $lines[$i].Contains("Daily Papers")) {
+      $dailyIdx = $i
+      break
+    }
+  }
+  if ($dailyIdx -ge 0) {
+    $lines[$dailyIdx] = $dailyLine
+  }
 
   if ($rootIdx -lt 0) {
-    $dailyIdx = -1
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-      if ($lines[$i].Trim() -eq "* Daily Papers") {
-        $dailyIdx = $i
-        break
-      }
-    }
     $insertAt = if ($dailyIdx -ge 0) { $dailyIdx } else { $lines.Count }
     $lines.Insert($insertAt, $rootLine)
     $lines.Insert($insertAt + 1, $uploadLine)
@@ -175,6 +184,7 @@ function Ensure-LocalPdfSidebarEntry {
     for ($i = $rootIdx + 1; $i -lt $nextTop; $i++) {
       if ($lines[$i].Contains('href="#/local-pdf"')) {
         $hasUpload = $true
+        $lines[$i] = $uploadLine
         break
       }
     }

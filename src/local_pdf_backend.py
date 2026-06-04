@@ -324,16 +324,16 @@ def _insert_local_sidebar_entry(
 ) -> None:
     path = Path(sidebar_path)
     lines = path.read_text(encoding="utf-8").splitlines(True) if path.exists() else []
-    root_line = "* 本地 PDF 解析\n"
-    upload_line = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">上传解析</a>\n'
-    daily_line = "* Daily Papers\n"
+    root_line = "* 📄 本地 PDF 解析\n"
+    upload_line = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n'
+    daily_line = "* 🗂️ Daily Papers\n"
 
-    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* Daily Papers")), -1)
+    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* ") and "Daily Papers" in line), -1)
     root_idx = next(
         (
             i
             for i, line in enumerate(lines)
-            if line.strip() == "* 本地 PDF 解析" or (line.startswith("* ") and 'href="#/local-pdf"' in line)
+            if (line.startswith("* ") and "本地 PDF 解析" in line) or (line.startswith("* ") and 'href="#/local-pdf"' in line)
         ),
         -1,
     )
@@ -344,21 +344,22 @@ def _insert_local_sidebar_entry(
         root_idx = insert_at
         if daily_idx >= 0:
             daily_idx += 2
-    elif 'href="#/local-pdf"' in lines[root_idx]:
+    elif lines[root_idx] != root_line:
         lines[root_idx] = root_line
     if daily_idx == -1:
         lines.append(daily_line)
         daily_idx = len(lines) - 1
+    elif lines[daily_idx] != daily_line:
+        lines[daily_idx] = daily_line
 
     next_top = next((i for i in range(root_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
-    has_upload = any('href="#/local-pdf"' in line for line in lines[root_idx + 1:next_top])
-    if not has_upload:
+    upload_idx = next((i for i in range(root_idx + 1, next_top) if 'href="#/local-pdf"' in lines[i]), -1)
+    if upload_idx == -1:
         lines.insert(root_idx + 1, upload_line)
         next_top += 1
-    upload_idx = next(
-        (i for i in range(root_idx + 1, next_top) if 'href="#/local-pdf"' in lines[i]),
-        -1,
-    )
+        upload_idx = root_idx + 1
+    else:
+        lines[upload_idx] = upload_line
     section_idx = next(
         (i for i in range(root_idx + 1, next_top) if lines[i].strip() == "* 精读区"),
         -1,

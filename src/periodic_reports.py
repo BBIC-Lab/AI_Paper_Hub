@@ -3157,7 +3157,7 @@ def update_periodic_sidebar(sidebar_path: Path, window: PeriodWindow) -> None:
     if sidebar_path.exists():
         lines = sidebar_path.read_text(encoding="utf-8-sig").splitlines()
     else:
-        lines = ['* <a class="dpr-sidebar-root-link" href="#/">首页</a>', "* Daily Papers"]
+        lines = ['* <a class="dpr-sidebar-root-link" href="#/">🏠 首页</a>', "* 🗂️ Daily Papers"]
     cleaned: list[str] = []
     skip_old_periodic_children = False
     for line in [line.rstrip("\n") for line in lines]:
@@ -3174,10 +3174,12 @@ def update_periodic_sidebar(sidebar_path: Path, window: PeriodWindow) -> None:
             continue
         cleaned.append(line)
     lines = cleaned
-    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* Daily Papers")), len(lines))
+    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* ") and "Daily Papers" in line), len(lines))
     if daily_idx == len(lines):
-        lines.append("* Daily Papers")
+        lines.append("* 🗂️ Daily Papers")
         daily_idx = len(lines) - 1
+    else:
+        lines[daily_idx] = "* 🗂️ Daily Papers"
     insert_idx = next((i for i in range(daily_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
     entries = [
         '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="#/reports/weekly/README">🗓️ 研究周报</a> <!--dpr-periodic-root:weekly-->',
