@@ -18,6 +18,8 @@ window.DPRReaderLibrary = (function () {
     queryInput: '',
     page: 1,
     catalogFingerprint: '',
+    catalogPaperIds: new Set(),
+    catalogReady: false,
     unsubscribe: null,
   };
 
@@ -261,6 +263,15 @@ window.DPRReaderLibrary = (function () {
       });
   };
 
+  const updateCatalogState = (papers) => {
+    state.catalogPaperIds = new Set(
+      (Array.isArray(papers) ? papers : [])
+        .map((paper) => normalizePaperId(paper && paper.paperId))
+        .filter(Boolean),
+    );
+    state.catalogReady = true;
+  };
+
   const catalogFingerprint = (papers) =>
     papers
       .map((paper) =>
@@ -280,7 +291,9 @@ window.DPRReaderLibrary = (function () {
 
   const syncSidebarCatalog = (store, options = {}) => {
     if (!store) return;
+    if (!document.querySelector('.sidebar-nav')) return;
     const catalog = collectSidebarCatalog();
+    updateCatalogState(catalog);
     if (!catalog.length) return;
     const fingerprint = catalogFingerprint(catalog);
     if (!options.force && fingerprint === state.catalogFingerprint) return;
@@ -321,17 +334,7 @@ window.DPRReaderLibrary = (function () {
     if (topicTags.length >= 5) return topicTags;
     const evidenceTags = isLocalPdfPaper(paper)
       ? []
-      : normalizeTopicTags(
-          [
-            paper.evidence,
-            paper.canonical_evidence,
-            paper.llm_evidence,
-            paper.llm_evidence_en,
-            paper.llm_evidence_cn,
-          ]
-            .filter(Boolean)
-            .join(', '),
-        )
+      : topicTagsFromEvidence(paper)
           .map(addSeen)
           .filter(Boolean)
           .slice(0, 5 - topicTags.length);
@@ -351,6 +354,45 @@ window.DPRReaderLibrary = (function () {
       .slice(0, 5 - topicTags.length - evidenceTags.length);
     return topicTags.concat(evidenceTags, explicitTags);
   };
+
+  const topicTagsFromEvidence = (paper) => {
+    const fields = [
+      paper && paper.evidence,
+      paper && paper.canonical_evidence,
+      paper && paper.llm_evidence,
+      paper && paper.llm_evidence_en,
+      paper && paper.llm_evidence_cn,
+    ];
+    return fields.flatMap((value) => {
+      const text = normalizeText(value);
+      if (!/[,\u3001;；|，]/.test(text) || looksLikeEvidenceSentence(text)) return [];
+      const tags = normalizeTopicTags(text);
+      return tags.length >= 2 ? tags : [];
+    });
+  };
+
+  const looksLikeEvidenceSentence = (value) => {
+    const text = normalizeText(value);
+    if (!text) return false;
+    if (/[。.!?！？]/.test(text)) return true;
+    const lower = text.toLowerCase();
+    if (
+      /\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents)\b/.test(
+        lower,
+      )
+    ) {
+      return true;
+    }
+    return /(?:本文|该论文|本论文|提出|使用|通过|证明|显示|表明|匹配|推荐|当前订阅)/.test(text);
+  };
+
+  const isRenderablePaper = (paper) => {
+    if (!isLocalPdfPaper(paper)) return true;
+    if (!state.catalogReady) return true;
+    return state.catalogPaperIds.has(normalizePaperId(paper && paper.paperId));
+  };
+
+  const filterRenderablePapers = (papers) => (Array.isArray(papers) ? papers.filter(isRenderablePaper) : []);
 
   const renderTags = (paper) => {
     const tags = [];
@@ -435,12 +477,12 @@ window.DPRReaderLibrary = (function () {
       root.innerHTML = '<section class="dpr-reader-library"><div class="dpr-reader-empty">个人论文库不可用。</div></section>';
       return;
     }
-    const items = store.listPapers({
+    const items = filterRenderablePapers(store.listPapers({
       filter: state.filter,
       query: state.query,
       sort: 'date',
-    });
-    const completeItems = store.listPapers({ filter: 'all', query: '', sort: 'date' });
+    }));
+    const completeItems = filterRenderablePapers(store.listPapers({ filter: 'all', query: '', sort: 'date' }));
     const totalPages = clampPage(items.length);
     const start = (state.page - 1) * PAGE_SIZE;
     const pageItems = items.slice(start, start + PAGE_SIZE);
@@ -551,11 +593,14 @@ window.DPRReaderLibrary = (function () {
       cleanTopicLabel,
       formatScore,
       isExcludedRouteId,
+      isRenderablePaper,
       isReaderPaperRouteId,
       normalizeTopicTags,
       paperMetaFromSidebarAnchor,
       renderPaper,
+      state,
       topicTagsForPaper,
+      updateCatalogState,
     },
   };
 })();

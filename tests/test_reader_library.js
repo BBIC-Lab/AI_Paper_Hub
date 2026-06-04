@@ -58,6 +58,13 @@ assert.deepEqual(
 );
 assert.equal(fallbackTopics.some((tag) => tag.label.toLowerCase() === 'ai4nd'), false);
 
+const sentenceEvidenceTopics = library.topicTagsForPaper({
+  evidence: 'This paper proposes cross-modal alignment, and improves EEG motor decoding.',
+  tags: [{ kind: 'query', label: 'ai4nd' }],
+});
+
+assert.deepEqual(sentenceEvidenceTopics, []);
+
 const generatedTopics = library.topicTagsForPaper({
   topic_tags: [
     'continual learning',
@@ -141,5 +148,10 @@ const renderedLocal = library.renderPaper(
 assert.match(renderedLocal, />本地PDF</);
 assert.doesNotMatch(renderedLocal, />精读</);
 assert.doesNotMatch(renderedLocal, />本地上传 PDF</);
+
+library.updateCatalogState([{ paperId: 'local-pdf/20260527/paper-a' }]);
+assert.equal(library.isRenderablePaper({ paperId: 'local-pdf/20260527/paper-a', source: 'local-pdf' }), true);
+assert.equal(library.isRenderablePaper({ paperId: 'local-pdf/20260528/missing-paper', source: 'local-pdf' }), false);
+assert.equal(library.isRenderablePaper({ paperId: '202606/04/paper-a' }), true);
 
 console.log('reader library tests passed');

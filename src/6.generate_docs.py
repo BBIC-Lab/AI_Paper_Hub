@@ -1501,6 +1501,53 @@ def _iter_reader_topic_candidates(value: Any, kind: str = "paper") -> List[Tuple
     return candidates
 
 
+def _iter_evidence_text_values(value: Any) -> List[str]:
+    if isinstance(value, list):
+        out: List[str] = []
+        for item in value:
+            out.extend(_iter_evidence_text_values(item))
+        return out
+    if isinstance(value, dict):
+        for key in ("label", "name", "tag", "keyword", "value"):
+            text = str(value.get(key) or "").strip()
+            if text:
+                return [text]
+        return []
+    text = str(value or "").strip()
+    return [text] if text else []
+
+
+def _looks_like_evidence_sentence(text: str) -> bool:
+    raw = str(text or "").strip()
+    if not raw:
+        return False
+    if re.search(r"[。.!?！？]", raw):
+        return True
+    lower = raw.casefold()
+    if re.search(
+        r"\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents)\b",
+        lower,
+    ):
+        return True
+    return bool(re.search(r"(?:本文|该论文|本论文|提出|使用|通过|证明|显示|表明|匹配|推荐|当前订阅)", raw))
+
+
+def _iter_reader_evidence_topic_candidates(value: Any) -> List[Tuple[str, str]]:
+    candidates: List[Tuple[str, str]] = []
+    for text in _iter_evidence_text_values(value):
+        if not re.search(r"[,;|、，；]", text):
+            continue
+        if _looks_like_evidence_sentence(text):
+            continue
+        parts = _topic_candidate_parts(text)
+        clean_parts = [_clean_reader_topic_label(part, "paper") for part in parts]
+        clean_parts = [part for part in clean_parts if part]
+        if len(clean_parts) < 2:
+            continue
+        candidates.extend(("paper", part) for part in parts)
+    return candidates
+
+
 def extract_reader_topic_tags(paper: Dict[str, Any], limit: int = 5) -> List[str]:
     out: List[str] = []
     seen: set = set()
@@ -1530,7 +1577,7 @@ def extract_reader_topic_tags(paper: Dict[str, Any], limit: int = 5) -> List[str
         "canonical_evidence",
         "evidence",
     ):
-        for kind, candidate in _iter_reader_topic_candidates(paper.get(field), "paper"):
+        for kind, candidate in _iter_reader_evidence_topic_candidates(paper.get(field)):
             _add_reader_topic(out, seen, candidate, kind, limit)
             if len(out) >= limit:
                 return out

@@ -180,6 +180,21 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.mod.extract_reader_topic_tags({"canonical_evidence": "symbolic regression, equation discovery"}),
             ["symbolic regression", "equation discovery"],
         )
+        self.assertEqual(
+            self.mod.extract_reader_topic_tags(
+                {
+                    "canonical_evidence": (
+                        "This paper proposes Frobenius reinitialization, and improves "
+                        "the stability-plasticity tradeoff."
+                    )
+                }
+            ),
+            [],
+        )
+        self.assertEqual(
+            self.mod.extract_reader_topic_tags({"canonical_evidence": "本文提出稳定性和可塑性平衡方法，适合当前订阅方向"}),
+            [],
+        )
 
     def test_update_sidebar_payload_includes_short_topic_tags(self):
         with tempfile.TemporaryDirectory() as d:
