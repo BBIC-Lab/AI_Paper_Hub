@@ -76,6 +76,7 @@ async function run() {
         paperId: '202606/04/catalog-new',
         title: 'Newer Catalog Paper',
         date: '2026-06-04',
+        topic_tags: ['planning', 'memory'],
         tags: [
           { kind: 'paper', label: 'library' },
           { kind: 'query', label: 'retrieval' },
@@ -97,10 +98,18 @@ async function run() {
   const catalogState = store.getState();
   assert.equal(catalogState.dirty, false);
   assert.equal(catalogState.papers['202606/04/catalog-new'].read, false);
+  assert.deepEqual(
+    catalogState.papers['202606/04/catalog-new'].topic_tags.map((tag) => tag.label),
+    ['planning', 'memory'],
+  );
   assert.equal(catalogState.papers['tutorial/workflow'], undefined);
   assert.equal(catalogState.papers['AI_Daily_Paper_Reader/README'], undefined);
   assert.equal(
     store.listPapers({ filter: 'tag:library', sort: 'date' })[0].paperId,
+    '202606/04/catalog-new',
+  );
+  assert.equal(
+    store.listPapers({ filter: 'tag:planning', sort: 'date' })[0].paperId,
     '202606/04/catalog-new',
   );
 

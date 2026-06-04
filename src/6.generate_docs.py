@@ -69,6 +69,29 @@ DEFAULT_DOCS_CONCURRENCY = 4
 
 DailyEntry = Tuple[str, str, List[Tuple[str, str]]] | Tuple[str, str, str, List[Tuple[str, str]]]
 
+READER_TOPIC_BLOCKED_LABELS = {
+    "ai4nd",
+    "composite",
+    "fresh_fetch",
+    "carryover",
+}
+READER_TOPIC_TAXONOMY_SEEDS = [
+    ("LLM Agents", ["agent", "multi-agent", "tool use", "tool-using", "planning", "memory", "autonomous"]),
+    ("Reasoning", ["reasoning", "chain-of-thought", "theorem", "formal", "logic", "search"]),
+    ("RAG / Retrieval", ["retrieval", "rag", "ranking", "indexing", "knowledge graph"]),
+    ("Evaluation / Benchmark", ["benchmark", "evaluation", "eval", "metric", "leaderboard", "dataset"]),
+    ("Vision / Multimodal", ["vision", "multimodal", "image", "video", "vlm", "visual"]),
+    ("NLP / Language", ["language model", "nlp", "translation", "dialogue", "text generation"]),
+    ("Systems / Efficiency", ["systems", "serving", "inference", "latency", "throughput", "distributed", "compiler"]),
+    ("Efficient Models", ["efficient", "compression", "quantization", "distillation", "edge", "small model"]),
+    ("Robotics", ["robot", "robotics", "manipulation", "policy", "control", "embodied"]),
+    ("Scientific AI", ["scientific", "science", "biology", "chemistry", "medicine", "biomedical", "hypothesis", "simulation", "laboratory"]),
+    ("Causality / World Models", ["causal", "causality", "world model", "simulation", "dynamics"]),
+    ("Safety / Alignment", ["safety", "alignment", "trustworthy", "risk", "guardrail", "red team", "privacy"]),
+    ("HCI / Human-AI", ["human-ai", "hci", "interactive", "user study", "collaboration", "interface"]),
+    ("Security", ["security", "attack", "adversarial", "vulnerability", "jailbreak"]),
+]
+
 
 def beijing_date_token(dt: datetime | None = None) -> str:
     current = dt or datetime.now(timezone.utc)
@@ -1400,6 +1423,123 @@ def split_sidebar_tag(tag: str) -> Tuple[str, str]:
     return ("other", raw)
 
 
+def _topic_candidate_parts(value: Any) -> List[str]:
+    parts: List[str] = []
+    if isinstance(value, dict):
+        for key in ("label", "name", "tag", "keyword", "value"):
+            text = str(value.get(key) or "").strip()
+            if text:
+                parts.append(text)
+                break
+        return parts
+    if isinstance(value, list):
+        for item in value:
+            parts.extend(_topic_candidate_parts(item))
+        return parts
+    text = str(value or "").strip()
+    if not text:
+        return parts
+    return [p.strip() for p in re.split(r"[,;|、，；]+", text) if p.strip()]
+
+
+def _reader_topic_key(label: str) -> str:
+    return re.sub(r"\s+", " ", str(label or "").strip()).casefold()
+
+
+def _clean_reader_topic_label(value: Any, kind: str = "paper") -> str:
+    label = re.sub(r"<[^>]+>", " ", str(value or ""))
+    label = re.sub(r"\s+", " ", label).strip(" \t\r\n:：;；,，、.!?！？\"'()[]{}<>")
+    if not label:
+        return ""
+    parsed_kind, parsed_label = split_sidebar_tag(label)
+    if parsed_label and parsed_kind != "other":
+        kind = parsed_kind
+        label = parsed_label.strip()
+    kind_key = str(kind or "").strip().casefold()
+    if kind_key in {"query", "search", "score", "reader", "profile", "intent", "subscription"}:
+        return ""
+    lower = label.casefold()
+    if lower in READER_TOPIC_BLOCKED_LABELS or lower.endswith(":composite") or lower.startswith("query:"):
+        return ""
+    if re.match(r"^(?:query|search|score)\s*[:：]", label, re.I):
+        return ""
+    words = [w for w in re.split(r"\s+", label) if w]
+    has_cjk = bool(re.search(r"[\u4e00-\u9fff]", label))
+    if has_cjk:
+        if len(label) > 12:
+            return ""
+    elif len(words) > 5 or len(label) > 42:
+        return ""
+    return label
+
+
+def _add_reader_topic(out: List[str], seen: set, candidate: Any, kind: str = "paper", limit: int = 5) -> None:
+    if len(out) >= limit:
+        return
+    label = _clean_reader_topic_label(candidate, kind)
+    key = _reader_topic_key(label)
+    if not label or key in seen:
+        return
+    seen.add(key)
+    out.append(label)
+
+
+def _iter_reader_topic_candidates(value: Any, kind: str = "paper") -> List[Tuple[str, str]]:
+    candidates: List[Tuple[str, str]] = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                item_kind = str(item.get("kind") or item.get("type") or kind).strip() or kind
+                for part in _topic_candidate_parts(item):
+                    candidates.append((item_kind, part))
+                continue
+            for part in _topic_candidate_parts(item):
+                candidates.append((kind, part))
+        return candidates
+    for part in _topic_candidate_parts(value):
+        candidates.append((kind, part))
+    return candidates
+
+
+def extract_reader_topic_tags(paper: Dict[str, Any], limit: int = 5) -> List[str]:
+    out: List[str] = []
+    seen: set = set()
+
+    for field, fallback_kind in (
+        ("topic_tags", "paper"),
+        ("keywords", "keyword"),
+        ("llm_tags", "paper"),
+    ):
+        for kind, candidate in _iter_reader_topic_candidates(paper.get(field), fallback_kind):
+            if field == "llm_tags":
+                parsed_kind, parsed_label = split_sidebar_tag(candidate)
+                kind = parsed_kind
+                candidate = parsed_label
+                if kind == "keyword":
+                    kind = "paper"
+            _add_reader_topic(out, seen, candidate, kind, limit)
+            if len(out) >= limit:
+                return out
+
+    for field in ("llm_evidence_en", "evidence_en"):
+        for kind, candidate in _iter_reader_topic_candidates(paper.get(field), "paper"):
+            _add_reader_topic(out, seen, candidate, kind, limit)
+            if len(out) >= limit:
+                return out
+
+    text_blob = " ".join(
+        str(paper.get(key) or "").strip()
+        for key in ("title", "title_zh", "abstract", "llm_evidence_en", "canonical_evidence")
+        if str(paper.get(key) or "").strip()
+    ).casefold()
+    for label, keywords in READER_TOPIC_TAXONOMY_SEEDS:
+        if any(keyword.casefold() in text_blob for keyword in keywords):
+            _add_reader_topic(out, seen, label, "paper", limit)
+            if len(out) >= limit:
+                return out
+    return out
+
+
 def round_half_up(x: float) -> int:
     return int(math.floor(x + 0.5))
 
@@ -1969,6 +2109,7 @@ def update_sidebar(
     quick_entries: List[DailyEntry],
     paper_evidence_by_id: Dict[str, str],
     date_label: str | None = None,
+    paper_topic_tags_by_id: Dict[str, List[str]] | None = None,
 ) -> None:
     def build_sidebar_item_payload(
         paper_id: str,
@@ -1977,6 +2118,7 @@ def update_sidebar(
         tags: List[Tuple[str, str]],
         route_href: str,
         evidence: str = "",
+        topic_tags: List[str] | None = None,
     ) -> str:
         score_text = "-"
         clean_tags: List[Dict[str, str]] = []
@@ -2001,6 +2143,19 @@ def update_sidebar(
             "score": score_text,
             "tags": clean_tags,
         }
+        clean_topic_tags: List[str] = []
+        seen_topic_tags: set = set()
+        for raw_topic in topic_tags or []:
+            clean_topic = _clean_reader_topic_label(raw_topic, "paper")
+            key = _reader_topic_key(clean_topic)
+            if not clean_topic or key in seen_topic_tags:
+                continue
+            seen_topic_tags.add(key)
+            clean_topic_tags.append(clean_topic)
+            if len(clean_topic_tags) >= 5:
+                break
+        if clean_topic_tags:
+            payload["topic_tags"] = clean_topic_tags
         safe_title_zh = str(title_zh or "").strip()
         if safe_title_zh:
             payload["title_zh"] = safe_title_zh
@@ -2171,7 +2326,8 @@ def update_sidebar(
             safe_title = html.escape((title or "").strip() or paper_id)
             href = f"#/{paper_id}"
             evidence = paper_evidence_by_id.get(str(paper_id).strip(), "")
-            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence)
+            topic_tags = (paper_topic_tags_by_id or {}).get(str(paper_id).strip(), [])
+            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence, topic_tags)
             block.append(
                 "      * "
                 f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" data-sidebar-item="{payload_json}">{safe_title}</a>\n'
@@ -2183,7 +2339,8 @@ def update_sidebar(
             safe_title = html.escape((title or "").strip() or paper_id)
             href = f"#/{paper_id}"
             evidence = paper_evidence_by_id.get(str(paper_id).strip(), "")
-            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence)
+            topic_tags = (paper_topic_tags_by_id or {}).get(str(paper_id).strip(), [])
+            payload_json = build_sidebar_item_payload(paper_id, title, title_zh, tags, href, evidence, topic_tags)
             block.append(
                 "      * "
                 f'<a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="{href}" data-sidebar-item="{payload_json}">{safe_title}</a>\n'
@@ -2961,6 +3118,7 @@ def main() -> None:
         section: str,
         papers: List[Dict[str, Any]],
         paper_evidence_by_id: Dict[str, str],
+        paper_topic_tags_by_id: Dict[str, List[str]],
     ) -> List[DailyEntry]:
         if not papers:
             return []
@@ -2988,6 +3146,7 @@ def main() -> None:
                     log(f"[WARN] 生成{section}论文失败：{e}")
                     continue
                 paper_evidence_by_id[str((pid or "").strip())] = get_paper_sidebar_evidence(paper)
+                paper_topic_tags_by_id[str((pid or "").strip())] = extract_reader_topic_tags(paper)
                 section_tags = extract_sidebar_tags(paper)
                 results.append((index, (pid, title, title_zh, section_tags)))
 
@@ -2995,6 +3154,7 @@ def main() -> None:
         return [v for _, v in results]
 
     sidebar_evidence_by_id: Dict[str, str] = {}
+    sidebar_topic_tags_by_id: Dict[str, List[str]] = {}
 
     if args.sidebar_only:
         log_substep("6.2", "跳过生成文章（仅更新侧边栏）", "SKIP")
@@ -3010,6 +3170,7 @@ def main() -> None:
                 except Exception:
                     title_zh = ""
             sidebar_evidence_by_id[str(pid).strip()] = get_paper_sidebar_evidence(paper)
+            sidebar_topic_tags_by_id[str(pid).strip()] = extract_reader_topic_tags(paper)
             deep_entries.append((pid, title, title_zh, extract_sidebar_tags(paper)))
 
         for paper in quick_list:
@@ -3024,15 +3185,16 @@ def main() -> None:
                 except Exception:
                     title_zh = ""
             sidebar_evidence_by_id[str(pid).strip()] = get_paper_sidebar_evidence(paper)
+            sidebar_topic_tags_by_id[str(pid).strip()] = extract_reader_topic_tags(paper)
             quick_entries.append((pid, title, title_zh, extract_sidebar_tags(paper)))
         log_substep("6.3", "跳过生成文章（仅更新侧边栏）", "SKIP")
     else:
         log_substep("6.2", "生成精读区文章", "START")
-        deep_entries = _process_section("deep", deep_list, sidebar_evidence_by_id)
+        deep_entries = _process_section("deep", deep_list, sidebar_evidence_by_id, sidebar_topic_tags_by_id)
         log_substep("6.2", "生成精读区文章", "END")
 
         log_substep("6.3", "生成速读区文章", "START")
-        quick_entries = _process_section("quick", quick_list, sidebar_evidence_by_id)
+        quick_entries = _process_section("quick", quick_list, sidebar_evidence_by_id, sidebar_topic_tags_by_id)
         log_substep("6.3", "生成速读区文章", "END")
 
     log_substep("6.4", "生成当日日报并同步首页 README", "START")
@@ -3070,6 +3232,7 @@ def main() -> None:
             quick_entries,
             sidebar_evidence_by_id,
             date_label=args.sidebar_date_label,
+            paper_topic_tags_by_id=sidebar_topic_tags_by_id,
         )
         log_substep("6.5", "更新侧边栏", "END")
     else:

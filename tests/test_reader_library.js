@@ -48,11 +48,43 @@ const fallbackTopics = library.topicTagsForPaper({
   tags: [{ kind: 'query', label: 'ai4nd' }],
 });
 
-assert.deepEqual(
-  fallbackTopics.map((tag) => tag.label).slice(0, 3),
-  ['cross-modal alignment', 'video semantic priors', 'EEG motor decoding'],
-);
+assert.deepEqual(fallbackTopics, []);
 assert.equal(fallbackTopics.some((tag) => tag.label.toLowerCase() === 'ai4nd'), false);
+
+const generatedTopics = library.topicTagsForPaper({
+  topic_tags: [
+    'continual learning',
+    'domain generalization',
+    'replay control',
+    'sample selection',
+    'lifelong agents',
+    'extra ignored',
+  ],
+  tags: [{ kind: 'paper', label: 'fallback' }],
+});
+
+assert.deepEqual(
+  generatedTopics.map((tag) => tag.label),
+  ['continual learning', 'domain generalization', 'replay control', 'sample selection', 'lifelong agents'],
+);
+
+const longPhraseTopics = library.topicTagsForPaper({
+  topic_tags: ['使用偏信息分解分析多模态语言模型中的模态交互'],
+  tags: [
+    { kind: 'paper', label: '持续学习' },
+    { kind: 'keyword', label: '域泛化' },
+  ],
+  evidence: '使用偏信息分解分析多模态语言模型中的模态交互',
+});
+
+assert.deepEqual(
+  longPhraseTopics.map((tag) => tag.label),
+  ['持续学习', '域泛化'],
+);
+assert.equal(
+  longPhraseTopics.some((tag) => tag.label.includes('使用偏信息')),
+  false,
+);
 
 const rendered = library.renderPaper(
   {
@@ -63,6 +95,7 @@ const rendered = library.renderPaper(
     date: '2026-06-04',
     score: '9.0',
     evidence: 'matches the reader profile',
+    topic_tags: ['planning', 'agents'],
     tags: [
       { kind: 'query', label: 'retrieval' },
       { kind: 'keyword', label: 'planning' },

@@ -131,6 +131,41 @@ window.DPRReaderLibrary = (function () {
       })
       .filter(Boolean);
 
+  const cleanTopicLabel = (value) => {
+    let label = normalizeText(value)
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/^[\s:：;；,，、.!?！？"()[\]{}-]+/, '')
+      .replace(/[\s:：;；,，、.!?！？"()[\]{}-]+$/, '');
+    label = normalizeText(label);
+    if (!label) return '';
+    const lower = label.toLowerCase();
+    if (/^(query|search|score)\s*[:：]/i.test(label)) return '';
+    if (lower === 'ai4nd' || lower === 'composite' || /:composite$/i.test(label)) return '';
+    const hasCjk = /[\u4e00-\u9fff]/.test(label);
+    const words = label.split(/\s+/).filter(Boolean);
+    if (hasCjk && label.length > 12) return '';
+    if (!hasCjk && (words.length > 5 || label.length > 42)) return '';
+    return label.length >= 2 ? label : '';
+  };
+
+  const normalizeTopicTags = (tags) =>
+    (Array.isArray(tags)
+      ? tags
+      : typeof tags === 'string'
+        ? tags.split(/[,;|、，；]+/)
+        : [])
+      .map((item) => {
+        if (typeof item === 'string') {
+          const label = cleanTopicLabel(item);
+          return label ? { kind: 'topic', label } : null;
+        }
+        if (!item || typeof item !== 'object') return null;
+        const kind = normalizeText(item.kind || item.type || 'topic').toLowerCase() || 'topic';
+        const label = cleanTopicLabel(item.label || item.name || item.value);
+        return label ? { kind, label } : null;
+      })
+      .filter(Boolean);
+
   const tagsFromSidebarDom = (anchor) => {
     if (!anchor || !anchor.querySelectorAll) return [];
     return Array.from(anchor.querySelectorAll('.dpr-sidebar-tag'))
@@ -180,6 +215,7 @@ window.DPRReaderLibrary = (function () {
       score: normalizeText(payload.score || scoreFromSidebarDom(anchor)),
       source: normalizeText(payload.source || (isLocalPdf ? 'local-pdf' : '')),
       evidence: normalizeText(payload.evidence),
+      topic_tags: normalizeTopicTags(payload.topic_tags || payload.topicTags),
       tags: normalizeTags(payload.tags && payload.tags.length ? payload.tags : tagsFromSidebarDom(anchor)),
     };
   };
@@ -207,6 +243,7 @@ window.DPRReaderLibrary = (function () {
           paper.title_zh,
           paper.score,
           paper.evidence,
+          (paper.topic_tags || []).map((tag) => `${tag.kind}:${tag.label}`).join('|'),
           (paper.tags || []).map((tag) => `${tag.kind}:${tag.label}`).join('|'),
         ].join('\u0001'),
       )
@@ -240,84 +277,33 @@ window.DPRReaderLibrary = (function () {
     return label ? `${scoreText}/10 ${label}` : `${scoreText}/10`;
   };
 
-  const cleanFallbackTopicLabel = (value) => {
-    let label = normalizeText(value)
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/^[\s:：,，;；、.!?？'"“”‘’()[\]{}-]+/, '')
-      .replace(/[\s:：,，;；、.!?？'"“”‘’()[\]{}-]+$/, '');
-    if (!label) return '';
-    const lower = label.toLowerCase();
-    if (/^(query|search|score)\s*:/i.test(label)) return '';
-    if (lower === 'ai4nd' || lower === 'composite' || /:composite$/i.test(label)) return '';
-    const words = label.split(/\s+/).filter(Boolean);
-    if (words.length > 6) {
-      const stopwords = new Set([
-        'a',
-        'an',
-        'and',
-        'are',
-        'at',
-        'benchmarking',
-        'for',
-        'from',
-        'in',
-        'of',
-        'on',
-        'the',
-        'to',
-        'towards',
-        'understanding',
-        'via',
-        'with',
-      ]);
-      const compact = words.filter((word) => {
-        const key = word.toLowerCase().replace(/[^a-z0-9]+/g, '');
-        return key && !stopwords.has(key);
-      });
-      if (compact.length >= 2) label = compact.slice(0, 5).join(' ');
-    }
-    if (label.length > 42) label = `${label.slice(0, 39).trim()}...`;
-    return label.length >= 3 ? label : '';
-  };
-
-  const fallbackTopicTagsForPaper = (paper, seen, limit) => {
-    const out = [];
-    const add = (candidate) => {
-      if (out.length >= limit) return;
-      const label = cleanFallbackTopicLabel(candidate);
-      if (!label) return;
-      const key = label.toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      out.push({ kind: 'paper', label });
-    };
-    [paper.evidence, paper.title_zh, paper.title].forEach((source) => {
-      if (out.length >= limit) return;
-      normalizeText(source)
-        .split(/(?:\s+-\s+)|[|/;；,，、。.!?？]+|[:：]+/)
-        .forEach(add);
-    });
-    return out;
-  };
-
   const topicTagsForPaper = (paper) => {
     const seen = new Set();
     const blockedKinds = new Set(['query', 'score', 'reader', 'search']);
+    const addSeen = (tag) => {
+      const label = cleanTopicLabel(tag && tag.label);
+      if (!label) return null;
+      const key = label.toLowerCase();
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return { kind: normalizeText(tag.kind || 'topic').toLowerCase() || 'topic', label };
+    };
+    const topicTags = normalizeTopicTags(paper.topic_tags).map(addSeen).filter(Boolean).slice(0, 5);
+    if (topicTags.length >= 5) return topicTags;
     const explicitTags = normalizeTags(paper.tags)
       .filter((tag) => {
         const kind = normalizeText(tag.kind).toLowerCase();
-        const label = normalizeText(tag.label);
-        if (!label || blockedKinds.has(kind)) return false;
-        if (/^(query|search|score)\s*:/i.test(label)) return false;
-        if (/:composite$/i.test(label) || /^composite$/i.test(label)) return false;
+        if (!['keyword', 'paper', 'topic', 'other'].includes(kind) || blockedKinds.has(kind)) return false;
+        const label = cleanTopicLabel(tag.label);
+        if (!label) return false;
+        tag.label = label;
         const key = label.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .slice(0, 5);
-    if (explicitTags.length >= 5) return explicitTags;
-    return explicitTags.concat(fallbackTopicTagsForPaper(paper, seen, 5 - explicitTags.length));
+      .slice(0, 5 - topicTags.length);
+    return topicTags.concat(explicitTags);
   };
 
   const renderTags = (paper) => {
@@ -509,10 +495,11 @@ window.DPRReaderLibrary = (function () {
       FILTERS,
       PAGE_SIZE,
       collectSidebarCatalog,
-      fallbackTopicTagsForPaper,
+      cleanTopicLabel,
       formatScore,
       isExcludedRouteId,
       isReaderPaperRouteId,
+      normalizeTopicTags,
       paperMetaFromSidebarAnchor,
       renderPaper,
       topicTagsForPaper,

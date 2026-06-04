@@ -81,6 +81,44 @@ window.DPRReaderStateStore = (function () {
       })
       .filter(Boolean);
 
+  const cleanTopicLabel = (value) => {
+    let label = normalizeText(value)
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/^[\s:：;；,，、.!?！？"()[\]{}-]+/, '')
+      .replace(/[\s:：;；,，、.!?！？"()[\]{}-]+$/, '');
+    label = normalizeText(label);
+    if (!label) return '';
+    const lower = label.toLowerCase();
+    if (/^(query|search|score)\s*[:：]/i.test(label)) return '';
+    if (lower === 'ai4nd' || lower === 'composite' || /:composite$/i.test(label)) return '';
+    const hasCjk = /[\u4e00-\u9fff]/.test(label);
+    const words = label.split(/\s+/).filter(Boolean);
+    if (hasCjk && label.length > 12) return '';
+    if (!hasCjk && (words.length > 5 || label.length > 42)) return '';
+    return label.length >= 2 ? label : '';
+  };
+
+  const normalizeTopicTags = (tags) =>
+    (Array.isArray(tags)
+      ? tags
+      : typeof tags === 'string'
+        ? tags.split(/[,;|、，；]+/)
+        : [])
+      .map((item) => {
+        if (typeof item === 'string') {
+          const label = cleanTopicLabel(item);
+          return label ? { kind: 'topic', label } : null;
+        }
+        if (!isPlainObject(item)) return null;
+        const label = cleanTopicLabel(item.label || item.name || item.value);
+        if (!label) return null;
+        return {
+          kind: normalizeText(item.kind || item.type || 'topic').toLowerCase() || 'topic',
+          label,
+        };
+      })
+      .filter(Boolean);
+
   const normalizePaperId = (paperId) =>
     normalizeText(paperId).replace(/^#\//, '').replace(/\.md$/i, '').replace(/\/$/, '');
 
@@ -140,6 +178,7 @@ window.DPRReaderStateStore = (function () {
       pdf: normalizeText(source.pdf || source.pdf_url),
       score: normalizeText(source.score),
       evidence: normalizeText(source.evidence),
+      topic_tags: normalizeTopicTags(source.topic_tags || source.topicTags),
       tags: normalizeTags(source.tags),
       reaction,
       marker,
@@ -514,12 +553,16 @@ window.DPRReaderStateStore = (function () {
     if (key.startsWith('marker:')) return paper.marker === key.slice(7);
     if (key.startsWith('tag:')) {
       const needle = key.slice(4);
-      return (paper.tags || []).some((item) => normalizeText(item.label).toLowerCase() === needle);
+      return [...(paper.topic_tags || []), ...(paper.tags || [])].some(
+        (item) => normalizeText(item.label).toLowerCase() === needle,
+      );
     }
     return (
       paper.marker === key ||
       paper.reaction === key ||
-      (paper.tags || []).some((item) => normalizeText(item.label).toLowerCase() === key)
+      [...(paper.topic_tags || []), ...(paper.tags || [])].some(
+        (item) => normalizeText(item.label).toLowerCase() === key,
+      )
     );
   };
 
@@ -532,6 +575,7 @@ window.DPRReaderStateStore = (function () {
       paper.source,
       paper.evidence,
       paper.score,
+      ...(paper.topic_tags || []).map((item) => item.label),
       ...(paper.tags || []).map((item) => item.label),
     ]
       .map((value) => normalizeText(value).toLowerCase())

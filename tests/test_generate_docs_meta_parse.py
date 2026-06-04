@@ -1,4 +1,5 @@
 import importlib.util
+import html
 import json
 import sys
 import tempfile
@@ -150,6 +151,65 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         self.assertIn(("query", "equation-discovery"), tags)
         self.assertNotIn(("query", "sr:composite"), tags)
         self.assertEqual(tags.count(("query", "sr")), 1)
+
+    def test_extract_reader_topic_tags_uses_short_sources(self):
+        paper = {
+            "topic_tags": [
+                "持续学习",
+                "使用偏信息分解分析多模态语言模型中的模态交互",
+            ],
+            "keywords": ["域泛化"],
+            "llm_tags": [
+                "query:ai4nd",
+                "paper:ai4nd:composite",
+                "paper:domain adaptation",
+            ],
+            "llm_evidence_en": "continual learning, domain generalization, replay control",
+            "canonical_evidence": "使用偏信息分解分析多模态语言模型中的模态交互",
+        }
+
+        topics = self.mod.extract_reader_topic_tags(paper)
+
+        self.assertEqual(
+            topics,
+            ["持续学习", "域泛化", "domain adaptation", "continual learning", "domain generalization"],
+        )
+        self.assertNotIn("ai4nd", " ".join(topics).lower())
+        self.assertFalse(any("使用偏信息" in topic for topic in topics))
+
+    def test_update_sidebar_payload_includes_short_topic_tags(self):
+        with tempfile.TemporaryDirectory() as d:
+            sidebar_path = Path(d) / "_sidebar.md"
+            sidebar_path.write_text("* Daily Papers\n", encoding="utf-8")
+
+            self.mod.update_sidebar(
+                str(sidebar_path),
+                "20260522",
+                [
+                    (
+                        "202605/22/test-paper",
+                        "Test Paper",
+                        "测试论文",
+                        [("score", "9.0"), ("query", "ai4nd")],
+                    )
+                ],
+                [],
+                {"202605/22/test-paper": "使用偏信息分解分析多模态语言模型中的模态交互"},
+                "2026-05-22",
+                paper_topic_tags_by_id={
+                    "202605/22/test-paper": [
+                        "持续学习",
+                        "域泛化",
+                        "使用偏信息分解分析多模态语言模型中的模态交互",
+                    ]
+                },
+            )
+
+            content = sidebar_path.read_text(encoding="utf-8")
+            encoded = content.split('data-sidebar-item="', 1)[1].split('"', 1)[0]
+            payload = json.loads(html.unescape(encoded))
+            self.assertEqual(payload["topic_tags"], ["持续学习", "域泛化"])
+            self.assertEqual(payload["tags"], [{"kind": "query", "label": "ai4nd"}])
 
     def test_build_markdown_content_writes_figures_json_front_matter(self):
         paper = {
