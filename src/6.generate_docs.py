@@ -74,6 +74,16 @@ READER_TOPIC_BLOCKED_LABELS = {
     "composite",
     "fresh_fetch",
     "carryover",
+    "local-pdf",
+    "model",
+    "models",
+    "method",
+    "methods",
+    "approach",
+    "paper",
+    "framework",
+    "system",
+    "not relevant",
 }
 READER_TOPIC_TAXONOMY_SEEDS = [
     ("LLM Agents", ["agent", "multi-agent", "tool use", "tool-using", "planning", "memory", "autonomous"]),
@@ -90,6 +100,75 @@ READER_TOPIC_TAXONOMY_SEEDS = [
     ("Safety / Alignment", ["safety", "alignment", "trustworthy", "risk", "guardrail", "red team", "privacy"]),
     ("HCI / Human-AI", ["human-ai", "hci", "interactive", "user study", "collaboration", "interface"]),
     ("Security", ["security", "attack", "adversarial", "vulnerability", "jailbreak"]),
+]
+
+READER_TOPIC_CATEGORY_LABELS = {
+    "cs.ai": "Artificial Intelligence",
+    "cs.cl": "NLP",
+    "cs.cv": "Computer Vision",
+    "cs.ir": "Information Retrieval",
+    "cs.lg": "Machine Learning",
+    "cs.sd": "Speech Processing",
+    "cs.ro": "Robotics",
+    "cs.hc": "Human-Computer Interaction",
+    "cs.cr": "Computer Security",
+    "cs.dc": "Distributed Systems",
+    "cs.ds": "Algorithms",
+    "cs.gr": "Computer Graphics",
+    "cs.ma": "Multi-Agent Systems",
+    "cs.ne": "Neural Computing",
+    "cs.sy": "Systems and Control",
+    "eess.as": "Audio and Speech Processing",
+    "eess.iv": "Image and Video Processing",
+    "eess.sp": "Signal Processing",
+    "eess.sy": "Control Systems",
+    "stat.ml": "Machine Learning",
+}
+
+READER_TOPIC_CANONICAL_PATTERNS = [
+    ("EEG motor decoding", [r"\beeg motor decoding\b"]),
+    ("EEG foundation models", [r"\beeg foundation models?\b"]),
+    ("fMRI decoding", [r"\bfmri\b.*\bdecod", r"\bdecod\w*\b.*\bfmri\b"]),
+    ("BCI", [r"\bbrain[- ]computer interface\b", r"\bbci\b"]),
+    ("neural decoding", [r"\bneural decoding\b", r"\bbrain decoding\b"]),
+    ("speech reconstruction", [r"\breconstruct\w* speech\b", r"\bspeech reconstruction\b"]),
+    ("non-invasive neural signals", [r"\bnon[- ]invasive neural signals?\b"]),
+    ("EMG-to-text", [r"\bemg[- ]to[- ]text\b", r"\belectromyography\b.*\btext\b"]),
+    ("semantic alignment", [r"\bsemantic alignment\b"]),
+    ("cross-modal alignment", [r"\bcross[- ]modal alignment\b"]),
+    ("multimodal alignment", [r"\bmultimodal alignment\b", r"\bmulti[- ]modal alignment\b"]),
+    ("cross-modal representation learning", [r"\bcross[- ]modal representation learning\b"]),
+    ("cross-modal knowledge editing", [r"\bcross[- ]modal knowledge editing\b", r"\bknowledge editing\b"]),
+    ("cross-modal knowledge transfer", [r"\bcross[- ]modal knowledge transfer\b"]),
+    ("multimodal models", [r"\bmultimodal models?\b", r"\bmulti[- ]modal models?\b", r"\bumms?\b"]),
+    ("multimodal domain generalization", [r"\bmultimodal domain generalization\b", r"\bmmdg\b"]),
+    ("domain generalization", [r"\bdomain generalization\b"]),
+    ("test-time adaptation", [r"\btest[- ]time (?:training|adaptation)\b", r"\bmodel at test time\b"]),
+    ("continual learning", [r"\bcontinual learning\b"]),
+    ("instruction tuning", [r"\binstruction tuning\b"]),
+    ("replay control", [r"\breplay control\b", r"\breplay controllers?\b"]),
+    ("dense retrieval", [r"\bdense retrieval\b", r"\bdense retrievers?\b"]),
+    ("reranking", [r"\breranking\b", r"\bre-ranking\b"]),
+    ("pseudo-label reranking", [r"\bpseudo[- ]labels?\b.*\brerank", r"\brerank\w*\b.*\bpseudo[- ]labels?\b"]),
+    ("time-series forecasting", [r"\btime[- ]series forecasting\b", r"\blong[- ]term time[- ]series forecasting\b"]),
+    ("time-series embeddings", [r"\btime[- ]series embeddings?\b"]),
+    ("time-series prediction", [r"\btime[- ]series prediction\b"]),
+    ("state space models", [r"\bstate space models?\b", r"\bselective state space\b"]),
+    ("non-stationary time series", [r"\bnon[- ]stationary time series\b", r"\bnon[- ]stationary temporal\b"]),
+    ("long-range temporal modeling", [r"\blong[- ]range\b.*\btemporal\b", r"\blong range credit assignment\b"]),
+    ("modality interaction", [r"\bmodality interaction\b"]),
+    ("partial information decomposition", [r"\bpartial information decomposition\b", r"\bpid\b"]),
+    ("multimodal JEPA", [r"\bmultimodal jepa\b", r"\bmulti[- ]modal jepa\b"]),
+    ("temporal sentence grounding", [r"\btemporal sentence grounding\b"]),
+    ("text-to-motion generation", [r"\btext[- ]to[- ]motion generation\b"]),
+    ("text-to-speech", [r"\btext[- ]to[- ]speech\b", r"\btts\b"]),
+    ("diffusion transformers", [r"\bdiffusion transformers?\b", r"\bdit\b"]),
+    ("representation alignment", [r"\brepresentation alignment\b"]),
+    ("agentic forecasting", [r"\bagentic forecasting\b"]),
+    ("adaptive memory", [r"\badaptive (?:factor )?memory\b"]),
+    ("generative retrieval", [r"\bgenerative retrieval\b"]),
+    ("ranking", [r"\branking\b"]),
+    ("recommendation systems", [r"\brecommendation systems?\b", r"\brecommender systems?\b"]),
 ]
 
 
@@ -1442,6 +1521,36 @@ def _topic_candidate_parts(value: Any) -> List[str]:
     return [p.strip() for p in re.split(r"[,;|、，；]+", text) if p.strip()]
 
 
+def _canonicalize_reader_topic_label(label: str) -> str:
+    text = re.sub(r"\s+", " ", str(label or "").replace("–", "-").replace("—", "-")).strip()
+    lower = text.casefold()
+    if not text:
+        return ""
+    if re.search(r"\btest[- ]?time\b", lower):
+        return "test-time adaptation"
+    if re.search(r"\bpseudo[- ]labels?\b", lower) and re.search(r"\brerank", lower):
+        return "pseudo-label reranking"
+    if re.search(r"\breconstruct\w* speech\b|\bspeech reconstruction\b", lower):
+        return "speech reconstruction"
+    if re.search(r"\bstate space models?\b|\bselective state space\b", lower):
+        return "state space models"
+    if re.search(r"\blong range credit assignment\b", lower):
+        return "long-range temporal modeling"
+    if re.fullmatch(r"multimodal domain generalization benchmark", lower):
+        return "multimodal domain generalization"
+    if re.fullmatch(r"multi-modal domain generalization benchmark", lower):
+        return "multimodal domain generalization"
+    text = re.sub(
+        r"^(?:analyz(?:e|es|ing)|adapt(?:s|ing)?|uses?|using|applies?|"
+        r"reconstruct(?:s|ing)?|benchmark(?:s|ing)?|align(?:s|ing)?|"
+        r"unify(?:ing|ies)?|unified|introduces?|presents?)\s+",
+        "",
+        text,
+        flags=re.I,
+    ).strip()
+    return text
+
+
 def _reader_topic_key(label: str) -> str:
     return re.sub(r"\s+", " ", str(label or "").strip()).casefold()
 
@@ -1455,10 +1564,13 @@ def _clean_reader_topic_label(value: Any, kind: str = "paper") -> str:
     if parsed_label and parsed_kind != "other":
         kind = parsed_kind
         label = parsed_label.strip()
+    label = _canonicalize_reader_topic_label(label)
     kind_key = str(kind or "").strip().casefold()
     if kind_key in {"query", "search", "score", "reader", "profile", "intent", "subscription"}:
         return ""
     lower = label.casefold()
+    if re.search(r"\b(?:prioritize|especially|could inspire|current subscription|reader profile)\b", lower):
+        return ""
     if lower in READER_TOPIC_BLOCKED_LABELS or lower.endswith(":composite") or lower.startswith("query:"):
         return ""
     if re.match(r"^(?:query|search|score)\s*[:：]", label, re.I):
@@ -1473,6 +1585,69 @@ def _clean_reader_topic_label(value: Any, kind: str = "paper") -> str:
     return label
 
 
+def _is_english_topic_text(text: str) -> bool:
+    return bool(re.search(r"[A-Za-z]", text or "")) and not bool(re.search(r"[\u4e00-\u9fff]", text or ""))
+
+
+def _reader_topic_phrase_parts(text: str) -> List[str]:
+    raw = re.sub(r"\s+", " ", str(text or "").strip())
+    if not raw or not _is_english_topic_text(raw):
+        return []
+    parts = _topic_candidate_parts(raw) if re.search(r"[,;|]", raw) else []
+    if not parts:
+        parts = [p.strip() for p in re.split(
+            r"\b(?:with|via|using|through|for|in|from|into|across|on|by|towards?|toward)\b",
+            raw,
+            flags=re.I,
+        ) if p.strip()]
+    if len(parts) <= 1:
+        parts = [raw]
+    return parts
+
+
+def _iter_reader_pattern_topic_candidates(value: Any) -> List[Tuple[str, str]]:
+    candidates: List[Tuple[str, str]] = []
+    for text in _iter_evidence_text_values(value):
+        if not text:
+            continue
+        for label, patterns in READER_TOPIC_CANONICAL_PATTERNS:
+            if any(re.search(pattern, text, re.I) for pattern in patterns):
+                candidates.append(("paper", label))
+    return candidates
+
+
+def _iter_reader_category_topic_candidates(paper: Dict[str, Any]) -> List[Tuple[str, str]]:
+    values: List[Any] = []
+    if paper.get("primary_category"):
+        values.append(paper.get("primary_category"))
+    categories = paper.get("categories")
+    if isinstance(categories, list):
+        values.extend(categories)
+    elif categories:
+        values.append(categories)
+    candidates: List[Tuple[str, str]] = []
+    for raw in values:
+        text = str(raw or "").strip()
+        if not text:
+            continue
+        mapped = READER_TOPIC_CATEGORY_LABELS.get(text.casefold())
+        if mapped:
+            candidates.append(("paper", mapped))
+        elif "." not in text and re.fullmatch(r"[A-Za-z][A-Za-z .&/-]{2,38}", text):
+            candidates.append(("paper", text.title() if text.islower() else text))
+    return candidates
+
+
+def _looks_like_short_query_topic(text: str) -> bool:
+    raw = str(text or "").strip()
+    if not raw or _looks_like_evidence_sentence(raw):
+        return False
+    if re.search(r"\b(?:prioritize|especially|could|should|papers central|subscription)\b", raw, re.I):
+        return False
+    words = [w for w in re.split(r"\s+", raw) if w]
+    return 1 <= len(words) <= 5 and len(raw) <= 48
+
+
 def _add_reader_topic(out: List[str], seen: set, candidate: Any, kind: str = "paper", limit: int = 5) -> None:
     if len(out) >= limit:
         return
@@ -1480,6 +1655,15 @@ def _add_reader_topic(out: List[str], seen: set, candidate: Any, kind: str = "pa
     key = _reader_topic_key(label)
     if not label or key in seen:
         return
+    for index, existing in enumerate(list(out)):
+        existing_key = _reader_topic_key(existing)
+        if key in existing_key:
+            return
+        if existing_key in key:
+            seen.discard(existing_key)
+            seen.add(key)
+            out[index] = label
+            return
     seen.add(key)
     out.append(label)
 
@@ -1525,7 +1709,7 @@ def _looks_like_evidence_sentence(text: str) -> bool:
         return True
     lower = raw.casefold()
     if re.search(
-        r"\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents)\b",
+        r"\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents|analyzes|analyses|adapts|reconstructs|reconstructing)\b",
         lower,
     ):
         return True
@@ -1535,16 +1719,14 @@ def _looks_like_evidence_sentence(text: str) -> bool:
 def _iter_reader_evidence_topic_candidates(value: Any) -> List[Tuple[str, str]]:
     candidates: List[Tuple[str, str]] = []
     for text in _iter_evidence_text_values(value):
-        if not re.search(r"[,;|、，；]", text):
-            continue
-        if _looks_like_evidence_sentence(text):
-            continue
-        parts = _topic_candidate_parts(text)
-        clean_parts = [_clean_reader_topic_label(part, "paper") for part in parts]
-        clean_parts = [part for part in clean_parts if part]
-        if len(clean_parts) < 2:
-            continue
-        candidates.extend(("paper", part) for part in parts)
+        sentence_like = _looks_like_evidence_sentence(text)
+        if not sentence_like:
+            parts = _reader_topic_phrase_parts(text)
+            clean_parts = [_clean_reader_topic_label(part, "paper") for part in parts]
+            clean_parts = [part for part in clean_parts if part]
+            if len(clean_parts) >= 1:
+                candidates.extend(("paper", part) for part in parts)
+        candidates.extend(_iter_reader_pattern_topic_candidates(text))
     return candidates
 
 
@@ -1568,30 +1750,38 @@ def extract_reader_topic_tags(paper: Dict[str, Any], limit: int = 5) -> List[str
             if len(out) >= limit:
                 return out
 
-    for field in (
-        "llm_evidence_en",
-        "evidence_en",
-        "llm_evidence_cn",
-        "evidence_cn",
-        "llm_evidence",
-        "canonical_evidence",
-        "evidence",
-    ):
+    for field in ("llm_evidence_en", "evidence_en"):
         for kind, candidate in _iter_reader_evidence_topic_candidates(paper.get(field)):
             _add_reader_topic(out, seen, candidate, kind, limit)
             if len(out) >= limit:
                 return out
 
-    text_blob = " ".join(
-        str(paper.get(key) or "").strip()
-        for key in ("title", "title_zh", "abstract", "llm_evidence_en", "canonical_evidence")
-        if str(paper.get(key) or "").strip()
-    ).casefold()
-    for label, keywords in READER_TOPIC_TAXONOMY_SEEDS:
-        if any(keyword.casefold() in text_blob for keyword in keywords):
-            _add_reader_topic(out, seen, label, "paper", limit)
+    if _looks_like_short_query_topic(str(paper.get("matched_query_text") or "")):
+        for kind, candidate in _iter_reader_pattern_topic_candidates(paper.get("matched_query_text")):
+            _add_reader_topic(out, seen, candidate, kind, limit)
             if len(out) >= limit:
                 return out
+        for kind, candidate in _iter_reader_topic_candidates(paper.get("matched_query_text"), "paper"):
+            _add_reader_topic(out, seen, candidate, kind, limit)
+            if len(out) >= limit:
+                return out
+
+    for field in ("llm_evidence_cn", "evidence_cn", "llm_evidence", "canonical_evidence", "evidence"):
+        for kind, candidate in _iter_reader_evidence_topic_candidates(paper.get(field)):
+            _add_reader_topic(out, seen, candidate, kind, limit)
+            if len(out) >= limit:
+                return out
+
+    for field in ("title", "title_zh"):
+        for kind, candidate in _iter_reader_pattern_topic_candidates(paper.get(field)):
+            _add_reader_topic(out, seen, candidate, kind, limit)
+            if len(out) >= limit:
+                return out
+
+    for kind, candidate in _iter_reader_category_topic_candidates(paper):
+        _add_reader_topic(out, seen, candidate, kind, limit)
+        if len(out) >= limit:
+            return out
     return out
 
 

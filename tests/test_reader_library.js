@@ -58,6 +58,28 @@ assert.deepEqual(
 );
 assert.equal(fallbackTopics.some((tag) => tag.label.toLowerCase() === 'ai4nd'), false);
 
+const phraseMetadataTopics = library.topicTagsForPaper({
+  llm_evidence_en: 'cross-modal knowledge editing in multimodal models',
+  matched_query_text: 'multimodal alignment',
+  categories: ['cs.CL', 'cs.CV'],
+  tags: [{ kind: 'query', label: 'ai4nd' }],
+});
+
+assert.deepEqual(
+  phraseMetadataTopics.map((tag) => tag.label),
+  ['cross-modal knowledge editing', 'multimodal models', 'multimodal alignment', 'NLP', 'Computer Vision'],
+);
+
+const titleOnlyTopics = library.topicTagsForPaper({
+  title: 'MMDG-Bench: A Benchmark for Multimodal Domain Generalization',
+  tags: [{ kind: 'query', label: 'ai4nd' }],
+});
+
+assert.deepEqual(
+  titleOnlyTopics.map((tag) => tag.label),
+  ['multimodal domain generalization'],
+);
+
 const sentenceEvidenceTopics = library.topicTagsForPaper({
   evidence: 'This paper proposes cross-modal alignment, and improves EEG motor decoding.',
   tags: [{ kind: 'query', label: 'ai4nd' }],

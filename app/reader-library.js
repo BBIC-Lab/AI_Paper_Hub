@@ -23,6 +23,75 @@ window.DPRReaderLibrary = (function () {
     unsubscribe: null,
   };
 
+  const CATEGORY_TOPIC_LABELS = {
+    'cs.ai': 'Artificial Intelligence',
+    'cs.cl': 'NLP',
+    'cs.cv': 'Computer Vision',
+    'cs.ir': 'Information Retrieval',
+    'cs.lg': 'Machine Learning',
+    'cs.sd': 'Speech Processing',
+    'cs.ro': 'Robotics',
+    'cs.hc': 'Human-Computer Interaction',
+    'cs.cr': 'Computer Security',
+    'cs.dc': 'Distributed Systems',
+    'cs.ds': 'Algorithms',
+    'cs.gr': 'Computer Graphics',
+    'cs.ma': 'Multi-Agent Systems',
+    'cs.ne': 'Neural Computing',
+    'cs.sy': 'Systems and Control',
+    'eess.as': 'Audio and Speech Processing',
+    'eess.iv': 'Image and Video Processing',
+    'eess.sp': 'Signal Processing',
+    'eess.sy': 'Control Systems',
+    'stat.ml': 'Machine Learning',
+  };
+
+  const CANONICAL_TOPIC_PATTERNS = [
+    ['EEG motor decoding', [/\beeg motor decoding\b/i]],
+    ['EEG foundation models', [/\beeg foundation models?\b/i]],
+    ['fMRI decoding', [/\bfmri\b.*\bdecod/i, /\bdecod\w*\b.*\bfmri\b/i]],
+    ['BCI', [/\bbrain[- ]computer interface\b/i, /\bbci\b/i]],
+    ['neural decoding', [/\bneural decoding\b/i, /\bbrain decoding\b/i]],
+    ['speech reconstruction', [/\breconstruct\w* speech\b/i, /\bspeech reconstruction\b/i]],
+    ['non-invasive neural signals', [/\bnon[- ]invasive neural signals?\b/i]],
+    ['EMG-to-text', [/\bemg[- ]to[- ]text\b/i, /\belectromyography\b.*\btext\b/i]],
+    ['semantic alignment', [/\bsemantic alignment\b/i]],
+    ['cross-modal alignment', [/\bcross[- ]modal alignment\b/i]],
+    ['multimodal alignment', [/\bmultimodal alignment\b/i, /\bmulti[- ]modal alignment\b/i]],
+    ['cross-modal representation learning', [/\bcross[- ]modal representation learning\b/i]],
+    ['cross-modal knowledge editing', [/\bcross[- ]modal knowledge editing\b/i, /\bknowledge editing\b/i]],
+    ['cross-modal knowledge transfer', [/\bcross[- ]modal knowledge transfer\b/i]],
+    ['multimodal models', [/\bmultimodal models?\b/i, /\bmulti[- ]modal models?\b/i, /\bumms?\b/i]],
+    ['multimodal domain generalization', [/\bmultimodal domain generalization\b/i, /\bmmdg\b/i]],
+    ['domain generalization', [/\bdomain generalization\b/i]],
+    ['test-time adaptation', [/\btest[- ]time (?:training|adaptation)\b/i, /\bmodel at test time\b/i]],
+    ['continual learning', [/\bcontinual learning\b/i]],
+    ['instruction tuning', [/\binstruction tuning\b/i]],
+    ['replay control', [/\breplay control\b/i, /\breplay controllers?\b/i]],
+    ['dense retrieval', [/\bdense retrieval\b/i, /\bdense retrievers?\b/i]],
+    ['pseudo-label reranking', [/\bpseudo[- ]labels?\b.*\brerank/i, /\brerank\w*\b.*\bpseudo[- ]labels?\b/i]],
+    ['reranking', [/\breranking\b/i, /\bre-ranking\b/i]],
+    ['time-series forecasting', [/\btime[- ]series forecasting\b/i, /\blong[- ]term time[- ]series forecasting\b/i]],
+    ['time-series embeddings', [/\btime[- ]series embeddings?\b/i]],
+    ['time-series prediction', [/\btime[- ]series prediction\b/i]],
+    ['state space models', [/\bstate space models?\b/i, /\bselective state space\b/i]],
+    ['non-stationary time series', [/\bnon[- ]stationary time series\b/i, /\bnon[- ]stationary temporal\b/i]],
+    ['long-range temporal modeling', [/\blong[- ]range\b.*\btemporal\b/i, /\blong range credit assignment\b/i]],
+    ['modality interaction', [/\bmodality interaction\b/i]],
+    ['partial information decomposition', [/\bpartial information decomposition\b/i, /\bpid\b/i]],
+    ['multimodal JEPA', [/\bmultimodal jepa\b/i, /\bmulti[- ]modal jepa\b/i]],
+    ['temporal sentence grounding', [/\btemporal sentence grounding\b/i]],
+    ['text-to-motion generation', [/\btext[- ]to[- ]motion generation\b/i]],
+    ['text-to-speech', [/\btext[- ]to[- ]speech\b/i, /\btts\b/i]],
+    ['diffusion transformers', [/\bdiffusion transformers?\b/i, /\bdit\b/i]],
+    ['representation alignment', [/\brepresentation alignment\b/i]],
+    ['agentic forecasting', [/\bagentic forecasting\b/i]],
+    ['adaptive memory', [/\badaptive (?:factor )?memory\b/i]],
+    ['generative retrieval', [/\bgenerative retrieval\b/i]],
+    ['ranking', [/\branking\b/i]],
+    ['recommendation systems', [/\brecommendation systems?\b/i, /\brecommender systems?\b/i]],
+  ];
+
   const escapeHtml = (value) =>
     String(value || '')
       .replace(/&/g, '&amp;')
@@ -148,8 +217,29 @@ window.DPRReaderLibrary = (function () {
       })
       .filter(Boolean);
 
+  const canonicalizeTopicLabel = (value) => {
+    let label = normalizeText(value).replace(/[–—]/g, '-');
+    const lower = label.toLowerCase();
+    if (!label) return '';
+    if (/\btest[- ]?time\b/i.test(label)) return 'test-time adaptation';
+    if (/\bpseudo[- ]labels?\b/i.test(label) && /\brerank/i.test(label)) return 'pseudo-label reranking';
+    if (/\breconstruct\w* speech\b/i.test(label) || /\bspeech reconstruction\b/i.test(label)) {
+      return 'speech reconstruction';
+    }
+    if (/\bstate space models?\b/i.test(label) || /\bselective state space\b/i.test(label)) return 'state space models';
+    if (/\blong range credit assignment\b/i.test(label)) return 'long-range temporal modeling';
+    if (lower === 'multimodal domain generalization benchmark' || lower === 'multi-modal domain generalization benchmark') {
+      return 'multimodal domain generalization';
+    }
+    label = label.replace(
+      /^(?:analyz(?:e|es|ing)|adapt(?:s|ing)?|uses?|using|applies?|reconstruct(?:s|ing)?|benchmark(?:s|ing)?|align(?:s|ing)?|unify(?:ing|ies)?|unified|introduces?|presents?)\s+/i,
+      '',
+    );
+    return normalizeText(label);
+  };
+
   const cleanTopicLabel = (value) => {
-    let label = normalizeText(value)
+    let label = canonicalizeTopicLabel(value)
       .replace(/<[^>]+>/g, ' ')
       .replace(/^[\s:：;；,，、.!?！？"()[\]{}-]+/, '')
       .replace(/[\s:：;；,，、.!?！？"()[\]{}-]+$/, '');
@@ -157,7 +247,28 @@ window.DPRReaderLibrary = (function () {
     if (!label) return '';
     const lower = label.toLowerCase();
     if (/^(query|search|score)\s*[:：]/i.test(label)) return '';
-    if (lower === 'ai4nd' || lower === 'composite' || /:composite$/i.test(label)) return '';
+    if (
+      [
+        'ai4nd',
+        'composite',
+        'fresh_fetch',
+        'carryover',
+        'local-pdf',
+        'model',
+        'models',
+        'method',
+        'methods',
+        'approach',
+        'paper',
+        'framework',
+        'system',
+        'not relevant',
+      ].includes(lower) ||
+      /:composite$/i.test(label) ||
+      /\b(?:prioritize|especially|could inspire|current subscription|reader profile)\b/i.test(label)
+    ) {
+      return '';
+    }
     const hasCjk = /[\u4e00-\u9fff]/.test(label);
     const words = label.split(/\s+/).filter(Boolean);
     if (hasCjk && label.length > 12) return '';
@@ -182,6 +293,53 @@ window.DPRReaderLibrary = (function () {
         return label ? { kind, label } : null;
       })
       .filter(Boolean);
+
+  const isEnglishTopicText = (value) => /[A-Za-z]/.test(value || '') && !/[\u4e00-\u9fff]/.test(value || '');
+
+  const topicPhraseParts = (value) => {
+    const text = normalizeText(value).replace(/[–—]/g, '-');
+    if (!text || !isEnglishTopicText(text)) return [];
+    const parts = /[,;|]/.test(text)
+      ? text.split(/[,;|]+/)
+      : text.split(/\b(?:with|via|using|through|for|in|from|into|across|on|by|towards?|toward)\b/i);
+    const cleanParts = parts.map((part) => normalizeText(part)).filter(Boolean);
+    return cleanParts.length > 1 ? cleanParts : [text];
+  };
+
+  const patternTopicTags = (value) => {
+    const text = normalizeText(value);
+    if (!text) return [];
+    const out = [];
+    CANONICAL_TOPIC_PATTERNS.forEach(([label, patterns]) => {
+      if (patterns.some((pattern) => pattern.test(text))) out.push({ kind: 'topic', label });
+    });
+    return out;
+  };
+
+  const categoryTopicTags = (paper) => {
+    const raw = [paper && paper.primary_category].concat(Array.isArray(paper && paper.categories) ? paper.categories : []);
+    return raw
+      .map((value) => {
+        const text = normalizeText(value);
+        if (!text) return '';
+        const mapped = CATEGORY_TOPIC_LABELS[text.toLowerCase()];
+        if (mapped) return mapped;
+        if (!text.includes('.') && /^[A-Za-z][A-Za-z .&/-]{2,38}$/.test(text)) {
+          return text === text.toLowerCase() ? text.replace(/\b[a-z]/g, (char) => char.toUpperCase()) : text;
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .map((label) => ({ kind: 'topic', label }));
+  };
+
+  const looksLikeShortQueryTopic = (value) => {
+    const text = normalizeText(value);
+    if (!text || looksLikeEvidenceSentence(text)) return false;
+    if (/\b(?:prioritize|especially|could|should|papers central|subscription)\b/i.test(text)) return false;
+    const words = text.split(/\s+/).filter(Boolean);
+    return words.length >= 1 && words.length <= 5 && text.length <= 48;
+  };
 
   const paperTagLabels = (paper) =>
     [...(paper && paper.topic_tags ? paper.topic_tags : []), ...(paper && paper.tags ? paper.tags : [])]
@@ -245,6 +403,12 @@ window.DPRReaderLibrary = (function () {
       source: normalizeText(payload.source || (isLocalPdf ? 'local-pdf' : '')),
       reader_section: normalizeReaderSection(payload.reader_section || payload.readerSection),
       evidence: normalizeText(payload.evidence),
+      llm_evidence_en: normalizeText(payload.llm_evidence_en || payload.evidence_en),
+      llm_evidence_cn: normalizeText(payload.llm_evidence_cn || payload.evidence_cn),
+      canonical_evidence: normalizeText(payload.canonical_evidence),
+      matched_query_text: normalizeText(payload.matched_query_text || payload.matchedQueryText),
+      primary_category: normalizeText(payload.primary_category || payload.primaryCategory),
+      categories: Array.isArray(payload.categories) ? payload.categories.map(normalizeText).filter(Boolean) : [],
       topic_tags: normalizeTopicTags(payload.topic_tags || payload.topicTags),
       tags: normalizeTags(payload.tags && payload.tags.length ? payload.tags : tagsFromSidebarDom(anchor)),
     };
@@ -327,18 +491,19 @@ window.DPRReaderLibrary = (function () {
       if (!label) return null;
       const key = label.toLowerCase();
       if (seen.has(key)) return null;
+      if (Array.from(seen).some((existingKey) => existingKey.includes(key) || key.includes(existingKey))) return null;
       seen.add(key);
       return { kind: normalizeText(tag.kind || 'topic').toLowerCase() || 'topic', label };
     };
     const topicTags = normalizeTopicTags(paper.topic_tags).map(addSeen).filter(Boolean).slice(0, 5);
     if (topicTags.length >= 5) return topicTags;
-    const evidenceTags = isLocalPdfPaper(paper)
+    const metadataTags = isLocalPdfPaper(paper)
       ? []
-      : topicTagsFromEvidence(paper)
+      : topicTagsFromMetadata(paper)
           .map(addSeen)
           .filter(Boolean)
           .slice(0, 5 - topicTags.length);
-    if (topicTags.length + evidenceTags.length >= 5) return topicTags.concat(evidenceTags);
+    if (topicTags.length + metadataTags.length >= 5) return topicTags.concat(metadataTags);
     const explicitTags = normalizeTags(paper.tags)
       .filter((tag) => {
         const kind = normalizeText(tag.kind).toLowerCase();
@@ -351,24 +516,39 @@ window.DPRReaderLibrary = (function () {
         seen.add(key);
         return true;
       })
-      .slice(0, 5 - topicTags.length - evidenceTags.length);
-    return topicTags.concat(evidenceTags, explicitTags);
+      .slice(0, 5 - topicTags.length - metadataTags.length);
+    return topicTags.concat(metadataTags, explicitTags);
   };
 
-  const topicTagsFromEvidence = (paper) => {
-    const fields = [
-      paper && paper.evidence,
-      paper && paper.canonical_evidence,
-      paper && paper.llm_evidence,
-      paper && paper.llm_evidence_en,
-      paper && paper.llm_evidence_cn,
-    ];
-    return fields.flatMap((value) => {
+  const topicTagsFromMetadata = (paper) => {
+    const out = [];
+    const add = (tag) => {
+      const label = cleanTopicLabel(tag && tag.label);
+      if (label) out.push({ kind: normalizeText(tag.kind || 'topic').toLowerCase() || 'topic', label });
+    };
+    [paper && paper.llm_evidence_en, paper && paper.evidence_en].forEach((value) => {
       const text = normalizeText(value);
-      if (!/[,\u3001;；|，]/.test(text) || looksLikeEvidenceSentence(text)) return [];
-      const tags = normalizeTopicTags(text);
-      return tags.length >= 2 ? tags : [];
+      if (!text) return;
+      if (!looksLikeEvidenceSentence(text)) topicPhraseParts(text).forEach((label) => add({ kind: 'topic', label }));
+      patternTopicTags(text).forEach(add);
     });
+    if (looksLikeShortQueryTopic(paper && paper.matched_query_text)) {
+      patternTopicTags(paper.matched_query_text).forEach(add);
+      normalizeTopicTags(paper.matched_query_text).forEach(add);
+    }
+    [paper && paper.llm_evidence_cn, paper && paper.evidence_cn, paper && paper.llm_evidence, paper && paper.canonical_evidence, paper && paper.evidence]
+      .forEach((value) => {
+        const text = normalizeText(value);
+        if (!text) return;
+        const sentenceLike = looksLikeEvidenceSentence(text);
+        if (!sentenceLike && /[,;|、，；]/.test(text)) {
+          normalizeTopicTags(text).forEach(add);
+        }
+        if (!sentenceLike) patternTopicTags(text).forEach(add);
+      });
+    [paper && paper.title, paper && paper.title_zh].forEach((value) => patternTopicTags(value).forEach(add));
+    categoryTopicTags(paper).forEach(add);
+    return out;
   };
 
   const looksLikeEvidenceSentence = (value) => {
@@ -377,7 +557,7 @@ window.DPRReaderLibrary = (function () {
     if (/[。.!?！？]/.test(text)) return true;
     const lower = text.toLowerCase();
     if (
-      /\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents)\b/.test(
+      /\b(?:this|the)\s+paper\b|\b(?:proposes|introduces|shows|demonstrates|matches|addresses|improves|uses|applies|presents|analyzes|analyses|adapts|reconstructs|reconstructing)\b/.test(
         lower,
       )
     ) {
