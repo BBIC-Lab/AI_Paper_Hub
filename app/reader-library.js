@@ -3,6 +3,8 @@ window.DPRReaderLibrary = (function () {
   const PAGE_SIZE = 10;
   const FILTERS = [
     { key: 'all', label: '全部' },
+    { key: 'reader:deep', label: '精读' },
+    { key: 'reader:quick', label: '速读' },
     { key: 'source:local-pdf', label: '本地' },
     { key: 'favorite', label: '收藏' },
     { key: 'marker:good', label: 'Core' },

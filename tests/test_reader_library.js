@@ -16,8 +16,8 @@ const library = window.DPRReaderLibrary.__test;
 
 assert.equal(library.FILTERS.some((item) => item.key === 'read' || item.label === '已读'), false);
 assert.deepEqual(
-  library.FILTERS.slice(0, 3).map((item) => item.key),
-  ['all', 'source:local-pdf', 'favorite'],
+  library.FILTERS.slice(0, 5).map((item) => item.key),
+  ['all', 'reader:deep', 'reader:quick', 'source:local-pdf', 'favorite'],
 );
 assert.equal(library.isExcludedRouteId('tutorial/README'), true);
 assert.equal(library.isExcludedRouteId('tutorial/quick-start'), true);

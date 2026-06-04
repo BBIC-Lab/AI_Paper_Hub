@@ -84,10 +84,18 @@ async function run() {
         ],
       },
       {
+        paperId: '202606/03/catalog-quick',
+        title: 'Quick Catalog Paper',
+        date: '2026-06-03',
+        reader_section: 'quick',
+        tags: [{ kind: 'paper', label: 'library' }],
+      },
+      {
         paperId: '202606/03/local-source',
         title: 'Local Source Paper',
         date: '2026-06-03',
         source: 'local-pdf',
+        reader_section: 'deep',
       },
       {
         paperId: 'local-pdf/20260604/local-route',
@@ -146,6 +154,12 @@ async function run() {
   assert.equal(localIds.has('local-pdf/20260604/local-route'), true);
   assert.equal(localIds.has('202606/02/local-tag'), true);
   assert.equal(localIds.has('202606/04/not-local'), false);
+  const deepIds = new Set(store.listPapers({ filter: 'reader:deep' }).map((paper) => paper.paperId));
+  assert.equal(deepIds.has('202606/04/catalog-new'), true);
+  assert.equal(deepIds.has('202606/03/local-source'), false);
+  const quickIds = new Set(store.listPapers({ filter: 'reader:quick' }).map((paper) => paper.paperId));
+  assert.equal(quickIds.has('202606/03/catalog-quick'), true);
+  assert.equal(quickIds.has('202606/04/catalog-new'), false);
 
   store.setMarker(
     '202605/25/paper-c',

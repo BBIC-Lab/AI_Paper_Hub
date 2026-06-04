@@ -12544,6 +12544,22 @@ body:not(.close).dpr-periodic-report-page .markdown-section {
   --dpr-reader-filter-active-bg: rgba(148, 163, 184, 0.26);
 }
 
+.markdown-section .dpr-reader-tabs button[data-reader-filter="reader:deep"] {
+  --dpr-reader-filter-color: #0369a1;
+  --dpr-reader-filter-border: rgba(14, 116, 144, 0.34);
+  --dpr-reader-filter-active-color: #075985;
+  --dpr-reader-filter-active-border: rgba(14, 116, 144, 0.5);
+  --dpr-reader-filter-active-bg: rgba(125, 211, 252, 0.26);
+}
+
+.markdown-section .dpr-reader-tabs button[data-reader-filter="reader:quick"] {
+  --dpr-reader-filter-color: #047857;
+  --dpr-reader-filter-border: rgba(16, 185, 129, 0.34);
+  --dpr-reader-filter-active-color: #065f46;
+  --dpr-reader-filter-active-border: rgba(16, 185, 129, 0.5);
+  --dpr-reader-filter-active-bg: rgba(167, 243, 208, 0.3);
+}
+
 .markdown-section .dpr-reader-tabs button[data-reader-filter="favorite"] {
   --dpr-reader-filter-color: #b45309;
   --dpr-reader-filter-border: rgba(217, 119, 6, 0.34);

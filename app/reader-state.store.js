@@ -570,7 +570,9 @@ window.DPRReaderStateStore = (function () {
     if (key === 'read') return !!paper.read;
     if (key === 'favorite' || key === 'dislike') return paper.reaction === key;
     if (key === 'source:local-pdf') return isLocalPdfPaper(paper);
-    if (key.startsWith('reader:')) return normalizeReaderSection(paper.reader_section) === key.slice(7);
+    if (key.startsWith('reader:')) {
+      return !isLocalPdfPaper(paper) && normalizeReaderSection(paper.reader_section) === key.slice(7);
+    }
     if (key.startsWith('marker:')) return paper.marker === key.slice(7);
     if (key.startsWith('tag:')) {
       const needle = key.slice(4);
