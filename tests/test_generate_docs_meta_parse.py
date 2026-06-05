@@ -282,6 +282,10 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                     ],
                     "202605/22/quick-paper": ["methodological bridge"],
                 },
+                paper_date_by_id={
+                    "202605/22/test-paper": "2026-05-20",
+                    "202605/22/quick-paper": "2026-05-21T00:00:00+00:00",
+                },
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
@@ -291,9 +295,12 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             ]
             payload_by_title = {payload["title"]: payload for payload in payloads}
             payload = payload_by_title["Test Paper"]
+            self.assertEqual(payload["date"], "2026-05-20")
+            self.assertEqual(payload["published"], "2026-05-20")
             self.assertEqual(payload["topic_tags"], ["continual learning", "domain generalization"])
             self.assertEqual(payload["reader_section"], "deep")
             self.assertEqual(payload["tags"], [{"kind": "query", "label": "ai4nd"}])
+            self.assertEqual(payload_by_title["Quick Paper"]["date"], "2026-05-21")
             self.assertEqual(payload_by_title["Quick Paper"]["reader_section"], "quick")
 
     def test_build_markdown_content_writes_figures_json_front_matter(self):

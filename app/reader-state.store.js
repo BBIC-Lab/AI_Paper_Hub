@@ -182,7 +182,7 @@ window.DPRReaderStateStore = (function () {
       paperId,
       title: normalizeText(source.title || source.title_en),
       title_zh: normalizeText(source.title_zh || source.titleZh),
-      date: normalizeDate(source.date || source.published || source.publication_date, paperId),
+      date: normalizeDate(source.published || source.publication_date || source.date, paperId),
       source: normalizeText(source.source),
       selection_source: normalizeText(source.selection_source),
       reader_section: normalizeReaderSection(source.reader_section || source.readerSection),

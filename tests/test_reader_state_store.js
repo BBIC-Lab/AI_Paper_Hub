@@ -161,6 +161,17 @@ async function run() {
   assert.equal(quickIds.has('202606/03/catalog-quick'), true);
   assert.equal(quickIds.has('202606/04/catalog-new'), false);
 
+  store.upsertPaperMeta(
+    '202606/04/eva-net',
+    {
+      title: 'EVA-Net: Subject-Independent EEG Motor Decoding with Video-Derived Motor Priors',
+      date: '2026-06-04',
+      published: '2026-06-01',
+    },
+    { dirty: false },
+  );
+  assert.equal(store.getPaper('202606/04/eva-net').date, '2026-06-01');
+
   store.setMarker(
     '202605/25/paper-c',
     'blue',

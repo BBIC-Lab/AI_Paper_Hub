@@ -396,7 +396,7 @@ window.DPRReaderLibrary = (function () {
     return {
       paperId,
       route,
-      date: normalizeDate(payload.date || payload.published || payload.publication_date, paperId),
+      date: normalizeDate(payload.published || payload.publication_date || payload.date, paperId),
       title,
       title_zh: normalizeText(payload.title_zh || payload.titleZh),
       link: normalizeText(payload.link || payload.url || fallbackLink),

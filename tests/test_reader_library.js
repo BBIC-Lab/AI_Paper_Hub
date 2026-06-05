@@ -29,6 +29,28 @@ assert.equal(library.isExcludedRouteId('202606/04/paper-a'), false);
 assert.equal(library.isExcludedRouteId('local-pdf/20260527/paper-a'), false);
 assert.equal(library.formatScore('8.5 订阅评分'), '8.5/10 订阅评分');
 
+const sidebarMeta = library.paperMetaFromSidebarAnchor({
+  textContent: 'EVA-Net: Subject-Independent EEG Motor Decoding with Video-Derived Motor Priors',
+  getAttribute(name) {
+    if (name === 'href') return '#/202606/04/eva-net';
+    if (name === 'data-sidebar-item') {
+      return JSON.stringify({
+        title: 'EVA-Net: Subject-Independent EEG Motor Decoding with Video-Derived Motor Priors',
+        date: '2026-06-04',
+        published: '2026-06-01',
+      });
+    }
+    return '';
+  },
+  querySelector() {
+    return null;
+  },
+  querySelectorAll() {
+    return [];
+  },
+});
+assert.equal(sidebarMeta.date, '2026-06-01');
+
 const topics = library.topicTagsForPaper({
   tags: [
     { kind: 'query', label: 'retrieval' },
