@@ -324,11 +324,32 @@ def _insert_local_sidebar_entry(
 ) -> None:
     path = Path(sidebar_path)
     lines = path.read_text(encoding="utf-8").splitlines(True) if path.exists() else []
+    original_text = "".join(lines)
     root_line = "* 📄 本地 PDF 解析\n"
     upload_line = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n'
-    daily_line = "* 🗂️ Daily Papers\n"
+    daily_line = "* 🗂️ 近期日报\n"
+    daily_note_line = (
+        '  * <small class="dpr-sidebar-daily-note">'
+        '完整论文报告参见<a class="dpr-sidebar-daily-note-link" href="#/reader-library">「个人论文库」</a>'
+        "</small>\n"
+    )
 
-    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* ") and "Daily Papers" in line), -1)
+    def is_daily_root(line: str) -> bool:
+        return line.startswith("* ") and ("近期日报" in line or "Daily Papers" in line)
+
+    def ensure_daily_note() -> None:
+        daily_root_idx = next((i for i, line in enumerate(lines) if is_daily_root(line)), -1)
+        if daily_root_idx < 0:
+            return
+        lines[daily_root_idx] = daily_line
+        daily_end = next((i for i in range(daily_root_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
+        lines[daily_root_idx + 1 : daily_end] = [
+            line for line in lines[daily_root_idx + 1 : daily_end] if "dpr-sidebar-daily-note" not in line
+        ]
+        daily_end = next((i for i in range(daily_root_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
+        lines.insert(daily_end, daily_note_line)
+
+    daily_idx = next((i for i, line in enumerate(lines) if is_daily_root(line)), -1)
     root_idx = next(
         (
             i
@@ -372,6 +393,11 @@ def _insert_local_sidebar_entry(
 
     href = f"#/{paper_id}"
     if any(href in line for line in lines[root_idx + 1:next_top]):
+        ensure_daily_note()
+        next_text = "".join(lines)
+        if next_text != original_text:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(next_text, encoding="utf-8")
         return
     safe_title = gen6.html.escape(_clean_line(title) or paper_id)
     payload = {
@@ -390,6 +416,7 @@ def _insert_local_sidebar_entry(
     while insert_at < len(lines) and lines[insert_at].startswith("    * "):
         insert_at += 1
     lines.insert(section_idx + 1, entry)
+    ensure_daily_note()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(lines), encoding="utf-8")
 

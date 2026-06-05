@@ -55,7 +55,15 @@ SIDEBAR_MONTHLY_REPORT_LINK = (
 )
 SIDEBAR_LOCAL_PDF_ROOT = "* 📄 本地 PDF 解析\n"
 SIDEBAR_LOCAL_PDF_UPLOAD_LINK = '  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n'
-SIDEBAR_DAILY_PAPERS_ROOT = "* 🗂️ Daily Papers\n"
+SIDEBAR_DAILY_PAPERS_LABEL = "近期日报"
+SIDEBAR_DAILY_PAPERS_LEGACY_LABEL = "Daily Papers"
+SIDEBAR_DAILY_PAPERS_ROOT = f"* 🗂️ {SIDEBAR_DAILY_PAPERS_LABEL}\n"
+SIDEBAR_DAILY_PAPERS_NOTE = (
+    '  * <small class="dpr-sidebar-daily-note">'
+    '完整论文报告参见<a class="dpr-sidebar-daily-note-link" href="#/reader-library">「个人论文库」</a>'
+    "</small>\n"
+)
+SIDEBAR_DAILY_PAPERS_KEEP_DAYS = 7
 
 # LLM 配置（通用 OpenAI-compatible Chat Completions）
 LLM_CLIENT = None
@@ -2456,11 +2464,14 @@ def update_sidebar(
     if os.path.exists(sidebar_path):
         with open(sidebar_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
-    # 模板文件可能没有末尾换行；先规整，避免新日期被拼到 Daily Papers 同一行。
+    # 模板文件可能没有末尾换行；先规整，避免新日期被拼到日报根节点同一行。
     lines = [line if line.endswith("\n") else f"{line}\n" for line in lines]
     repaired_lines: List[str] = []
     for line in lines:
-        match = re.match(r"^(\s*\*\s+(?:🗂️\s*)?Daily Papers)\s+(\*\s+.+)$", line.rstrip("\n"))
+        match = re.match(
+            r"^(\s*\*\s+(?:🗂️\s*)?(?:Daily Papers|近期日报))\s+(\*\s+.+)$",
+            line.rstrip("\n"),
+        )
         if match:
             repaired_lines.append(f"{match.group(1).rstrip()}\n")
             repaired_lines.append(f"  {match.group(2).strip()}\n")
@@ -2470,7 +2481,10 @@ def update_sidebar(
 
     def is_daily_root(line: str) -> bool:
         stripped = line.strip()
-        return stripped.startswith("* ") and "Daily Papers" in stripped
+        return line.startswith("* ") and (
+            SIDEBAR_DAILY_PAPERS_LEGACY_LABEL in stripped
+            or SIDEBAR_DAILY_PAPERS_LABEL in stripped
+        )
 
     def is_local_pdf_root(line: str) -> bool:
         stripped = line.strip()
@@ -2516,7 +2530,7 @@ def update_sidebar(
             return end
 
         for link, needle in specs:
-            if any(needle in line for line in lines):
+            if any(line.startswith("* ") and needle in line for line in lines):
                 continue
             insert_at = daily_block_end()
             lines.insert(insert_at, link)
@@ -2545,6 +2559,65 @@ def update_sidebar(
         else:
             lines[upload_idx] = SIDEBAR_LOCAL_PDF_UPLOAD_LINK
         return daily_index
+
+    def daily_heading_key(line: str) -> str:
+        marker_match = re.search(r"<!--dpr-date:(\d{8})(?:-(\d{8}))?-->", line)
+        if marker_match:
+            return marker_match.group(2) or marker_match.group(1)
+        text = re.sub(r"<!--.*?-->", "", str(line or ""))
+        text = re.sub(r"^\s*\*\s*", "", text).strip()
+        text = re.sub(r"^(?:📅|🗂️)\s*", "", text).strip()
+        range_match = re.match(
+            r"^(\d{4})-(\d{2})-(\d{2})\s*~\s*(\d{4})-(\d{2})-(\d{2})$",
+            text,
+        )
+        if range_match:
+            return "".join(range_match.group(i) for i in range(4, 7))
+        single_match = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", text)
+        if single_match:
+            return "".join(single_match.groups())
+        return ""
+
+    def is_daily_heading_line(line: str) -> bool:
+        return line.startswith("  * ") and not line.startswith("    * ") and bool(daily_heading_key(line))
+
+    def rebuild_recent_daily_block(daily_index: int) -> None:
+        if daily_index < 0:
+            return
+        block_end = daily_index + 1
+        while block_end < len(lines):
+            if lines[block_end].startswith("* "):
+                break
+            block_end += 1
+
+        children = lines[daily_index + 1 : block_end]
+        day_blocks: List[Tuple[str, List[str]]] = []
+        seen_keys: set[str] = set()
+        i = 0
+        while i < len(children):
+            line = children[i]
+            if not is_daily_heading_line(line):
+                i += 1
+                continue
+            key = daily_heading_key(line)
+            current = [line]
+            i += 1
+            while i < len(children):
+                next_line = children[i]
+                if next_line.startswith("  * ") and not next_line.startswith("    * "):
+                    break
+                current.append(next_line)
+                i += 1
+            if key and key not in seen_keys:
+                seen_keys.add(key)
+                day_blocks.append((key, current))
+
+        day_blocks.sort(key=lambda item: item[0], reverse=True)
+        next_children: List[str] = []
+        for _, day_block in day_blocks[:SIDEBAR_DAILY_PAPERS_KEEP_DAYS]:
+            next_children.extend(day_block)
+        next_children.append(SIDEBAR_DAILY_PAPERS_NOTE)
+        lines[daily_index + 1 : block_end] = next_children
 
     daily_idx = -1
     for i, line in enumerate(lines):
@@ -2656,6 +2729,8 @@ def update_sidebar(
             del lines[i]
             continue
         i += 1
+
+    rebuild_recent_daily_block(daily_idx)
 
     with open(sidebar_path, "w", encoding="utf-8") as f:
         f.writelines(lines)

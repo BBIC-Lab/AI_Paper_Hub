@@ -2851,12 +2851,38 @@ body.dpr-paper-page article.markdown-section {
   margin-top: 10px;
 }
 
+.sidebar-nav > ul > li {
+  margin-top: 10px;
+}
+
+.sidebar-nav > ul > li:first-child {
+  margin-top: 0;
+}
+
 .sidebar-nav li.dpr-sidebar-daily-root > .dpr-sidebar-group-toggle,
 .sidebar-nav li.dpr-sidebar-local-root > .dpr-sidebar-group-toggle {
   font-size: 1.04rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--dpr-heading-color);
+}
+
+.sidebar-nav > ul > li > a.dpr-sidebar-root-link {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  border-radius: 10px;
+  color: var(--dpr-heading-color) !important;
+  background: transparent !important;
+  font-size: 1.04rem;
+  font-weight: 500;
+  line-height: inherit;
+  letter-spacing: -0.01em;
+  text-decoration: none !important;
 }
 
 .sidebar-nav li:has(> .sidebar-day-toggle) {
@@ -2880,9 +2906,6 @@ body.dpr-paper-page article.markdown-section {
   padding-left: 0 !important;
 }
 
-.sidebar-nav a.dpr-sidebar-root-link,
-.sidebar-nav a.dpr-sidebar-root-link:link,
-.sidebar-nav a.dpr-sidebar-root-link:visited,
 .sidebar-nav a.dpr-sidebar-brief-link,
 .sidebar-nav a.dpr-sidebar-brief-link:link,
 .sidebar-nav a.dpr-sidebar-brief-link:visited {
@@ -2942,6 +2965,27 @@ body.dpr-paper-page article.markdown-section {
   opacity: 1;
 }
 
+.sidebar-nav .dpr-sidebar-daily-note {
+  display: block;
+  margin: 4px 6px 7px 12px;
+  color: rgba(53, 80, 98, 0.72);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.sidebar-nav .dpr-sidebar-daily-note-link,
+.sidebar-nav .dpr-sidebar-daily-note-link:link,
+.sidebar-nav .dpr-sidebar-daily-note-link:visited {
+  color: var(--dpr-accent-color-hover);
+  font-weight: 700;
+  text-decoration: none !important;
+}
+
+.sidebar-nav .dpr-sidebar-daily-note-link:hover {
+  color: var(--dpr-accent-color);
+}
+
 /* 评价为“好”的论文（浅绿色文字，保持白底，仅文字变色） */
 /* 评价为"一般"的论文（浅红色文字，保持白底，仅文字变色） */
 /* 侧边栏交互状态：去掉下划线，悬停时仅在当前行右侧显示绿色小条 */
@@ -2966,7 +3010,7 @@ body.dpr-paper-page article.markdown-section {
   font-weight: 800;
 }
 
-/* 当前跳转项统一用绿色文字和右侧竖线高亮；展开控制项另用 Daily Papers 风格。 */
+/* 当前跳转项统一用绿色文字和右侧竖线高亮；展开控制项另用日报分组风格。 */
 .sidebar-nav li.sidebar-paper-item {
   display: flex;
   align-items: center;

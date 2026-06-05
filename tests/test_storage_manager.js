@@ -72,6 +72,7 @@ function testInventoryAndSelectionPlan() {
   assert.equal(inventory.leaves.length, 2);
   assert.equal(inventory.leaves[0].label, 'Local Demo');
   assert.equal(inventory.leaves[1].label, 'Daily Paper');
+  assert.equal(inventory.roots[0].label, '近期日报');
   assert.equal(inventory.roots[0].children[0].label, '2026-05-28');
   assert.equal(inventory.roots[1].children[0].label, '2026-05-29');
 
@@ -81,6 +82,8 @@ function testInventoryAndSelectionPlan() {
   assert.ok(plan.paths.includes('docs/local-pdf/20260529/local-demo.md'));
   assert.ok(plan.paths.includes('docs/local-pdf/20260529/local-demo.txt'));
   assert.ok(plan.sidebarChanged);
+  assert.ok(plan.nextSidebar.includes('* 🗂️ 近期日报'));
+  assert.ok(!plan.nextSidebar.includes('* Daily Papers'));
   assert.ok(!plan.nextSidebar.includes('#/local-pdf/20260529/local-demo'));
   assert.ok(plan.nextSidebar.includes('#/local-pdf">上传解析</a>'));
 }
@@ -185,6 +188,8 @@ function testMergeSidebarContextLinesScopesDuplicateSectionNames() {
   const date28Index = restored.indexOf('2026-05-28');
   const restoredIndex = restored.indexOf('#/202605/28/restored-paper');
   const keptIndex = restored.indexOf('#/202605/28/kept-paper');
+  assert.ok(restored.includes('* 🗂️ 近期日报'));
+  assert.ok(!restored.includes('* Daily Papers'));
   assert.ok(restoredIndex > date28Index);
   assert.ok(restoredIndex > todayIndex);
   assert.ok(restoredIndex > keptIndex);
@@ -217,6 +222,7 @@ function testRestorePlanRepairsStaleSidebarContextDate() {
     manifest,
   });
   const plan = buildTrashActionPlan(trash, new Set(['trash-paper:stale-context']));
+  assert.equal(plan.contextGroups[0][0], '* 🗂️ 近期日报');
   assert.ok(plan.contextGroups[0].includes('  * 2026-05-28 <!--dpr-date:20260528-->'));
   assert.ok(!plan.contextGroups[0].includes('  * 2026-05-29 <!--dpr-date:20260529-->'));
 
@@ -234,6 +240,8 @@ function testRestorePlanRepairsStaleSidebarContextDate() {
   const date28Index = restored.indexOf('2026-05-28');
   const restoredIndex = restored.indexOf(href);
   const block29 = restored.slice(date29Index, date28Index);
+  assert.ok(restored.includes('* 🗂️ 近期日报'));
+  assert.ok(!restored.includes('* Daily Papers'));
   assert.ok(!block29.includes(href));
   assert.ok(restoredIndex > date28Index);
 }
@@ -268,7 +276,8 @@ function testRemoveSidebarLines() {
   );
   assert.ok(!next.includes('#/202605/28/demo'));
   assert.ok(!next.includes('#/202605/28/README'));
-  assert.ok(next.includes('* Daily Papers'));
+  assert.ok(next.includes('* 🗂️ 近期日报'));
+  assert.ok(!next.includes('* Daily Papers'));
 }
 
 function createStorageContainerStub() {

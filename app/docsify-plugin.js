@@ -98,8 +98,18 @@ window.$docsify = {
         String(value || '')
           .replace(/^(?:[\s\uFE0F\u200D]*(?:[\u2600-\u27BF]|[\u{1F300}-\u{1FAFF}])\uFE0F?\s*)+/u, '')
           .trim();
+      const DAILY_ROOT_LABEL = '近期日报';
+      const DAILY_ROOT_LEGACY_LABEL = 'Daily Papers';
+      const isDailyRootLabel = (value) => {
+        const clean = stripSidebarEmoji(value);
+        return clean === DAILY_ROOT_LABEL || clean === DAILY_ROOT_LEGACY_LABEL;
+      };
+      const normalizeDailyRootLabel = (value) =>
+        isDailyRootLabel(value) ? DAILY_ROOT_LABEL : stripSidebarEmoji(value);
 
       window.DPRSidebarUtils = Object.assign({}, window.DPRSidebarUtils || {}, {
+        isDailyRootLabel,
+        normalizeDailyRootLabel,
         stripSidebarEmoji,
       });
 
@@ -1469,7 +1479,7 @@ window.$docsify = {
 
         const getSidebarEmoji = (type, text) => {
           const value = stripSidebarEmoji(text);
-          if (type === 'daily-root' || value === 'Daily Papers') return '🗂️';
+          if (type === 'daily-root' || isDailyRootLabel(value)) return '🗂️';
           if (type === 'local-root' || value === '本地 PDF 解析') return '📄';
           if (type === 'day') return '📅';
           if (value === '精读区') return '🔬';
@@ -1480,7 +1490,7 @@ window.$docsify = {
 
         const setSidebarLabelContent = (el, type, text) => {
           if (!el) return;
-          const clean = stripSidebarEmoji(text);
+          const clean = type === 'daily-root' ? DAILY_ROOT_LABEL : stripSidebarEmoji(text);
           const emoji = getSidebarEmoji(type, clean);
           el.dataset.dprRawLabel = clean;
           el.textContent = '';
@@ -2280,7 +2290,7 @@ window.$docsify = {
 
         const getGroupType = (text) => {
           const value = stripSidebarEmoji(text);
-          if (value === 'Daily Papers') return 'daily-root';
+          if (isDailyRootLabel(value)) return 'daily-root';
           if (value === '本地 PDF 解析') return 'local-root';
           if (value === '精读区' || value === '速读区') return 'section';
           return '';
@@ -4279,24 +4289,64 @@ window.$docsify = {
         });
       };
 
+      const normalizeDocsRoute = (value) => {
+        let text = String(value || '').trim();
+        if (!text) return '';
+        const hashIndex = text.indexOf('#');
+        if (hashIndex >= 0) text = text.slice(hashIndex + 1);
+        const legacyId = text.match(/^\?id=([^&]+)/i);
+        if (legacyId) text = legacyId[1];
+        try {
+          text = decodeURIComponent(text);
+        } catch {
+          // keep the original text
+        }
+        text = text.split(/[?#]/)[0];
+        text = text.replace(/\\/g, '/').replace(/^#?\/+/, '');
+        text = text.replace(/^docs\//i, '').replace(/\/+$/, '');
+        text = text.replace(/\.md$/i, '');
+        return text;
+      };
+
+      const routeHrefFromId = (routeId) => {
+        const id = normalizeDocsRoute(routeId);
+        return id ? `#/${id}` : '#/';
+      };
+
+      const classifyDocsRoute = (...candidates) => {
+        const normalized = candidates.map(normalizeDocsRoute).filter(Boolean);
+        const routeId = normalized.find((id) => !/^README$/i.test(id)) || normalized[0] || '';
+        const isHomePage = !routeId || /^README$/i.test(routeId);
+        const isPaperPage = /^(?:\d{6}\/\d{2}|\d{8}-\d{8}|local-pdf\/\d{8})\/(?!README$).+/i.test(routeId);
+        const isDailyReportPage = /^(?:\d{6}\/\d{2}|\d{8}-\d{8})\/README$/i.test(routeId);
+        const isPeriodicReportPage = /^reports\/(?:weekly|monthly)(?:\/[^/]+)?\/README$/i.test(routeId);
+        const isReportPage = isDailyReportPage || isPeriodicReportPage;
+        const isTutorialPage = /^tutorial(?:\/|$)/i.test(routeId);
+        const isLocalPdfToolPage = /^local-pdf$/i.test(routeId);
+        const isReaderLibraryPage = /^reader-library$/i.test(routeId);
+        const isLandingPage =
+          isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage || isReaderLibraryPage;
+        return {
+          routeId,
+          href: routeHrefFromId(routeId),
+          isHomePage,
+          isPaperPage,
+          isDailyReportPage,
+          isPeriodicReportPage,
+          isReportPage,
+          isTutorialPage,
+          isLocalPdfToolPage,
+          isReaderLibraryPage,
+          isLandingPage,
+        };
+      };
+
+      window.DPRRouteUtils = Object.assign({}, window.DPRRouteUtils || {}, {
+        classifyDocsRoute,
+        normalizeDocsRoute,
+      });
+
       // 侧边栏/正文的论文页标题条：英文右侧，中文左侧，中间竖线
-      const isPaperRouteFile = (file) => {
-        const f = String(file || '');
-        return /^(?:\d{6}\/\d{2}|\d{8}-\d{8}|local-pdf\/\d{8})\/(?!README\.md$).+\.md$/i.test(f);
-      };
-
-      const isReportRouteFile = (file) => {
-        const f = String(file || '');
-        return (
-          /^(?:\d{6}\/\d{2}|\d{8}-\d{8})\/README\.md$/i.test(f) ||
-          /^reports\/(?:weekly|monthly)(?:\/[^/]+)?\/README\.md$/i.test(f)
-        );
-      };
-
-      const isPeriodicReportRouteFile = (file) => {
-        const f = String(file || '');
-        return /^reports\/(?:weekly|monthly)(?:\/[^/]+)?\/README\.md$/i.test(f);
-      };
 
       const fitTextToBox = (el, minPx, maxPx) => {
         if (!el) return;
@@ -4344,13 +4394,14 @@ window.$docsify = {
         isReportPage = false,
         isPaperPage = false,
         isPeriodicReportPage = false,
+        isLandingPage = false,
       } = {}) => {
         const body = document.body;
         if (!body || !body.classList) return;
         body.classList.toggle('dpr-home-page', !!isHomePage);
         body.classList.toggle('dpr-report-page', !!isReportPage);
         body.classList.toggle('dpr-periodic-report-page', !!isPeriodicReportPage);
-        body.classList.toggle('dpr-landing-page', !!(isHomePage || isReportPage));
+        body.classList.toggle('dpr-landing-page', !!isLandingPage);
         body.classList.toggle('dpr-paper-page', !!isPaperPage);
       };
 
@@ -4381,8 +4432,8 @@ window.$docsify = {
       };
 
       const applyPaperTitleBar = () => {
-        const file = vm && vm.route ? vm.route.file : '';
-        if (!isPaperRouteFile(file)) {
+        const route = vm && vm.route ? vm.route : {};
+        if (!classifyDocsRoute(route.file, route.path, getPaperId()).isPaperPage) {
           return;
         }
 
@@ -4973,24 +5024,11 @@ window.$docsify = {
       };
 
       const isPaperHref = (href) => {
-        const h = normalizeHref(href);
-        // 匹配论文页：
-        // - 传统路径：#/YYYYMM/DD/slug
-        // - 区间路径：#/YYYYMMDD-YYYYMMDD/slug
-        return /^#\/(?:\d{6}\/\d{2}|\d{8}-\d{8})\/(?!README$).+/i.test(h);
+        return classifyDocsRoute(href).isPaperPage;
       };
 
       const isReportHref = (href) => {
-        const h = normalizeHref(href);
-        // 匹配日报页：
-        // - 传统路径：#/YYYYMM/DD/README
-        // - 区间路径：#/YYYYMMDD-YYYYMMDD/README
-        return /^#\/(?:\d{6}\/\d{2}|\d{8}-\d{8})\/README$/i.test(h);
-      };
-
-      const isPaperHrefFallback = (href) => {
-        const h = normalizeHref(href);
-        return h.startsWith('#/') && h.includes('/') && !/\/README$/i.test(h);
+        return classifyDocsRoute(href).isReportPage;
       };
 
       const collectPaperHrefsFromSidebar = () => {
@@ -5036,14 +5074,15 @@ window.$docsify = {
       const updateNavState = () => {
         DPR_NAV_STATE.paperHrefs = collectPaperHrefsFromSidebar();
         DPR_NAV_STATE.reportHrefs = collectReportHrefsFromSidebar();
-        const file = vm && vm.route ? vm.route.file : '';
-        if (file && isPaperRouteFile(file)) {
-          DPR_NAV_STATE.currentHref = normalizeHref('#/' + String(file).replace(/\.md$/i, ''));
+        const route = vm && vm.route ? vm.route : {};
+        const pageRoute = classifyDocsRoute(route.file, route.path, getPaperId());
+        if (pageRoute.isPaperPage) {
+          DPR_NAV_STATE.currentHref = pageRoute.href;
         } else {
           DPR_NAV_STATE.currentHref = '';
         }
-        if (file && isReportRouteFile(file)) {
-          DPR_NAV_STATE.currentReportHref = normalizeHref('#/' + String(file).replace(/\.md$/i, ''));
+        if (pageRoute.isReportPage) {
+          DPR_NAV_STATE.currentReportHref = pageRoute.href;
         } else {
           DPR_NAV_STATE.currentReportHref = '';
         }
@@ -5443,7 +5482,7 @@ window.$docsify = {
             if (/^https?:\/\//i.test(rawHref)) return;
             const href = link.getAttribute('href') || '';
             const target = normalizeHref(href);
-            if (!target || !isPaperHref(target) && !isPaperHrefFallback(target)) {
+            if (!target || !isPaperHref(target)) {
               return;
             }
             if (!target) return;
@@ -6424,10 +6463,10 @@ window.$docsify = {
 
       // --- Docsify beforeEach 钩子：解析 front matter ---
       hook.beforeEach(function (content) {
-        const file = vm && vm.route ? vm.route.file : '';
+        const route = vm && vm.route ? vm.route : {};
         const normalizedContent = normalizeMarkdownMathDelimiters(content || '');
         // 只对论文页面处理
-        if (!isPaperRouteFile(file)) {
+        if (!classifyDocsRoute(route.file, route.path).isPaperPage) {
           latestPaperRawMarkdown = '';
           return protectMarkdownMathForDocsify(normalizedContent);
         }
@@ -6459,29 +6498,20 @@ window.$docsify = {
           // ignore
         }
 
-        // 当前路由对应的“论文 ID”（简单用文件名去掉 .md）
         const paperId = getPaperId();
-        const routePath = vm.route && vm.route.path ? vm.route.path : '';
-        const lowerId = (paperId || '').toLowerCase();
-
-        // 首页（如 README.md 或根路径）不展示研讨区，只做数学渲染和 Zotero 元数据更新
-        const isHomePage =
-          !paperId ||
-          lowerId === 'readme' ||
-          routePath === '/' ||
-          routePath === '';
         const file = vm && vm.route ? vm.route.file : '';
-        const isReportPage = isReportRouteFile(file);
-        const isPeriodicReportPage = isPeriodicReportRouteFile(file);
-        const isPaperPage = isPaperRouteFile(file);
-        const isTutorialPage = /^tutorial(?:\/|$)/i.test(
-          String(file || routePath || paperId || '').replace(/^\/+/, ''),
-        );
-        const normalizedLandingFile = String(file || routePath || paperId || '').replace(/^\/+/, '');
-        const isLocalPdfToolPage = /^local-pdf(?:\.md)?$/i.test(normalizedLandingFile);
-        const isReaderLibraryPage = /^reader-library(?:\.md)?$/i.test(normalizedLandingFile);
-        const isLandingLikePage = isHomePage || isReportPage || isTutorialPage || isLocalPdfToolPage || isReaderLibraryPage;
-        syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage, isPeriodicReportPage });
+        const routePath = vm.route && vm.route.path ? vm.route.path : '';
+        const pageRoute = classifyDocsRoute(file, routePath, paperId);
+        const {
+          routeId,
+          isHomePage,
+          isReportPage,
+          isPeriodicReportPage,
+          isPaperPage,
+          isReaderLibraryPage,
+          isLandingPage,
+        } = pageRoute;
+        syncPageTypeClasses({ isHomePage, isReportPage, isPaperPage, isPeriodicReportPage, isLandingPage });
 
         // A. 对正文区域进行一次全局公式渲染（支持 $...$ / $$...$$）
         const mainContent = document.querySelector('.markdown-section');
@@ -6537,8 +6567,8 @@ window.$docsify = {
           }
         }
 
-        if (!isLandingLikePage && window.PrivateDiscussionChat) {
-          window.PrivateDiscussionChat.initForPage(paperId);
+        if (isPaperPage && window.PrivateDiscussionChat) {
+          window.PrivateDiscussionChat.initForPage(routeId || paperId);
         } else if (
           window.PrivateDiscussionChat &&
           typeof window.PrivateDiscussionChat.destroyForPage === 'function'
@@ -6565,8 +6595,8 @@ window.$docsify = {
         // ----------------------------------------------------
         // G. 侧边栏已阅读论文状态高亮
         // ----------------------------------------------------
-        if (!isLandingLikePage && paperId) {
-          markSidebarReadState(paperId);
+        if (isPaperPage && (routeId || paperId)) {
+          markSidebarReadState(routeId || paperId);
         } else {
           // 首页也需要应用已有的“已读高亮”，但不新增记录
           markSidebarReadState(null);

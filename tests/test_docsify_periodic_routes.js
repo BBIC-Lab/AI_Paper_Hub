@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const source = fs.readFileSync('app/docsify-plugin.js', 'utf8');
 
 assert.ok(
-  source.includes('/^reports\\/(?:weekly|monthly)(?:\\/[^/]+)?\\/README\\.md$/i.test(f)'),
-  'periodic report routes should be treated as report pages',
+  source.includes('const classifyDocsRoute = (...candidates) =>'),
+  'route handling should be centralized instead of duplicated across page features',
 );
 assert.match(
   source,
@@ -26,6 +26,16 @@ assert.match(
   source,
   /dpr-weekly-evidence-toggle/,
   'weekly evidence expansion should only be wired through the toggle button',
+);
+assert.match(
+  source,
+  /if \(isPaperPage && window\.PrivateDiscussionChat\)/,
+  'private discussion chat should be initialized only on paper pages',
+);
+assert.doesNotMatch(
+  source,
+  /!isLandingLikePage && window\.PrivateDiscussionChat/,
+  'non-paper pages should not rely on a broad negative allow-list for chat suppression',
 );
 
 console.log('docsify periodic route tests passed');

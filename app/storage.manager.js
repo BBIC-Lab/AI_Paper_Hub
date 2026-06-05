@@ -6,12 +6,19 @@ window.DPRStorageManager = (function () {
   const DELETE_CONFIRM_PHRASE = '删除运行态';
   const RESTORE_CONFIRM_PHRASE = '恢复运行态';
   const EMPTY_TRASH_CONFIRM_PHRASE = '清空回收站';
+  const DAILY_ROOT_LABEL = '近期日报';
+  const DAILY_ROOT_LEGACY_LABEL = 'Daily Papers';
+  const DAILY_ROOT_LINE = `* 🗂️ ${DAILY_ROOT_LABEL}`;
+  const isDailyRootLine = (line) => {
+    const text = String(line || '');
+    return text.includes(DAILY_ROOT_LABEL) || text.includes(DAILY_ROOT_LEGACY_LABEL);
+  };
 
   const PATH_CARDS = [
     {
-      label: 'Daily Papers 日报',
+      label: '近期日报',
       path: 'docs/YYYYMM/DD/README.md',
-      note: '每日总览页，侧栏 Daily Papers 日期入口会指向这里。',
+      note: '每日总览页，侧栏近期日报日期入口会指向这里。',
     },
     {
       label: '论文报告与文本',
@@ -316,6 +323,10 @@ window.DPRStorageManager = (function () {
     const end = subtreeEndIndex(lines, parentIndex);
     for (let i = start; i < end; i += 1) {
       const candidate = lines[i];
+      if (targetIndent === 0 && isDailyRootLine(targetText) && lineIndent(candidate) === 0 && isDailyRootLine(candidate)) {
+        lines[i] = DAILY_ROOT_LINE;
+        return i;
+      }
       if (String(candidate || '').trim() !== targetText) continue;
       if (lineIndent(candidate) !== targetIndent) continue;
       return i;
@@ -469,7 +480,7 @@ window.DPRStorageManager = (function () {
       {
         id: 'root:daily',
         type: 'daily',
-        label: 'Daily Papers',
+        label: DAILY_ROOT_LABEL,
         note: '',
         children: [],
       },
@@ -526,7 +537,7 @@ window.DPRStorageManager = (function () {
       {
         id: 'trash-root:daily',
         type: 'daily',
-        label: 'Daily Papers',
+        label: DAILY_ROOT_LABEL,
         note: '',
         children: [],
         extraPaths: [],
@@ -664,7 +675,7 @@ window.DPRStorageManager = (function () {
       const hrefMatch = line.match(/href=["']([^"']+)["']/i);
       const href = hrefMatch ? normalizeHref(hrefMatch[1]) : '';
       if (href && targets.has(href)) return;
-      next.push(line);
+      next.push(lineIndent(line) === 0 && isDailyRootLine(line) ? DAILY_ROOT_LINE : line);
     });
     return pruneEmptySidebarSections(next).join('\n') + (hadTrailingNewline ? '\n' : '');
   };
@@ -678,7 +689,7 @@ window.DPRStorageManager = (function () {
       const indent = line.match(/^\s*/)[0].length;
       if (indent > 2) continue;
       const isRuntimeGroup =
-        /Daily Papers/.test(trimmed) ||
+        isDailyRootLine(trimmed) ||
         /本地 PDF 解析/.test(trimmed) ||
         /\d{2,4}[-/]\d{2}[-/]\d{2}/.test(trimmed) ||
         /\d{8}-\d{8}/.test(trimmed) ||
@@ -915,8 +926,7 @@ window.DPRStorageManager = (function () {
       .filter((line) => String(line || '').trim());
     if (!leaf || leaf.type !== 'daily') return context;
 
-    const rootLine = context.find((line) => lineIndent(line) === 0 && /Daily Papers/i.test(String(line || '')))
-      || '* Daily Papers';
+    const rootLine = DAILY_ROOT_LINE;
     const groupLine = dailyGroupContextLine(leaf.groupKey || groupKeyFromRouteId(leaf.routeId));
     const leafLine = restoreLeafContextLine(leaf, context);
     const groupIndent = lineIndent(groupLine);
@@ -1170,7 +1180,7 @@ window.DPRStorageManager = (function () {
   const renderTree = () => {
     if (!state.inventory) return '<div class="dpr-settings-empty">想执行删除前，请先点击上方“扫描运行态文件”。</div>';
     if (!state.inventory.leaves.length) {
-      return '<div class="dpr-settings-empty">没有扫描到 Daily Papers 或本地 PDF 运行态报告。</div>';
+      return '<div class="dpr-settings-empty">没有扫描到近期日报或本地 PDF 运行态报告。</div>';
     }
     return `<ul class="dpr-storage-tree dpr-storage-compact-tree">${state.inventory.roots.map((root) => renderNode(root, 0)).join('')}</ul>`;
   };

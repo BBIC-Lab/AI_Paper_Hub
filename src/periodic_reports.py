@@ -3153,11 +3153,21 @@ def write_periodic_index_pages(docs_dir: Path) -> None:
 
 
 def update_periodic_sidebar(sidebar_path: Path, window: PeriodWindow) -> None:
+    daily_root_line = "* 🗂️ 近期日报"
+    daily_note_line = (
+        '  * <small class="dpr-sidebar-daily-note">'
+        '完整论文报告参见<a class="dpr-sidebar-daily-note-link" href="#/reader-library">「个人论文库」</a>'
+        "</small>"
+    )
+
+    def is_daily_root(line: str) -> bool:
+        return line.startswith("* ") and ("Daily Papers" in line or "近期日报" in line)
+
     sidebar_path.parent.mkdir(parents=True, exist_ok=True)
     if sidebar_path.exists():
         lines = sidebar_path.read_text(encoding="utf-8-sig").splitlines()
     else:
-        lines = ['* <a class="dpr-sidebar-root-link" href="#/">🏠 首页</a>', "* 🗂️ Daily Papers"]
+        lines = ['* <a class="dpr-sidebar-root-link" href="#/">🏠 首页</a>', daily_root_line]
     cleaned: list[str] = []
     skip_old_periodic_children = False
     for line in [line.rstrip("\n") for line in lines]:
@@ -3174,12 +3184,18 @@ def update_periodic_sidebar(sidebar_path: Path, window: PeriodWindow) -> None:
             continue
         cleaned.append(line)
     lines = cleaned
-    daily_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("* ") and "Daily Papers" in line), len(lines))
+    daily_idx = next((i for i, line in enumerate(lines) if is_daily_root(line)), len(lines))
     if daily_idx == len(lines):
-        lines.append("* 🗂️ Daily Papers")
+        lines.append(daily_root_line)
         daily_idx = len(lines) - 1
     else:
-        lines[daily_idx] = "* 🗂️ Daily Papers"
+        lines[daily_idx] = daily_root_line
+    daily_block_end = next((i for i in range(daily_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
+    lines[daily_idx + 1 : daily_block_end] = [
+        line for line in lines[daily_idx + 1 : daily_block_end] if "dpr-sidebar-daily-note" not in line
+    ]
+    daily_block_end = next((i for i in range(daily_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
+    lines.insert(daily_block_end, daily_note_line)
     insert_idx = next((i for i in range(daily_idx + 1, len(lines)) if lines[i].startswith("* ")), len(lines))
     entries = [
         '* <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="#/reports/weekly/README">🗓️ 研究周报</a> <!--dpr-periodic-root:weekly-->',

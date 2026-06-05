@@ -143,12 +143,13 @@ function Ensure-LocalPdfSidebarEntry {
 
   $rootLabel = [System.Text.Encoding]::UTF8.GetString([byte[]](0xE6,0x9C,0xAC,0xE5,0x9C,0xB0,0x20,0x50,0x44,0x46,0x20,0xE8,0xA7,0xA3,0xE6,0x9E,0x90))
   $uploadLabel = [System.Text.Encoding]::UTF8.GetString([byte[]](0xE4,0xB8,0x8A,0xE4,0xBC,0xA0,0xE8,0xA7,0xA3,0xE6,0x9E,0x90))
+  $dailyLabel = [System.Text.Encoding]::UTF8.GetString([byte[]](0xE8,0xBF,0x91,0xE6,0x9C,0x9F,0xE6,0x97,0xA5,0xE6,0x8A,0xA5))
   $docEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x93,0x84))
   $noteEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x93,0x9D))
   $folderEmoji = [System.Text.Encoding]::UTF8.GetString([byte[]](0xF0,0x9F,0x97,0x82,0xEF,0xB8,0x8F))
   $rootLine = "* $docEmoji $rootLabel"
   $uploadLine = "  * <a class=`"dpr-sidebar-brief-link`" href=`"#/local-pdf`">$noteEmoji $uploadLabel</a>"
-  $dailyLine = "* $folderEmoji Daily Papers"
+  $dailyLine = "* $folderEmoji $dailyLabel"
   $rootIdx = -1
   for ($i = 0; $i -lt $lines.Count; $i++) {
     if (($lines[$i].StartsWith("* ") -and $lines[$i].Contains($rootLabel)) -or $lines[$i].Contains('href="#/local-pdf"')) {
@@ -158,7 +159,7 @@ function Ensure-LocalPdfSidebarEntry {
   }
   $dailyIdx = -1
   for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i].Trim().StartsWith("* ") -and $lines[$i].Contains("Daily Papers")) {
+    if ($lines[$i].Trim().StartsWith("* ") -and ($lines[$i].Contains("Daily Papers") -or $lines[$i].Contains($dailyLabel))) {
       $dailyIdx = $i
       break
     }

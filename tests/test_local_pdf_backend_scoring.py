@@ -84,6 +84,9 @@ class LocalPdfBackendScoringTest(unittest.TestCase):
             )
 
             text = sidebar.read_text(encoding="utf-8")
+            self.assertIn("* 🗂️ 近期日报", text)
+            self.assertNotIn("* Daily Papers", text)
+            self.assertEqual(text.count('class="dpr-sidebar-daily-note"'), 1)
             self.assertIn("data-sidebar-item=", text)
             encoded = text.split('data-sidebar-item="', 1)[1].split('"', 1)[0]
             payload = json.loads(html.unescape(encoded))

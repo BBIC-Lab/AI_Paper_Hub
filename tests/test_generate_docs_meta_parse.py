@@ -1,4 +1,4 @@
-import importlib.util
+﻿import importlib.util
 import html
 import json
 import sys
@@ -30,6 +30,13 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             llm_stub.LLMClient = DummyLLMClient
             llm_stub.make_task_client = lambda *args, **kwargs: DummyLLMClient()
             sys.modules["llm"] = llm_stub
+        if "paper_figures" not in sys.modules:
+            import types
+
+            paper_figures_stub = types.ModuleType("paper_figures")
+            paper_figures_stub.ensure_paper_figures = lambda **kwargs: []
+            paper_figures_stub.ensure_paper_figures_from_file = lambda **kwargs: []
+            sys.modules["paper_figures"] = paper_figures_stub
 
         src_path = root / "src" / "6.generate_docs.py"
         spec = importlib.util.spec_from_file_location("gen6_mod", src_path)
@@ -469,6 +476,9 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.assertIn("* 📄 本地 PDF 解析", content)
             self.assertIn('href="#/local-pdf">📝 上传解析</a>', content)
             self.assertIn("#/reader-library", content)
+            self.assertIn("* 🗂️ 近期日报", content)
+            self.assertNotIn("* Daily Papers\n", content)
+            self.assertEqual(content.count('class="dpr-sidebar-daily-note"'), 1)
             self.assertIn("#/reports/weekly/README", content)
             self.assertIn("#/reports/monthly/README", content)
             self.assertIn(
@@ -493,8 +503,9 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
-            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ Daily Papers', content)
-            self.assertIn("* 🗂️ Daily Papers\n  * 2026-05-22", content)
+            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ 近期日报', content)
+            self.assertIn("* 🗂️ 近期日报\n  * 2026-05-22", content)
+            self.assertEqual(content.count('class="dpr-sidebar-daily-note"'), 1)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)
 
@@ -523,12 +534,61 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             )
 
             content = sidebar_path.read_text(encoding="utf-8")
-            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ Daily Papers', content)
-            self.assertIn("* 🗂️ Daily Papers\n  * 2026-05-22", content)
+            self.assertIn('* 📄 本地 PDF 解析\n  * <a class="dpr-sidebar-brief-link" href="#/local-pdf">📝 上传解析</a>\n* 🗂️ 近期日报', content)
+            self.assertIn("* 🗂️ 近期日报\n  * 2026-05-22", content)
+            self.assertEqual(content.count('class="dpr-sidebar-daily-note"'), 1)
             self.assertIn("📝 今日简报", content)
             self.assertNotIn("* Daily Papers  * 2026-05-22", content)
             self.assertNotIn("旧条目", content)
             self.assertIn("* Other", content)
+
+    def test_update_sidebar_keeps_latest_seven_daily_blocks_with_note(self):
+        with tempfile.TemporaryDirectory() as d:
+            sidebar_path = Path(d) / "_sidebar.md"
+            old_days = [
+                "20260509",
+                "20260508",
+                "20260507",
+                "20260506",
+                "20260505",
+                "20260504",
+                "20260503",
+                "20260502",
+                "20260501",
+            ]
+            sidebar_path.write_text(
+                "\n".join(
+                    ["* Daily Papers"]
+                    + [
+                        f"  * 2026-05-{day[-2:]} <!--dpr-date:{day}-->\n    * <a class=\"dpr-sidebar-brief-link\" href=\"#/{day[:6]}/{day[-2:]}/README\">旧日报</a>"
+                        for day in old_days
+                    ]
+                    + ["* Other"]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            self.mod.update_sidebar(
+                str(sidebar_path),
+                "20260510",
+                [("202605/10/test-paper", "Test Paper", [])],
+                [],
+                {},
+                "2026-05-10",
+            )
+
+            content = sidebar_path.read_text(encoding="utf-8")
+            self.assertIn("* 🗂️ 近期日报", content)
+            self.assertEqual(content.count('class="dpr-sidebar-daily-note"'), 1)
+            kept_days = ["20260510", "20260509", "20260508", "20260507", "20260506", "20260505", "20260504"]
+            positions = [content.index(f"<!--dpr-date:{day}-->") for day in kept_days]
+            self.assertEqual(positions, sorted(positions))
+            self.assertNotIn("<!--dpr-date:20260503-->", content)
+            self.assertNotIn("<!--dpr-date:20260502-->", content)
+            self.assertNotIn("<!--dpr-date:20260501-->", content)
+            self.assertGreater(content.index("dpr-sidebar-daily-note"), content.index("<!--dpr-date:20260504-->"))
+            self.assertLess(content.index("dpr-sidebar-daily-note"), content.index("* Other"))
 
 
 if __name__ == "__main__":

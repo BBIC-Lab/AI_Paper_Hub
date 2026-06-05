@@ -336,6 +336,9 @@ function testResearchValueBoundaryStopsBeforeGeneratedSections() {
 function testSidebarEmojiStripperIsShared() {
   assert.equal(typeof window.DPRSidebarUtils.stripSidebarEmoji, 'function');
   assert.equal(window.DPRSidebarUtils.stripSidebarEmoji('\u{1F5C2}\uFE0F Daily Papers'), 'Daily Papers');
+  assert.equal(window.DPRSidebarUtils.isDailyRootLabel('\u{1F5C2}\uFE0F Daily Papers'), true);
+  assert.equal(window.DPRSidebarUtils.isDailyRootLabel('\u{1F5C2}\uFE0F 近期日报'), true);
+  assert.equal(window.DPRSidebarUtils.normalizeDailyRootLabel('Daily Papers'), '近期日报');
 }
 
 function testSidebarCacheBusterTargetsOnlySidebar() {
@@ -345,6 +348,30 @@ function testSidebarCacheBusterTargetsOnlySidebar() {
   const updated = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md?dpr_v=old&x=1');
   assert.match(updated, /^docs\/_sidebar\.md\?dpr_v=\d+&x=1$/);
   assert.equal(window.DPRAppendSidebarCacheBuster('docs/202605/28/README.md'), 'docs/202605/28/README.md');
+}
+
+function testDocsRouteClassificationUsesOneNormalizer() {
+  assert.equal(typeof window.DPRRouteUtils.classifyDocsRoute, 'function');
+  assert.equal(window.DPRRouteUtils.normalizeDocsRoute('/docs/reports/weekly/README.md'), 'reports/weekly/README');
+
+  const weekly = window.DPRRouteUtils.classifyDocsRoute('/docs/reports/weekly/README.md');
+  assert.equal(weekly.isReportPage, true);
+  assert.equal(weekly.isPeriodicReportPage, true);
+  assert.equal(weekly.isPaperPage, false);
+
+  const weeklyFromGenericReadme = window.DPRRouteUtils.classifyDocsRoute('README.md', '/reports/weekly/README');
+  assert.equal(weeklyFromGenericReadme.isPeriodicReportPage, true);
+
+  const library = window.DPRRouteUtils.classifyDocsRoute('#/reader-library');
+  assert.equal(library.isReaderLibraryPage, true);
+  assert.equal(library.isLandingPage, true);
+
+  const tutorial = window.DPRRouteUtils.classifyDocsRoute('/tutorial/quick-start');
+  assert.equal(tutorial.isTutorialPage, true);
+  assert.equal(tutorial.isPaperPage, false);
+
+  const localPaper = window.DPRRouteUtils.classifyDocsRoute('/local-pdf/20260527/local-paper.md');
+  assert.equal(localPaper.isPaperPage, true);
 }
 
 testFullwidthCommaInsideInlineMath();
@@ -360,5 +387,6 @@ testResearchValueExtractorKeepsDoneMarkerInBody();
 testResearchValueBoundaryStopsBeforeGeneratedSections();
 testSidebarEmojiStripperIsShared();
 testSidebarCacheBusterTargetsOnlySidebar();
+testDocsRouteClassificationUsesOneNormalizer();
 
 console.log('docsify markdown math tests passed');
