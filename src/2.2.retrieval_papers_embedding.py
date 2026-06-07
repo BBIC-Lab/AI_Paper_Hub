@@ -18,6 +18,13 @@ import re
 
 import numpy as np
 
+try:
+  from core import artifacts as core_artifacts
+  from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+  from src.core import artifacts as core_artifacts
+  from src.core import paths as core_paths
+
 from filter import E5_QUERY_PREFIX, EmbeddingCoarseFilter, encode_queries
 try:
   from source_backend_router import group_queries_by_source, merge_pipeline_results
@@ -37,10 +44,10 @@ from supabase_source import (
 SCRIPT_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "config.yaml"))
 ROOT_DIR = os.path.dirname(CONFIG_FILE)
-TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
-ARCHIVE_DIR = os.path.join(ROOT_DIR, "archive", TODAY_STR)
-RAW_DIR = os.path.join(ARCHIVE_DIR, "raw")
-FILTERED_DIR = os.path.join(ARCHIVE_DIR, "filtered")
+TODAY_STR = core_paths.run_date_from_env()
+ARCHIVE_DIR = str(core_paths.archive_dir(ROOT_DIR, TODAY_STR))
+RAW_DIR = str(core_paths.raw_dir(ROOT_DIR, TODAY_STR))
+FILTERED_DIR = str(core_paths.filtered_dir(ROOT_DIR, TODAY_STR))
 DATE_RE_DAY = re.compile(r"^\d{8}$")
 DATE_RE_RANGE = re.compile(r"^\d{8}-\d{8}$")
 SUPABASE_TIME_FIELDS = ("published",)
@@ -448,8 +455,7 @@ def load_paper_pool(path: str) -> List[Paper]:
   if not os.path.exists(path):
     raise FileNotFoundError(f"找不到论文池文件：{path}")
 
-  with open(path, "r", encoding="utf-8") as f:
-    raw = json.load(f)
+  raw = core_artifacts.read_json(path)
 
   papers: List[Paper] = []
   for item in raw:
@@ -1112,8 +1118,6 @@ def save_tagged_results(
   """
   from datetime import datetime, timezone
 
-  os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-
   id_to_paper: Dict[str, Paper] = result.get("papers") or {}
 
   tagged_papers = [p.to_dict() for p in id_to_paper.values() if p.tags]
@@ -1140,8 +1144,7 @@ def save_tagged_results(
     "queries": result.get("queries") or [],
   }
 
-  with open(output_path, "w", encoding="utf-8") as f:
-    json.dump(payload, f, ensure_ascii=False, indent=2)
+  core_artifacts.write_json(output_path, payload)
 
   log(f"[INFO] 已将带 tag 的论文和每个查询的 top_k 结果写入：{output_path}")
   log(f"[INFO] 其中带 tag 的论文数：{len(tagged_papers)}")
@@ -1506,7 +1509,7 @@ def main() -> None:
       raw_files = []
 
     if not raw_files:
-      output_path = os.path.join(FILTERED_DIR, f"arxiv_papers_{TODAY_STR}.embedding.json")
+      output_path = os.path.join(FILTERED_DIR, core_artifacts.paper_artifact_filename(TODAY_STR, "embedding"))
       if multi_source_backend:
         multi_source_result = run_multi_source_vector_recall(output_path, queries)
         if multi_source_result:

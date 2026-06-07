@@ -10,15 +10,22 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List
 
+try:
+    from core import artifacts as core_artifacts
+    from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+    from src.core import artifacts as core_artifacts
+    from src.core import paths as core_paths
+
 from llm import LLMAuthenticationError, LLMClient, make_task_client
 from subscription_plan import build_pipeline_inputs
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
-ARCHIVE_DIR = os.path.join(ROOT_DIR, "archive", TODAY_STR)
-RANKED_DIR = os.path.join(ARCHIVE_DIR, "rank")
-CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
+TODAY_STR = core_paths.run_date_from_env()
+ARCHIVE_DIR = str(core_paths.archive_dir(ROOT_DIR, TODAY_STR))
+RANKED_DIR = str(core_paths.rank_dir(ROOT_DIR, TODAY_STR))
+CONFIG_FILE = str(core_paths.config_path(ROOT_DIR))
 
 DEFAULT_FILTER_MODEL = os.getenv("DPR_LLM_FILTER_MODEL") or os.getenv("DPR_LLM_MODEL") or ""
 DEFAULT_FILTER_CONCURRENCY = 4
@@ -39,14 +46,11 @@ def group_end() -> None:
 def load_json(path: str) -> Dict[str, Any]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"missing file: {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return core_artifacts.read_json_object(path)
 
 
 def save_json(data: Dict[str, Any], path: str) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    core_artifacts.write_json(path, data)
     log(f"[INFO] saved: {path}")
 
 

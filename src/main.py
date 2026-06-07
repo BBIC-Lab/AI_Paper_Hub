@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 import argparse
-import json
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any
+
+try:
+    from core import artifacts as core_artifacts
+    from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+    from src.core import artifacts as core_artifacts
+    from src.core import paths as core_paths
 
 try:
     from source_config import get_source_backend, load_config_with_source_migration
@@ -69,28 +75,19 @@ def should_skip_fetch(config: dict | None = None) -> bool:
 
 
 def beijing_today(now: datetime | None = None):
-    current = now or datetime.now(timezone.utc)
-    if current.tzinfo is None:
-        current = current.replace(tzinfo=timezone.utc)
-    return current.astimezone(BEIJING_TZ).date()
+    return core_paths.beijing_today(now)
 
 
 def beijing_today_token(now: datetime | None = None) -> str:
-    return beijing_today(now).strftime("%Y%m%d")
+    return core_paths.beijing_today_token(now)
 
 
 def build_sidebar_date_label(days: int, now: datetime | None = None) -> str:
-    safe_days = max(int(days), 1)
-    end_date = beijing_today(now)
-    start_date = end_date - timedelta(days=safe_days - 1)
-    return f"{start_date:%Y-%m-%d} ~ {end_date:%Y-%m-%d}"
+    return core_paths.build_sidebar_date_label(days, now=now)
 
 
 def build_run_date_token(days: int, now: datetime | None = None) -> str:
-    safe_days = max(int(days), 1)
-    end_date = beijing_today(now)
-    start_date = end_date - timedelta(days=safe_days - 1)
-    return f"{start_date:%Y%m%d}-{end_date:%Y%m%d}"
+    return core_paths.build_run_date_token(days, now=now)
 
 
 def resolve_run_date_token(fetch_days: int | None, now: datetime | None = None) -> str:
@@ -100,18 +97,25 @@ def resolve_run_date_token(fetch_days: int | None, now: datetime | None = None) 
     - 其它情况使用单日 token：YYYYMMDD
     """
     if fetch_days is not None:
-        if fetch_days >= LONG_RANGE_DAYS_THRESHOLD:
-            return build_run_date_token(fetch_days, now=now)
-        return beijing_today_token(now)
+        return core_paths.resolve_run_date_token(
+            fetch_days,
+            now=now,
+            long_range_days_threshold=LONG_RANGE_DAYS_THRESHOLD,
+            default_days=MAIN_DEFAULT_DAYS,
+        )
 
     setting = load_arxiv_paper_setting()
     try:
         days_window = int(setting.get("days_window") or MAIN_DEFAULT_DAYS)
     except Exception:
         days_window = MAIN_DEFAULT_DAYS
-    if days_window >= LONG_RANGE_DAYS_THRESHOLD:
-        return build_run_date_token(days_window, now=now)
-    return beijing_today_token(now)
+    return core_paths.resolve_run_date_token(
+        None,
+        days_window=days_window,
+        now=now,
+        long_range_days_threshold=LONG_RANGE_DAYS_THRESHOLD,
+        default_days=MAIN_DEFAULT_DAYS,
+    )
 
 
 def resolve_sidebar_date_label(fetch_days: int | None, now: datetime | None = None) -> str | None:
@@ -177,18 +181,13 @@ def parse_trace_ids(cli_values: list[str] | None) -> list[str]:
 
 
 def load_json_safe(path: str) -> Any:
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as exc:
+    def _log_error(exc: Exception) -> None:
         print(f"[TRACE] 读取失败: {path} | {exc}", flush=True)
-        return None
+    return core_artifacts.read_json_safe(path, default=None, on_error=_log_error)
 
 
 def save_json(path: str, data: Any) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    core_artifacts.write_json(path, data)
 
 
 def _read_env_text(*names: str) -> str:
@@ -614,27 +613,15 @@ def main() -> None:
     if trace_ids:
         print(f"[TRACE] 启用论文追踪: {', '.join(trace_ids)}", flush=True)
 
-    archive_dir = os.path.join(ROOT_DIR, "archive", run_date_token)
-    raw_path = os.path.join(archive_dir, "raw", f"arxiv_papers_{run_date_token}.json")
-    bm25_path = os.path.join(
-        archive_dir,
-        "filtered",
-        f"arxiv_papers_{run_date_token}.bm25.json",
-    )
-    embedding_path = os.path.join(
-        archive_dir,
-        "filtered",
-        f"arxiv_papers_{run_date_token}.embedding.json",
-    )
-    rrf_path = os.path.join(archive_dir, "filtered", f"arxiv_papers_{run_date_token}.json")
-    rerank_path = os.path.join(archive_dir, "rank", f"arxiv_papers_{run_date_token}.json")
-    llm_path = os.path.join(archive_dir, "rank", f"arxiv_papers_{run_date_token}.llm.json")
     recommend_mode = "skims" if use_skims_mode else "standard"
-    recommend_path = os.path.join(
-        archive_dir,
-        "recommend",
-        f"arxiv_papers_{run_date_token}.{recommend_mode}.json",
-    )
+    artifact_paths = core_paths.run_artifact_paths(ROOT_DIR, run_date_token, recommend_mode)
+    raw_path = str(artifact_paths.raw)
+    bm25_path = str(artifact_paths.bm25)
+    embedding_path = str(artifact_paths.embedding)
+    rrf_path = str(artifact_paths.rrf)
+    rerank_path = str(artifact_paths.rerank)
+    llm_path = str(artifact_paths.llm)
+    recommend_path = str(artifact_paths.recommend)
 
     if args.run_enrich:
         run_step(

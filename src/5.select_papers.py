@@ -8,17 +8,24 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
+try:
+    from core import artifacts as core_artifacts
+    from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+    from src.core import artifacts as core_artifacts
+    from src.core import paths as core_paths
+
 from subscription_plan import count_subscription_tags, get_profile_daily_paper_limits
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-ARCHIVE_ROOT = os.path.join(ROOT_DIR, "archive")
-TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
-ARCHIVE_DIR = os.path.join(ARCHIVE_ROOT, TODAY_STR)
-RANKED_DIR = os.path.join(ARCHIVE_DIR, "rank")
-RECOMMEND_DIR = os.path.join(ARCHIVE_DIR, "recommend")
-CARRYOVER_PATH = os.path.join(ARCHIVE_ROOT, "carryover.json")
-CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
+ARCHIVE_ROOT = str(core_paths.archive_root(ROOT_DIR))
+TODAY_STR = core_paths.run_date_from_env()
+ARCHIVE_DIR = str(core_paths.archive_dir(ROOT_DIR, TODAY_STR))
+RANKED_DIR = str(core_paths.rank_dir(ROOT_DIR, TODAY_STR))
+RECOMMEND_DIR = str(core_paths.recommend_dir(ROOT_DIR, TODAY_STR))
+CARRYOVER_PATH = str(core_paths.carryover_path(ROOT_DIR))
+CONFIG_FILE = str(core_paths.config_path(ROOT_DIR))
 
 MODES = {
     "standard": {
@@ -100,33 +107,20 @@ def group_end() -> None:
 def load_json(path: str) -> Dict[str, Any]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"missing file: {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return core_artifacts.read_json_object(path)
 
 
 def save_json(data: Dict[str, Any], path: str) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    core_artifacts.write_json(path, data)
     log(f"[INFO] saved: {path}")
 
 
 def parse_date_str(date_str: str) -> date:
-    s = str(date_str or "").strip()
-    if re.fullmatch(r"\d{8}-\d{8}", s):
-        # 区间 token 用结束日期参与“今日/最近N天”逻辑
-        s = s.split("-", 1)[1]
-    return datetime.strptime(s, "%Y%m%d").date()
+    return core_paths.parse_run_date_token(date_str)
 
 
 def list_date_dirs(archive_root: str) -> List[str]:
-    if not os.path.isdir(archive_root):
-        return []
-    result: List[str] = []
-    for name in os.listdir(archive_root):
-        if re.match(r"^\d{8}$", name) or re.match(r"^\d{8}-\d{8}$", name):
-            result.append(name)
-    return sorted(result)
+    return core_paths.list_archive_date_dirs(archive_root)
 
 
 def parse_payload_date(payload: Dict[str, Any]) -> date | None:
@@ -1350,7 +1344,7 @@ def main() -> None:
         log("[INFO] 没有候选论文（新论文=0 且 carryover=0），将写入空推荐结果并更新 carryover。")
         os.makedirs(output_dir, exist_ok=True)
         for mode in modes:
-            output_path = os.path.join(output_dir, f"arxiv_papers_{TODAY_STR}.{mode}.json")
+            output_path = os.path.join(output_dir, core_artifacts.paper_artifact_filename(TODAY_STR, mode))
             empty = {
                 "mode": mode,
                 "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -1404,7 +1398,7 @@ def main() -> None:
             )
             if args.all_quick:
                 result = force_all_into_quick(result)
-        output_path = os.path.join(output_dir, f"arxiv_papers_{TODAY_STR}.{mode}.json")
+        output_path = os.path.join(output_dir, core_artifacts.paper_artifact_filename(TODAY_STR, mode))
         stats = result.get("stats") or {}
         log(f"[STATS] {json.dumps(stats, ensure_ascii=False)}")
         save_json(result, output_path)
