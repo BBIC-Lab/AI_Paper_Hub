@@ -5,7 +5,12 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import requests
 
-from src.model_loader import RemoteSentenceTransformer, load_sentence_transformer
+from src.model_loader import (
+    RemoteSentenceTransformer,
+    is_remote_embedding_enabled,
+    load_remote_embedding_settings,
+    load_sentence_transformer,
+)
 
 
 class RemoteSentenceTransformerTest(unittest.TestCase):
@@ -30,7 +35,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
 
         model = RemoteSentenceTransformer(
             model_name="BAAI/bge-small-en-v1.5",
-            endpoint="https://embed.zwwen.online",
+            endpoint="https://embed.example.test",
             api_key="test-key",
             timeout=30,
             default_batch_size=2,
@@ -62,7 +67,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
 
         model = RemoteSentenceTransformer(
             model_name="BAAI/bge-small-en-v1.5",
-            endpoint="https://embed.zwwen.online",
+            endpoint="https://embed.example.test",
             api_key="test-key",
             timeout=30,
             default_batch_size=2,
@@ -92,7 +97,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
 
         model = RemoteSentenceTransformer(
             model_name="BAAI/bge-small-en-v1.5",
-            endpoint="https://embed.zwwen.online",
+            endpoint="https://embed.example.test",
             api_key="test-key",
             timeout=30,
             default_batch_size=2,
@@ -111,26 +116,45 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
     @patch.dict(
         os.environ,
         {
+            "DPR_EMBED_API_URL": "https://embed.example.test",
+            "DPR_EMBED_API_KEY": "env-key",
             "DPR_EMBED_API_TIMEOUT": "45",
         },
         clear=False,
     )
-    def test_load_sentence_transformer_returns_remote_wrapper_with_fixed_key(self):
+    def test_load_sentence_transformer_returns_remote_wrapper_from_env(self):
         model = load_sentence_transformer("BAAI/bge-small-en-v1.5", device="cpu")
         self.assertTrue(getattr(model, "is_remote", False))
         self.assertEqual(model.model_name, "BAAI/bge-small-en-v1.5")
-        self.assertEqual(model.endpoint, "https://embed.zwwen.online/embed")
+        self.assertEqual(model.endpoint, "https://embed.example.test/embed")
         self.assertEqual(model.timeout, 45)
-        self.assertEqual(
-            model.api_key,
-            "26932a86d772001af60cbd9d2c162bfda3a90e094f797f3d6806f6077478b27a",
-        )
+        self.assertEqual(model.api_key, "env-key")
 
+    @patch.dict(os.environ, {}, clear=True)
+    @patch("src.model_loader._load_local_sentence_transformer")
+    def test_load_sentence_transformer_defaults_to_local_without_remote_url(self, mock_load_local):
+        local_model = MagicMock()
+        mock_load_local.return_value = local_model
+
+        self.assertFalse(is_remote_embedding_enabled())
+        self.assertIsNone(load_remote_embedding_settings())
+
+        model = load_sentence_transformer("BAAI/bge-small-en-v1.5", device="cpu")
+
+        mock_load_local.assert_called_once()
+        self.assertIs(model, local_model)
+
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://from-os-env.example.test"}, clear=False)
+    def test_load_remote_embedding_settings_honors_explicit_empty_env(self):
+        self.assertIsNone(load_remote_embedding_settings({}))
+
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
     def test_load_sentence_transformer_uses_cpu_fallback_for_remote_device_alias(self):
         model = load_sentence_transformer("BAAI/bge-small-en-v1.5", device="remote")
         self.assertTrue(getattr(model, "is_remote", False))
         self.assertEqual(model.local_device, "cpu")
 
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
     @patch("src.model_loader._load_local_sentence_transformer")
     @patch("src.model_loader.requests.post")
     def test_remote_device_alias_falls_back_to_local_cpu_when_remote_request_fails(
@@ -150,6 +174,27 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertEqual(mock_load_local.call_args.kwargs["device"], "cpu")
         self.assertEqual(arr.shape, (1, 2))
 
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
+    @patch("src.model_loader._load_local_sentence_transformer")
+    @patch("src.model_loader.requests.post")
+    def test_remote_failure_can_be_configured_to_fail_fast(self, mock_post, mock_load_local):
+        mock_post.side_effect = requests.exceptions.Timeout("remote timeout")
+
+        model = RemoteSentenceTransformer(
+            model_name="BAAI/bge-small-en-v1.5",
+            endpoint="https://embed.example.test",
+            api_key="test-key",
+            timeout=30,
+            default_batch_size=2,
+            fallback="fail",
+        )
+
+        with self.assertRaises(requests.exceptions.Timeout):
+            model.encode(["a"], convert_to_numpy=True, normalize_embeddings=True, batch_size=2)
+
+        mock_load_local.assert_not_called()
+
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
     @patch("src.model_loader._load_local_sentence_transformer")
     def test_load_sentence_transformer_can_force_local(self, mock_load_local):
         local_model = MagicMock()
@@ -164,6 +209,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         mock_load_local.assert_called_once()
         self.assertIs(model, local_model)
 
+    @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
     @patch("src.model_loader._load_local_sentence_transformer")
     def test_load_sentence_transformer_normalizes_remote_device_when_force_local(self, mock_load_local):
         local_model = MagicMock()
