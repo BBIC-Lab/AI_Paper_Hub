@@ -281,18 +281,25 @@ function testEmbeddingCustomProfileRequiresUrlAndKey() {
 
 function testEmbeddingSettingsUiSourceMatchesContract() {
   const source = fs.readFileSync(path.join(__dirname, '../app/subscriptions.manager.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../app/app.css'), 'utf8');
 
   assert.ok(source.includes('value="default_remote" checked'));
   assert.ok(source.includes('默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）'));
   assert.ok(source.includes('本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5'));
   assert.ok(source.includes('自定义 API Key 只会加密写入 GitHub Secrets'));
+  assert.ok(source.includes("setEmbeddingCustomPanelVisible(profile === 'custom')"));
+  assert.ok(source.includes("setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom')"));
   assert.ok(source.includes('id="dpr-embedding-api-url-input"'));
   assert.ok(source.includes('id="dpr-embedding-api-key-input"'));
+  assert.ok(source.includes('id="dpr-embedding-api-url-input" type="text" autocomplete="off" disabled'));
+  assert.ok(source.includes('id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled'));
   assert.equal(source.includes('dpr-embedding-provider-select'), false);
   assert.equal(source.includes('dpr-embedding-timeout-input'), false);
   assert.equal(source.includes('dpr-embedding-fallback-select'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_URL'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_KEY'), false);
+  assert.ok(css.includes('.dpr-embedding-custom-panel[hidden]'));
+  assert.ok(css.includes('display: none;'));
 }
 
 function testNormalizeResearchDirectionsSplitsAndCaps() {

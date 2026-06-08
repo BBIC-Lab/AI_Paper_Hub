@@ -1320,14 +1320,23 @@ window.SubscriptionsManager = (function () {
     }
   };
 
+  const setEmbeddingCustomPanelVisible = (visible) => {
+    const customPanel = document.getElementById('dpr-embedding-custom-panel');
+    if (!customPanel) return;
+    customPanel.hidden = !visible;
+    customPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    Array.from(customPanel.querySelectorAll('input, select, textarea, button')).forEach((el) => {
+      el.disabled = !visible;
+    });
+  };
+
   const syncEmbeddingSettingsFields = () => {
     if (!panel) return;
     const state = resolveEmbeddingServiceState();
     const profile = state.profile === 'advanced' ? DEFAULT_EMBEDDING_PROFILE : state.profile;
     const radio = document.querySelector(`input[name="dpr-embedding-profile"][value="${profile}"]`);
     if (radio) radio.checked = true;
-    const customPanel = document.getElementById('dpr-embedding-custom-panel');
-    if (customPanel) customPanel.hidden = profile !== 'custom';
+    setEmbeddingCustomPanelVisible(profile === 'custom');
     const statusEl = document.getElementById('dpr-embedding-current-status');
     if (statusEl) {
       const labels = {
@@ -1404,8 +1413,7 @@ window.SubscriptionsManager = (function () {
       if (input._bound) return;
       input._bound = true;
       input.addEventListener('change', () => {
-        const customPanel = document.getElementById('dpr-embedding-custom-panel');
-        if (customPanel) customPanel.hidden = normalizeEmbeddingProfile(input.value) !== 'custom';
+        setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom');
         setEmbeddingMessage('', '#666');
       });
     });
@@ -2124,8 +2132,8 @@ window.SubscriptionsManager = (function () {
                   <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
                     <p class="dpr-embedding-safe-note">自定义 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
                     <div class="dpr-settings-form-grid">
-                      <label class="chat-quick-run-row" for="dpr-embedding-api-url-input"><span>服务地址</span><input id="dpr-embedding-api-url-input" type="text" autocomplete="off" placeholder="https://your-embedding-server.example.com/embed" /></label>
-                      <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" placeholder="只写入 GitHub Secrets，不回显" /></label>
+                      <label class="chat-quick-run-row" for="dpr-embedding-api-url-input"><span>服务地址</span><input id="dpr-embedding-api-url-input" type="text" autocomplete="off" disabled placeholder="https://your-embedding-server.example.com/embed" /></label>
+                      <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
                     </div>
                   </div>
                   <div class="dpr-embedding-save-row">

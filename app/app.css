@@ -5284,6 +5284,10 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   gap: 12px;
 }
 
+.dpr-embedding-custom-panel[hidden] {
+  display: none;
+}
+
 .dpr-embedding-safe-note {
   margin: 0;
   padding: 10px 12px;
