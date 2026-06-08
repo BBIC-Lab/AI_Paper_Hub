@@ -169,9 +169,14 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         },
         clear=True,
     )
-    def test_default_remote_profile_missing_secrets_falls_back_to_local(self):
-        self.assertFalse(is_remote_embedding_enabled())
-        self.assertIsNone(load_remote_embedding_settings())
+    def test_default_remote_profile_uses_preset_endpoint_without_url_secret(self):
+        settings = load_remote_embedding_settings()
+
+        self.assertTrue(is_remote_embedding_enabled())
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "default_remote")
+        self.assertEqual(settings.endpoint, "https://embed.zwwen.online/embed")
+        self.assertEqual(settings.api_key, "")
 
     @patch.dict(
         os.environ,
@@ -228,22 +233,26 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertIn("reserved", " ".join(messages))
 
     @patch.dict(os.environ, {}, clear=True)
-    @patch("src.model_loader._load_local_sentence_transformer")
-    def test_load_sentence_transformer_defaults_to_local_without_remote_url(self, mock_load_local):
-        local_model = MagicMock()
-        mock_load_local.return_value = local_model
+    def test_load_sentence_transformer_defaults_to_preset_remote_without_env(self):
+        settings = load_remote_embedding_settings()
 
-        self.assertFalse(is_remote_embedding_enabled())
-        self.assertIsNone(load_remote_embedding_settings())
+        self.assertTrue(is_remote_embedding_enabled())
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "default_remote")
+        self.assertEqual(settings.endpoint, "https://embed.zwwen.online/embed")
 
         model = load_sentence_transformer("BAAI/bge-small-en-v1.5", device="cpu")
 
-        mock_load_local.assert_called_once()
-        self.assertIs(model, local_model)
+        self.assertTrue(getattr(model, "is_remote", False))
+        self.assertEqual(model.endpoint, "https://embed.zwwen.online/embed")
 
     @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://from-os-env.example.test"}, clear=False)
     def test_load_remote_embedding_settings_honors_explicit_empty_env(self):
-        self.assertIsNone(load_remote_embedding_settings({}))
+        settings = load_remote_embedding_settings({})
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "default_remote")
+        self.assertEqual(settings.endpoint, "https://embed.zwwen.online/embed")
 
     @patch.dict(os.environ, {"DPR_EMBED_API_URL": "https://embed.example.test"}, clear=False)
     def test_load_sentence_transformer_uses_cpu_fallback_for_remote_device_alias(self):

@@ -20,6 +20,7 @@ MODELSCOPE_ENDPOINT = "https://modelscope.cn/hf"
 _DEFAULT_RETRIES = 3
 _DEFAULT_HF_BACKOFF_RETRIES = 1
 _DEFAULT_REMOTE_TIMEOUT_SECONDS = 60
+_DEFAULT_REMOTE_PRESET_ENDPOINT = "https://embed.zwwen.online/embed"
 _REMOTE_PROVIDER_ALIASES = {
   "": "legacy",
   "custom": "legacy",
@@ -84,10 +85,8 @@ def load_remote_embedding_settings(
       log("[WARN] DPR_EMBED_PROFILE=advanced is reserved; using local embedding.")
     return None
   if profile == "default_remote":
-    endpoint = _env_text(env, "DPR_EMBED_DEFAULT_API_URL")
+    endpoint = _env_text(env, "DPR_EMBED_DEFAULT_API_URL", _DEFAULT_REMOTE_PRESET_ENDPOINT)
     api_key = _env_text(env, "DPR_EMBED_DEFAULT_API_KEY")
-    if not endpoint and raw_profile and log:
-      log("[WARN] Default embedding Secrets are missing; using local embedding.")
   elif profile == "custom":
     endpoint = custom_endpoint
     api_key = _env_text(env, "DPR_EMBED_API_KEY")
