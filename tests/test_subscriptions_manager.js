@@ -17,6 +17,9 @@ const {
   normalizeDailyReports,
   resolveDailyReports,
   buildEmailWorkflowCron,
+  normalizeEmbeddingProfile,
+  resolveEmbeddingServiceState,
+  buildEmbeddingSecretsPayload,
   normalizeResearchDirections,
   resolveResearchDirections,
   normalizePeriodicReports,
@@ -228,6 +231,68 @@ function testEmailWorkflowCronKeepsUtcTime() {
 
   assert.equal(schedule.cron, '30 8 * * *');
   assert.equal(schedule.timezone, 'UTC');
+}
+
+function testEmbeddingProfileDefaultsToDefaultEmbedding() {
+  assert.equal(normalizeEmbeddingProfile(''), 'default_remote');
+  assert.equal(normalizeEmbeddingProfile('default_remote'), 'default_remote');
+  assert.equal(resolveEmbeddingServiceState({}).profile, 'default_remote');
+}
+
+function testEmbeddingSecretsPayloadForCustomProfile() {
+  const payload = buildEmbeddingSecretsPayload({
+    profile: 'custom',
+    apiUrl: 'https://embed.example.test/embed',
+    apiKey: 'secret-key',
+    provider: 'legacy',
+    timeout: '45',
+    fallback: 'fail',
+  });
+
+  assert.deepEqual(payload, {
+    DPR_EMBED_PROFILE: 'custom',
+    DPR_EMBED_API_URL: 'https://embed.example.test/embed',
+    DPR_EMBED_API_KEY: 'secret-key',
+    DPR_EMBED_PROVIDER: 'legacy',
+    DPR_EMBED_API_TIMEOUT: '60',
+    DPR_EMBED_REMOTE_FALLBACK: 'local',
+  });
+}
+
+function testEmbeddingPresetProfilesDoNotExposeEndpointSecrets() {
+  for (const profile of ['local', 'default_remote', 'advanced']) {
+    const payload = buildEmbeddingSecretsPayload({ profile });
+    assert.deepEqual(payload, { DPR_EMBED_PROFILE: profile });
+    assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_API_URL'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_API_KEY'), false);
+  }
+}
+
+function testEmbeddingCustomProfileRequiresUrlAndKey() {
+  assert.throws(
+    () => buildEmbeddingSecretsPayload({ profile: 'custom', apiUrl: '', apiKey: 'secret-key' }),
+    /embedding/,
+  );
+  assert.throws(
+    () => buildEmbeddingSecretsPayload({ profile: 'custom', apiUrl: 'https://embed.example.test' }),
+    /API Key/,
+  );
+}
+
+function testEmbeddingSettingsUiSourceMatchesContract() {
+  const source = fs.readFileSync(path.join(__dirname, '../app/subscriptions.manager.js'), 'utf8');
+
+  assert.ok(source.includes('value="default_remote" checked'));
+  assert.ok(source.includes('默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）'));
+  assert.ok(source.includes('本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5'));
+  assert.ok(source.includes('自定义 API Key 只会加密写入 GitHub Secrets'));
+  assert.ok(source.includes('id="dpr-embedding-api-url-input"'));
+  assert.ok(source.includes('id="dpr-embedding-api-key-input"'));
+  assert.equal(source.includes('dpr-embedding-provider-select'), false);
+  assert.equal(source.includes('dpr-embedding-timeout-input'), false);
+  assert.equal(source.includes('dpr-embedding-fallback-select'), false);
+  assert.equal(source.includes('DPR_EMBED_DEFAULT_API_URL'), false);
+  assert.equal(source.includes('DPR_EMBED_DEFAULT_API_KEY'), false);
 }
 
 function testNormalizeResearchDirectionsSplitsAndCaps() {
@@ -484,6 +549,11 @@ testWindowWarningOnlyAppearsForLongWindow();
 testRunProfileQuickFetchPassesProfileTagToWorkflow();
 testEmailWorkflowCronConvertsShanghaiTimeToUtc();
 testEmailWorkflowCronKeepsUtcTime();
+testEmbeddingProfileDefaultsToDefaultEmbedding();
+testEmbeddingSecretsPayloadForCustomProfile();
+testEmbeddingPresetProfilesDoNotExposeEndpointSecrets();
+testEmbeddingCustomProfileRequiresUrlAndKey();
+testEmbeddingSettingsUiSourceMatchesContract();
 testNormalizeResearchDirectionsSplitsAndCaps();
 testResolveResearchDirectionsFallsBackToKeywords();
 testResolveResearchDirectionsPrefersConfiguredValues();

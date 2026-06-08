@@ -25,11 +25,21 @@ _REMOTE_PROVIDER_ALIASES = {
   "custom": "legacy",
   "legacy": "legacy",
 }
+_REMOTE_PROFILE_ALIASES = {
+  "": "default_remote",
+  "default": "default_remote",
+  "default_remote": "default_remote",
+  "remote": "default_remote",
+  "local": "local",
+  "advanced": "advanced",
+  "custom": "custom",
+}
 _REMOTE_DEVICE_ALIASES = {"remote"}
 
 
 @dataclass(frozen=True)
 class RemoteEmbeddingSettings:
+  profile: str
   provider: str
   endpoint: str
   api_key: str
@@ -50,13 +60,42 @@ def normalize_remote_embedding_provider(provider: str | None) -> str:
   return _REMOTE_PROVIDER_ALIASES.get(text, text)
 
 
+def normalize_remote_embedding_profile(profile: str | None) -> str:
+  text = str(profile or "").strip().lower()
+  return _REMOTE_PROFILE_ALIASES.get(text, text)
+
+
 def load_remote_embedding_settings(
   env: Mapping[str, str] | None = None,
   *,
   log: Callable[[str], None] | None = None,
 ) -> RemoteEmbeddingSettings | None:
   env = os.environ if env is None else env
-  endpoint = _env_text(env, "DPR_EMBED_API_URL")
+  raw_profile = _env_text(env, "DPR_EMBED_PROFILE")
+  custom_endpoint = _env_text(env, "DPR_EMBED_API_URL")
+  profile = normalize_remote_embedding_profile(raw_profile)
+  if not raw_profile and custom_endpoint:
+    profile = "custom"
+
+  if profile == "local":
+    return None
+  if profile == "advanced":
+    if log:
+      log("[WARN] DPR_EMBED_PROFILE=advanced is reserved; using local embedding.")
+    return None
+  if profile == "default_remote":
+    endpoint = _env_text(env, "DPR_EMBED_DEFAULT_API_URL")
+    api_key = _env_text(env, "DPR_EMBED_DEFAULT_API_KEY")
+    if not endpoint and raw_profile and log:
+      log("[WARN] Default embedding Secrets are missing; using local embedding.")
+  elif profile == "custom":
+    endpoint = custom_endpoint
+    api_key = _env_text(env, "DPR_EMBED_API_KEY")
+  else:
+    if log:
+      log(f"[WARN] Unsupported DPR_EMBED_PROFILE={profile}; using local embedding.")
+    return None
+
   if not endpoint:
     return None
 
@@ -84,9 +123,10 @@ def load_remote_embedding_settings(
     fallback = "local"
 
   return RemoteEmbeddingSettings(
+    profile=profile,
     provider=provider,
     endpoint=endpoint,
-    api_key=_env_text(env, "DPR_EMBED_API_KEY"),
+    api_key=api_key,
     timeout=max(int(timeout or _DEFAULT_REMOTE_TIMEOUT_SECONDS), 1),
     fallback=fallback,
   )
@@ -101,7 +141,7 @@ def remote_embedding_env_summary() -> str:
   if settings is None:
     return "disabled"
   auth = "with-auth" if settings.api_key else "no-auth"
-  return f"{settings.provider}:{settings.endpoint} timeout={settings.timeout}s {auth}"
+  return f"{settings.profile}/{settings.provider}:{settings.endpoint} timeout={settings.timeout}s {auth}"
 
 
 def normalize_local_embedding_device(device: str | None) -> str:
@@ -423,7 +463,8 @@ def load_sentence_transformer(
     log(
       f"[INFO] Using remote embedding service: model={model_name} "
       f"endpoint={remote_settings.endpoint} timeout={remote_settings.timeout}s "
-      f"provider={remote_settings.provider} fallback={remote_settings.fallback} {device_note}"
+      f"profile={remote_settings.profile} provider={remote_settings.provider} "
+      f"fallback={remote_settings.fallback} {device_note}"
     )
     return RemoteSentenceTransformer(
       model_name=model_name,

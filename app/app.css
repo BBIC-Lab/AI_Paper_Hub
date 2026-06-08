@@ -5226,6 +5226,74 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   overflow-wrap: anywhere;
 }
 
+.dpr-embedding-settings-card {
+  grid-column: 1 / -1;
+  align-items: stretch;
+}
+
+.dpr-embedding-status-pill {
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--dpr-settings-accent);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dpr-embedding-profile-group {
+  display: grid;
+  gap: 10px;
+}
+
+#arxiv-search-panel .dpr-embedding-profile-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(23, 32, 51, 0.09);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--dpr-settings-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#arxiv-search-panel .dpr-embedding-profile-option input {
+  margin-top: 3px;
+  accent-color: var(--dpr-settings-accent);
+}
+
+#arxiv-search-panel .dpr-embedding-profile-option strong {
+  color: var(--dpr-settings-text);
+}
+
+#arxiv-search-panel .dpr-embedding-profile-option.is-disabled {
+  opacity: 0.62;
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.dpr-embedding-custom-panel,
+.dpr-embedding-save-row {
+  display: grid;
+  gap: 12px;
+}
+
+.dpr-embedding-safe-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.07);
+  color: #385173;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .dpr-storage-status {
   display: grid;
   gap: 10px;

@@ -22,6 +22,10 @@ window.SubscriptionsManager = (function () {
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
   const DEFAULT_EMAIL_PUSH_TIME = '08:30';
   const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
+  const DEFAULT_EMBEDDING_PROFILE = 'default_remote';
+  const DEFAULT_EMBEDDING_PROVIDER = 'legacy';
+  const DEFAULT_EMBEDDING_TIMEOUT = 60;
+  const DEFAULT_EMBEDDING_FALLBACK = 'local';
   const DEFAULT_PERIODIC_REPORTS = {
     enabled: true,
     default_input_mode: 'artifacts',
@@ -96,6 +100,8 @@ window.SubscriptionsManager = (function () {
   let emailSaveBtn = null;
   let emailTestBtn = null;
   let emailMsgEl = null;
+  let embeddingSaveBtn = null;
+  let embeddingMsgEl = null;
   let researchSaveBtn = null;
   let researchMsgEl = null;
   let settingsDirtyBadge = null;
@@ -169,6 +175,60 @@ window.SubscriptionsManager = (function () {
   const normalizeEmailTimezone = (value) => (
     normalizeText(value) === 'UTC' ? 'UTC' : DEFAULT_EMAIL_TIMEZONE
   );
+  const normalizeEmbeddingProfile = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    return ['local', 'default_remote', 'advanced', 'custom'].includes(text)
+      ? text
+      : DEFAULT_EMBEDDING_PROFILE;
+  };
+  const normalizeEmbeddingProvider = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    return text === 'custom' || text === 'legacy' ? 'legacy' : DEFAULT_EMBEDDING_PROVIDER;
+  };
+  const normalizeEmbeddingFallback = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    return text === 'fail' ? 'fail' : DEFAULT_EMBEDDING_FALLBACK;
+  };
+  const normalizeEmbeddingTimeout = (value) => {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_EMBEDDING_TIMEOUT;
+    return Math.min(parsed, 600);
+  };
+  const resolveEmbeddingServiceState = (secretValue) => {
+    const secret = isPlainObject(secretValue)
+      ? secretValue
+      : (isPlainObject(window.decoded_secret_private) ? window.decoded_secret_private : {});
+    const embedding = isPlainObject(secret.embeddingService) ? secret.embeddingService : {};
+    return {
+      profile: normalizeEmbeddingProfile(embedding.profile || DEFAULT_EMBEDDING_PROFILE),
+      provider: normalizeEmbeddingProvider(embedding.provider || DEFAULT_EMBEDDING_PROVIDER),
+      timeout: normalizeEmbeddingTimeout(embedding.timeout || DEFAULT_EMBEDDING_TIMEOUT),
+      fallback: normalizeEmbeddingFallback(embedding.fallback || DEFAULT_EMBEDDING_FALLBACK),
+      hasCustomCredentials: !!embedding.hasCustomCredentials,
+    };
+  };
+  const buildEmbeddingSecretsPayload = (settings) => {
+    const safe = isPlainObject(settings) ? settings : {};
+    const profile = normalizeEmbeddingProfile(safe.profile);
+    const secrets = { DPR_EMBED_PROFILE: profile };
+    if (profile !== 'custom') {
+      return secrets;
+    }
+    const apiUrl = normalizeText(safe.apiUrl);
+    const apiKey = normalizeText(safe.apiKey);
+    if (!/^https?:\/\//i.test(apiUrl)) {
+      throw new Error('请填写以 http:// 或 https:// 开头的 embedding 服务地址。');
+    }
+    if (!apiKey) {
+      throw new Error('请填写自定义 embedding API Key。');
+    }
+    secrets.DPR_EMBED_API_URL = apiUrl;
+    secrets.DPR_EMBED_API_KEY = apiKey;
+    secrets.DPR_EMBED_PROVIDER = DEFAULT_EMBEDDING_PROVIDER;
+    secrets.DPR_EMBED_API_TIMEOUT = String(DEFAULT_EMBEDDING_TIMEOUT);
+    secrets.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
+    return secrets;
+  };
   const buildEmailWorkflowCron = (timeValue, timezoneValue) => {
     const timeText = normalizeDailyPushTime(timeValue);
     const timezone = normalizeEmailTimezone(timezoneValue);
@@ -833,6 +893,7 @@ window.SubscriptionsManager = (function () {
       el.textContent = String(windows.daysWindow);
     });
     syncEmailSettingsFields();
+    syncEmbeddingSettingsFields();
     syncPeriodicReportFields();
     syncDailyReportFields();
     renderResearchDirections();
@@ -1251,6 +1312,111 @@ window.SubscriptionsManager = (function () {
       if (emailTestBtn) emailTestBtn.disabled = false;
     }
   };
+
+  const setEmbeddingMessage = (text, color) => {
+    if (embeddingMsgEl) {
+      embeddingMsgEl.textContent = text || '';
+      embeddingMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const syncEmbeddingSettingsFields = () => {
+    if (!panel) return;
+    const state = resolveEmbeddingServiceState();
+    const profile = state.profile === 'advanced' ? DEFAULT_EMBEDDING_PROFILE : state.profile;
+    const radio = document.querySelector(`input[name="dpr-embedding-profile"][value="${profile}"]`);
+    if (radio) radio.checked = true;
+    const customPanel = document.getElementById('dpr-embedding-custom-panel');
+    if (customPanel) customPanel.hidden = profile !== 'custom';
+    const statusEl = document.getElementById('dpr-embedding-current-status');
+    if (statusEl) {
+      const labels = {
+        local: '本地 embedding',
+        default_remote: '默认 embedding',
+        advanced: '高级 embedding（待开放）',
+        custom: state.hasCustomCredentials ? '自定义 embedding（已配置）' : '自定义 embedding（未配置）',
+      };
+      statusEl.textContent = labels[profile] || labels.default_remote;
+    }
+  };
+
+  const collectEmbeddingSettingsDraft = () => {
+    const selected = document.querySelector('input[name="dpr-embedding-profile"]:checked');
+    const profile = normalizeEmbeddingProfile(selected ? selected.value : DEFAULT_EMBEDDING_PROFILE);
+    const getValue = (id) => normalizeText((document.getElementById(id) || {}).value || '');
+    return {
+      profile,
+      apiUrl: getValue('dpr-embedding-api-url-input'),
+      apiKey: getValue('dpr-embedding-api-key-input'),
+    };
+  };
+
+  const saveEmbeddingSettings = async () => {
+    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
+      setEmbeddingMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+      return;
+    }
+
+    let draft = null;
+    let secrets = null;
+    try {
+      draft = collectEmbeddingSettingsDraft();
+      secrets = buildEmbeddingSecretsPayload(draft);
+    } catch (e) {
+      setEmbeddingMessage(e.message || 'Embedding 配置不完整。', '#c00');
+      return;
+    }
+
+    try {
+      if (embeddingSaveBtn) embeddingSaveBtn.disabled = true;
+      setEmbeddingMessage('正在写入 GitHub Secrets...', '#666');
+      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+        setEmbeddingMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      });
+      const secret = isPlainObject(window.decoded_secret_private)
+        ? window.decoded_secret_private
+        : {};
+      secret.embeddingService = {
+        profile: normalizeEmbeddingProfile(draft.profile),
+        provider: DEFAULT_EMBEDDING_PROVIDER,
+        timeout: DEFAULT_EMBEDDING_TIMEOUT,
+        fallback: DEFAULT_EMBEDDING_FALLBACK,
+        hasCustomCredentials: normalizeEmbeddingProfile(draft.profile) === 'custom',
+      };
+      window.decoded_secret_private = secret;
+      const apiUrlInput = document.getElementById('dpr-embedding-api-url-input');
+      const apiKeyInput = document.getElementById('dpr-embedding-api-key-input');
+      if (apiUrlInput) apiUrlInput.value = '';
+      if (apiKeyInput) apiKeyInput.value = '';
+      syncEmbeddingSettingsFields();
+      setEmbeddingMessage('Embedding 设置已保存；GitHub Secrets 不会回显明文。', '#080');
+    } catch (e) {
+      console.error(e);
+      setEmbeddingMessage(`保存 embedding 设置失败：${(e && e.message) || e}`.slice(0, 220), '#c00');
+    } finally {
+      if (embeddingSaveBtn) embeddingSaveBtn.disabled = false;
+    }
+  };
+
+  const bindEmbeddingSettingsInputs = () => {
+    const profileInputs = Array.from(document.querySelectorAll('input[name="dpr-embedding-profile"]'));
+    profileInputs.forEach((input) => {
+      if (input._bound) return;
+      input._bound = true;
+      input.addEventListener('change', () => {
+        const customPanel = document.getElementById('dpr-embedding-custom-panel');
+        if (customPanel) customPanel.hidden = normalizeEmbeddingProfile(input.value) !== 'custom';
+        setEmbeddingMessage('', '#666');
+      });
+    });
+    embeddingSaveBtn = document.getElementById('dpr-embedding-save-btn');
+    embeddingMsgEl = document.getElementById('dpr-embedding-settings-msg');
+    if (embeddingSaveBtn && !embeddingSaveBtn._bound) {
+      embeddingSaveBtn._bound = true;
+      embeddingSaveBtn.addEventListener('click', saveEmbeddingSettings);
+    }
+  };
+
 
   const sendEmailTest = () => {
     if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runWorkflowByKey !== 'function') {
@@ -1929,6 +2095,44 @@ window.SubscriptionsManager = (function () {
                   <span>聊天模型</span>
                   <strong>可复用工作流 API 或单独配置</strong>
                 </div>
+                <div class="dpr-settings-card dpr-secret-card dpr-embedding-settings-card">
+                  <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                    <div>
+                      <h3>Embedding 服务</h3>
+                      <p>选择向量编码方式。默认 embedding 使用项目预置服务；自定义密钥只写入 GitHub Secrets。</p>
+                    </div>
+                    <span id="dpr-embedding-current-status" class="dpr-embedding-status-pill">默认 embedding</span>
+                  </div>
+                  <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Embedding 服务模式">
+                    <label class="dpr-embedding-profile-option">
+                      <input id="dpr-embedding-profile-local" name="dpr-embedding-profile" type="radio" value="local" />
+                      <span><strong>本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5，CPU 执行，首次运行需下载模型）</span>
+                    </label>
+                    <label class="dpr-embedding-profile-option">
+                      <input id="dpr-embedding-profile-default" name="dpr-embedding-profile" type="radio" value="default_remote" checked />
+                      <span><strong>默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）</span>
+                    </label>
+                    <label class="dpr-embedding-profile-option is-disabled">
+                      <input id="dpr-embedding-profile-advanced" name="dpr-embedding-profile" type="radio" value="advanced" disabled />
+                      <span><strong>高级 embedding</strong>（自建服务预设，待开放，暂不填写模型）</span>
+                    </label>
+                    <label class="dpr-embedding-profile-option">
+                      <input id="dpr-embedding-profile-custom" name="dpr-embedding-profile" type="radio" value="custom" />
+                      <span><strong>自定义 embedding</strong>（自定义 /embed 服务）</span>
+                    </label>
+                  </div>
+                  <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
+                    <p class="dpr-embedding-safe-note">自定义 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
+                    <div class="dpr-settings-form-grid">
+                      <label class="chat-quick-run-row" for="dpr-embedding-api-url-input"><span>服务地址</span><input id="dpr-embedding-api-url-input" type="text" autocomplete="off" placeholder="https://your-embedding-server.example.com/embed" /></label>
+                      <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" placeholder="只写入 GitHub Secrets，不回显" /></label>
+                    </div>
+                  </div>
+                  <div class="dpr-embedding-save-row">
+                    <button id="dpr-embedding-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 embedding 设置</button>
+                  </div>
+                  <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">GitHub Secrets 是 write-only，保存后不会回显密钥明文。</div>
+                </div>
               </div>
             </section>
 
@@ -2581,6 +2785,7 @@ window.SubscriptionsManager = (function () {
     bindWindowInput('dpr-settings-days-window-input', 'days_window');
     bindWindowInput('dpr-settings-carryover-window-input', 'carryover_days');
     bindPeriodicReportInputs();
+    bindEmbeddingSettingsInputs();
 
     const reloadConfigBtn = document.getElementById('dpr-settings-reload-config-btn');
     if (reloadConfigBtn && !reloadConfigBtn._bound) {
@@ -2622,7 +2827,10 @@ window.SubscriptionsManager = (function () {
     emailSaveBtn = document.getElementById('dpr-email-save-btn');
     emailTestBtn = document.getElementById('dpr-email-test-btn');
     emailMsgEl = document.getElementById('dpr-email-settings-msg');
+    embeddingSaveBtn = document.getElementById('dpr-embedding-save-btn');
+    embeddingMsgEl = document.getElementById('dpr-embedding-settings-msg');
     syncEmailSettingsFields();
+    syncEmbeddingSettingsFields();
     [
       quickRunTodayBtn,
       quickRun10dBtn,
@@ -2818,6 +3026,12 @@ window.SubscriptionsManager = (function () {
       normalizeDailyReports: (value) => normalizeDailyReports(cloneDeep(value || {})),
       resolveDailyReports: (config) => resolveDailyReports(cloneDeep(config || {})),
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
+      normalizeEmbeddingProfile: (value) => normalizeEmbeddingProfile(value),
+      normalizeEmbeddingProvider: (value) => normalizeEmbeddingProvider(value),
+      normalizeEmbeddingFallback: (value) => normalizeEmbeddingFallback(value),
+      normalizeEmbeddingTimeout: (value) => normalizeEmbeddingTimeout(value),
+      resolveEmbeddingServiceState: (secret) => resolveEmbeddingServiceState(secret),
+      buildEmbeddingSecretsPayload: (settings) => buildEmbeddingSecretsPayload(settings),
       normalizeResearchDirections: (value) => normalizeResearchDirections(value),
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
       normalizePeriodicReports: (value) => normalizePeriodicReports(cloneDeep(value || {})),

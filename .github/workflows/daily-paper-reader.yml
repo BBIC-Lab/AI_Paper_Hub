@@ -42,7 +42,14 @@ jobs:
       DPR_LLM_FILTER_MODEL: ${{ secrets.DPR_LLM_FILTER_MODEL }}
       DPR_LLM_SUMMARY_MODEL: ${{ secrets.DPR_LLM_SUMMARY_MODEL }}
       DPR_SKIP_RERANK: "true"
-      DPR_EMBED_API_TIMEOUT: "60"
+      DPR_EMBED_PROFILE: ${{ secrets.DPR_EMBED_PROFILE || 'default_remote' }}
+      DPR_EMBED_DEFAULT_API_URL: ${{ secrets.DPR_EMBED_DEFAULT_API_URL }}
+      DPR_EMBED_DEFAULT_API_KEY: ${{ secrets.DPR_EMBED_DEFAULT_API_KEY }}
+      DPR_EMBED_API_URL: ${{ secrets.DPR_EMBED_API_URL }}
+      DPR_EMBED_API_KEY: ${{ secrets.DPR_EMBED_API_KEY }}
+      DPR_EMBED_PROVIDER: ${{ secrets.DPR_EMBED_PROVIDER || 'legacy' }}
+      DPR_EMBED_API_TIMEOUT: ${{ secrets.DPR_EMBED_API_TIMEOUT || '60' }}
+      DPR_EMBED_REMOTE_FALLBACK: ${{ secrets.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
       PYTHONUNBUFFERED: "1"
 
     steps:

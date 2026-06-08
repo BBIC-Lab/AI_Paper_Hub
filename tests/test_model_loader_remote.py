@@ -10,6 +10,7 @@ from src.model_loader import (
     is_remote_embedding_enabled,
     load_remote_embedding_settings,
     load_sentence_transformer,
+    normalize_remote_embedding_profile,
 )
 
 
@@ -129,6 +130,102 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertEqual(model.endpoint, "https://embed.example.test/embed")
         self.assertEqual(model.timeout, 45)
         self.assertEqual(model.api_key, "env-key")
+        self.assertEqual(model.fallback, "local")
+
+    def test_normalize_remote_embedding_profile_aliases(self):
+        self.assertEqual(normalize_remote_embedding_profile(""), "default_remote")
+        self.assertEqual(normalize_remote_embedding_profile("default"), "default_remote")
+        self.assertEqual(normalize_remote_embedding_profile("remote"), "default_remote")
+        self.assertEqual(normalize_remote_embedding_profile("local"), "local")
+        self.assertEqual(normalize_remote_embedding_profile("custom"), "custom")
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "default_remote",
+            "DPR_EMBED_DEFAULT_API_URL": "https://default-embed.example.test",
+            "DPR_EMBED_DEFAULT_API_KEY": "default-key",
+            "DPR_EMBED_API_URL": "https://custom-embed.example.test",
+            "DPR_EMBED_API_KEY": "custom-key",
+            "DPR_EMBED_API_TIMEOUT": "31",
+        },
+        clear=True,
+    )
+    def test_default_remote_profile_uses_default_secret_pair(self):
+        settings = load_remote_embedding_settings()
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "default_remote")
+        self.assertEqual(settings.endpoint, "https://default-embed.example.test")
+        self.assertEqual(settings.api_key, "default-key")
+        self.assertEqual(settings.timeout, 31)
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "default_remote",
+            "DPR_EMBED_API_URL": "https://custom-embed.example.test",
+            "DPR_EMBED_API_KEY": "custom-key",
+        },
+        clear=True,
+    )
+    def test_default_remote_profile_missing_secrets_falls_back_to_local(self):
+        self.assertFalse(is_remote_embedding_enabled())
+        self.assertIsNone(load_remote_embedding_settings())
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "local",
+            "DPR_EMBED_DEFAULT_API_URL": "https://default-embed.example.test",
+            "DPR_EMBED_API_URL": "https://custom-embed.example.test",
+        },
+        clear=True,
+    )
+    @patch("src.model_loader._load_local_sentence_transformer")
+    def test_local_profile_forces_local_even_when_remote_secrets_exist(self, mock_load_local):
+        local_model = MagicMock()
+        mock_load_local.return_value = local_model
+
+        self.assertFalse(is_remote_embedding_enabled())
+        model = load_sentence_transformer("BAAI/bge-small-en-v1.5", device="cpu")
+
+        self.assertIs(model, local_model)
+        mock_load_local.assert_called_once()
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "custom",
+            "DPR_EMBED_DEFAULT_API_URL": "https://default-embed.example.test",
+            "DPR_EMBED_DEFAULT_API_KEY": "default-key",
+            "DPR_EMBED_API_URL": "https://custom-embed.example.test",
+            "DPR_EMBED_API_KEY": "custom-key",
+        },
+        clear=True,
+    )
+    def test_custom_profile_uses_custom_secret_pair(self):
+        settings = load_remote_embedding_settings()
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "custom")
+        self.assertEqual(settings.endpoint, "https://custom-embed.example.test")
+        self.assertEqual(settings.api_key, "custom-key")
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "advanced",
+            "DPR_EMBED_DEFAULT_API_URL": "https://default-embed.example.test",
+            "DPR_EMBED_API_URL": "https://custom-embed.example.test",
+        },
+        clear=True,
+    )
+    def test_advanced_profile_is_reserved_and_falls_back_to_local(self):
+        messages = []
+
+        self.assertIsNone(load_remote_embedding_settings(log=messages.append))
+        self.assertIn("reserved", " ".join(messages))
 
     @patch.dict(os.environ, {}, clear=True)
     @patch("src.model_loader._load_local_sentence_transformer")
