@@ -341,13 +341,26 @@ function testSidebarEmojiStripperIsShared() {
   assert.equal(window.DPRSidebarUtils.normalizeDailyRootLabel('Daily Papers'), '近期日报');
 }
 
-function testSidebarCacheBusterTargetsOnlySidebar() {
+function testRuntimeMarkdownCacheBusterTargetsOnlyRuntimeFiles() {
   assert.equal(typeof window.DPRAppendSidebarCacheBuster, 'function');
+  assert.equal(typeof window.DPRAppendRuntimeMarkdownCacheBuster, 'function');
   const sidebarUrl = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md');
   assert.match(sidebarUrl, /^docs\/_sidebar\.md\?dpr_v=\d+$/);
   const updated = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md?dpr_v=old&x=1');
   assert.match(updated, /^docs\/_sidebar\.md\?dpr_v=\d+&x=1$/);
+  const rootHome = window.DPRAppendRuntimeMarkdownCacheBuster('README.md');
+  assert.match(rootHome, /^README\.md\?dpr_v=\d+$/);
+  const docsHome = window.DPRAppendRuntimeMarkdownCacheBuster('docs/README.md?x=1#home');
+  assert.match(docsHome, /^docs\/README\.md\?x=1&dpr_v=\d+#home$/);
+  const refreshedDocsHome = window.DPRAppendRuntimeMarkdownCacheBuster(
+    'docs/README.md?dpr_v=old&x=1#home',
+  );
+  assert.match(refreshedDocsHome, /^docs\/README\.md\?dpr_v=\d+&x=1#home$/);
   assert.equal(window.DPRAppendSidebarCacheBuster('docs/202605/28/README.md'), 'docs/202605/28/README.md');
+  assert.equal(
+    window.DPRAppendRuntimeMarkdownCacheBuster('docs/reports/weekly/README.md'),
+    'docs/reports/weekly/README.md',
+  );
 }
 
 function testDocsRouteClassificationUsesOneNormalizer() {
@@ -386,7 +399,7 @@ testResearchValueSectionMovesBeforeResearchFlow();
 testResearchValueExtractorKeepsDoneMarkerInBody();
 testResearchValueBoundaryStopsBeforeGeneratedSections();
 testSidebarEmojiStripperIsShared();
-testSidebarCacheBusterTargetsOnlySidebar();
+testRuntimeMarkdownCacheBusterTargetsOnlyRuntimeFiles();
 testDocsRouteClassificationUsesOneNormalizer();
 
 console.log('docsify markdown math tests passed');

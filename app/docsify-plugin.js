@@ -10,11 +10,20 @@
   window.DPR_REFRESH_SIDEBAR_CACHE_BUSTER = refreshSidebarCacheBuster;
   refreshSidebarCacheBuster();
 
-  const appendSidebarCacheBuster = (url) => {
+  const isRuntimeMarkdownPath = (pathPart) => {
+    const path = String(pathPart || '').replace(/\\/g, '/');
+    return (
+      /(^|\/)_sidebar\.md$/i.test(path) ||
+      /^(?:\.\/)?README\.md$/i.test(path) ||
+      /(^|\/)docs\/README\.md$/i.test(path)
+    );
+  };
+
+  const appendRuntimeMarkdownCacheBuster = (url) => {
     if (typeof url !== 'string') return url;
     const [beforeHash, hashPart = ''] = url.split('#');
     const pathPart = beforeHash.split('?')[0];
-    if (!/(^|\/)_sidebar\.md$/i.test(pathPart)) return url;
+    if (!isRuntimeMarkdownPath(pathPart)) return url;
     const token = encodeURIComponent(window.DPR_SIDEBAR_CACHE_BUSTER || refreshSidebarCacheBuster());
     const nextBeforeHash = /([?&])dpr_v=/.test(beforeHash)
       ? beforeHash.replace(/([?&]dpr_v=)[^&#]*/i, `$1${token}`)
@@ -22,12 +31,13 @@
     return `${nextBeforeHash}${hashPart ? `#${hashPart}` : ''}`;
   };
 
-  window.DPRAppendSidebarCacheBuster = appendSidebarCacheBuster;
+  window.DPRAppendRuntimeMarkdownCacheBuster = appendRuntimeMarkdownCacheBuster;
+  window.DPRAppendSidebarCacheBuster = appendRuntimeMarkdownCacheBuster;
 
   if (typeof XMLHttpRequest !== 'undefined' && XMLHttpRequest.prototype && XMLHttpRequest.prototype.open) {
     const originalOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function dprOpen(method, url, ...rest) {
-      return originalOpen.call(this, method, appendSidebarCacheBuster(url), ...rest);
+      return originalOpen.call(this, method, appendRuntimeMarkdownCacheBuster(url), ...rest);
     };
   }
 
@@ -35,12 +45,12 @@
     const originalFetch = window.fetch.bind(window);
     window.fetch = (input, init) => {
       if (typeof Request !== 'undefined' && input instanceof Request) {
-        const nextUrl = appendSidebarCacheBuster(input.url);
+        const nextUrl = appendRuntimeMarkdownCacheBuster(input.url);
         if (nextUrl !== input.url) {
           return originalFetch(new Request(nextUrl, input), init);
         }
       }
-      return originalFetch(appendSidebarCacheBuster(input), init);
+      return originalFetch(appendRuntimeMarkdownCacheBuster(input), init);
     };
   }
 })();
