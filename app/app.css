@@ -5335,6 +5335,19 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.1));
 }
 
+.dpr-advanced-config-info-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.dpr-advanced-config-info-grid .dpr-settings-card {
+  margin-top: 0;
+}
+
 .dpr-advanced-config-overlay {
   --dpr-settings-bg: #f4f6f8;
   --dpr-settings-card: rgba(255, 255, 255, 0.92);
@@ -6522,6 +6535,10 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
 
   .dpr-secret-card--hero,
   .dpr-advanced-config-entry-card {
+    grid-template-columns: 1fr;
+  }
+
+  .dpr-advanced-config-info-grid {
     grid-template-columns: 1fr;
   }
 

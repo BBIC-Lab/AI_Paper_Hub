@@ -341,6 +341,14 @@ function testEmbeddingSettingsUiSourceMatchesContract() {
   assert.ok(source.includes("setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom')"));
   assert.ok(source.includes('id="dpr-open-advanced-config-btn"'));
   assert.ok(source.includes('id="dpr-advanced-config-title">高级配置（可选）</h3>'));
+  assert.ok(source.includes('class="dpr-advanced-config-info-grid"'));
+  assert.ok(source.includes('class="dpr-settings-card dpr-secret-info-card dpr-advanced-config-info-card"'));
+  assert.ok(source.includes('<span>Embedding 服务</span>'));
+  assert.ok(source.includes('将论文与检索意图转成语义向量，是召回质量的基础'));
+  assert.ok(source.includes('<span>Reranker 服务</span>'));
+  assert.ok(source.includes('对候选论文二次精排，提升最终推荐的相关性'));
+  assert.ok(source.indexOf('<h3>高级配置</h3>') < source.indexOf('<span>Embedding 服务</span>'));
+  assert.ok(source.indexOf('<span>Embedding 服务</span>') < source.indexOf('<span>Reranker 服务</span>'));
   assert.ok(source.includes('id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>'));
   assert.ok(source.includes('id="dpr-embedding-provider-select"'));
   assert.ok(source.includes('id="dpr-embedding-endpoint-input"'));
@@ -374,6 +382,9 @@ function testEmbeddingSettingsUiSourceMatchesContract() {
   assert.ok(css.includes('.dpr-advanced-config-overlay.show'));
   assert.ok(css.includes('.dpr-advanced-config-overlay.show .dpr-advanced-config-modal'));
   assert.ok(css.includes('.dpr-advanced-config-overlay .dpr-settings-primary-btn'));
+  assert.ok(css.includes('.dpr-advanced-config-info-grid'));
+  assert.ok(css.includes('grid-template-columns: repeat(2, minmax(0, 1fr));'));
+  assert.ok(css.includes('margin-top: 14px;'));
   assert.ok(css.includes('.dpr-advanced-config-overlay .dpr-embedding-profile-option'));
   assert.ok(css.includes('.dpr-advanced-config-overlay .chat-quick-run-row input'));
   assert.ok(css.includes('backdrop-filter: blur(14px) saturate(1.08);'));

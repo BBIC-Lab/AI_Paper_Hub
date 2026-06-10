@@ -2386,6 +2386,16 @@ window.SubscriptionsManager = (function () {
                   </div>
                   <button id="dpr-open-advanced-config-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开高级配置</button>
                 </div>
+                <div class="dpr-advanced-config-info-grid">
+                  <div class="dpr-settings-card dpr-secret-info-card dpr-advanced-config-info-card">
+                    <span>Embedding 服务</span>
+                    <strong>将论文与检索意图转成语义向量，是召回质量的基础</strong>
+                  </div>
+                  <div class="dpr-settings-card dpr-secret-info-card dpr-advanced-config-info-card">
+                    <span>Reranker 服务</span>
+                    <strong>对候选论文二次精排，提升最终推荐的相关性</strong>
+                  </div>
+                </div>
               </div>
               <div id="dpr-advanced-config-overlay" class="dpr-advanced-config-overlay secret-gate-hidden" role="dialog" aria-modal="true" aria-labelledby="dpr-advanced-config-title" aria-hidden="true">
                 <div class="dpr-advanced-config-modal">
