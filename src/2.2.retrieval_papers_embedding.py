@@ -65,6 +65,18 @@ def multi_source_rpc_enabled() -> bool:
   return str(os.getenv("DPR_ENABLE_MULTI_SOURCE_RPC") or "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def env_flag_enabled(*names: str) -> bool:
+  for name in names:
+    value = str(os.getenv(name) or "").strip().lower()
+    if value:
+      return value in ("1", "true", "yes", "on")
+  return False
+
+
+def supabase_vector_disabled(cli_value: bool = False) -> bool:
+  return bool(cli_value) or env_flag_enabled("DPR_DISABLE_SUPABASE_VECTOR")
+
+
 def resolve_multi_source_vector_backend(config: Dict[str, Any], queries: List[dict]) -> Dict[str, Any] | None:
   all_sources: List[str] = []
   for query in queries or []:
@@ -1175,8 +1187,8 @@ def main() -> None:
   parser.add_argument(
     "--model",
     type=str,
-    default="BAAI/bge-small-en-v1.5",
-    help="用于向量检索的 sentence-transformers 模型名称（默认 BAAI/bge-small-en-v1.5）",
+    default=os.getenv("DPR_EMBED_MODEL") or "BAAI/bge-small-en-v1.5",
+    help="用于向量检索的模型名称（默认 DPR_EMBED_MODEL 或 BAAI/bge-small-en-v1.5）",
   )
   parser.add_argument(
     "--batch-size",
@@ -1203,6 +1215,9 @@ def main() -> None:
   )
 
   args = parser.parse_args()
+  disable_supabase_vector = supabase_vector_disabled(args.disable_supabase_vector)
+  if disable_supabase_vector:
+    log("[INFO] DPR_DISABLE_SUPABASE_VECTOR 已启用：跳过 Supabase 向量召回，使用本地/远程 embedding 候选池。")
 
   config = load_config()
   pipeline_inputs = build_pipeline_inputs(config)
@@ -1225,7 +1240,11 @@ def main() -> None:
     log("[ERROR] 未能从订阅配置中解析到 Embedding 查询，退出。")
     return
 
-  multi_source_backend = resolve_multi_source_vector_backend(config, queries) if multi_source_rpc_enabled() else None
+  multi_source_backend = (
+    resolve_multi_source_vector_backend(config, queries)
+    if multi_source_rpc_enabled() and not disable_supabase_vector
+    else None
+  )
 
   # 使用 EmbeddingCoarseFilter 类进行粗筛（模型只加载一次）
   coarse_filter = None
@@ -1279,11 +1298,13 @@ def main() -> None:
     backend_enabled = (
       bool(backend_conf.get("enabled"))
       and bool(backend_conf.get("use_vector_rpc"))
-      and not bool(args.disable_supabase_vector)
+      and not disable_supabase_vector
     )
     if not source_queries:
       return None
     if not backend_enabled:
+      if disable_supabase_vector:
+        return None
       if source_key == ARXIV_SOURCE_KEY:
         return None
       raise RuntimeError(f"论文源「{source_key}」未配置可用的向量 RPC。")

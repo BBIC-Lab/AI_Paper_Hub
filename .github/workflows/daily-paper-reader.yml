@@ -41,15 +41,29 @@ jobs:
       DPR_LLM_REWRITE_MODEL: ${{ secrets.DPR_LLM_REWRITE_MODEL }}
       DPR_LLM_FILTER_MODEL: ${{ secrets.DPR_LLM_FILTER_MODEL }}
       DPR_LLM_SUMMARY_MODEL: ${{ secrets.DPR_LLM_SUMMARY_MODEL }}
-      DPR_SKIP_RERANK: "true"
+      DPR_SKIP_RERANK: ${{ secrets.DPR_SKIP_RERANK || 'true' }}
+      DPR_INFERENCE_BASE_URL: ${{ secrets.DPR_INFERENCE_BASE_URL }}
+      INFERENCE_BASE_URL: ${{ secrets.INFERENCE_BASE_URL }}
       DPR_EMBED_PROFILE: ${{ secrets.DPR_EMBED_PROFILE || 'default_remote' }}
+      DPR_EMBED_MODEL: ${{ secrets.DPR_EMBED_MODEL }}
+      DPR_EMBED_ENDPOINT: ${{ secrets.DPR_EMBED_ENDPOINT }}
+      EMBED_ENDPOINT: ${{ secrets.EMBED_ENDPOINT }}
       DPR_EMBED_DEFAULT_API_URL: ${{ secrets.DPR_EMBED_DEFAULT_API_URL }}
       DPR_EMBED_DEFAULT_API_KEY: ${{ secrets.DPR_EMBED_DEFAULT_API_KEY }}
       DPR_EMBED_API_URL: ${{ secrets.DPR_EMBED_API_URL }}
       DPR_EMBED_API_KEY: ${{ secrets.DPR_EMBED_API_KEY }}
+      EMBED_API_KEY: ${{ secrets.EMBED_API_KEY }}
       DPR_EMBED_PROVIDER: ${{ secrets.DPR_EMBED_PROVIDER || 'legacy' }}
       DPR_EMBED_API_TIMEOUT: ${{ secrets.DPR_EMBED_API_TIMEOUT || '60' }}
       DPR_EMBED_REMOTE_FALLBACK: ${{ secrets.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
+      DPR_DISABLE_SUPABASE_VECTOR: ${{ secrets.DPR_DISABLE_SUPABASE_VECTOR || 'false' }}
+      DPR_RERANK_PROVIDER: ${{ secrets.DPR_RERANK_PROVIDER }}
+      DPR_RERANK_MODEL: ${{ secrets.DPR_RERANK_MODEL }}
+      DPR_RERANK_ENDPOINT: ${{ secrets.DPR_RERANK_ENDPOINT }}
+      RERANK_ENDPOINT: ${{ secrets.RERANK_ENDPOINT }}
+      DPR_RERANK_API_KEY: ${{ secrets.DPR_RERANK_API_KEY }}
+      RERANK_API_KEY: ${{ secrets.RERANK_API_KEY }}
+      DPR_RERANK_API_TIMEOUT: ${{ secrets.DPR_RERANK_API_TIMEOUT || '60' }}
       PYTHONUNBUFFERED: "1"
 
     steps:

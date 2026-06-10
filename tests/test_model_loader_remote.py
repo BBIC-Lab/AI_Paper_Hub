@@ -58,6 +58,34 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertEqual(first_call.kwargs["headers"]["Authorization"], "Bearer test-key")
         self.assertEqual(first_call.kwargs["timeout"], 30)
 
+    @patch("src.model_loader.requests.post")
+    def test_openai_remote_encode_uses_embeddings_api_shape(self, mock_post):
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = {
+            "data": [
+                {"index": 1, "embedding": [0.0, 3.0]},
+                {"index": 0, "embedding": [4.0, 0.0]},
+            ]
+        }
+        mock_post.return_value = resp
+
+        model = RemoteSentenceTransformer(
+            model_name="BAAI/bge-m3",
+            endpoint="https://vllm.example.test/v1",
+            provider="openai",
+            api_key="test-key",
+            timeout=30,
+        )
+        arr = model.encode(["a", "b"], convert_to_numpy=True, normalize_embeddings=True, batch_size=8)
+
+        self.assertEqual(model.endpoint, "https://vllm.example.test/v1/embeddings")
+        np.testing.assert_allclose(arr[0], np.asarray([1.0, 0.0], dtype=np.float32), atol=1e-6)
+        np.testing.assert_allclose(arr[1], np.asarray([0.0, 1.0], dtype=np.float32), atol=1e-6)
+        first_call = mock_post.call_args
+        self.assertEqual(first_call.kwargs["json"], {"model": "BAAI/bge-m3", "input": ["a", "b"]})
+        self.assertEqual(first_call.kwargs["headers"]["Authorization"], "Bearer test-key")
+
     @patch("src.model_loader._load_local_sentence_transformer")
     @patch("src.model_loader.requests.post")
     def test_remote_encode_falls_back_to_local_model_when_remote_fails(self, mock_post, mock_load_local):
@@ -131,6 +159,52 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertEqual(model.timeout, 45)
         self.assertEqual(model.api_key, "env-key")
         self.assertEqual(model.fallback, "local")
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "default_remote",
+            "DPR_EMBED_PROVIDER": "openai",
+            "DPR_EMBED_ENDPOINT": "https://vllm.example.test/v1",
+            "DPR_EMBED_API_KEY": "env-key",
+        },
+        clear=True,
+    )
+    def test_openai_embedding_settings_use_endpoint_alias(self):
+        settings = load_remote_embedding_settings()
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "custom")
+        self.assertEqual(settings.provider, "openai")
+        self.assertEqual(settings.endpoint, "https://vllm.example.test/v1")
+        self.assertEqual(settings.api_key, "env-key")
+
+        model = load_sentence_transformer("BAAI/bge-m3", device="cpu")
+        self.assertEqual(model.provider, "openai")
+        self.assertEqual(model.endpoint, "https://vllm.example.test/v1/embeddings")
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "custom",
+            "DPR_EMBED_PROVIDER": "openai",
+            "DPR_INFERENCE_BASE_URL": "https://private-host.example.test",
+            "DPR_EMBED_ENDPOINT": "/v1/embeddings",
+            "DPR_EMBED_API_KEY": "env-key",
+        },
+        clear=True,
+    )
+    def test_openai_embedding_allows_path_endpoint_with_base_url(self):
+        messages = []
+        settings = load_remote_embedding_settings(log=messages.append)
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.endpoint, "https://private-host.example.test/v1/embeddings")
+
+        model = load_sentence_transformer("BAAI/bge-m3", device="cpu", log=messages.append)
+        self.assertEqual(model.endpoint, "https://private-host.example.test/v1/embeddings")
+        self.assertTrue(any("endpoint=/v1/embeddings" in item for item in messages))
+        self.assertFalse(any("private-host.example.test" in item for item in messages))
 
     def test_normalize_remote_embedding_profile_aliases(self):
         self.assertEqual(normalize_remote_embedding_profile(""), "default_remote")

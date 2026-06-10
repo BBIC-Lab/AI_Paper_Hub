@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import pathlib
 import sys
 import tempfile
@@ -34,6 +35,20 @@ class QueryEmbeddingCacheTest(unittest.TestCase):
         h3 = self.mod.build_query_embedding_hash("BAAI/bge-small-en-v1.5", "equation discovery")
         self.assertEqual(h1, h2)
         self.assertNotEqual(h1, h3)
+
+    def test_supabase_vector_disabled_reads_env_flag(self):
+        old_value = os.environ.get("DPR_DISABLE_SUPABASE_VECTOR")
+        try:
+            os.environ["DPR_DISABLE_SUPABASE_VECTOR"] = "true"
+            self.assertTrue(self.mod.supabase_vector_disabled(False))
+            os.environ["DPR_DISABLE_SUPABASE_VECTOR"] = "false"
+            self.assertFalse(self.mod.supabase_vector_disabled(False))
+            self.assertTrue(self.mod.supabase_vector_disabled(True))
+        finally:
+            if old_value is None:
+                os.environ.pop("DPR_DISABLE_SUPABASE_VECTOR", None)
+            else:
+                os.environ["DPR_DISABLE_SUPABASE_VECTOR"] = old_value
 
     def test_hydrate_query_embeddings_uses_per_item_cache_and_only_encodes_misses(self):
         cfg = {

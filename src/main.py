@@ -198,14 +198,29 @@ def _read_env_text(*names: str) -> str:
     return ""
 
 
+def _env_flag_enabled(*names: str) -> bool:
+    value = _read_env_text(*names).lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _env_flag_disabled(*names: str) -> bool:
+    value = _read_env_text(*names).lower()
+    return value in {"0", "false", "no", "off"}
+
+
 def should_skip_rerank() -> tuple[bool, str]:
-    provider = _read_env_text("DPR_RERANK_PROVIDER").lower() or "none"
-    skip_value = _read_env_text("DPR_SKIP_RERANK").lower()
-    if provider and provider not in {"none", "disabled", "off"}:
-        return True, f"{provider}（native rerank provider 待接入）"
-    if skip_value in {"0", "false", "no", "off"}:
-        return True, "none（第一版已移除 native rerank，使用 RRF fallback）"
-    return True, "none"
+    if not _env_flag_disabled("DPR_SKIP_RERANK"):
+        return True, "disabled（DPR_SKIP_RERANK 默认为 true）"
+
+    provider = _read_env_text("DPR_RERANK_PROVIDER").lower()
+    endpoint = _read_env_text("DPR_RERANK_ENDPOINT", "RERANK_ENDPOINT")
+    if not provider and endpoint:
+        provider = "openai"
+    if provider in {"openai", "openai-compatible", "openai_compatible", "vllm"}:
+        return False, "openai"
+    if provider in {"", "none", "disabled", "off"}:
+        return True, "none（未配置 DPR_RERANK_PROVIDER=openai）"
+    return True, f"{provider}（unsupported rerank provider）"
 
 
 def score_to_stars(score: float) -> int:
@@ -536,6 +551,11 @@ def main() -> None:
         help="Device for embedding retrieval (default: cpu).",
     )
     parser.add_argument(
+        "--embedding-model",
+        default=os.getenv("DPR_EMBED_MODEL") or "BAAI/bge-small-en-v1.5",
+        help="Embedding model for Step 2.2 (default: DPR_EMBED_MODEL or BAAI/bge-small-en-v1.5).",
+    )
+    parser.add_argument(
         "--embedding-batch-size",
         type=int,
         default=8,
@@ -635,6 +655,12 @@ def main() -> None:
         skip_fetch = should_skip_fetch()
     else:
         skip_fetch = args.skip_fetch
+    if _env_flag_enabled("DPR_DISABLE_SUPABASE_VECTOR") and args.skip_fetch is None:
+        skip_fetch = False
+        print(
+            "[INFO] DPR_DISABLE_SUPABASE_VECTOR=true，强制保留 Step 1 本地候选池抓取。",
+            flush=True,
+        )
 
     if skip_fetch:
         print(
@@ -666,6 +692,8 @@ def main() -> None:
         [
             python,
             os.path.join(SRC_DIR, "2.2.retrieval_papers_embedding.py"),
+            "--model",
+            str(args.embedding_model),
             "--device",
             str(args.embedding_device),
             "--batch-size",

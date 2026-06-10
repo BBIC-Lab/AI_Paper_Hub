@@ -1,0 +1,195 @@
+{
+  "period": "weekly",
+  "key": "2026-W23",
+  "label": "周报 · 2026-06-01 ~ 2026-06-07",
+  "start_date": "2026-06-01",
+  "end_date": "2026-06-07",
+  "input_mode": "artifacts",
+  "input_hash": "e6ded6c95eea35f0fd3bca176602d9c95dfe09c6de08d6651c01a2e8c44a2efd",
+  "generated_at": "2026-06-06T09:29:05+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-06-01",
+      "end_date": "2026-06-07",
+      "artifact_files": 0,
+      "raw_records": 0,
+      "unique_papers": 0,
+      "duplicates_removed": 0,
+      "source_buckets": 0
+    },
+    "avg_score": 0,
+    "topics": [],
+    "sources": [],
+    "sections": [],
+    "score_distribution": [],
+    "timeline": [
+      {
+        "date": "2026-06-01",
+        "count": 0
+      },
+      {
+        "date": "2026-06-02",
+        "count": 0
+      },
+      {
+        "date": "2026-06-03",
+        "count": 0
+      },
+      {
+        "date": "2026-06-04",
+        "count": 0
+      },
+      {
+        "date": "2026-06-05",
+        "count": 0
+      },
+      {
+        "date": "2026-06-06",
+        "count": 0
+      },
+      {
+        "date": "2026-06-07",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [],
+    "weekly_v2": {
+      "related_topics": [],
+      "focus_topics": [],
+      "context_topics": [],
+      "weekday_topic_timeline": [],
+      "word_cloud": [],
+      "radar": [
+        {
+          "label": "智能体/推理",
+          "key": "agent_reasoning",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "数据/评测",
+          "key": "data_eval",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "系统/效率",
+          "key": "systems_efficiency",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "科学/机器人",
+          "key": "science_robotics",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "安全/HCI",
+          "key": "safety_hci",
+          "count": 0,
+          "score": 0.0
+        }
+      ],
+      "cooccurrence": [],
+      "topic_breadth": 0,
+      "topic_limits": {
+        "related_topics": 10,
+        "topic_timeline": 10,
+        "cooccurrence_topics": 10,
+        "cooccurrence_pairs": 12
+      }
+    },
+    "monthly_v1": {}
+  },
+  "interpretation": {
+    "weekly_summary": "本周去重样本共 0 篇，其中 0 篇达到 8.0 分以上。相关主题主要落在 暂无明显主题，可作为本周阅读和下周检索微调的重点。",
+    "weekly_summary_source": "fallback",
+    "weekly_summary_model": "",
+    "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
+    "monthly_summary": "本月去重样本共 0 篇，主题广度 0 类。主要相关主题集中在 暂无明显主题；当前为首月基线，暂无上月环比。下月可优先观察新增与持续上升主题，并结合主题共现关系确认是否形成稳定研究线索。",
+    "monthly_summary_source": "fallback",
+    "monthly_summary_model": "",
+    "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+    "watchlist": [],
+    "summary_evidence_ids": [],
+    "highlights": [
+      "本期覆盖 0 个日报 artifact，去重后得到 0 篇论文。",
+      "主题集中在 暂无明显主题，来源主要包括 未知来源。"
+    ],
+    "rising_topics": [],
+    "reading_route": [
+      "先读 Top 0 高分论文，建立本期问题意识。",
+      "再按主题图表展开证据列表，补齐相邻方向。",
+      "最后记录需要持续跟踪的主题，作为下期检索配置的调整依据。"
+    ],
+    "caveats": [
+      "本报告只基于已生成的日报/候选 artifact，不代表全领域完整统计。",
+      "趋势判断以本地统计为准，LLM 仅参与解读文本。"
+    ]
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 12,
+  "evidence_index": [],
+  "monthly_v1": {},
+  "related_topics": [],
+  "focus_topics": [],
+  "context_topics": [],
+  "weekday_topic_timeline": [],
+  "word_cloud": [],
+  "radar": [
+    {
+      "label": "智能体/推理",
+      "key": "agent_reasoning",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "数据/评测",
+      "key": "data_eval",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "系统/效率",
+      "key": "systems_efficiency",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "科学/机器人",
+      "key": "science_robotics",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "安全/HCI",
+      "key": "safety_hci",
+      "count": 0,
+      "score": 0.0
+    }
+  ],
+  "cooccurrence": [],
+  "topic_limits": {
+    "related_topics": 10,
+    "topic_timeline": 10,
+    "cooccurrence_topics": 10,
+    "cooccurrence_pairs": 12
+  },
+  "weekly_summary": "本周去重样本共 0 篇，其中 0 篇达到 8.0 分以上。相关主题主要落在 暂无明显主题，可作为本周阅读和下周检索微调的重点。",
+  "weekly_summary_source": "fallback",
+  "weekly_summary_model": "",
+  "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
+  "monthly_summary": "本月去重样本共 0 篇，主题广度 0 类。主要相关主题集中在 暂无明显主题；当前为首月基线，暂无上月环比。下月可优先观察新增与持续上升主题，并结合主题共现关系确认是否形成稳定研究线索。",
+  "monthly_summary_source": "fallback",
+  "monthly_summary_model": "",
+  "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+  "artifacts": [],
+  "papers": []
+}

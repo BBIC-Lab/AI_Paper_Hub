@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import os
 import time
 from typing import Any, Callable, Mapping, Optional, TYPE_CHECKING
+from urllib.parse import urlsplit
 
 import numpy as np
 import requests
@@ -25,6 +26,10 @@ _REMOTE_PROVIDER_ALIASES = {
   "": "legacy",
   "custom": "legacy",
   "legacy": "legacy",
+  "openai": "openai",
+  "openai-compatible": "openai",
+  "openai_compatible": "openai",
+  "vllm": "openai",
 }
 _REMOTE_PROFILE_ALIASES = {
   "": "default_remote",
@@ -56,6 +61,41 @@ def _env_text(env: Mapping[str, str], name: str, default: str = "") -> str:
   return str(env.get(name) or default or "").strip()
 
 
+def _env_text_any(env: Mapping[str, str], *names: str, default: str = "") -> str:
+  for name in names:
+    value = _env_text(env, name)
+    if value:
+      return value
+  return str(default or "").strip()
+
+
+def _join_base_url(base_url: str, endpoint: str) -> str:
+  endpoint_text = str(endpoint or "").strip()
+  if not endpoint_text:
+    return ""
+  if endpoint_text.startswith("http://") or endpoint_text.startswith("https://"):
+    return endpoint_text
+  base_text = str(base_url or "").strip().rstrip("/")
+  if not base_text:
+    return endpoint_text
+  if endpoint_text.startswith("/"):
+    return f"{base_text}{endpoint_text}"
+  return f"{base_text}/{endpoint_text}"
+
+
+def _redact_endpoint(endpoint: str) -> str:
+  text = str(endpoint or "").strip()
+  if not text:
+    return "<unset>"
+  try:
+    parsed = urlsplit(text)
+    if parsed.scheme and parsed.netloc:
+      return parsed.path or "/"
+  except Exception:
+    pass
+  return text
+
+
 def normalize_remote_embedding_provider(provider: str | None) -> str:
   text = str(provider or "").strip().lower()
   return _REMOTE_PROVIDER_ALIASES.get(text, text)
@@ -73,9 +113,17 @@ def load_remote_embedding_settings(
 ) -> RemoteEmbeddingSettings | None:
   env = os.environ if env is None else env
   raw_profile = _env_text(env, "DPR_EMBED_PROFILE")
-  custom_endpoint = _env_text(env, "DPR_EMBED_API_URL")
+  provider = normalize_remote_embedding_provider(_env_text(env, "DPR_EMBED_PROVIDER", "legacy"))
+  base_url = _env_text_any(env, "DPR_INFERENCE_BASE_URL", "INFERENCE_BASE_URL")
+  endpoint_alias = _env_text_any(env, "DPR_EMBED_ENDPOINT", "EMBED_ENDPOINT")
+  raw_custom_endpoint = endpoint_alias or _env_text(env, "DPR_EMBED_API_URL")
+  if not raw_custom_endpoint and provider == "openai" and base_url:
+    raw_custom_endpoint = base_url
+  custom_endpoint = _join_base_url(base_url, raw_custom_endpoint)
   profile = normalize_remote_embedding_profile(raw_profile)
-  if not raw_profile and custom_endpoint:
+  if (endpoint_alias or (provider == "openai" and base_url)) and profile == "default_remote":
+    profile = "custom"
+  elif not raw_profile and custom_endpoint:
     profile = "custom"
 
   if profile == "local":
@@ -89,7 +137,7 @@ def load_remote_embedding_settings(
     api_key = _env_text(env, "DPR_EMBED_DEFAULT_API_KEY")
   elif profile == "custom":
     endpoint = custom_endpoint
-    api_key = _env_text(env, "DPR_EMBED_API_KEY")
+    api_key = _env_text_any(env, "DPR_EMBED_API_KEY", "EMBED_API_KEY", "EMBED_KEY")
   else:
     if log:
       log(f"[WARN] Unsupported DPR_EMBED_PROFILE={profile}; using local embedding.")
@@ -98,8 +146,7 @@ def load_remote_embedding_settings(
   if not endpoint:
     return None
 
-  provider = normalize_remote_embedding_provider(_env_text(env, "DPR_EMBED_PROVIDER", "legacy"))
-  if provider != "legacy":
+  if provider not in {"legacy", "openai"}:
     if log:
       log(f"[WARN] Unsupported DPR_EMBED_PROVIDER={provider}; falling back to legacy /embed protocol.")
     provider = "legacy"
@@ -140,7 +187,7 @@ def remote_embedding_env_summary() -> str:
   if settings is None:
     return "disabled"
   auth = "with-auth" if settings.api_key else "no-auth"
-  return f"{settings.profile}/{settings.provider}:{settings.endpoint} timeout={settings.timeout}s {auth}"
+  return f"{settings.profile}/{settings.provider}:{_redact_endpoint(settings.endpoint)} timeout={settings.timeout}s {auth}"
 
 
 def normalize_local_embedding_device(device: str | None) -> str:
@@ -160,6 +207,7 @@ class RemoteSentenceTransformer:
     self,
     model_name: str,
     endpoint: str,
+    provider: str = "legacy",
     api_key: str = "",
     timeout: int = _DEFAULT_REMOTE_TIMEOUT_SECONDS,
     default_batch_size: int = 8,
@@ -173,7 +221,10 @@ class RemoteSentenceTransformer:
     log: Callable[[str], None] = _log_default,
   ):
     self.model_name = model_name
-    self.endpoint = self._normalize_endpoint(endpoint)
+    self.provider = normalize_remote_embedding_provider(provider)
+    if self.provider not in {"legacy", "openai"}:
+      self.provider = "legacy"
+    self.endpoint = self._normalize_endpoint(endpoint, self.provider)
     self.api_key = str(api_key or "").strip()
     self.timeout = max(int(timeout or _DEFAULT_REMOTE_TIMEOUT_SECONDS), 1)
     self.default_batch_size = max(int(default_batch_size or 1), 1)
@@ -188,10 +239,16 @@ class RemoteSentenceTransformer:
     self._remote_disabled_reason = ""
 
   @staticmethod
-  def _normalize_endpoint(endpoint: str) -> str:
+  def _normalize_endpoint(endpoint: str, provider: str = "legacy") -> str:
     text = str(endpoint or "").strip().rstrip("/")
     if not text:
       raise ValueError("远程 embedding 服务地址不能为空（DPR_EMBED_API_URL）")
+    if normalize_remote_embedding_provider(provider) == "openai":
+      if text.endswith("/v1/embeddings"):
+        return text
+      if text.endswith("/v1"):
+        return f"{text}/embeddings"
+      return text
     if text.endswith("/embed"):
       return text
     return f"{text}/embed"
@@ -203,6 +260,48 @@ class RemoteSentenceTransformer:
     if self.api_key:
       headers["Authorization"] = f"Bearer {self.api_key}"
     return headers
+
+  def _build_payload(self, chunk: list[str]) -> dict[str, Any]:
+    if self.provider == "openai":
+      return {
+        "model": self.model_name,
+        "input": chunk,
+      }
+    return {"texts": chunk}
+
+  def _parse_embedding_response(self, data: Any, expected_count: int) -> np.ndarray:
+    embeddings = None
+    if self.provider == "openai":
+      items = data.get("data") if isinstance(data, dict) else None
+      if isinstance(items, list):
+        indexed_items = []
+        for pos, item in enumerate(items):
+          if not isinstance(item, dict):
+            continue
+          raw_index = item.get("index", pos)
+          try:
+            index = int(raw_index)
+          except Exception:
+            index = pos
+          indexed_items.append((index, item.get("embedding")))
+        indexed_items.sort(key=lambda item: item[0])
+        embeddings = [item[1] for item in indexed_items]
+    if embeddings is None and isinstance(data, dict):
+      embeddings = data.get("embeddings")
+    if not isinstance(embeddings, list):
+      raise RuntimeError("远程 embedding 服务返回缺少 embeddings/data 字段")
+    try:
+      arr = np.asarray(embeddings, dtype=np.float32)
+    except Exception as exc:
+      raise RuntimeError(f"远程 embedding 返回无法转换为 float32：{exc}") from exc
+
+    if arr.ndim != 2:
+      raise RuntimeError(f"远程 embedding 返回维度异常：shape={getattr(arr, 'shape', None)}")
+    if arr.shape[0] != expected_count:
+      raise RuntimeError(
+        f"远程 embedding 返回条数异常：expected={expected_count} actual={arr.shape[0]}"
+      )
+    return arr
 
   def _get_local_model(self):
     if self._local_model is None:
@@ -287,7 +386,7 @@ class RemoteSentenceTransformer:
 
       self._log(
         f"[INFO] 远程 embedding：model={self.model_name} "
-        f"endpoint={self.endpoint} total={len(texts)} batch={safe_batch_size}"
+        f"endpoint={_redact_endpoint(self.endpoint)} total={len(texts)} batch={safe_batch_size}"
       )
 
       for chunk_index, chunk in enumerate(chunks, start=1):
@@ -295,7 +394,7 @@ class RemoteSentenceTransformer:
         response = requests.post(
           self.endpoint,
           headers=headers,
-          json={"texts": chunk},
+          json=self._build_payload(chunk),
           timeout=self.timeout,
         )
         if response.status_code == 401 and headers.get("Authorization"):
@@ -306,25 +405,12 @@ class RemoteSentenceTransformer:
           response = requests.post(
             self.endpoint,
             headers=headers,
-            json={"texts": chunk},
+            json=self._build_payload(chunk),
             timeout=self.timeout,
           )
         response.raise_for_status()
         data = response.json()
-        embeddings = data.get("embeddings")
-        if not isinstance(embeddings, list):
-          raise RuntimeError("远程 embedding 服务返回缺少 embeddings 字段")
-        try:
-          arr = np.asarray(embeddings, dtype=np.float32)
-        except Exception as exc:
-          raise RuntimeError(f"远程 embedding 返回无法转换为 float32：{exc}") from exc
-
-        if arr.ndim != 2:
-          raise RuntimeError(f"远程 embedding 返回维度异常：shape={getattr(arr, 'shape', None)}")
-        if arr.shape[0] != len(chunk):
-          raise RuntimeError(
-            f"远程 embedding 返回条数异常：expected={len(chunk)} actual={arr.shape[0]}"
-          )
+        arr = self._parse_embedding_response(data, len(chunk))
         if normalize_embeddings:
           norms = np.linalg.norm(arr, axis=1, keepdims=True)
           arr = arr / np.clip(norms, 1e-12, None)
@@ -461,13 +547,14 @@ def load_sentence_transformer(
       device_note += f" local_fallback_device={local_device}"
     log(
       f"[INFO] Using remote embedding service: model={model_name} "
-      f"endpoint={remote_settings.endpoint} timeout={remote_settings.timeout}s "
+      f"endpoint={_redact_endpoint(remote_settings.endpoint)} timeout={remote_settings.timeout}s "
       f"profile={remote_settings.profile} provider={remote_settings.provider} "
       f"fallback={remote_settings.fallback} {device_note}"
     )
     return RemoteSentenceTransformer(
       model_name=model_name,
       endpoint=remote_settings.endpoint,
+      provider=remote_settings.provider,
       api_key=remote_settings.api_key,
       timeout=remote_settings.timeout,
       local_device=local_device,

@@ -34,6 +34,7 @@ secret.private
 
 # Codex / local agent state
 .codex/
+hf_cache/
 
 # 临时/测试文件
 test.pdf

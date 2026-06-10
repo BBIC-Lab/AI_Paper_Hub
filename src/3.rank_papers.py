@@ -14,6 +14,11 @@ except Exception:  # pragma: no cover - package import fallback
   from src.core import artifacts as core_artifacts
   from src.core import paths as core_paths
 
+try:
+  from reranker import create_reranker_from_env
+except Exception:  # pragma: no cover - package import fallback
+  from src.reranker import create_reranker_from_env
+
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 TODAY_STR = core_paths.run_date_from_env()
@@ -504,12 +509,13 @@ def main() -> None:
     log(f"[WARN] 输入文件不存在（今天可能没有新论文）：{input_path}，将跳过 Step 3。")
     return
 
+  reranker, rerank_model = create_reranker_from_env(model=args.rerank_model, log=log)
   process_file(
-    reranker=None,
+    reranker=reranker,
     input_path=input_path,
     output_path=output_path,
     top_n=args.top_n,
-    rerank_model=args.rerank_model,
+    rerank_model=rerank_model,
   )
 
 

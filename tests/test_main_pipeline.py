@@ -164,6 +164,81 @@ class MainPipelineTest(unittest.TestCase):
             self.assertNotIn("Step 3 - Rerank", labels)
             self.assertIn("Step 4 - LLM refine", labels)
 
+    def test_main_runs_openai_rerank_when_enabled(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            src_dir = root / "src"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            token = "20260310"
+            self._write_rrf_input(root, token)
+            calls = []
+
+            def fake_run_step(label, args, env=None):
+                calls.append((label, args, env))
+
+            with patch.object(self.mod, "ROOT_DIR", str(root)), patch.object(
+                self.mod, "SRC_DIR", str(src_dir)
+            ), patch.object(
+                self.mod, "resolve_run_date_token", return_value=token
+            ), patch.object(
+                self.mod, "resolve_sidebar_date_label", return_value=None
+            ), patch.object(
+                self.mod, "parse_trace_ids", return_value=[]
+            ), patch.object(
+                self.mod, "run_step", side_effect=fake_run_step
+            ), patch.object(
+                sys, "argv", ["main.py"]
+            ), patch.dict(
+                os.environ,
+                {
+                    "DPR_SKIP_RERANK": "false",
+                    "DPR_RERANK_PROVIDER": "openai",
+                    "DPR_RERANK_ENDPOINT": "https://rerank.example.test/v1",
+                    "DPR_RERANK_MODEL": "Qwen/Qwen3-Reranker-0.6B",
+                },
+                clear=True,
+            ):
+                self.mod.main()
+
+            labels = [item[0] for item in calls]
+            self.assertIn("Step 3 - Rerank", labels)
+            self.assertIn("Step 4 - LLM refine", labels)
+
+    def test_disable_supabase_vector_keeps_fetch_enabled(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            src_dir = root / "src"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            token = "20260310"
+            calls = []
+
+            def fake_run_step(label, args, env=None):
+                calls.append((label, args, env))
+
+            with patch.object(self.mod, "ROOT_DIR", str(root)), patch.object(
+                self.mod, "SRC_DIR", str(src_dir)
+            ), patch.object(
+                self.mod, "resolve_run_date_token", return_value=token
+            ), patch.object(
+                self.mod, "resolve_sidebar_date_label", return_value=None
+            ), patch.object(
+                self.mod, "parse_trace_ids", return_value=[]
+            ), patch.object(
+                self.mod, "should_skip_fetch", return_value=True
+            ), patch.object(
+                self.mod, "run_step", side_effect=fake_run_step
+            ), patch.object(
+                sys, "argv", ["main.py"]
+            ), patch.dict(
+                os.environ,
+                {"DPR_DISABLE_SUPABASE_VECTOR": "true"},
+                clear=True,
+            ):
+                self.mod.main()
+
+            labels = [item[0] for item in calls]
+            self.assertIn("Step 1 - fetch arxiv", labels)
+
 
 if __name__ == "__main__":
     unittest.main()
