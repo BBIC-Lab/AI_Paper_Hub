@@ -5226,7 +5226,8 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   overflow-wrap: anywhere;
 }
 
-.dpr-embedding-settings-card {
+.dpr-embedding-settings-card,
+.dpr-reranker-settings-card {
   grid-column: 1 / -1;
   align-items: stretch;
 }
@@ -5243,6 +5244,11 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.dpr-reranker-status-pill {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--dpr-settings-blue);
 }
 
 .dpr-embedding-profile-group {
@@ -5284,8 +5290,31 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   gap: 12px;
 }
 
-.dpr-embedding-custom-panel[hidden] {
+.dpr-embedding-custom-panel[hidden],
+.dpr-reranker-custom-panel[hidden] {
   display: none;
+}
+
+.dpr-embedding-custom-panel .dpr-settings-form-grid,
+.dpr-reranker-custom-panel .dpr-settings-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#arxiv-search-panel .dpr-embedding-custom-panel .chat-quick-run-row,
+#arxiv-search-panel .dpr-reranker-custom-panel .chat-quick-run-row {
+  min-width: 0;
+}
+
+#arxiv-search-panel .dpr-embedding-custom-panel .chat-quick-run-row:first-child,
+#arxiv-search-panel .dpr-reranker-custom-panel .chat-quick-run-row:first-child {
+  grid-column: 1 / -1;
+}
+
+#arxiv-search-panel .dpr-embedding-custom-panel input:disabled,
+#arxiv-search-panel .dpr-embedding-custom-panel select:disabled,
+#arxiv-search-panel .dpr-reranker-custom-panel input:disabled {
+  background: rgba(248, 250, 252, 0.72);
+  color: #98a2b3;
 }
 
 .dpr-embedding-safe-note {
@@ -6230,6 +6259,16 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
 
   .dpr-secret-card--hero {
     grid-template-columns: 1fr;
+  }
+
+  .dpr-embedding-custom-panel .dpr-settings-form-grid,
+  .dpr-reranker-custom-panel .dpr-settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #arxiv-search-panel .dpr-embedding-custom-panel .chat-quick-run-row:first-child,
+  #arxiv-search-panel .dpr-reranker-custom-panel .chat-quick-run-row:first-child {
+    grid-column: auto;
   }
 
   .dpr-secret-card,

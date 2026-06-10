@@ -20,6 +20,8 @@ const {
   normalizeEmbeddingProfile,
   resolveEmbeddingServiceState,
   buildEmbeddingSecretsPayload,
+  resolveRerankerServiceState,
+  buildRerankerSecretsPayload,
   normalizeResearchDirections,
   resolveResearchDirections,
   normalizePeriodicReports,
@@ -242,18 +244,20 @@ function testEmbeddingProfileDefaultsToDefaultEmbedding() {
 function testEmbeddingSecretsPayloadForCustomProfile() {
   const payload = buildEmbeddingSecretsPayload({
     profile: 'custom',
-    apiUrl: 'https://embed.example.test/embed',
+    provider: 'openai',
+    endpoint: 'https://embed.example.test/v1/embeddings',
+    model: 'BAAI/bge-m3',
     apiKey: 'secret-key',
-    provider: 'legacy',
     timeout: '45',
     fallback: 'fail',
   });
 
   assert.deepEqual(payload, {
     DPR_EMBED_PROFILE: 'custom',
-    DPR_EMBED_API_URL: 'https://embed.example.test/embed',
+    DPR_EMBED_PROVIDER: 'openai',
+    DPR_EMBED_ENDPOINT: 'https://embed.example.test/v1/embeddings',
+    DPR_EMBED_MODEL: 'BAAI/bge-m3',
     DPR_EMBED_API_KEY: 'secret-key',
-    DPR_EMBED_PROVIDER: 'legacy',
     DPR_EMBED_API_TIMEOUT: '60',
     DPR_EMBED_REMOTE_FALLBACK: 'local',
   });
@@ -263,18 +267,63 @@ function testEmbeddingPresetProfilesDoNotExposeEndpointSecrets() {
   for (const profile of ['local', 'default_remote', 'advanced']) {
     const payload = buildEmbeddingSecretsPayload({ profile });
     assert.deepEqual(payload, { DPR_EMBED_PROFILE: profile });
-    assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_API_URL'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_ENDPOINT'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_MODEL'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(payload, 'DPR_EMBED_API_KEY'), false);
   }
 }
 
 function testEmbeddingCustomProfileRequiresUrlAndKey() {
   assert.throws(
-    () => buildEmbeddingSecretsPayload({ profile: 'custom', apiUrl: '', apiKey: 'secret-key' }),
+    () => buildEmbeddingSecretsPayload({ profile: 'custom', endpoint: '', model: 'BAAI/bge-m3', apiKey: 'secret-key' }),
     /embedding/,
   );
   assert.throws(
-    () => buildEmbeddingSecretsPayload({ profile: 'custom', apiUrl: 'https://embed.example.test' }),
+    () => buildEmbeddingSecretsPayload({ profile: 'custom', endpoint: 'https://embed.example.test', apiKey: 'secret-key' }),
+    /模型/,
+  );
+  assert.throws(
+    () => buildEmbeddingSecretsPayload({ profile: 'custom', endpoint: 'https://embed.example.test', model: 'BAAI/bge-m3' }),
+    /API Key/,
+  );
+}
+
+function testRerankerSecretsPayloadForEnabledAndDisabled() {
+  const enabled = buildRerankerSecretsPayload({
+    enabled: true,
+    endpoint: 'https://rerank.example.test/v1/rerank',
+    model: 'Qwen/Qwen3-Reranker-0.6B',
+    apiKey: 'rerank-key',
+  });
+
+  assert.deepEqual(enabled, {
+    DPR_SKIP_RERANK: 'false',
+    DPR_RERANK_PROVIDER: 'openai',
+    DPR_RERANK_ENDPOINT: 'https://rerank.example.test/v1/rerank',
+    DPR_RERANK_MODEL: 'Qwen/Qwen3-Reranker-0.6B',
+    DPR_RERANK_API_KEY: 'rerank-key',
+    DPR_RERANK_API_TIMEOUT: '60',
+  });
+
+  assert.deepEqual(buildRerankerSecretsPayload({ enabled: false }), {
+    DPR_SKIP_RERANK: 'true',
+    DPR_RERANK_PROVIDER: 'disabled',
+  });
+  assert.equal(resolveRerankerServiceState({}).enabled, false);
+  assert.equal(resolveRerankerServiceState({ rerankerService: { enabled: true, hasCredentials: true } }).hasCredentials, true);
+}
+
+function testRerankerCustomProfileRequiresEndpointModelAndKey() {
+  assert.throws(
+    () => buildRerankerSecretsPayload({ enabled: true, endpoint: '', model: 'rerank-model', apiKey: 'secret-key' }),
+    /reranker/,
+  );
+  assert.throws(
+    () => buildRerankerSecretsPayload({ enabled: true, endpoint: 'https://rerank.example.test/v1/rerank', apiKey: 'secret-key' }),
+    /模型/,
+  );
+  assert.throws(
+    () => buildRerankerSecretsPayload({ enabled: true, endpoint: 'https://rerank.example.test/v1/rerank', model: 'rerank-model' }),
     /API Key/,
   );
 }
@@ -286,19 +335,29 @@ function testEmbeddingSettingsUiSourceMatchesContract() {
   assert.ok(source.includes('value="default_remote" checked'));
   assert.ok(source.includes('默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）'));
   assert.ok(source.includes('本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5'));
-  assert.ok(source.includes('自定义 API Key 只会加密写入 GitHub Secrets'));
+  assert.ok(source.includes('自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets'));
   assert.ok(source.includes("setEmbeddingCustomPanelVisible(profile === 'custom')"));
   assert.ok(source.includes("setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom')"));
-  assert.ok(source.includes('id="dpr-embedding-api-url-input"'));
+  assert.ok(source.includes('id="dpr-embedding-provider-select"'));
+  assert.ok(source.includes('id="dpr-embedding-endpoint-input"'));
+  assert.ok(source.includes('id="dpr-embedding-model-input"'));
   assert.ok(source.includes('id="dpr-embedding-api-key-input"'));
-  assert.ok(source.includes('id="dpr-embedding-api-url-input" type="text" autocomplete="off" disabled'));
+  assert.ok(source.includes('id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled'));
+  assert.ok(source.includes('id="dpr-embedding-model-input" type="text" autocomplete="off" disabled'));
   assert.ok(source.includes('id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled'));
-  assert.equal(source.includes('dpr-embedding-provider-select'), false);
+  assert.ok(source.includes('DPR_EMBED_ENDPOINT'));
+  assert.ok(source.includes('DPR_EMBED_MODEL'));
+  assert.ok(source.includes('id="dpr-reranker-endpoint-input"'));
+  assert.ok(source.includes('id="dpr-reranker-model-input"'));
+  assert.ok(source.includes('id="dpr-reranker-api-key-input"'));
+  assert.ok(source.includes('DPR_RERANK_ENDPOINT'));
+  assert.ok(source.includes('DPR_SKIP_RERANK'));
   assert.equal(source.includes('dpr-embedding-timeout-input'), false);
   assert.equal(source.includes('dpr-embedding-fallback-select'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_URL'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_KEY'), false);
   assert.ok(css.includes('.dpr-embedding-custom-panel[hidden]'));
+  assert.ok(css.includes('.dpr-reranker-custom-panel[hidden]'));
   assert.ok(css.includes('display: none;'));
 }
 
@@ -560,6 +619,8 @@ testEmbeddingProfileDefaultsToDefaultEmbedding();
 testEmbeddingSecretsPayloadForCustomProfile();
 testEmbeddingPresetProfilesDoNotExposeEndpointSecrets();
 testEmbeddingCustomProfileRequiresUrlAndKey();
+testRerankerSecretsPayloadForEnabledAndDisabled();
+testRerankerCustomProfileRequiresEndpointModelAndKey();
 testEmbeddingSettingsUiSourceMatchesContract();
 testNormalizeResearchDirectionsSplitsAndCaps();
 testResolveResearchDirectionsFallsBackToKeywords();
