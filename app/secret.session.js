@@ -1040,226 +1040,235 @@
       const initialChatMode = chatUsesCustom ? 'openai-compatible' : 'workflow';
 
       modal.innerHTML = `
-        <h2 style="margin-top:0;">🛡️ 新配置指引 · 第二步</h2>
-        <div class="secret-setup-step2-grid" style="font-size:13px;">
-          <div class="secret-setup-step2-col">
-            <div class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">GitHub Token（必填）</div>
-              <p class="secret-setup-step2-note">
-                需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
-              </p>
-              <div class="secret-setup-input-row">
-                <input
-                  id="secret-setup-github-token"
-                  type="password"
-                  autocomplete="off"
-                  placeholder="用于读写 config.yaml 与触发 workflow 的 GitHub PAT"
-                  style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
-                />
-                <button id="secret-setup-github-verify" type="button" class="secret-gate-btn secondary">
-                  验证
-                </button>
-              </div>
-              <div id="secret-setup-github-status" style="min-height:18px; font-size:12px; color:#999;">
-                需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
-              </div>
+        <div class="secret-setup-step2-shell">
+          <div class="secret-setup-step2-top-card">
+            <div class="secret-setup-step2-top-icon">🔐</div>
+            <div>
+              <h2 id="secret-setup-step2-heading">密钥配置（必要）</h2>
+              <p>配置 GitHub Token、论文工作流大模型和聊天区大模型；密钥只加密写入 GitHub Secrets 和本地 secret.private。</p>
             </div>
+          </div>
 
-            <div id="secret-setup-workflow-section" class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">工作流大模型 API（必填）</div>
-              <p class="secret-setup-step2-note">
-                用于 query enrich、LLM refine、速览与总结。第一版要求 OpenAI-compatible Chat Completions。
-              </p>
-              <div class="secret-setup-input-row multi-actions">
-                <input
-                  id="secret-setup-workflow-api-key"
-                  type="password"
-                  autocomplete="off"
-                  placeholder="API Key，例如：sk-xxxx"
-                  style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
-                />
-                <button id="secret-setup-workflow-verify" type="button" class="secret-gate-btn secondary">
-                  测试
-                </button>
-                <button id="secret-setup-workflow-test" type="button" class="secret-gate-btn secondary">
-                  重测
-                </button>
-              </div>
-              <input
-                id="secret-setup-workflow-base-url"
-                type="text"
-                autocomplete="off"
-                placeholder="Base URL，例如 https://api.openai.com/v1"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin:6px 0 4px; font-size:13px;"
-              />
-              <div id="secret-setup-workflow-status" style="min-height:18px; font-size:12px; color:#999; margin-bottom:8px;">
-                将发送一次 <code>hello world</code> 请求检查接口、Key 与模型是否可用。
-              </div>
-
-              <div style="font-weight:500; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
-                工作流大模型配置方式
-                <span class="secret-model-tip">!
-                  <span class="secret-model-tip-popup">
-                    按照 Thinking（思考模式）的高负载场景估算：<br/>
-                    <br/>
-                    总结：15k 输入 + 4k 输出（含思考）<br/>
-                    提问：16.1k 输入 + 2k 输出（含思考）<br/>
-                    <br/>
-                    模型 · 约价（单次）：<br/>
-                    - Gemini 3 Flash：总结 ¥0.0195，提问 ¥0.0141（不到 2 分钱，100 篇论文约 2 元）<br/>
-                    - DeepSeek V3：总结 ¥0.0294，提问 ¥0.0267（不到 3 分钱，长输出性价比极高）<br/>
-                    - GPT-5：总结 ¥0.0588，提问 ¥0.0401（约 6 分钱）<br/>
-                    - Gemini 3 Pro：总结 ¥0.0780，提问 ¥0.0562（约 8 分钱，一篇论文不到 1 毛钱）
-                  </span>
-                </span>
-              </div>
-              <div id="secret-setup-workflow-models" style="font-size:13px;">
-                <div style="display:grid; gap:6px; margin-bottom:8px;">
-                  <label class="secret-setup-provider-choice" style="margin:0;">
-                    <input type="radio" name="secret-setup-workflow-model-mode" value="single" />
-                    <span><strong>一键设置</strong>只填写一个模型并同步写入所有工作流模型 Secret。</span>
-                  </label>
-                  <label class="secret-setup-provider-choice" style="margin:0;">
-                    <input type="radio" name="secret-setup-workflow-model-mode" value="scenario" />
-                    <span><strong>分场景配置</strong>分别为改写、筛选、总结等任务指定模型。</span>
-                  </label>
-                </div>
-                <div id="secret-setup-workflow-single-model-panel">
-                  <p class="secret-setup-step2-note" style="margin:0 0 6px;">
-                    可选择 <code>deepseek-v4-flash</code> / <code>deepseek-v4-pro</code>，也可以直接输入服务商支持的模型名。
-                  </p>
-                  <p class="secret-setup-step2-note" style="margin:0 0 6px; color:#b26a00;">
-                    请慎重考虑：一键选择最高模型会让 query enrich、LLM refine、日报总结等全流程都使用该模型，消耗会明显增加。
-                  </p>
+          <div class="secret-setup-step2-scroll" style="font-size:13px;">
+            <div class="secret-setup-step2-grid">
+              <div class="secret-setup-step2-block">
+                <div class="secret-setup-step2-title">GitHub Token</div>
+                <p class="secret-setup-step2-note">
+                  需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
+                </p>
+                <div class="secret-setup-input-row">
                   <input
-                    id="secret-setup-workflow-model-input"
-                    type="text"
+                    id="secret-setup-github-token"
+                    type="password"
                     autocomplete="off"
-                    placeholder="模型名，例如 deepseek-v4-flash / deepseek-v4-pro"
+                    placeholder="用于读写 config.yaml 与触发 workflow 的 GitHub PAT"
                     style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
                   />
+                  <button id="secret-setup-github-verify" type="button" class="secret-gate-btn secondary">
+                    验证
+                  </button>
                 </div>
-                <div id="secret-setup-workflow-scenario-model-panel" style="display:none;">
-                  <p class="secret-setup-step2-note" style="margin:0 0 6px;">
-                    将分别写入以下 GitHub Secrets；每项可从预设中选择，也可输入自定义模型名。
-                  </p>
-                  ${workflowScenarioFields.map((field) => `
-                    <div class="secret-setup-workflow-secret-field" style="border:1px solid #eee; border-radius:8px; padding:8px; margin-bottom:6px; background:#fafafa;">
-                      <div style="font-weight:600; margin-bottom:4px;">
-                        <code>${field.secret}</code>
-                        <span style="font-weight:400; color:#666;">（${field.note}）</span>
+                <div id="secret-setup-github-status" style="min-height:18px; font-size:12px; color:#999;">
+                  需要使用 <code>Classic PAT</code>，并同时具备 <code>repo</code>、<code>workflow</code> 和 <code>gist</code> 权限。
+                </div>
+              </div>
+
+              <div id="secret-setup-workflow-section" class="secret-setup-step2-block">
+                <div class="secret-setup-step2-title">论文工作流大模型</div>
+                <p class="secret-setup-step2-note">
+                  用于 query enrich、LLM refine、速览与总结。第一版要求 OpenAI-compatible Chat Completions。
+                </p>
+                <div class="secret-setup-input-row multi-actions">
+                  <input
+                    id="secret-setup-workflow-api-key"
+                    type="password"
+                    autocomplete="off"
+                    placeholder="API Key，例如：sk-xxxx"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
+                  />
+                  <button id="secret-setup-workflow-verify" type="button" class="secret-gate-btn secondary">
+                    测试
+                  </button>
+                  <button id="secret-setup-workflow-test" type="button" class="secret-gate-btn secondary">
+                    重测
+                  </button>
+                </div>
+                <input
+                  id="secret-setup-workflow-base-url"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Base URL，例如 https://api.openai.com/v1"
+                  style="width:100%; box-sizing:border-box; padding:6px 8px; margin:6px 0 4px; font-size:13px;"
+                />
+                <div id="secret-setup-workflow-status" style="min-height:18px; font-size:12px; color:#999; margin-bottom:8px;">
+                  将发送一次 <code>hello world</code> 请求检查接口、Key 与模型是否可用。
+                </div>
+
+                <div style="font-weight:500; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
+                  工作流大模型配置方式
+                  <span class="secret-model-tip">!
+                    <span class="secret-model-tip-popup">
+                      按照 Thinking（思考模式）的高负载场景估算：<br/>
+                      <br/>
+                      总结：15k 输入 + 4k 输出（含思考）<br/>
+                      提问：16.1k 输入 + 2k 输出（含思考）<br/>
+                      <br/>
+                      模型 · 约价（单次）：<br/>
+                      - Gemini 3 Flash：总结 ¥0.0195，提问 ¥0.0141（不到 2 分钱，100 篇论文约 2 元）<br/>
+                      - DeepSeek V3：总结 ¥0.0294，提问 ¥0.0267（不到 3 分钱，长输出性价比极高）<br/>
+                      - GPT-5：总结 ¥0.0588，提问 ¥0.0401（约 6 分钱）<br/>
+                      - Gemini 3 Pro：总结 ¥0.0780，提问 ¥0.0562（约 8 分钱，一篇论文不到 1 毛钱）
+                    </span>
+                  </span>
+                </div>
+                <div id="secret-setup-workflow-models" style="font-size:13px;">
+                  <div style="display:grid; gap:6px; margin-bottom:8px;">
+                    <label class="secret-setup-provider-choice" style="margin:0;">
+                      <input type="radio" name="secret-setup-workflow-model-mode" value="single" />
+                      <span><strong>一键设置</strong>只填写一个模型并同步写入所有工作流模型 Secret。</span>
+                    </label>
+                    <label class="secret-setup-provider-choice" style="margin:0;">
+                      <input type="radio" name="secret-setup-workflow-model-mode" value="scenario" />
+                      <span><strong>分场景配置</strong>分别为改写、筛选、总结等任务指定模型。</span>
+                    </label>
+                  </div>
+                  <div id="secret-setup-workflow-single-model-panel">
+                    <p class="secret-setup-step2-note" style="margin:0 0 6px;">
+                      可选择 <code>deepseek-v4-flash</code> / <code>deepseek-v4-pro</code>，也可以直接输入服务商支持的模型名。
+                    </p>
+                    <p class="secret-setup-step2-note" style="margin:0 0 6px; color:#b26a00;">
+                      请慎重考虑：一键选择最高模型会让 query enrich、LLM refine、日报总结等全流程都使用该模型，消耗会明显增加。
+                    </p>
+                    <input
+                      id="secret-setup-workflow-model-input"
+                      type="text"
+                      autocomplete="off"
+                      placeholder="模型名，例如 deepseek-v4-flash / deepseek-v4-pro"
+                      style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
+                    />
+                  </div>
+                  <div id="secret-setup-workflow-scenario-model-panel" style="display:none;">
+                    <p class="secret-setup-step2-note" style="margin:0 0 6px;">
+                      将分别写入以下 GitHub Secrets；每项可从预设中选择，也可输入自定义模型名。
+                    </p>
+                    ${workflowScenarioFields.map((field) => `
+                      <div class="secret-setup-workflow-secret-field" style="border:1px solid #eee; border-radius:8px; padding:8px; margin-bottom:6px; background:#fafafa;">
+                        <div style="font-weight:600; margin-bottom:4px;">
+                          <code>${field.secret}</code>
+                          <span style="font-weight:400; color:#666;">（${field.note}）</span>
+                        </div>
+                        <input
+                          class="secret-setup-workflow-model-field"
+                          data-workflow-model-key="${field.key}"
+                          type="text"
+                          autocomplete="off"
+                          placeholder="${field.recommended}"
+                          style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
+                        />
                       </div>
-                      <input
-                        class="secret-setup-workflow-model-field"
-                        data-workflow-model-key="${field.key}"
-                        type="text"
-                        autocomplete="off"
-                        placeholder="${field.recommended}"
-                        style="width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px;"
-                      />
-                    </div>
-                  `).join('')}
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <div id="secret-setup-chat-section" class="secret-setup-step2-block">
+                <div class="secret-setup-step2-title">聊天区大模型</div>
+                <p class="secret-setup-step2-note">
+                  聊天区可以复用工作流 API，也可以填写另一组 OpenAI-compatible API。展开后的配置会保留在当前卡片内部。
+                </p>
+                <label class="secret-setup-provider-choice">
+                  <input type="radio" name="secret-setup-provider" value="workflow" />
+                  <span><strong>聊天区也使用工作流 API</strong>工作流总结、过滤与聊天区使用同一组 OpenAI-compatible 配置。</span>
+                </label>
+                <label class="secret-setup-provider-choice">
+                  <input type="radio" name="secret-setup-provider" value="openai-compatible" />
+                  <span><strong>聊天区使用另一组 OpenAI-compatible API</strong>最多 3 个自定义模型，仅用于论文页面聊天。</span>
+                </label>
+
+                <div id="secret-setup-custom-section" class="secret-setup-inline-panel">
+                  <div class="secret-setup-step2-title secret-setup-step2-subtitle">OpenAI-compatible 聊天配置</div>
+                  <p class="secret-setup-step2-note">
+                    预设会自动填写 <code>Base URL</code> 与推荐模型；API Key 仍需你自行输入。这里的模型仅供聊天区使用。
+                  </p>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                    <button id="secret-setup-preset-deepseek" type="button" class="secret-gate-btn secondary">
+                      填入 DeepSeek 预设
+                    </button>
+                    <button id="secret-setup-preset-glm" type="button" class="secret-gate-btn secondary">
+                      填入 GLM 预设
+                    </button>
+                    <button id="secret-setup-preset-minimax" type="button" class="secret-gate-btn secondary">
+                      填入 MiniMax 预设
+                    </button>
+                    <button id="secret-setup-preset-kimi" type="button" class="secret-gate-btn secondary">
+                      填入 Kimi 预设
+                    </button>
+                    <button id="secret-setup-preset-openai" type="button" class="secret-gate-btn secondary">
+                      填入 OpenAI 预设
+                    </button>
+                  </div>
+                  <input
+                    id="secret-setup-custom-api-key"
+                    type="password"
+                    autocomplete="off"
+                    placeholder="聊天 API Key"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
+                  />
+                  <input
+                    id="secret-setup-custom-base-url"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="聊天 Base URL，例如 https://api.openai.com/v1"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
+                  />
+                  <input
+                    id="secret-setup-custom-model-1"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="聊天模型 1（默认）"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
+                  />
+                  <input
+                    id="secret-setup-custom-model-2"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="聊天模型 2（可选）"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
+                  />
+                  <input
+                    id="secret-setup-custom-model-3"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="聊天模型 3（可选）"
+                    style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
+                  />
+                  <button id="secret-setup-custom-test" type="button" class="secret-gate-btn secondary secret-setup-step2-actions">
+                    测试当前配置
+                  </button>
+                  <div id="secret-setup-custom-status" style="min-height:18px; font-size:12px; color:#999; margin-top:6px;">
+                    将依次用已填写聊天模型发送 <code>hello world</code>，检查接口与模型是否可用。
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="secret-setup-step2-col">
-            <div class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">聊天模型来源</div>
-              <p class="secret-setup-step2-note">
-                聊天区可以复用工作流 API，也可以填写另一组 OpenAI-compatible API。
-              </p>
-              <label class="secret-setup-provider-choice">
-                <input type="radio" name="secret-setup-provider" value="workflow" />
-                <span><strong>聊天区也使用工作流 API</strong>工作流总结、过滤与聊天区使用同一组 OpenAI-compatible 配置。</span>
-              </label>
-              <label class="secret-setup-provider-choice">
-                <input type="radio" name="secret-setup-provider" value="openai-compatible" />
-                <span><strong>聊天区使用另一组 OpenAI-compatible API</strong>最多 3 个自定义模型，仅用于论文页面聊天。</span>
-              </label>
+          <div class="secret-setup-step2-footer">
+            <div id="secret-setup-error" class="secret-setup-step2-message" style="min-height:18px; font-size:12px; color:#999;">
+              所有密钥信息将加密写入 GitHub Secrets（用于 GitHub Actions），并同步生成本地 <code>secret.private</code> 备份，原文不会直接存入仓库。
             </div>
-
-            <div id="secret-setup-custom-section" class="secret-setup-step2-block">
-              <div class="secret-setup-step2-title">OpenAI-compatible 聊天配置</div>
-              <p class="secret-setup-step2-note">
-                预设会自动填写 <code>Base URL</code> 与推荐模型；API Key 仍需你自行输入。这里的模型仅供聊天区使用。
-              </p>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
-                <button id="secret-setup-preset-deepseek" type="button" class="secret-gate-btn secondary">
-                  填入 DeepSeek 预设
-                </button>
-                <button id="secret-setup-preset-glm" type="button" class="secret-gate-btn secondary">
-                  填入 GLM 预设
-                </button>
-                <button id="secret-setup-preset-minimax" type="button" class="secret-gate-btn secondary">
-                  填入 MiniMax 预设
-                </button>
-                <button id="secret-setup-preset-kimi" type="button" class="secret-gate-btn secondary">
-                  填入 Kimi 预设
-                </button>
-                <button id="secret-setup-preset-openai" type="button" class="secret-gate-btn secondary">
-                  填入 OpenAI 预设
-                </button>
-              </div>
-              <input
-                id="secret-setup-custom-api-key"
-                type="password"
-                autocomplete="off"
-                placeholder="聊天 API Key"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
-              />
-              <input
-                id="secret-setup-custom-base-url"
-                type="text"
-                autocomplete="off"
-                placeholder="聊天 Base URL，例如 https://api.openai.com/v1"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
-              />
-              <input
-                id="secret-setup-custom-model-1"
-                type="text"
-                autocomplete="off"
-                placeholder="聊天模型 1（默认）"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
-              />
-              <input
-                id="secret-setup-custom-model-2"
-                type="text"
-                autocomplete="off"
-                placeholder="聊天模型 2（可选）"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
-              />
-              <input
-                id="secret-setup-custom-model-3"
-                type="text"
-                autocomplete="off"
-                placeholder="聊天模型 3（可选）"
-                style="width:100%; box-sizing:border-box; padding:6px 8px; margin-bottom:4px; font-size:13px;"
-              />
-              <button id="secret-setup-custom-test" type="button" class="secret-gate-btn secondary secret-setup-step2-actions">
-                测试当前配置
+            <div class="secret-gate-actions">
+              <button id="secret-setup-back" type="button" class="secret-gate-btn secondary">
+                上一步
               </button>
-              <div id="secret-setup-custom-status" style="min-height:18px; font-size:12px; color:#999; margin-top:6px;">
-                将依次用已填写聊天模型发送 <code>hello world</code>，检查接口与模型是否可用。
-              </div>
+              <button id="secret-setup-close" type="button" class="secret-gate-btn secondary">
+                关闭
+              </button>
+              <button id="secret-setup-generate" type="button" class="secret-gate-btn primary">
+                保存配置
+              </button>
             </div>
           </div>
-        </div>
-
-        <div id="secret-setup-error" style="min-height:18px; font-size:12px; color:#999; margin-top:10px; margin-bottom:8px;">
-          所有密钥信息将加密写入 GitHub Secrets（用于 GitHub Actions），并同步生成本地 <code>secret.private</code> 备份，原文不会直接存入仓库。
-        </div>
-        <div class="secret-gate-actions">
-          <button id="secret-setup-back" type="button" class="secret-gate-btn secondary">
-            上一步
-          </button>
-          <button id="secret-setup-close" type="button" class="secret-gate-btn secondary">
-            关闭
-          </button>
-          <button id="secret-setup-generate" type="button" class="secret-gate-btn primary">
-            保存配置
-          </button>
         </div>
       `;
 

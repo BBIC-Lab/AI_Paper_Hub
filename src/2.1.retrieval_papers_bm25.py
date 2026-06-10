@@ -7,13 +7,19 @@
 # 5. 将带 tag 的论文列表和每个查询的 top_k 结果写回到一个新的 JSON 文件中。
 
 import argparse
-import json
 import math
 import os
 import re
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from typing import Dict, List, Set, Any, Iterable
+
+try:
+  from core import artifacts as core_artifacts
+  from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+  from src.core import artifacts as core_artifacts
+  from src.core import paths as core_paths
 
 from query_boolean import (
   parse_boolean_expr,
@@ -41,10 +47,10 @@ from supabase_source import (
 SCRIPT_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "config.yaml"))
 ROOT_DIR = os.path.dirname(CONFIG_FILE)
-TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
-ARCHIVE_DIR = os.path.join(ROOT_DIR, "archive", TODAY_STR)
-RAW_DIR = os.path.join(ARCHIVE_DIR, "raw")
-FILTERED_DIR = os.path.join(ARCHIVE_DIR, "filtered")
+TODAY_STR = core_paths.run_date_from_env()
+ARCHIVE_DIR = str(core_paths.archive_dir(ROOT_DIR, TODAY_STR))
+RAW_DIR = str(core_paths.raw_dir(ROOT_DIR, TODAY_STR))
+FILTERED_DIR = str(core_paths.filtered_dir(ROOT_DIR, TODAY_STR))
 DATE_RE_DAY = re.compile(r"^\d{8}$")
 DATE_RE_RANGE = re.compile(r"^\d{8}-\d{8}$")
 SUPABASE_TIME_FIELDS = ("published",)
@@ -547,8 +553,7 @@ def load_paper_pool(path: str) -> List[Paper]:
   if not os.path.exists(path):
     raise FileNotFoundError(f"找不到论文池文件：{path}")
 
-  with open(path, "r", encoding="utf-8") as f:
-    raw = json.load(f)
+  raw = core_artifacts.read_json(path)
 
   papers: List[Paper] = []
   for item in raw:
@@ -951,8 +956,7 @@ def save_tagged_results(
     "queries": result.get("queries") or [],
   }
 
-  with open(output_path, "w", encoding="utf-8") as f:
-    json.dump(payload, f, ensure_ascii=False, indent=2)
+  core_artifacts.write_json(output_path, payload)
 
   log(f"[INFO] 已将带 tag 的论文和每个查询的 top_k 结果写入：{output_path}")
   log(f"[INFO] 其中带 tag 的论文数：{len(tagged_papers)}")
@@ -1213,7 +1217,7 @@ def main() -> None:
       raw_files = []
 
     if not raw_files:
-      output_path = os.path.join(FILTERED_DIR, f"arxiv_papers_{TODAY_STR}.bm25.json")
+      output_path = os.path.join(FILTERED_DIR, core_artifacts.paper_artifact_filename(TODAY_STR, "bm25"))
       if multi_source_backend:
         multi_source_result = run_multi_source_supabase_rank(output_path, queries)
         if multi_source_result:

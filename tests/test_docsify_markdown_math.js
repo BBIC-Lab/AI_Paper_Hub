@@ -340,8 +340,8 @@ function testSidebarEmojiStripperIsShared() {
   assert.equal(window.DPRSidebarUtils.isDailyRootLabel('\u{1F5C2}\uFE0F 近期日报'), true);
   assert.equal(window.DPRSidebarUtils.normalizeDailyRootLabel('Daily Papers'), '近期日报');
 }
-
 function testRuntimeMarkdownCacheBusterTargetsOnlyRuntimeFiles() {
+
   assert.equal(typeof window.DPRAppendSidebarCacheBuster, 'function');
   assert.equal(typeof window.DPRAppendRuntimeMarkdownCacheBuster, 'function');
   const sidebarUrl = window.DPRAppendSidebarCacheBuster('docs/_sidebar.md');

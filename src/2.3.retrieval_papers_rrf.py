@@ -6,17 +6,23 @@
 # 4. 输出融合后的 JSON，供下一步 reranker 使用。
 
 import argparse
-import json
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
+try:
+  from core import artifacts as core_artifacts
+  from core import paths as core_paths
+except Exception:  # pragma: no cover - package import fallback
+  from src.core import artifacts as core_artifacts
+  from src.core import paths as core_paths
+
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
-ARCHIVE_DIR = os.path.join(ROOT_DIR, "archive", TODAY_STR)
-FILTERED_DIR = os.path.join(ARCHIVE_DIR, "filtered")
+TODAY_STR = core_paths.run_date_from_env()
+ARCHIVE_DIR = str(core_paths.archive_dir(ROOT_DIR, TODAY_STR))
+FILTERED_DIR = str(core_paths.filtered_dir(ROOT_DIR, TODAY_STR))
 
 def log(message: str) -> None:
   ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -34,14 +40,11 @@ def group_end() -> None:
 def load_json(path: str) -> Dict[str, Any]:
   if not os.path.exists(path):
     raise FileNotFoundError(f"找不到文件：{path}")
-  with open(path, "r", encoding="utf-8") as f:
-    return json.load(f)
+  return core_artifacts.read_json_object(path)
 
 
 def save_json(data: Dict[str, Any], path: str) -> None:
-  os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-  with open(path, "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
+  core_artifacts.write_json(path, data)
   log(f"[INFO] 已写入融合结果：{path}")
 
 

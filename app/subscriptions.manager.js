@@ -22,6 +22,12 @@ window.SubscriptionsManager = (function () {
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
   const DEFAULT_EMAIL_PUSH_TIME = '08:30';
   const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
+  const DEFAULT_EMBEDDING_PROFILE = 'default_remote';
+  const DEFAULT_EMBEDDING_PROVIDER = 'openai';
+  const DEFAULT_EMBEDDING_TIMEOUT = 60;
+  const DEFAULT_EMBEDDING_FALLBACK = 'local';
+  const DEFAULT_RERANK_PROVIDER = 'openai';
+  const DEFAULT_RERANK_TIMEOUT = 60;
   const DEFAULT_PERIODIC_REPORTS = {
     enabled: true,
     default_input_mode: 'artifacts',
@@ -96,6 +102,11 @@ window.SubscriptionsManager = (function () {
   let emailSaveBtn = null;
   let emailTestBtn = null;
   let emailMsgEl = null;
+  let embeddingSaveBtn = null;
+  let embeddingMsgEl = null;
+  let rerankerSaveBtn = null;
+  let rerankerMsgEl = null;
+  let advancedConfigHideTimer = null;
   let researchSaveBtn = null;
   let researchMsgEl = null;
   let settingsDirtyBadge = null;
@@ -169,6 +180,130 @@ window.SubscriptionsManager = (function () {
   const normalizeEmailTimezone = (value) => (
     normalizeText(value) === 'UTC' ? 'UTC' : DEFAULT_EMAIL_TIMEZONE
   );
+  const isHttpUrl = (value) => /^https?:\/\//i.test(normalizeText(value));
+  const normalizeEmbeddingProfile = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    return ['local', 'default_remote', 'advanced', 'custom'].includes(text)
+      ? text
+      : DEFAULT_EMBEDDING_PROFILE;
+  };
+  const normalizeEmbeddingProvider = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    if (['legacy', 'custom'].includes(text)) return 'legacy';
+    if (['openai', 'openai-compatible', 'openai_compatible', 'vllm'].includes(text)) return 'openai';
+    return DEFAULT_EMBEDDING_PROVIDER;
+  };
+  const normalizeEmbeddingFallback = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    return text === 'fail' ? 'fail' : DEFAULT_EMBEDDING_FALLBACK;
+  };
+  const normalizeEmbeddingTimeout = (value) => {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_EMBEDDING_TIMEOUT;
+    return Math.min(parsed, 600);
+  };
+  const resolveEmbeddingServiceState = (secretValue) => {
+    const secret = isPlainObject(secretValue)
+      ? secretValue
+      : (isPlainObject(window.decoded_secret_private) ? window.decoded_secret_private : {});
+    const embedding = isPlainObject(secret.embeddingService) ? secret.embeddingService : {};
+    return {
+      profile: normalizeEmbeddingProfile(embedding.profile || DEFAULT_EMBEDDING_PROFILE),
+      provider: normalizeEmbeddingProvider(embedding.provider || DEFAULT_EMBEDDING_PROVIDER),
+      timeout: normalizeEmbeddingTimeout(embedding.timeout || DEFAULT_EMBEDDING_TIMEOUT),
+      fallback: normalizeEmbeddingFallback(embedding.fallback || DEFAULT_EMBEDDING_FALLBACK),
+      hasCustomCredentials: !!embedding.hasCustomCredentials,
+    };
+  };
+  const buildEmbeddingSecretsPayload = (settings) => {
+    const safe = isPlainObject(settings) ? settings : {};
+    const profile = normalizeEmbeddingProfile(safe.profile);
+    const secrets = { DPR_EMBED_PROFILE: profile };
+    if (profile !== 'custom') {
+      return secrets;
+    }
+    const endpoint = normalizeText(safe.endpoint || safe.apiUrl);
+    const model = normalizeText(safe.model);
+    const apiKey = normalizeText(safe.apiKey);
+    const provider = normalizeEmbeddingProvider(safe.provider);
+    if (!isHttpUrl(endpoint)) {
+      throw new Error('请填写以 http:// 或 https:// 开头的 embedding endpoint。');
+    }
+    if (!model) {
+      throw new Error('请填写 embedding 模型名称。');
+    }
+    if (!apiKey) {
+      throw new Error('请填写自定义 embedding API Key。');
+    }
+    secrets.DPR_EMBED_PROVIDER = provider;
+    secrets.DPR_EMBED_ENDPOINT = endpoint;
+    secrets.DPR_EMBED_MODEL = model;
+    secrets.DPR_EMBED_API_KEY = apiKey;
+    secrets.DPR_EMBED_API_TIMEOUT = String(DEFAULT_EMBEDDING_TIMEOUT);
+    secrets.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
+    return secrets;
+  };
+  const normalizeRerankerProvider = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    if (['', 'none', 'off', 'disabled'].includes(text)) return 'disabled';
+    if (['openai', 'openai-compatible', 'openai_compatible', 'vllm'].includes(text)) return 'openai';
+    return DEFAULT_RERANK_PROVIDER;
+  };
+  const normalizeRerankerEnabled = (value) => {
+    if (value === true) return true;
+    if (value === false) return false;
+    const text = normalizeText(value).toLowerCase();
+    return ['1', 'true', 'yes', 'on', 'enabled', 'openai'].includes(text);
+  };
+  const resolveRerankerServiceState = (secretValue) => {
+    const secret = isPlainObject(secretValue)
+      ? secretValue
+      : (isPlainObject(window.decoded_secret_private) ? window.decoded_secret_private : {});
+    const reranker = isPlainObject(secret.rerankerService) ? secret.rerankerService : {};
+    const legacyReranker = isPlainObject(secret.rerankerLLM) ? secret.rerankerLLM : {};
+    const enabled = typeof reranker.enabled === 'boolean'
+      ? reranker.enabled
+      : !!legacyReranker.enabled;
+    return {
+      enabled,
+      provider: normalizeRerankerProvider(reranker.provider || (enabled ? DEFAULT_RERANK_PROVIDER : 'disabled')),
+      timeout: normalizeEmbeddingTimeout(reranker.timeout || DEFAULT_RERANK_TIMEOUT),
+      hasCredentials: !!reranker.hasCredentials,
+    };
+  };
+  const buildRerankerSecretsPayload = (settings) => {
+    const safe = isPlainObject(settings) ? settings : {};
+    const enabledValue = Object.prototype.hasOwnProperty.call(safe, 'enabled')
+      ? safe.enabled
+      : safe.mode;
+    const enabled = normalizeRerankerEnabled(enabledValue);
+    if (!enabled) {
+      return {
+        DPR_SKIP_RERANK: 'true',
+        DPR_RERANK_PROVIDER: 'disabled',
+      };
+    }
+    const endpoint = normalizeText(safe.endpoint);
+    const model = normalizeText(safe.model);
+    const apiKey = normalizeText(safe.apiKey);
+    if (!isHttpUrl(endpoint)) {
+      throw new Error('请填写以 http:// 或 https:// 开头的 reranker endpoint。');
+    }
+    if (!model) {
+      throw new Error('请填写 reranker 模型名称。');
+    }
+    if (!apiKey) {
+      throw new Error('请填写 reranker API Key。');
+    }
+    return {
+      DPR_SKIP_RERANK: 'false',
+      DPR_RERANK_PROVIDER: normalizeRerankerProvider(safe.provider || DEFAULT_RERANK_PROVIDER),
+      DPR_RERANK_ENDPOINT: endpoint,
+      DPR_RERANK_MODEL: model,
+      DPR_RERANK_API_KEY: apiKey,
+      DPR_RERANK_API_TIMEOUT: String(DEFAULT_RERANK_TIMEOUT),
+    };
+  };
   const buildEmailWorkflowCron = (timeValue, timezoneValue) => {
     const timeText = normalizeDailyPushTime(timeValue);
     const timezone = normalizeEmailTimezone(timezoneValue);
@@ -833,6 +968,8 @@ window.SubscriptionsManager = (function () {
       el.textContent = String(windows.daysWindow);
     });
     syncEmailSettingsFields();
+    syncEmbeddingSettingsFields();
+    syncRerankerSettingsFields();
     syncPeriodicReportFields();
     syncDailyReportFields();
     renderResearchDirections();
@@ -1251,6 +1388,318 @@ window.SubscriptionsManager = (function () {
       if (emailTestBtn) emailTestBtn.disabled = false;
     }
   };
+
+  const setEmbeddingMessage = (text, color) => {
+    if (embeddingMsgEl) {
+      embeddingMsgEl.textContent = text || '';
+      embeddingMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const setEmbeddingCustomPanelVisible = (visible) => {
+    const customPanel = document.getElementById('dpr-embedding-custom-panel');
+    if (!customPanel) return;
+    customPanel.hidden = !visible;
+    customPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    Array.from(customPanel.querySelectorAll('input, select, textarea, button')).forEach((el) => {
+      el.disabled = !visible;
+    });
+  };
+
+  const syncEmbeddingSettingsFields = () => {
+    if (!panel) return;
+    const state = resolveEmbeddingServiceState();
+    const profile = state.profile === 'advanced' ? DEFAULT_EMBEDDING_PROFILE : state.profile;
+    const radio = document.querySelector(`input[name="dpr-embedding-profile"][value="${profile}"]`);
+    if (radio) radio.checked = true;
+    setEmbeddingCustomPanelVisible(profile === 'custom');
+    const providerSelect = document.getElementById('dpr-embedding-provider-select');
+    if (providerSelect && document.activeElement !== providerSelect) {
+      providerSelect.value = state.provider || DEFAULT_EMBEDDING_PROVIDER;
+    }
+    const statusEl = document.getElementById('dpr-embedding-current-status');
+    if (statusEl) {
+      const labels = {
+        local: '本地 embedding',
+        default_remote: '默认 embedding',
+        custom: state.hasCustomCredentials
+          ? `自定义 embedding（${state.provider === 'legacy' ? 'legacy /embed' : 'OpenAI'} 已配置）`
+          : '自定义 embedding（未配置）',
+      };
+      statusEl.textContent = labels[profile] || labels.default_remote;
+    }
+  };
+
+  const collectEmbeddingSettingsDraft = () => {
+    const selected = document.querySelector('input[name="dpr-embedding-profile"]:checked');
+    const profile = normalizeEmbeddingProfile(selected ? selected.value : DEFAULT_EMBEDDING_PROFILE);
+    const getValue = (id) => normalizeText((document.getElementById(id) || {}).value || '');
+    return {
+      profile,
+      provider: getValue('dpr-embedding-provider-select') || DEFAULT_EMBEDDING_PROVIDER,
+      endpoint: getValue('dpr-embedding-endpoint-input') || getValue('dpr-embedding-api-url-input'),
+      model: getValue('dpr-embedding-model-input'),
+      apiKey: getValue('dpr-embedding-api-key-input'),
+    };
+  };
+
+  const saveEmbeddingSettings = async () => {
+    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
+      setEmbeddingMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+      return;
+    }
+
+    let draft = null;
+    let secrets = null;
+    try {
+      draft = collectEmbeddingSettingsDraft();
+      secrets = buildEmbeddingSecretsPayload(draft);
+    } catch (e) {
+      setEmbeddingMessage(e.message || 'Embedding 配置不完整。', '#c00');
+      return;
+    }
+
+    try {
+      if (embeddingSaveBtn) embeddingSaveBtn.disabled = true;
+      setEmbeddingMessage('正在写入 GitHub Secrets...', '#666');
+      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+        setEmbeddingMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      });
+      const secret = isPlainObject(window.decoded_secret_private)
+        ? window.decoded_secret_private
+        : {};
+      secret.embeddingService = {
+        profile: normalizeEmbeddingProfile(draft.profile),
+        provider: normalizeEmbeddingProvider(draft.provider),
+        timeout: DEFAULT_EMBEDDING_TIMEOUT,
+        fallback: DEFAULT_EMBEDDING_FALLBACK,
+        hasCustomCredentials: normalizeEmbeddingProfile(draft.profile) === 'custom',
+      };
+      window.decoded_secret_private = secret;
+      const apiKeyInput = document.getElementById('dpr-embedding-api-key-input');
+      if (apiKeyInput) apiKeyInput.value = '';
+      syncEmbeddingSettingsFields();
+      setEmbeddingMessage('Embedding 设置已保存；GitHub Secrets 不会回显明文。', '#080');
+    } catch (e) {
+      console.error(e);
+      setEmbeddingMessage(`保存 embedding 设置失败：${(e && e.message) || e}`.slice(0, 220), '#c00');
+    } finally {
+      if (embeddingSaveBtn) embeddingSaveBtn.disabled = false;
+    }
+  };
+
+  const bindEmbeddingSettingsInputs = () => {
+    const profileInputs = Array.from(document.querySelectorAll('input[name="dpr-embedding-profile"]'));
+    profileInputs.forEach((input) => {
+      if (input._bound) return;
+      input._bound = true;
+      input.addEventListener('change', () => {
+        setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom');
+        setEmbeddingMessage('', '#666');
+      });
+    });
+    embeddingSaveBtn = document.getElementById('dpr-embedding-save-btn');
+    embeddingMsgEl = document.getElementById('dpr-embedding-settings-msg');
+    if (embeddingSaveBtn && !embeddingSaveBtn._bound) {
+      embeddingSaveBtn._bound = true;
+      embeddingSaveBtn.addEventListener('click', saveEmbeddingSettings);
+    }
+  };
+
+  const setRerankerMessage = (text, color) => {
+    if (rerankerMsgEl) {
+      rerankerMsgEl.textContent = text || '';
+      rerankerMsgEl.style.color = color || '#666';
+    }
+  };
+
+  const setRerankerCustomPanelVisible = (visible) => {
+    const customPanel = document.getElementById('dpr-reranker-custom-panel');
+    if (!customPanel) return;
+    customPanel.hidden = !visible;
+    customPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    Array.from(customPanel.querySelectorAll('input, select, textarea, button')).forEach((el) => {
+      el.disabled = !visible;
+    });
+  };
+
+  const syncRerankerSettingsFields = () => {
+    if (!panel) return;
+    const state = resolveRerankerServiceState();
+    const mode = state.enabled ? 'enabled' : 'disabled';
+    const radio = document.querySelector(`input[name="dpr-reranker-mode"][value="${mode}"]`);
+    if (radio) radio.checked = true;
+    setRerankerCustomPanelVisible(state.enabled);
+    const statusEl = document.getElementById('dpr-reranker-current-status');
+    if (statusEl) {
+      statusEl.textContent = state.enabled && state.hasCredentials
+        ? 'Reranker 已配置'
+        : (state.enabled ? 'Reranker 待补全' : 'RRF fallback');
+    }
+  };
+
+  const collectRerankerSettingsDraft = () => {
+    const selected = document.querySelector('input[name="dpr-reranker-mode"]:checked');
+    const mode = selected ? selected.value : 'disabled';
+    const getValue = (id) => normalizeText((document.getElementById(id) || {}).value || '');
+    return {
+      enabled: mode === 'enabled',
+      provider: DEFAULT_RERANK_PROVIDER,
+      endpoint: getValue('dpr-reranker-endpoint-input'),
+      model: getValue('dpr-reranker-model-input'),
+      apiKey: getValue('dpr-reranker-api-key-input'),
+    };
+  };
+
+  const saveRerankerSettings = async () => {
+    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
+      setRerankerMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+      return;
+    }
+
+    let draft = null;
+    let secrets = null;
+    try {
+      draft = collectRerankerSettingsDraft();
+      secrets = buildRerankerSecretsPayload(draft);
+    } catch (e) {
+      setRerankerMessage(e.message || 'Reranker 配置不完整。', '#c00');
+      return;
+    }
+
+    try {
+      if (rerankerSaveBtn) rerankerSaveBtn.disabled = true;
+      setRerankerMessage('正在写入 GitHub Secrets...', '#666');
+      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+        setRerankerMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      });
+      const enabled = normalizeRerankerEnabled(draft.enabled);
+      const secret = isPlainObject(window.decoded_secret_private)
+        ? window.decoded_secret_private
+        : {};
+      secret.rerankerService = {
+        enabled,
+        provider: enabled ? DEFAULT_RERANK_PROVIDER : 'disabled',
+        timeout: DEFAULT_RERANK_TIMEOUT,
+        hasCredentials: enabled,
+      };
+      secret.rerankerLLM = {
+        enabled,
+      };
+      window.decoded_secret_private = secret;
+      const apiKeyInput = document.getElementById('dpr-reranker-api-key-input');
+      if (apiKeyInput) apiKeyInput.value = '';
+      syncRerankerSettingsFields();
+      setRerankerMessage(
+        enabled
+          ? 'Reranker 设置已保存；GitHub Secrets 不会回显明文。'
+          : 'Reranker 已关闭；工作流将使用 RRF fallback。',
+        '#080',
+      );
+    } catch (e) {
+      console.error(e);
+      setRerankerMessage(`保存 reranker 设置失败：${(e && e.message) || e}`.slice(0, 220), '#c00');
+    } finally {
+      if (rerankerSaveBtn) rerankerSaveBtn.disabled = false;
+    }
+  };
+
+  const bindRerankerSettingsInputs = () => {
+    const modeInputs = Array.from(document.querySelectorAll('input[name="dpr-reranker-mode"]'));
+    modeInputs.forEach((input) => {
+      if (input._bound) return;
+      input._bound = true;
+      input.addEventListener('change', () => {
+        setRerankerCustomPanelVisible(input.value === 'enabled');
+        setRerankerMessage('', '#666');
+      });
+    });
+    rerankerSaveBtn = document.getElementById('dpr-reranker-save-btn');
+    rerankerMsgEl = document.getElementById('dpr-reranker-settings-msg');
+    if (rerankerSaveBtn && !rerankerSaveBtn._bound) {
+      rerankerSaveBtn._bound = true;
+      rerankerSaveBtn.addEventListener('click', saveRerankerSettings);
+    }
+  };
+
+  const setAdvancedConfigDialogVisible = (visible) => {
+    const overlay = document.getElementById('dpr-advanced-config-overlay');
+    if (!overlay) return;
+    if (visible) {
+      if (advancedConfigHideTimer) {
+        clearTimeout(advancedConfigHideTimer);
+        advancedConfigHideTimer = null;
+      }
+      overlay.classList.remove('secret-gate-hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          overlay.classList.add('show');
+        });
+      });
+      syncEmbeddingSettingsFields();
+      syncRerankerSettingsFields();
+      const closeButton = overlay.querySelector('[data-dpr-advanced-config-close]');
+      if (closeButton && typeof closeButton.focus === 'function') {
+        window.setTimeout(() => closeButton.focus(), 0);
+      }
+      return;
+    }
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (advancedConfigHideTimer) {
+      clearTimeout(advancedConfigHideTimer);
+    }
+    advancedConfigHideTimer = window.setTimeout(() => {
+      overlay.classList.add('secret-gate-hidden');
+      advancedConfigHideTimer = null;
+    }, 300);
+  };
+
+  const bindAdvancedConfigDialog = () => {
+    const openBtn = document.getElementById('dpr-open-advanced-config-btn');
+    const overlay = document.getElementById('dpr-advanced-config-overlay');
+    if (!openBtn || !overlay) return;
+    if (overlay.parentElement !== document.body) {
+      document.body.appendChild(overlay);
+    }
+
+    if (!openBtn._bound) {
+      openBtn._bound = true;
+      openBtn.addEventListener('click', () => setAdvancedConfigDialogVisible(true));
+    }
+    Array.from(overlay.querySelectorAll('[data-dpr-advanced-config-close]')).forEach((btn) => {
+      if (btn._bound) return;
+      btn._bound = true;
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setAdvancedConfigDialogVisible(false);
+      });
+    });
+    if (!overlay._bound) {
+      overlay._bound = true;
+      overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay) {
+          event.preventDefault();
+          event.stopPropagation();
+          setAdvancedConfigDialogVisible(false);
+        }
+      });
+      overlay.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+    }
+    if (!document._dprAdvancedConfigEscBound) {
+      document._dprAdvancedConfigEscBound = true;
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setAdvancedConfigDialogVisible(false);
+        }
+      });
+    }
+  };
+
 
   const sendEmailTest = () => {
     if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runWorkflowByKey !== 'function') {
@@ -1907,15 +2356,15 @@ window.SubscriptionsManager = (function () {
                   <h2>密钥配置</h2>
                   <p>密钥只通过加密向导和 GitHub Secrets 管理，此处不会展示明文。</p>
                 </div>
-                <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>
               </div>
               <div class="dpr-secret-settings-grid">
                 <div class="dpr-settings-card dpr-secret-card dpr-secret-card--hero">
                   <div class="dpr-secret-status-orb">🔐</div>
-                  <div>
+                  <div class="dpr-secret-hero-copy">
                     <h3>访问模式：<span id="dpr-settings-access-mode">未初始化</span></h3>
                     <p>完整权限可读写 config.yaml、触发 workflow，并启用大模型对话；游客模式仅支持阅读。</p>
                   </div>
+                  <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>
                 </div>
                 <div class="dpr-settings-card dpr-secret-info-card">
                   <span>GitHub Token</span>
@@ -1928,6 +2377,107 @@ window.SubscriptionsManager = (function () {
                 <div class="dpr-settings-card dpr-secret-info-card">
                   <span>聊天模型</span>
                   <strong>可复用工作流 API 或单独配置</strong>
+                </div>
+                <div class="dpr-settings-card dpr-secret-card dpr-advanced-config-entry-card">
+                  <div class="dpr-secret-status-orb dpr-advanced-config-orb">🚀</div>
+                  <div class="dpr-secret-hero-copy">
+                    <h3>高级配置</h3>
+                    <p>可选配置自建 Embedding 与 Reranker 服务；密钥只写入 GitHub Secrets，不回显明文。</p>
+                  </div>
+                  <button id="dpr-open-advanced-config-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开高级配置</button>
+                </div>
+                <div class="dpr-advanced-config-info-grid">
+                  <div class="dpr-settings-card dpr-secret-info-card dpr-advanced-config-info-card">
+                    <span>Embedding 服务</span>
+                    <strong>将论文与检索意图转成语义向量，是召回质量的基础</strong>
+                  </div>
+                  <div class="dpr-settings-card dpr-secret-info-card dpr-advanced-config-info-card">
+                    <span>Reranker 服务</span>
+                    <strong>对候选论文二次精排，提升最终推荐的相关性</strong>
+                  </div>
+                </div>
+              </div>
+              <div id="dpr-advanced-config-overlay" class="dpr-advanced-config-overlay secret-gate-hidden" role="dialog" aria-modal="true" aria-labelledby="dpr-advanced-config-title" aria-hidden="true">
+                <div class="dpr-advanced-config-modal">
+                  <div class="dpr-advanced-config-modal-top">
+                    <div class="dpr-advanced-config-title-card">
+                      <div class="dpr-advanced-config-title-icon">🚀</div>
+                      <div>
+                        <h3 id="dpr-advanced-config-title">高级配置（可选）</h3>
+                        <p>按需接入自定义 Embedding / Reranker 服务；运行时敏感值只保存到 GitHub Secrets。</p>
+                      </div>
+                    </div>
+                    <button class="dpr-advanced-config-close" type="button" data-dpr-advanced-config-close aria-label="关闭高级配置">×</button>
+                  </div>
+                  <div class="dpr-advanced-config-service-stack">
+                    <div class="dpr-settings-card dpr-secret-card dpr-embedding-settings-card">
+                      <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                        <div>
+                          <h3>Embedding 服务</h3>
+                          <p>选择向量编码方式。默认 embedding 使用项目预置服务；自定义 embedding 的 endpoint、模型和密钥只写入 GitHub Secrets。</p>
+                        </div>
+                        <span id="dpr-embedding-current-status" class="dpr-embedding-status-pill">默认 embedding</span>
+                      </div>
+                      <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Embedding 服务模式">
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-local" name="dpr-embedding-profile" type="radio" value="local" />
+                          <span><strong>本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5，CPU 执行，首次运行需下载模型）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-default" name="dpr-embedding-profile" type="radio" value="default_remote" checked />
+                          <span><strong>默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-custom" name="dpr-embedding-profile" type="radio" value="custom" />
+                          <span><strong>自定义 embedding</strong>（OpenAI-compatible embeddings 或 legacy /embed 服务）</span>
+                        </label>
+                      </div>
+                      <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
+                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
+                        <div class="dpr-settings-form-grid">
+                          <label class="chat-quick-run-row" for="dpr-embedding-provider-select"><span>接口协议</span><select id="dpr-embedding-provider-select" disabled><option value="openai" selected>OpenAI-compatible /v1/embeddings</option><option value="legacy">Legacy /embed</option></select></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-embedding-server.example.com/v1/embeddings" /></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-model-input"><span>模型名称</span><input id="dpr-embedding-model-input" type="text" autocomplete="off" disabled placeholder="BAAI/bge-small-en-v1.5" /></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
+                        </div>
+                      </div>
+                      <div class="dpr-embedding-save-row">
+                        <button id="dpr-embedding-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 embedding 设置</button>
+                      </div>
+                      <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">GitHub Secrets 是 write-only，保存后不会回显密钥明文。</div>
+                    </div>
+                    <div class="dpr-settings-card dpr-secret-card dpr-reranker-settings-card">
+                      <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                        <div>
+                          <h3>Reranker 服务</h3>
+                          <p>可启用自定义的 OpenAI-compatible rerank 接口；关闭时继续使用 RRF fallback。</p>
+                        </div>
+                        <span id="dpr-reranker-current-status" class="dpr-embedding-status-pill dpr-reranker-status-pill">RRF fallback</span>
+                      </div>
+                      <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Reranker 服务模式">
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-reranker-mode-disabled" name="dpr-reranker-mode" type="radio" value="disabled" checked />
+                          <span><strong>关闭 reranker</strong>（默认跳过 Step 3 /rerank，使用 BM25 + embedding + RRF）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-reranker-mode-enabled" name="dpr-reranker-mode" type="radio" value="enabled" />
+                          <span><strong>启用自定义 reranker</strong>（OpenAI/vLLM-compatible /v1/rerank）</span>
+                        </label>
+                      </div>
+                      <div id="dpr-reranker-custom-panel" class="dpr-embedding-custom-panel dpr-reranker-custom-panel" hidden>
+                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名和 API Key 只会加密写入 GitHub Secrets；保存后旧密钥不会回显。</p>
+                        <div class="dpr-settings-form-grid">
+                          <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-reranker-server.example.com/v1/rerank" /></label>
+                          <label class="chat-quick-run-row" for="dpr-reranker-model-input"><span>模型名称</span><input id="dpr-reranker-model-input" type="text" autocomplete="off" disabled placeholder="Qwen/Qwen3-Reranker-0.6B" /></label>
+                          <label class="chat-quick-run-row" for="dpr-reranker-api-key-input"><span>API Key</span><input id="dpr-reranker-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
+                        </div>
+                      </div>
+                      <div class="dpr-embedding-save-row">
+                        <button id="dpr-reranker-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 reranker 设置</button>
+                      </div>
+                      <div id="dpr-reranker-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">关闭时会写入 DPR_SKIP_RERANK=true；启用时会写入 reranker endpoint、模型与 API Key。</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -2581,6 +3131,9 @@ window.SubscriptionsManager = (function () {
     bindWindowInput('dpr-settings-days-window-input', 'days_window');
     bindWindowInput('dpr-settings-carryover-window-input', 'carryover_days');
     bindPeriodicReportInputs();
+    bindEmbeddingSettingsInputs();
+    bindRerankerSettingsInputs();
+    bindAdvancedConfigDialog();
 
     const reloadConfigBtn = document.getElementById('dpr-settings-reload-config-btn');
     if (reloadConfigBtn && !reloadConfigBtn._bound) {
@@ -2622,7 +3175,13 @@ window.SubscriptionsManager = (function () {
     emailSaveBtn = document.getElementById('dpr-email-save-btn');
     emailTestBtn = document.getElementById('dpr-email-test-btn');
     emailMsgEl = document.getElementById('dpr-email-settings-msg');
+    embeddingSaveBtn = document.getElementById('dpr-embedding-save-btn');
+    embeddingMsgEl = document.getElementById('dpr-embedding-settings-msg');
+    rerankerSaveBtn = document.getElementById('dpr-reranker-save-btn');
+    rerankerMsgEl = document.getElementById('dpr-reranker-settings-msg');
     syncEmailSettingsFields();
+    syncEmbeddingSettingsFields();
+    syncRerankerSettingsFields();
     [
       quickRunTodayBtn,
       quickRun10dBtn,
@@ -2818,6 +3377,16 @@ window.SubscriptionsManager = (function () {
       normalizeDailyReports: (value) => normalizeDailyReports(cloneDeep(value || {})),
       resolveDailyReports: (config) => resolveDailyReports(cloneDeep(config || {})),
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
+      normalizeEmbeddingProfile: (value) => normalizeEmbeddingProfile(value),
+      normalizeEmbeddingProvider: (value) => normalizeEmbeddingProvider(value),
+      normalizeEmbeddingFallback: (value) => normalizeEmbeddingFallback(value),
+      normalizeEmbeddingTimeout: (value) => normalizeEmbeddingTimeout(value),
+      resolveEmbeddingServiceState: (secret) => resolveEmbeddingServiceState(secret),
+      buildEmbeddingSecretsPayload: (settings) => buildEmbeddingSecretsPayload(settings),
+      normalizeRerankerProvider: (value) => normalizeRerankerProvider(value),
+      normalizeRerankerEnabled: (value) => normalizeRerankerEnabled(value),
+      resolveRerankerServiceState: (secret) => resolveRerankerServiceState(secret),
+      buildRerankerSecretsPayload: (settings) => buildRerankerSecretsPayload(settings),
       normalizeResearchDirections: (value) => normalizeResearchDirections(value),
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
       normalizePeriodicReports: (value) => normalizePeriodicReports(cloneDeep(value || {})),

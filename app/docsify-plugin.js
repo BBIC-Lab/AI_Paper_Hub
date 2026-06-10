@@ -104,6 +104,7 @@ window.$docsify = {
 
       const defaultAuthors = ['Daily Paper Reader Team', 'Docsify Renderer'];
 
+
       const stripSidebarEmoji = (value) =>
         String(value || '')
           .replace(/^(?:[\s\uFE0F\u200D]*(?:[\u2600-\u27BF]|[\u{1F300}-\u{1FAFF}])\uFE0F?\s*)+/u, '')
