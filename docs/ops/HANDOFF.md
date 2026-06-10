@@ -1,8 +1,8 @@
-# 私有论文工作站部署前审计交接
+# 私有论文工作站初始化交接
 
-审计时间：2026-06-10 20:38 HKT
+审计时间：2026-06-10 21:12 HKT
 主机：spark-d326
-范围：仅部署前审计；未安装 runner，未改 workflow，未启动/停止模型服务，未改防火墙，未推送代码。
+范围：私有下游工作站仓库初始化与同步边界配置；未安装 runner，未改 workflow，未启动/停止模型服务，未改防火墙，未推送代码。
 敏感信息规则：本文件不记录 Token、API Key、凭据值；后续也不要把密钥写入本文件、终端日志或 Git。
 
 ## 环境结论
@@ -20,16 +20,30 @@
 ### `/home/jy/AI_Daily_Paper_Reader`
 
 - 存在且是 Git 仓库。
-- 当前分支：`codex/embedding-adapter-p0`，跟踪 `origin/codex/embedding-adapter-p0`。
+- 当前分支：`main`，工作区干净，状态为 `main...origin/main [ahead 10]`。
 - 远端（已脱敏）：
   - `origin`: `git@github.com:Jurio0304/AI_Daily_Paper_Reader.git`
   - `private`: `git@github.com:Jurio0304/AI_Daily_Paper_Reader_Private.git`
-- 审计前工作区非干净：73 个 modified、4 个 untracked；未重置、未清理、未提交。
+- 本次未修改公开上游工作目录或远端配置，未 push。
 
 ### `/home/jy/BBIC_AI_Paper_Hub`
 
-- 目录不存在，因此无法列出 remote、分支或 status。
-- 后续部署前需要确认私有下游仓库地址与初始化方式。
+- 已从本机公开上游工作目录 `/home/jy/AI_Daily_Paper_Reader` 初始化为 Git 工作目录。
+- 当前分支：`main`，跟踪 `upstream/main`，状态为 `main...upstream/main [ahead 10]`。
+- 远端：
+  - `upstream`: `git@github.com:Jurio0304/AI_Daily_Paper_Reader.git`，fetch only；push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`。
+  - `origin`: `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git`，作为私有下游推送目标。
+- 本机 Git 保护：
+  - `branch.main.remote=upstream`，默认从公开上游拉取。
+  - `branch.main.pushRemote=origin`、`remote.pushDefault=origin`、`push.default=current`，默认只向私有下游推送。
+  - `.git/hooks/pre-push` 阻止向非 `origin` 远端推送，并阻止直接推送到 `AI_Daily_Paper_Reader`。
+- 已尝试只读检查 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git`，返回 `Repository not found`；首次 push 前需确认私有仓库已创建且当前 SSH key 有权限。
+
+## 下游生成结果边界
+
+- 可提交到私有下游、但不得同步回公开上游：`docs/YYYYMM/DD/*.md`、`docs/README.md`、`docs/_sidebar.md`、`docs/reports/**/README.md`、`docs/reports/**/report.meta.json`、被页面引用的 `docs/assets/figures/**`。
+- 不得提交到公开上游；默认也不应进入私有下游 Git 历史：`.env*`、`secret.private`、`secrets/`、凭据文件、`archive/**`（除 `archive/.gitkeep`）、`hf_cache/`、日志、缓存、临时文件、`docs/assets/local_pdfs/**`、`docs/local-pdf/**`、`paper_reader/**`、生成全文/原始 PDF/本地数据库。
+- 详细日常步骤见 `docs/ops/PRIVATE_WORKSTATION.md`。
 
 ## 本地模型服务
 
@@ -92,16 +106,16 @@
 
 ## 风险点
 
-- `/home/jy/BBIC_AI_Paper_Hub` 尚不存在；部署 runner 前需要先明确私有仓库 clone 目标。
-- 当前工作区已有大量未提交改动，涉及 workflow、源码、docs 和 tests；部署前应先由维护者确认这些改动是否预期。
-- 当前分支不是 `main`，而是 `codex/embedding-adapter-p0`；后续同步/部署需要确认目标分支。
+- 私有下游远端地址按 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git` 配置，但只读探测返回 `Repository not found`；不要 push，直到仓库地址/权限经维护者确认。
+- 下游工作目录基于本机公开上游 HEAD 初始化；该 HEAD 比 `upstream/main` 超前 10 个提交。
+- 个性化 `config.yaml` / `docs/config.yaml` 若包含私有订阅或服务参数，不得同步回公开上游；API Key 仍必须走环境变量、`.env`、`secret.private` 或 GitHub Secrets。
 - 当前用户无法无交互 sudo；安装 runner、写 systemd unit 或调整服务时可能需要手工 sudo。
 - `python` 命令缺失；脚本应优先使用 `python3` 或项目指定运行器。
 - 健康端点仅返回 HTTP 200 且空响应体；只能确认端口和 HTTP 层存活，不能确认模型权重或推理质量。
 
 ## 需要手工提供的信息
 
-- 私有 GitHub 仓库地址：用于 `/home/jy/BBIC_AI_Paper_Hub` 的 clone/remote。
+- 私有 GitHub 仓库地址和权限确认：当前暂按 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git` 配置。
 - runner 绑定目标：私有仓库级、组织级或 enterprise 级，以及期望 runner 名称和 labels。
 - 是否允许后续用 sudo 安装/注册 runner，以及 runner 以哪个 Linux 用户运行。
 - GitHub runner 注册 token：仅在安装时通过安全交互/环境注入，不写入 Git、不写入交接文件、不打印。
@@ -110,4 +124,8 @@
 
 ## 本次修改
 
-- 新增非敏感交接文件：`docs/ops/HANDOFF.md`。
+- 初始化私有下游工作目录：`/home/jy/BBIC_AI_Paper_Hub`。
+- 配置 `upstream` / `origin` 远端、默认拉取/推送策略和本机 `pre-push` 误推保护。
+- 更新下游 `.gitignore`，排除运行态、缓存、日志、凭据、本地上传、全文/原始 PDF 等内容。
+- 新增非敏感边界说明：`docs/ops/PRIVATE_WORKSTATION.md`。
+- 更新本交接文件：`docs/ops/HANDOFF.md`。

@@ -18,23 +18,58 @@ chat.db-wal
 app.log
 *.log
 
-# 本地环境配置
+# 本地环境配置 / 凭据
 .env
+.env.*
+!.env.example
 secret.private
+*.secret
+*.token
+*.key
+*.pem
+credentials*.json
+*credentials*.json
+secrets/
 
-# 运行生成的论文/日报产物
-# *.pdf
-# archive/*
-# !archive/.gitkeep
-# docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/
-# docs/assets/figures/
-# docs/assets/local_pdfs/
-# docs/local-pdf/
-# paper_reader/
+# 私有工作站运行态边界
+# 允许提交到私有下游的生成结果：
+# - docs/YYYYMM/DD/*.md、docs/README.md、docs/_sidebar.md
+# - docs/reports/**/README.md、docs/reports/**/report.meta.json
+# - docs/assets/figures/**（仅当私有日报页面引用）
+# 不提交抓取/排序中间态、全文抽取、原始 PDF、运行状态和本地上传。
+archive/*
+!archive/.gitkeep
+paper_reader/
+trash/
+runtime/
+runs/
+state/
+logs/
+cache/
+.cache/
+.ruff_cache/
+.mypy_cache/
+docs/assets/local_pdfs/
+docs/local-pdf/
+docs/reader-db/*
+!docs/reader-db/*.enc.json
+docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/**/*.txt
+docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/**/*.json
+docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/**/*.pdf
+docs/[0-9][0-9][0-9][0-9][0-9][0-9]*/**/*.html
+*.pdf
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
 
 # Codex / local agent state
 .codex/
 hf_cache/
+actions-runner/
+_work/
+_diag/
 
 # 临时/测试文件
 test.pdf
@@ -44,7 +79,6 @@ tmp_test_cases/
 .pytest_cache/
 
 # Tencent Cloud EdgeOne
-.env
 .edgeone/*
 !.edgeone/project.json
 .tef_dist/*
