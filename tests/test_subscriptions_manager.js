@@ -335,9 +335,13 @@ function testEmbeddingSettingsUiSourceMatchesContract() {
   assert.ok(source.includes('value="default_remote" checked'));
   assert.ok(source.includes('默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）'));
   assert.ok(source.includes('本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5'));
+  assert.ok(source.includes('自定义 embedding</strong>（OpenAI-compatible embeddings 或 legacy /embed 服务）'));
   assert.ok(source.includes('自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets'));
   assert.ok(source.includes("setEmbeddingCustomPanelVisible(profile === 'custom')"));
   assert.ok(source.includes("setEmbeddingCustomPanelVisible(normalizeEmbeddingProfile(input.value) === 'custom')"));
+  assert.ok(source.includes('id="dpr-open-advanced-config-btn"'));
+  assert.ok(source.includes('id="dpr-advanced-config-title">高级配置（可选）</h3>'));
+  assert.ok(source.includes('id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>'));
   assert.ok(source.includes('id="dpr-embedding-provider-select"'));
   assert.ok(source.includes('id="dpr-embedding-endpoint-input"'));
   assert.ok(source.includes('id="dpr-embedding-model-input"'));
@@ -350,14 +354,31 @@ function testEmbeddingSettingsUiSourceMatchesContract() {
   assert.ok(source.includes('id="dpr-reranker-endpoint-input"'));
   assert.ok(source.includes('id="dpr-reranker-model-input"'));
   assert.ok(source.includes('id="dpr-reranker-api-key-input"'));
+  assert.ok(source.includes('可启用自定义的 OpenAI-compatible rerank 接口'));
   assert.ok(source.includes('DPR_RERANK_ENDPOINT'));
   assert.ok(source.includes('DPR_SKIP_RERANK'));
+  assert.equal(source.includes('id="dpr-embedding-profile-advanced"'), false);
+  assert.equal(source.includes('高级 embedding'), false);
+  assert.equal(source.includes('自定义服务器</strong>'), false);
   assert.equal(source.includes('dpr-embedding-timeout-input'), false);
   assert.equal(source.includes('dpr-embedding-fallback-select'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_URL'), false);
   assert.equal(source.includes('DPR_EMBED_DEFAULT_API_KEY'), false);
   assert.ok(css.includes('.dpr-embedding-custom-panel[hidden]'));
   assert.ok(css.includes('.dpr-reranker-custom-panel[hidden]'));
+  assert.ok(source.includes('class="dpr-advanced-config-overlay secret-gate-hidden"'));
+  assert.ok(source.includes('document.body.appendChild(overlay)'));
+  assert.ok(source.includes("overlay.classList.remove('secret-gate-hidden')"));
+  assert.ok(source.includes("overlay.classList.add('show')"));
+  assert.ok(source.includes("overlay.addEventListener('mousedown'"));
+  assert.ok(css.includes('.dpr-advanced-config-overlay.show'));
+  assert.ok(css.includes('.dpr-advanced-config-overlay.show .dpr-advanced-config-modal'));
+  assert.ok(css.includes('.dpr-advanced-config-overlay .dpr-settings-primary-btn'));
+  assert.ok(css.includes('.dpr-advanced-config-overlay .dpr-embedding-profile-option'));
+  assert.ok(css.includes('.dpr-advanced-config-overlay .chat-quick-run-row input'));
+  assert.ok(css.includes('backdrop-filter: blur(14px) saturate(1.08);'));
+  assert.ok(css.includes('--dpr-settings-text: #172033;'));
+  assert.ok(css.includes('grid-template-columns: minmax(0, 1fr);'));
   assert.ok(css.includes('display: none;'));
 }
 

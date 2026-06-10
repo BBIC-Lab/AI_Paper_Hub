@@ -106,6 +106,7 @@ window.SubscriptionsManager = (function () {
   let embeddingMsgEl = null;
   let rerankerSaveBtn = null;
   let rerankerMsgEl = null;
+  let advancedConfigHideTimer = null;
   let researchSaveBtn = null;
   let researchMsgEl = null;
   let settingsDirtyBadge = null;
@@ -1421,7 +1422,6 @@ window.SubscriptionsManager = (function () {
       const labels = {
         local: '本地 embedding',
         default_remote: '默认 embedding',
-        advanced: '高级 embedding（待开放）',
         custom: state.hasCustomCredentials
           ? `自定义 embedding（${state.provider === 'legacy' ? 'legacy /embed' : 'OpenAI'} 已配置）`
           : '自定义 embedding（未配置）',
@@ -1619,6 +1619,84 @@ window.SubscriptionsManager = (function () {
     if (rerankerSaveBtn && !rerankerSaveBtn._bound) {
       rerankerSaveBtn._bound = true;
       rerankerSaveBtn.addEventListener('click', saveRerankerSettings);
+    }
+  };
+
+  const setAdvancedConfigDialogVisible = (visible) => {
+    const overlay = document.getElementById('dpr-advanced-config-overlay');
+    if (!overlay) return;
+    if (visible) {
+      if (advancedConfigHideTimer) {
+        clearTimeout(advancedConfigHideTimer);
+        advancedConfigHideTimer = null;
+      }
+      overlay.classList.remove('secret-gate-hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          overlay.classList.add('show');
+        });
+      });
+      syncEmbeddingSettingsFields();
+      syncRerankerSettingsFields();
+      const closeButton = overlay.querySelector('[data-dpr-advanced-config-close]');
+      if (closeButton && typeof closeButton.focus === 'function') {
+        window.setTimeout(() => closeButton.focus(), 0);
+      }
+      return;
+    }
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (advancedConfigHideTimer) {
+      clearTimeout(advancedConfigHideTimer);
+    }
+    advancedConfigHideTimer = window.setTimeout(() => {
+      overlay.classList.add('secret-gate-hidden');
+      advancedConfigHideTimer = null;
+    }, 300);
+  };
+
+  const bindAdvancedConfigDialog = () => {
+    const openBtn = document.getElementById('dpr-open-advanced-config-btn');
+    const overlay = document.getElementById('dpr-advanced-config-overlay');
+    if (!openBtn || !overlay) return;
+    if (overlay.parentElement !== document.body) {
+      document.body.appendChild(overlay);
+    }
+
+    if (!openBtn._bound) {
+      openBtn._bound = true;
+      openBtn.addEventListener('click', () => setAdvancedConfigDialogVisible(true));
+    }
+    Array.from(overlay.querySelectorAll('[data-dpr-advanced-config-close]')).forEach((btn) => {
+      if (btn._bound) return;
+      btn._bound = true;
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setAdvancedConfigDialogVisible(false);
+      });
+    });
+    if (!overlay._bound) {
+      overlay._bound = true;
+      overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay) {
+          event.preventDefault();
+          event.stopPropagation();
+          setAdvancedConfigDialogVisible(false);
+        }
+      });
+      overlay.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+    }
+    if (!document._dprAdvancedConfigEscBound) {
+      document._dprAdvancedConfigEscBound = true;
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setAdvancedConfigDialogVisible(false);
+        }
+      });
     }
   };
 
@@ -2278,15 +2356,15 @@ window.SubscriptionsManager = (function () {
                   <h2>密钥配置</h2>
                   <p>密钥只通过加密向导和 GitHub Secrets 管理，此处不会展示明文。</p>
                 </div>
-                <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>
               </div>
               <div class="dpr-secret-settings-grid">
                 <div class="dpr-settings-card dpr-secret-card dpr-secret-card--hero">
                   <div class="dpr-secret-status-orb">🔐</div>
-                  <div>
+                  <div class="dpr-secret-hero-copy">
                     <h3>访问模式：<span id="dpr-settings-access-mode">未初始化</span></h3>
                     <p>完整权限可读写 config.yaml、触发 workflow，并启用大模型对话；游客模式仅支持阅读。</p>
                   </div>
+                  <button id="arxiv-open-secret-setup-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开密钥配置</button>
                 </div>
                 <div class="dpr-settings-card dpr-secret-info-card">
                   <span>GitHub Token</span>
@@ -2300,76 +2378,96 @@ window.SubscriptionsManager = (function () {
                   <span>聊天模型</span>
                   <strong>可复用工作流 API 或单独配置</strong>
                 </div>
-                <div class="dpr-settings-card dpr-secret-card dpr-embedding-settings-card">
-                  <div class="dpr-settings-card-head dpr-settings-card-head-compact">
-                    <div>
-                      <h3>Embedding 服务</h3>
-                      <p>选择向量编码方式。默认 embedding 使用项目预置服务；自定义服务器的 endpoint、模型和密钥只写入 GitHub Secrets。</p>
-                    </div>
-                    <span id="dpr-embedding-current-status" class="dpr-embedding-status-pill">默认 embedding</span>
+                <div class="dpr-settings-card dpr-secret-card dpr-advanced-config-entry-card">
+                  <div class="dpr-secret-status-orb dpr-advanced-config-orb">🚀</div>
+                  <div class="dpr-secret-hero-copy">
+                    <h3>高级配置</h3>
+                    <p>可选配置自建 Embedding 与 Reranker 服务；密钥只写入 GitHub Secrets，不回显明文。</p>
                   </div>
-                  <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Embedding 服务模式">
-                    <label class="dpr-embedding-profile-option">
-                      <input id="dpr-embedding-profile-local" name="dpr-embedding-profile" type="radio" value="local" />
-                      <span><strong>本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5，CPU 执行，首次运行需下载模型）</span>
-                    </label>
-                    <label class="dpr-embedding-profile-option">
-                      <input id="dpr-embedding-profile-default" name="dpr-embedding-profile" type="radio" value="default_remote" checked />
-                      <span><strong>默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）</span>
-                    </label>
-                    <label class="dpr-embedding-profile-option is-disabled">
-                      <input id="dpr-embedding-profile-advanced" name="dpr-embedding-profile" type="radio" value="advanced" disabled />
-                      <span><strong>高级 embedding</strong>（自建服务预设，待开放，暂不填写模型）</span>
-                    </label>
-                    <label class="dpr-embedding-profile-option">
-                      <input id="dpr-embedding-profile-custom" name="dpr-embedding-profile" type="radio" value="custom" />
-                      <span><strong>自定义服务器</strong>（OpenAI-compatible embeddings 或 legacy /embed 服务）</span>
-                    </label>
-                  </div>
-                  <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
-                    <p class="dpr-embedding-safe-note">自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
-                    <div class="dpr-settings-form-grid">
-                      <label class="chat-quick-run-row" for="dpr-embedding-provider-select"><span>接口协议</span><select id="dpr-embedding-provider-select" disabled><option value="openai" selected>OpenAI-compatible /v1/embeddings</option><option value="legacy">Legacy /embed</option></select></label>
-                      <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-embedding-server.example.com/v1/embeddings" /></label>
-                      <label class="chat-quick-run-row" for="dpr-embedding-model-input"><span>模型名称</span><input id="dpr-embedding-model-input" type="text" autocomplete="off" disabled placeholder="BAAI/bge-small-en-v1.5" /></label>
-                      <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
-                    </div>
-                  </div>
-                  <div class="dpr-embedding-save-row">
-                    <button id="dpr-embedding-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 embedding 设置</button>
-                  </div>
-                  <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">GitHub Secrets 是 write-only，保存后不会回显密钥明文。</div>
+                  <button id="dpr-open-advanced-config-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开高级配置</button>
                 </div>
-                <div class="dpr-settings-card dpr-secret-card dpr-reranker-settings-card">
-                  <div class="dpr-settings-card-head dpr-settings-card-head-compact">
-                    <div>
-                      <h3>Reranker 服务</h3>
-                      <p>可启用当前服务器上的 OpenAI-compatible rerank 接口；关闭时继续使用 RRF fallback。</p>
+              </div>
+              <div id="dpr-advanced-config-overlay" class="dpr-advanced-config-overlay secret-gate-hidden" role="dialog" aria-modal="true" aria-labelledby="dpr-advanced-config-title" aria-hidden="true">
+                <div class="dpr-advanced-config-modal">
+                  <div class="dpr-advanced-config-modal-top">
+                    <div class="dpr-advanced-config-title-card">
+                      <div class="dpr-advanced-config-title-icon">🚀</div>
+                      <div>
+                        <h3 id="dpr-advanced-config-title">高级配置（可选）</h3>
+                        <p>按需接入自定义 Embedding / Reranker 服务；运行时敏感值只保存到 GitHub Secrets。</p>
+                      </div>
                     </div>
-                    <span id="dpr-reranker-current-status" class="dpr-embedding-status-pill dpr-reranker-status-pill">RRF fallback</span>
+                    <button class="dpr-advanced-config-close" type="button" data-dpr-advanced-config-close aria-label="关闭高级配置">×</button>
                   </div>
-                  <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Reranker 服务模式">
-                    <label class="dpr-embedding-profile-option">
-                      <input id="dpr-reranker-mode-disabled" name="dpr-reranker-mode" type="radio" value="disabled" checked />
-                      <span><strong>关闭 reranker</strong>（默认跳过 Step 3 /rerank，使用 BM25 + embedding + RRF）</span>
-                    </label>
-                    <label class="dpr-embedding-profile-option">
-                      <input id="dpr-reranker-mode-enabled" name="dpr-reranker-mode" type="radio" value="enabled" />
-                      <span><strong>启用自定义 reranker</strong>（OpenAI/vLLM-compatible /v1/rerank）</span>
-                    </label>
-                  </div>
-                  <div id="dpr-reranker-custom-panel" class="dpr-embedding-custom-panel dpr-reranker-custom-panel" hidden>
-                    <p class="dpr-embedding-safe-note">Reranker endpoint、模型名和 API Key 只会加密写入 GitHub Secrets；保存后旧密钥不会回显。</p>
-                    <div class="dpr-settings-form-grid">
-                      <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-reranker-server.example.com/v1/rerank" /></label>
-                      <label class="chat-quick-run-row" for="dpr-reranker-model-input"><span>模型名称</span><input id="dpr-reranker-model-input" type="text" autocomplete="off" disabled placeholder="Qwen/Qwen3-Reranker-0.6B" /></label>
-                      <label class="chat-quick-run-row" for="dpr-reranker-api-key-input"><span>API Key</span><input id="dpr-reranker-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
+                  <div class="dpr-advanced-config-service-stack">
+                    <div class="dpr-settings-card dpr-secret-card dpr-embedding-settings-card">
+                      <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                        <div>
+                          <h3>Embedding 服务</h3>
+                          <p>选择向量编码方式。默认 embedding 使用项目预置服务；自定义 embedding 的 endpoint、模型和密钥只写入 GitHub Secrets。</p>
+                        </div>
+                        <span id="dpr-embedding-current-status" class="dpr-embedding-status-pill">默认 embedding</span>
+                      </div>
+                      <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Embedding 服务模式">
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-local" name="dpr-embedding-profile" type="radio" value="local" />
+                          <span><strong>本地 embedding</strong>（SentenceTransformers 本地加载 BAAI/bge-small-en-v1.5，CPU 执行，首次运行需下载模型）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-default" name="dpr-embedding-profile" type="radio" value="default_remote" checked />
+                          <span><strong>默认 embedding</strong>（BAAI/bge-small-en-v1.5，项目预置服务）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-embedding-profile-custom" name="dpr-embedding-profile" type="radio" value="custom" />
+                          <span><strong>自定义 embedding</strong>（OpenAI-compatible embeddings 或 legacy /embed 服务）</span>
+                        </label>
+                      </div>
+                      <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
+                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
+                        <div class="dpr-settings-form-grid">
+                          <label class="chat-quick-run-row" for="dpr-embedding-provider-select"><span>接口协议</span><select id="dpr-embedding-provider-select" disabled><option value="openai" selected>OpenAI-compatible /v1/embeddings</option><option value="legacy">Legacy /embed</option></select></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-embedding-server.example.com/v1/embeddings" /></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-model-input"><span>模型名称</span><input id="dpr-embedding-model-input" type="text" autocomplete="off" disabled placeholder="BAAI/bge-small-en-v1.5" /></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
+                        </div>
+                      </div>
+                      <div class="dpr-embedding-save-row">
+                        <button id="dpr-embedding-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 embedding 设置</button>
+                      </div>
+                      <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">GitHub Secrets 是 write-only，保存后不会回显密钥明文。</div>
+                    </div>
+                    <div class="dpr-settings-card dpr-secret-card dpr-reranker-settings-card">
+                      <div class="dpr-settings-card-head dpr-settings-card-head-compact">
+                        <div>
+                          <h3>Reranker 服务</h3>
+                          <p>可启用自定义的 OpenAI-compatible rerank 接口；关闭时继续使用 RRF fallback。</p>
+                        </div>
+                        <span id="dpr-reranker-current-status" class="dpr-embedding-status-pill dpr-reranker-status-pill">RRF fallback</span>
+                      </div>
+                      <div class="dpr-embedding-profile-group" role="radiogroup" aria-label="Reranker 服务模式">
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-reranker-mode-disabled" name="dpr-reranker-mode" type="radio" value="disabled" checked />
+                          <span><strong>关闭 reranker</strong>（默认跳过 Step 3 /rerank，使用 BM25 + embedding + RRF）</span>
+                        </label>
+                        <label class="dpr-embedding-profile-option">
+                          <input id="dpr-reranker-mode-enabled" name="dpr-reranker-mode" type="radio" value="enabled" />
+                          <span><strong>启用自定义 reranker</strong>（OpenAI/vLLM-compatible /v1/rerank）</span>
+                        </label>
+                      </div>
+                      <div id="dpr-reranker-custom-panel" class="dpr-embedding-custom-panel dpr-reranker-custom-panel" hidden>
+                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名和 API Key 只会加密写入 GitHub Secrets；保存后旧密钥不会回显。</p>
+                        <div class="dpr-settings-form-grid">
+                          <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-reranker-server.example.com/v1/rerank" /></label>
+                          <label class="chat-quick-run-row" for="dpr-reranker-model-input"><span>模型名称</span><input id="dpr-reranker-model-input" type="text" autocomplete="off" disabled placeholder="Qwen/Qwen3-Reranker-0.6B" /></label>
+                          <label class="chat-quick-run-row" for="dpr-reranker-api-key-input"><span>API Key</span><input id="dpr-reranker-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
+                        </div>
+                      </div>
+                      <div class="dpr-embedding-save-row">
+                        <button id="dpr-reranker-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 reranker 设置</button>
+                      </div>
+                      <div id="dpr-reranker-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">关闭时会写入 DPR_SKIP_RERANK=true；启用时会写入 reranker endpoint、模型与 API Key。</div>
                     </div>
                   </div>
-                  <div class="dpr-embedding-save-row">
-                    <button id="dpr-reranker-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 reranker 设置</button>
-                  </div>
-                  <div id="dpr-reranker-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">关闭时会写入 DPR_SKIP_RERANK=true；启用时会写入 reranker endpoint、模型与 API Key。</div>
                 </div>
               </div>
             </section>
@@ -3025,6 +3123,7 @@ window.SubscriptionsManager = (function () {
     bindPeriodicReportInputs();
     bindEmbeddingSettingsInputs();
     bindRerankerSettingsInputs();
+    bindAdvancedConfigDialog();
 
     const reloadConfigBtn = document.getElementById('dpr-settings-reload-config-btn');
     if (reloadConfigBtn && !reloadConfigBtn._bound) {
