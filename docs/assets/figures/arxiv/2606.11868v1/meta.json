@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-001.webp",
+      "caption": "Figure 1: Spectral Under-utilization (top) and MemNovo’s correction (bottom).",
+      "page": 1,
+      "index": 1,
+      "width": 502,
+      "height": 419
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-006.webp",
+      "caption": "Figure 2: Overview of the MemNovo framework. The system comprises three stages. (Left) The tandem mass spectrum is processed by a frozen encoder to yield latent features Senc. (Middle) These features are cached in a persistent Memory Bank (M). During the final layer of the frozen decoder, the Injection Mechanism performs projection-free memory retrieval via cross-attention and injects the spectral signal through an ultra-conservative residual connection (scaled by 𝛼). (Right) The enhanced representation guides the Beam Search to produce the final peptide sequence, correcting potential prediction errors.",
+      "page": 4,
+      "index": 6,
+      "width": 1056,
+      "height": 432
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-002.webp",
+      "caption": "Figure 3: Diagnostic results from the Sensitivity Scaling Framework. The curves illustrate model performance sensitivity to variations in feature magnitude for spectrum and peptide inputs. The large sensitivity gap between the two input sources validates the existence of spectral underutilization.",
+      "page": 6,
+      "index": 2,
+      "width": 487,
+      "height": 599
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-005.webp",
+      "caption": "Figure 4: Visualization of three representative cases where MemNovo corrects erroneous baseline predictions from InstaNovo. Each panel compares the ground truth (GT) sequence with the baseline prediction, highlighting the conflict region. In all three cases, the baseline satisfies the precursor mass constraint but fails to distinguish fine-grained spectral details due to sensitivity imbalance. MemNovo resolves these ambiguities by retrieving diagnostic peaks from the spectral memory.",
+      "page": 8,
+      "index": 5,
+      "width": 1050,
+      "height": 215
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-003.webp",
+      "caption": "Table 7: Case type distribution for InstaNovo + MemNovo.",
+      "page": 10,
+      "index": 3,
+      "width": 506,
+      "height": 251
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11868v1/fig-004.webp",
+      "caption": "Table 9: Dataset statistics and sequence-length analysis.",
+      "page": 10,
+      "index": 4,
+      "width": 506,
+      "height": 238
+    }
+  ]
+}

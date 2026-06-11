@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-003.webp",
+      "caption": "Figure 1. States and actions have the same relationship that pixel coordinates and RGB values have in implicit neural representations (INRs) for vision. We find that this improves on previous work that relies on naive state-action history conditioning by concatenation.",
+      "page": 2,
+      "index": 3,
+      "width": 813,
+      "height": 475
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-007.webp",
+      "caption": "Figure 3. Ant sequences from Minari ((Younis et al., 2024)). We construct out-of-distribution (OOD) sequences by sampling stateaction pairs based on action similarity across policies, such as simple, medium, and expert. Each panel shows two frames from a sequence. In the OOD split, action-similar samples can correspond to visually distinct or unrecoverable Ant states, making policy identity difficult to infer from state marginals alone.",
+      "page": 3,
+      "index": 7,
+      "width": 479,
+      "height": 310
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-010.webp",
+      "caption": "Figure 4. Out-of-distribution policy representations on Hopper at increasing data scales. Behavioral INR remains visually separable at larger Hopper scales, while amortized history-conditioned representations degrade, matching the probe-accuracy trend in Table 3.",
+      "page": 4,
+      "index": 10,
+      "width": 492,
+      "height": 380
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-001.webp",
+      "caption": "Table 5. Real-world OOD definitions. These domains are less controlled than synthetic GRF or checkpoint-generated MuJoCo, but they match the motivating setting: heterogeneous behavioral data without training-time policy labels.",
+      "page": 6,
+      "index": 1,
+      "width": 494,
+      "height": 377
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-004.webp",
+      "caption": "Table 6. All-policy SPECIALIZATION results on real-world domains. Values are mean probe and kNN-1 accuracy over seeds. These datasets differ in shortcut structure: FastF1 is the clearest continuous state-action scaling setting, DROID uses compact lowdimensional features where action shortcuts are informative, and Lichess is a symbolic discrete-action domain with repeated contexts.",
+      "page": 7,
+      "index": 4,
+      "width": 483,
+      "height": 482
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-009.webp",
+      "caption": "Figure 6. Chess sequences from the Lichess dataset. PGN files store full chess games, while UCI denotes the standardized move notation used as the action label, e.g., e2e4. We construct OOD sequences by keeping only the tracked player’s moves, representing each state as the board before that move, and holding out shared board-state regions identified by cross-player nearest-neighbor overlap. This tests whether the representation identifies a player from state-conditioned move choice rather than openings or board-state shortcuts.",
+      "page": 13,
+      "index": 9,
+      "width": 987,
+      "height": 553
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-008.webp",
+      "caption": "Table 9. DM Lab Seek-Avoid full split results. Values are means over seeds. Higher is better for P, K, and action accuracy; lower is better for NLL. Diffusion NLL is omitted because likelihood is not defined for that sampler.",
+      "page": 13,
+      "index": 8,
+      "width": 513,
+      "height": 411
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-006.webp",
+      "caption": "Figure 7. Our embeddings hold multidimensional information; in Formula One, the policy is defined not only by the player but by the track. In fact, there exist more shortcuts to extracting track information than player identity, as shown here.",
+      "page": 14,
+      "index": 6,
+      "width": 1017,
+      "height": 519
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-005.webp",
+      "caption": "Table 10. Full real-world all-policy representation results from the aggregate table. Each cell reports the mean over seeds. P is linear-probe accuracy and K is kNN-1 accuracy. Higher is better.",
+      "page": 14,
+      "index": 5,
+      "width": 1017,
+      "height": 433
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12200v1/fig-002.webp",
+      "caption": "Table 11. GENERALIZATION summary across the main datasets. Values are mean ± standard deviation over seeds. P is linear-probe accuracy; K is kNN-1 accuracy; NMSE and MedSE are continuous-action prediction losses; Acc. and NLL are discrete-action metrics. Missing metrics are not defined for that dataset in the aggregate.",
+      "page": 15,
+      "index": 2,
+      "width": 1100,
+      "height": 491
+    }
+  ]
+}

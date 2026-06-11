@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-004.webp",
+      "caption": "Figure 1: Overview of miniReranker. Left: the proposed Vision-first reformulation enables reusable visual precaching for both vision-as-document and vision-as-query settings. Right: miniReranker further improves efficiency through three complementary compression strategies: (1) Early Exit, which reduces depth-wise computation by terminating inference at intermediate layers; (2) Interaction Band, which restricts cross-segment attention to a narrow range of effective layers; and (3) Token Pruning, which removes redundant visual tokens to reduce sequence length and interaction cost.",
+      "page": 3,
+      "index": 4,
+      "width": 950,
+      "height": 508
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-008.webp",
+      "caption": "Figure 2: Layer-wise Logit Probing reveals substantial depth-wise redundancy in multimodal reranking, while Cross-segment Interaction Analysis shows that effective cross-segment information exchange is concentrated within a narrow range of intermediate layers.",
+      "page": 5,
+      "index": 8,
+      "width": 944,
+      "height": 213
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-003.webp",
+      "caption": "Table 3: Main results on MMEB-v2 multimodal reranking benchmarks across image, video, and visual-document tasks. CLS: classification, QA: question answering. RET: retrieval, GD: grounding, MRET: moment retrieval, VDR: ViDoRe, VR: VisRAG, OOD: out-of-domain. † denotes models finetuned using our training recipe.",
+      "page": 7,
+      "index": 3,
+      "width": 941,
+      "height": 335
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-002.webp",
+      "caption": "Table 4: Ablation study of prompting formulations and individual compression components after supervised fine-tuning.",
+      "page": 7,
+      "index": 2,
+      "width": 941,
+      "height": 231
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-005.webp",
+      "caption": "Figure 5: Latency scaling in the vision-as-document setting.",
+      "page": 8,
+      "index": 5,
+      "width": 448,
+      "height": 385
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-001.webp",
+      "caption": "Table 5: Composition of the token-pruned multimodal reranker training set.",
+      "page": 15,
+      "index": 1,
+      "width": 471,
+      "height": 592
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-009.webp",
+      "caption": "Table 6: Evaluation dataset composition. We summarize the evaluated datasets by meta-task, retrieval format, number of queries, and candidate size. I, T, V, and D denote image, text, video, and visual document, respectively.",
+      "page": 16,
+      "index": 9,
+      "width": 451,
+      "height": 492
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-007.webp",
+      "caption": "Figure 11: Prompt template for vision-as-query reranking, where the query-side visual input is placed before the candidate document to enable reuse across candidates.",
+      "page": 17,
+      "index": 7,
+      "width": 461,
+      "height": 394
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10759v1/fig-006.webp",
+      "caption": "Figure 12: Prompt template for vision-as-document reranking, where the document-side visual input is placed before the query to enable reuse across queries.",
+      "page": 17,
+      "index": 6,
+      "width": 461,
+      "height": 394
+    }
+  ]
+}

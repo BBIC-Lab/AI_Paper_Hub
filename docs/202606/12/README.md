@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-12</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-12 06:12 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -11,11 +11,10 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日聚焦迁移学习新场景，从多物种动物面部识别到电池X光缺陷检测，精读高分论文，并速览时序搜索、图同步与结构发现。</p>
-<p>最值得关注的是迁移学习打破人类面部局限，以高准确率实现跨物种感知，以及利用扩散模型从均匀先验中无监督提取图结构。</p>
-<p>建议普通读者先读“Beyond Humans”获取跨领域灵感，再结合“扩散先验”论文探索用生成式方法自动发现数据底层关系。</p>
+      <p>今日精读两篇迁移学习应用，速读涵盖时序检索、图同步与图扩散等前沿方向。</p>
+<p>最惹眼的是迁移学习在非人类面部与工业X光检测中的高评分落地，以及用扩散模型从均匀先验中学习图结构的新思路。</p>
+<p>普通读者可从跨物种识别与电池质检案例入手，感受迁移学习的工业与生物多样性价值。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/12/README">打开完整日报</a>
   </div>
   <section class="dpr-daily-paper-section is-deep">
     <h2>精读区</h2>
@@ -159,3 +158,6 @@
 </article></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>

@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-005.webp",
+      "caption": "Figure 1: TSseek System Architecture.",
+      "page": 4,
+      "index": 5,
+      "width": 379,
+      "height": 350
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-007.webp",
+      "caption": "Table 1: Description of TSseek Query Constructs",
+      "page": 5,
+      "index": 7,
+      "width": 1066,
+      "height": 279
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-001.webp",
+      "caption": "Figure 4: TSseek Storage and Indexing Layer.",
+      "page": 6,
+      "index": 1,
+      "width": 422,
+      "height": 470
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-002.webp",
+      "caption": "Figure 6: Preprocessing and index (or model) construction",
+      "page": 11,
+      "index": 2,
+      "width": 368,
+      "height": 620
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-006.webp",
+      "caption": "Figure 8: Whole-matching baseline comparison on Random",
+      "page": 12,
+      "index": 6,
+      "width": 410,
+      "height": 445
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-004.webp",
+      "caption": "Figure 13: Ablation on 𝛼 (TSBS), ordered by decision flow: (a)",
+      "page": 14,
+      "index": 4,
+      "width": 493,
+      "height": 351
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09824v2/fig-003.webp",
+      "caption": "Figure 14: TSseek whole-matching time on ECG-25M across series lengths 𝑛 ∈ {64, 128, 256}. Stacked bars give the index-",
+      "page": 15,
+      "index": 3,
+      "width": 489,
+      "height": 271
+    }
+  ]
+}

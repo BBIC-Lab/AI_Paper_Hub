@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-002.webp",
+      "caption": "Figure 1: Copy head formation unfolds in multiple stages, with qualitatively distinct behavior for linear and softmax attention. Left: Attention patterns for linear (purple) and softmax (blue) attention from the trained model (top per color) and theory (bottom per color) for different amounts of training data P . (i) P = 20: the attention layer does not contribute in the linear case and softmax attention remains at its uniform pooling default; (ii) P = 100: after the second-order phase transition for linear attention, all tokens are attended to equally; (iii) P = 300: the copy pattern begins to appear; (iv) P = 800: it sharpens into the correct shift-by-one pattern. Right: Loss per token as a function of training set size P for linear (purple) and softmax (blue) attention. Softmax attention exhibits a sharp, discontinuous loss drop near P ≈ 300 corresponding to a first-order phase transition. Linear attention shows a fast continuous decrease at small P (second-order transition) followed by a plateau and a slower decrease (gradual crossover). Crosses mark points on the left.",
+      "page": 2,
+      "index": 2,
+      "width": 793,
+      "height": 257
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-003.webp",
+      "caption": "Figure 3: Linear attention exhibits a second-order phase transition and subsequent gradual crossover. Left: Scalar order parameters ĉ1, ĉG measured from models trained with Adam (circles) and SGLD (diamonds) compared to the theory predictions (dashed) as a function of the amount of training data or sample complexity P . At the phase transition, ĉ1 rises sharply from zero, while ĉG remains near zero; beyond P ≈ 400, ĉ1 declines while ĉG rises, marking the crossover from uniform pooling to copy attention; theory tracks the empirically observed behavior closely. Center and right: Phase diagram of copy subcircuit emergence. We show the loss per token as a function of training sequences P vs. sequence length L for V = 5 fixed (center), and vs. vocabulary size V for fixed L = 25 (right). The two phases identified from the order parameters ĉ1, ĉG manifest as distinct loss plateaus separated by two transition regions; the phase boundaries are predicted by our theory as a function of P ∗(L, V ) in Eqs. (16) (solid white) and (17) (dashed white).",
+      "page": 7,
+      "index": 3,
+      "width": 814,
+      "height": 197
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-006.webp",
+      "caption": "Figure 4: Softmax attention exhibits a first-order phase transition. Left: Scalar order parameters â1, âG measured from models trained with Adam (circles) and SGLD (diamonds) compared to the theory predictions (dashed lines) as a function of the amount of training data or sample complexity P . At the phase transition the value of âG jumps marking a first-order phase transition. Note that the dots corresponding to SGLD are often covered by the diamonds corresponding to Adam due to their precise agreement. Center and right: Phase diagram of copy subcircuit emergence. We show the loss per token as a function of training sequences P vs. sequence length L for V = 5 fixed (center), and vs. vocabulary size V for fixed L = 25 (right). The transition from a phase of uniform attention to a phase of copy attention manifests as a sharp drop in the loss; the phase boundary P ∗(L, V ) (white) is predicted by our theory in Eq. (21).",
+      "page": 9,
+      "index": 6,
+      "width": 814,
+      "height": 195
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-005.webp",
+      "caption": "Figure 5: Attention-pattern coverage by order-parameter projections. We quantify how much of the empirical attention pattern lies in the two-dimensional subspace spanned by the pooling and copy order-parameter directions, using the projected norm ratio and cosine similarity. Left: Linear attention is nearly fully described by this subspace for Adam across training set sizes P ; throughout much of the panel, Adam markers are hidden behind SGLD markers, and the norm-ratio points are hidden behind the cosine-similarity points. SGLD shows the only visible loss of coverage, with larger fluctuations in the crossover region 300 ≤ P ≤ 600, consistent with transient attention components outside the order-parameter plane. Right: Softmax attention shows essentially perfect coverage for both Adam and SGLD over the full range of P , with all metrics and optimizers nearly overlapping at one.",
+      "page": 51,
+      "index": 5,
+      "width": 802,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-007.webp",
+      "caption": "Table 1: Hyperparameters used in the numerical experiments. The only swept quantity is the number of training sequences P ; all other settings are kept fixed across runs.",
+      "page": 52,
+      "index": 7,
+      "width": 822,
+      "height": 503
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-001.webp",
+      "caption": "Figure 6: Test loss for linear attention trained with Adam. We show the test loss as a function of the number of epochs for different values of P on models trained with Adam. We clearly see two clusters with one reaching a lower loss value. Since the Bayesian posterior, and hence SGLD in principle, is insensitive to the initial conditions and would, in principle, reach the global minimum given sufficient time, we include only converged runs in the cluster with lower loss in the results in the main text.",
+      "page": 53,
+      "index": 1,
+      "width": 731,
+      "height": 1224
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12058v1/fig-004.webp",
+      "caption": "Figure 7: Test loss for softmax attention trained with Adam. We show the test loss as a function of the number of epochs for different values of P on models trained with Adam. With softmax Adam converged to the global minimum in all of our seeds.",
+      "page": 54,
+      "index": 4,
+      "width": 743,
+      "height": 652
+    }
+  ]
+}

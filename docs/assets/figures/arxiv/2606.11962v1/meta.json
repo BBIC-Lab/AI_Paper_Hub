@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11962v1/fig-004.webp",
+      "caption": "Figure 1: Fisher information for a pair of observations distant from each other by a duration τ . The underlying model is an fGn of Hurst exponent equal to 0.25, 0.4, 0.5, 0.6, 0.75 (from the darker to the lighter curve). The dashed curves correspond to the asymptotic leading term (2H(2H−1) ln(τ)+4H−1)2τ4H−4 obtained by Theorem 1.",
+      "page": 8,
+      "index": 4,
+      "width": 667,
+      "height": 483
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11962v1/fig-001.webp",
+      "caption": "Figure 2: Godambe information of the pairs (Yi, Yi+1) ′, for i ∈ J0, 19K, with (black dots) or without (grey line) the new pair (Y20, Y20+τ ) ′, for τ ∈ J−20,−2K∪ J1, 40K. The underlying model is an fGn of Hurst exponent equal to 0.55 (left graph) or 0.8 (right graph).",
+      "page": 10,
+      "index": 1,
+      "width": 809,
+      "height": 325
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11962v1/fig-005.webp",
+      "caption": "Figure 3: Bias (left graph) and variance (right graph) of the composite estimators with p = 15 overlapping sub-vectors of consecutive observations (black solid line) or p = 25 non-overlapping sub-vectors of consecutive observations (black dashed line), of the maximum likelihood estimator (grey solid line), and the moment-based estimator (grey dashed line), with N = 500.",
+      "page": 12,
+      "index": 5,
+      "width": 809,
+      "height": 294
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11962v1/fig-003.webp",
+      "caption": "Figure 4: MSE, on a log-log scale, of the composite estimators with p = 15 overlapping sub-vectors of consecutive observations (black solid line) or p = 25 non-overlapping sub-vectors of consecutive observations (black dashed line), of the maximum likelihood estimator (grey solid line), and the moment-based estimator (grey dashed line), with H = 0.15 (left graph) and H = 0.65 (right graph).",
+      "page": 13,
+      "index": 3,
+      "width": 809,
+      "height": 295
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11962v1/fig-002.webp",
+      "caption": "Figure 5: MSE of the composite estimators with overlapping (black solid line) or non-overlapping (black dashed line) sub-vectors of consecutive observations, as a function of the size p of each sub-vector, along with the MSE of the maximum likelihood estimator (grey solid line) and the moment-based estimator (grey dashed line), with N = 500, H = 0.15 (left graph), and H = 0.65 (right graph).",
+      "page": 14,
+      "index": 2,
+      "width": 809,
+      "height": 275
+    }
+  ]
+}
