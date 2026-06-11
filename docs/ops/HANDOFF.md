@@ -76,6 +76,21 @@
 - 自定义 label：`dpr-local-inference`。
 - 服务状态：`systemd --user`，当前 `enabled` 且 `active (running)`；以普通用户 `jy` 运行。
 
+## 阶段 A 验收记录
+
+验收时间：2026-06-11 14:31 HKT。
+
+- 阶段 A 已验收：本机 self-hosted runner、私有仓库远端保护、daily workflow loopback 约束和本机模型服务存活项已完成复核。
+- Runner：`actions.runner.BBIC-Lab-AI_Paper_Hub.spark-d326-bbic.service` 为 `enabled` / `active (running)`；runner 日志显示已连接 GitHub 并处于 `Listening for Jobs`，注册目标为 `BBIC-Lab/AI_Paper_Hub`。
+- Runner label：安装日志记录 `labels=dpr-local-inference`；daily workflow 使用 `runs-on: [self-hosted, linux, dpr-local-inference]`，可由该 runner 领取私有仓库任务。
+- Workflow 触发：`.github/workflows/` 已复核并修正为只使用 `schedule` / `workflow_dispatch`；已移除 `privacy-guard` 的 `pull_request` 和 `push` 触发。
+- Workflow 权限：需要提交结果的 workflow 保留 `contents: write`；只读维护检查保留 `contents: read`。
+- Endpoint：daily workflow 的 Embedding / Reranker endpoint 默认值和 preflight 均强制为 `http://127.0.0.1:8010/v1/embeddings`、`http://127.0.0.1:8011/v1/rerank`，不再接受 `localhost` 或其他地址。
+- 模型端口：`8010`、`8011` 均仅监听 `127.0.0.1`；`/health` 均返回 HTTP 200，响应体为空。
+- Push 边界：`upstream` push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`；本机 `pre-push` hook 只允许推送到私有 `origin`，并阻止公开上游目标。
+- 日志审计：本机 runner diagnostic log 未命中 API Key / Bearer / Authorization 泄露特征；当前尚无 workflow worker log，原因是本机没有 GitHub CLI 和可用 GitHub API token，`workflow_dispatch` 需要在 GitHub 页面手工触发后补充远端日志与产物验收。
+- 暴露面注意：未发现本次新增公网隧道或对外发布模型 endpoint；但主机存在若干非 loopback 监听端口（如系统 SSH/RDP/代理、一个既有 `python3 -m http.server 8765 --bind 0.0.0.0`、以及 vLLM EngineCore 内部随机端口），如要求“零外部监听”需由运维单独确认或关闭。
+
 ## 配置项控制矩阵
 
 ### LLM Chat / Summary / Refine

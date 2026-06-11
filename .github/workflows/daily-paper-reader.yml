@@ -166,9 +166,9 @@ jobs:
               fail "$name is empty; set the repository Variable or keep the workflow default."
             fi
             case "$url" in
-              "http://127.0.0.1:${port}${path}"|"http://localhost:${port}${path}") ;;
+              "http://127.0.0.1:${port}${path}") ;;
               *)
-                fail "$name must be http://127.0.0.1:${port}${path} or http://localhost:${port}${path} on the self-hosted runner."
+                fail "$name must be http://127.0.0.1:${port}${path} on the self-hosted runner."
                 ;;
             esac
           }
