@@ -1008,6 +1008,65 @@ window.SubscriptionsGithubToken = (function () {
     return true;
   };
 
+  const saveVariables = async (variableValues, progress) => {
+    const token = getTokenForConfig();
+    if (!token) {
+      throw new Error('未配置有效的 GitHub Token，请先完成首页的新配置指引。');
+    }
+    const info = await resolveRepoInfoFromToken(token, true);
+    const entries = Array.isArray(variableValues)
+      ? variableValues
+      : Object.entries(variableValues || {}).map(([name, value]) => ({ name, value }));
+
+    for (let i = 0; i < entries.length; i += 1) {
+      const item = entries[i] || {};
+      const name = String(item.name || '').trim();
+      if (!name) continue;
+      const value = String(item.value == null ? '' : item.value);
+      if (typeof progress === 'function') {
+        progress(i + 1, entries.length, name);
+      }
+
+      const createRes = await fetch(
+        `https://api.github.com/repos/${info.owner}/${info.repo}/actions/variables`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `token ${info.token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, value }),
+        },
+      );
+      if (createRes.ok) {
+        continue;
+      }
+      if (createRes.status !== 409) {
+        const text = await createRes.text().catch(() => '');
+        throw new Error(`写入 GitHub Variable ${name} 失败：HTTP ${createRes.status} ${createRes.statusText} - ${text}`);
+      }
+
+      const updateRes = await fetch(
+        `https://api.github.com/repos/${info.owner}/${info.repo}/actions/variables/${encodeURIComponent(name)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `token ${info.token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, value }),
+        },
+      );
+      if (!updateRes.ok) {
+        const text = await updateRes.text().catch(() => '');
+        throw new Error(`更新 GitHub Variable ${name} 失败：HTTP ${updateRes.status} ${updateRes.statusText} - ${text}`);
+      }
+    }
+    return true;
+  };
+
   // 通过 GitHub API 读取 config.yaml（用于保存时获取最新 sha）
   const loadConfigFromGithub = async () => {
     const token = getTokenForConfig();
@@ -1379,5 +1438,6 @@ window.SubscriptionsGithubToken = (function () {
     updateRepoTextFile,
     commitRepoChanges,
     saveSecrets,
+    saveVariables,
   };
 })();

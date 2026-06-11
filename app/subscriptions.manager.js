@@ -16,7 +16,7 @@ window.SubscriptionsManager = (function () {
   const DEFAULT_DAILY_REPORTS = {
     enabled: true,
   };
-  const DAILY_AUTO_SCHEDULE_LABEL = '每周一至周五 北京时间 02:30';
+  const DAILY_AUTO_SCHEDULE_LABEL = '每周一至周五 北京时间 03:00';
   const DAILY_AUTO_DEFAULT_MESSAGE = '仅影响 GitHub Actions 定时 schedule；“快速使用”的手动抓取仍可运行。';
   const DAILY_AUTO_DIRTY_MESSAGE = '检测到未保存修改，请先保存后再切换自动日报。';
   const EMAIL_WORKFLOW_PATH = '.github/workflows/email-daily-brief.yml';
@@ -218,30 +218,36 @@ window.SubscriptionsManager = (function () {
   const buildEmbeddingSecretsPayload = (settings) => {
     const safe = isPlainObject(settings) ? settings : {};
     const profile = normalizeEmbeddingProfile(safe.profile);
-    const secrets = { DPR_EMBED_PROFILE: profile };
     if (profile !== 'custom') {
-      return secrets;
+      return {};
+    }
+    const apiKey = normalizeText(safe.apiKey);
+    if (!apiKey) {
+      throw new Error('请填写自定义 embedding API Key。');
+    }
+    return { MODEL_API_KEY: apiKey };
+  };
+  const buildEmbeddingVariablesPayload = (settings) => {
+    const safe = isPlainObject(settings) ? settings : {};
+    const profile = normalizeEmbeddingProfile(safe.profile);
+    const variables = { DPR_EMBED_PROFILE: profile };
+    if (profile !== 'custom') {
+      return variables;
     }
     const endpoint = normalizeText(safe.endpoint || safe.apiUrl);
     const model = normalizeText(safe.model);
-    const apiKey = normalizeText(safe.apiKey);
-    const provider = normalizeEmbeddingProvider(safe.provider);
     if (!isHttpUrl(endpoint)) {
       throw new Error('请填写以 http:// 或 https:// 开头的 embedding endpoint。');
     }
     if (!model) {
       throw new Error('请填写 embedding 模型名称。');
     }
-    if (!apiKey) {
-      throw new Error('请填写自定义 embedding API Key。');
-    }
-    secrets.DPR_EMBED_PROVIDER = provider;
-    secrets.DPR_EMBED_ENDPOINT = endpoint;
-    secrets.DPR_EMBED_MODEL = model;
-    secrets.DPR_EMBED_API_KEY = apiKey;
-    secrets.DPR_EMBED_API_TIMEOUT = String(DEFAULT_EMBEDDING_TIMEOUT);
-    secrets.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
-    return secrets;
+    variables.DPR_EMBED_PROVIDER = normalizeEmbeddingProvider(safe.provider);
+    variables.DPR_EMBED_ENDPOINT = endpoint;
+    variables.DPR_EMBED_MODEL = model;
+    variables.DPR_EMBED_API_TIMEOUT = String(DEFAULT_EMBEDDING_TIMEOUT);
+    variables.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
+    return variables;
   };
   const normalizeRerankerProvider = (value) => {
     const text = normalizeText(value).toLowerCase();
@@ -278,6 +284,21 @@ window.SubscriptionsManager = (function () {
       : safe.mode;
     const enabled = normalizeRerankerEnabled(enabledValue);
     if (!enabled) {
+      return {};
+    }
+    const apiKey = normalizeText(safe.apiKey);
+    if (!apiKey) {
+      throw new Error('请填写 reranker API Key。');
+    }
+    return { MODEL_API_KEY: apiKey };
+  };
+  const buildRerankerVariablesPayload = (settings) => {
+    const safe = isPlainObject(settings) ? settings : {};
+    const enabledValue = Object.prototype.hasOwnProperty.call(safe, 'enabled')
+      ? safe.enabled
+      : safe.mode;
+    const enabled = normalizeRerankerEnabled(enabledValue);
+    if (!enabled) {
       return {
         DPR_SKIP_RERANK: 'true',
         DPR_RERANK_PROVIDER: 'disabled',
@@ -285,22 +306,17 @@ window.SubscriptionsManager = (function () {
     }
     const endpoint = normalizeText(safe.endpoint);
     const model = normalizeText(safe.model);
-    const apiKey = normalizeText(safe.apiKey);
     if (!isHttpUrl(endpoint)) {
       throw new Error('请填写以 http:// 或 https:// 开头的 reranker endpoint。');
     }
     if (!model) {
       throw new Error('请填写 reranker 模型名称。');
     }
-    if (!apiKey) {
-      throw new Error('请填写 reranker API Key。');
-    }
     return {
       DPR_SKIP_RERANK: 'false',
       DPR_RERANK_PROVIDER: normalizeRerankerProvider(safe.provider || DEFAULT_RERANK_PROVIDER),
       DPR_RERANK_ENDPOINT: endpoint,
       DPR_RERANK_MODEL: model,
-      DPR_RERANK_API_KEY: apiKey,
       DPR_RERANK_API_TIMEOUT: String(DEFAULT_RERANK_TIMEOUT),
     };
   };
@@ -1444,16 +1460,22 @@ window.SubscriptionsManager = (function () {
   };
 
   const saveEmbeddingSettings = async () => {
-    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
-      setEmbeddingMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+    if (
+      !window.SubscriptionsGithubToken
+      || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function'
+      || typeof window.SubscriptionsGithubToken.saveVariables !== 'function'
+    ) {
+      setEmbeddingMessage('当前无法写入 GitHub Secrets/Variables，请先完成 GitHub 登录。', '#c00');
       return;
     }
 
     let draft = null;
     let secrets = null;
+    let variables = null;
     try {
       draft = collectEmbeddingSettingsDraft();
       secrets = buildEmbeddingSecretsPayload(draft);
+      variables = buildEmbeddingVariablesPayload(draft);
     } catch (e) {
       setEmbeddingMessage(e.message || 'Embedding 配置不完整。', '#c00');
       return;
@@ -1461,10 +1483,16 @@ window.SubscriptionsManager = (function () {
 
     try {
       if (embeddingSaveBtn) embeddingSaveBtn.disabled = true;
-      setEmbeddingMessage('正在写入 GitHub Secrets...', '#666');
-      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
-        setEmbeddingMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      setEmbeddingMessage('正在写入 GitHub Variables...', '#666');
+      await window.SubscriptionsGithubToken.saveVariables(variables, (current, total, name) => {
+        setEmbeddingMessage(`(${current}/${total}) 正在保存 GitHub Variable：${name}...`, '#666');
       });
+      if (Object.keys(secrets || {}).length > 0) {
+        setEmbeddingMessage('正在写入 GitHub Secrets...', '#666');
+        await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+          setEmbeddingMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+        });
+      }
       const secret = isPlainObject(window.decoded_secret_private)
         ? window.decoded_secret_private
         : {};
@@ -1479,7 +1507,7 @@ window.SubscriptionsManager = (function () {
       const apiKeyInput = document.getElementById('dpr-embedding-api-key-input');
       if (apiKeyInput) apiKeyInput.value = '';
       syncEmbeddingSettingsFields();
-      setEmbeddingMessage('Embedding 设置已保存；GitHub Secrets 不会回显明文。', '#080');
+      setEmbeddingMessage('Embedding 设置已保存；Endpoint/模型写入 Variables，API Key 写入 Secrets 且不会回显明文。', '#080');
     } catch (e) {
       console.error(e);
       setEmbeddingMessage(`保存 embedding 设置失败：${(e && e.message) || e}`.slice(0, 220), '#c00');
@@ -1552,16 +1580,22 @@ window.SubscriptionsManager = (function () {
   };
 
   const saveRerankerSettings = async () => {
-    if (!window.SubscriptionsGithubToken || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function') {
-      setRerankerMessage('当前无法写入 GitHub Secrets，请先完成 GitHub 登录。', '#c00');
+    if (
+      !window.SubscriptionsGithubToken
+      || typeof window.SubscriptionsGithubToken.saveSecrets !== 'function'
+      || typeof window.SubscriptionsGithubToken.saveVariables !== 'function'
+    ) {
+      setRerankerMessage('当前无法写入 GitHub Secrets/Variables，请先完成 GitHub 登录。', '#c00');
       return;
     }
 
     let draft = null;
     let secrets = null;
+    let variables = null;
     try {
       draft = collectRerankerSettingsDraft();
       secrets = buildRerankerSecretsPayload(draft);
+      variables = buildRerankerVariablesPayload(draft);
     } catch (e) {
       setRerankerMessage(e.message || 'Reranker 配置不完整。', '#c00');
       return;
@@ -1569,10 +1603,16 @@ window.SubscriptionsManager = (function () {
 
     try {
       if (rerankerSaveBtn) rerankerSaveBtn.disabled = true;
-      setRerankerMessage('正在写入 GitHub Secrets...', '#666');
-      await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
-        setRerankerMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+      setRerankerMessage('正在写入 GitHub Variables...', '#666');
+      await window.SubscriptionsGithubToken.saveVariables(variables, (current, total, name) => {
+        setRerankerMessage(`(${current}/${total}) 正在保存 GitHub Variable：${name}...`, '#666');
       });
+      if (Object.keys(secrets || {}).length > 0) {
+        setRerankerMessage('正在写入 GitHub Secrets...', '#666');
+        await window.SubscriptionsGithubToken.saveSecrets(secrets, (current, total, name) => {
+          setRerankerMessage(`(${current}/${total}) 正在上传 GitHub Secret：${name}...`, '#666');
+        });
+      }
       const enabled = normalizeRerankerEnabled(draft.enabled);
       const secret = isPlainObject(window.decoded_secret_private)
         ? window.decoded_secret_private
@@ -1592,7 +1632,7 @@ window.SubscriptionsManager = (function () {
       syncRerankerSettingsFields();
       setRerankerMessage(
         enabled
-          ? 'Reranker 设置已保存；GitHub Secrets 不会回显明文。'
+          ? 'Reranker 设置已保存；Endpoint/模型写入 Variables，API Key 写入 Secrets 且不会回显明文。'
           : 'Reranker 已关闭；工作流将使用 RRF fallback。',
         '#080',
       );
@@ -2382,7 +2422,7 @@ window.SubscriptionsManager = (function () {
                   <div class="dpr-secret-status-orb dpr-advanced-config-orb">🚀</div>
                   <div class="dpr-secret-hero-copy">
                     <h3>高级配置</h3>
-                    <p>可选配置自建 Embedding 与 Reranker 服务；密钥只写入 GitHub Secrets，不回显明文。</p>
+                    <p>可选配置自建 Embedding 与 Reranker 服务；Endpoint/模型写入 GitHub Variables，密钥只写入 GitHub Secrets。</p>
                   </div>
                   <button id="dpr-open-advanced-config-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">打开高级配置</button>
                 </div>
@@ -2414,7 +2454,7 @@ window.SubscriptionsManager = (function () {
                       <div class="dpr-settings-card-head dpr-settings-card-head-compact">
                         <div>
                           <h3>Embedding 服务</h3>
-                          <p>选择向量编码方式。默认 embedding 使用项目预置服务；自定义 embedding 的 endpoint、模型和密钥只写入 GitHub Secrets。</p>
+                          <p>选择向量编码方式。自定义 embedding 的 endpoint/模型写入 Variables，API Key 写入 Secrets。</p>
                         </div>
                         <span id="dpr-embedding-current-status" class="dpr-embedding-status-pill">默认 embedding</span>
                       </div>
@@ -2433,10 +2473,10 @@ window.SubscriptionsManager = (function () {
                         </label>
                       </div>
                       <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
-                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名和 API Key 只会加密写入 GitHub Secrets，不会写入公开仓库、config.yaml 或 docs/config.yaml。</p>
+                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets，不会写入仓库文件、config.yaml 或 docs/config.yaml。</p>
                         <div class="dpr-settings-form-grid">
                           <label class="chat-quick-run-row" for="dpr-embedding-provider-select"><span>接口协议</span><select id="dpr-embedding-provider-select" disabled><option value="openai" selected>OpenAI-compatible /v1/embeddings</option><option value="legacy">Legacy /embed</option></select></label>
-                          <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-embedding-server.example.com/v1/embeddings" /></label>
+                          <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="http://127.0.0.1:8010/v1/embeddings" /></label>
                           <label class="chat-quick-run-row" for="dpr-embedding-model-input"><span>模型名称</span><input id="dpr-embedding-model-input" type="text" autocomplete="off" disabled placeholder="BAAI/bge-small-en-v1.5" /></label>
                           <label class="chat-quick-run-row" for="dpr-embedding-api-key-input"><span>API Key</span><input id="dpr-embedding-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
                         </div>
@@ -2444,7 +2484,7 @@ window.SubscriptionsManager = (function () {
                       <div class="dpr-embedding-save-row">
                         <button id="dpr-embedding-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 embedding 设置</button>
                       </div>
-                      <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">GitHub Secrets 是 write-only，保存后不会回显密钥明文。</div>
+                      <div id="dpr-embedding-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">Endpoint/模型保存到 Variables；API Key 保存到 Secrets，保存后不会回显密钥明文。</div>
                     </div>
                     <div class="dpr-settings-card dpr-secret-card dpr-reranker-settings-card">
                       <div class="dpr-settings-card-head dpr-settings-card-head-compact">
@@ -2465,9 +2505,9 @@ window.SubscriptionsManager = (function () {
                         </label>
                       </div>
                       <div id="dpr-reranker-custom-panel" class="dpr-embedding-custom-panel dpr-reranker-custom-panel" hidden>
-                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名和 API Key 只会加密写入 GitHub Secrets；保存后旧密钥不会回显。</p>
+                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets，保存后旧密钥不会回显。</p>
                         <div class="dpr-settings-form-grid">
-                          <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="https://your-reranker-server.example.com/v1/rerank" /></label>
+                          <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="http://127.0.0.1:8011/v1/rerank" /></label>
                           <label class="chat-quick-run-row" for="dpr-reranker-model-input"><span>模型名称</span><input id="dpr-reranker-model-input" type="text" autocomplete="off" disabled placeholder="Qwen/Qwen3-Reranker-0.6B" /></label>
                           <label class="chat-quick-run-row" for="dpr-reranker-api-key-input"><span>API Key</span><input id="dpr-reranker-api-key-input" type="password" autocomplete="off" disabled placeholder="只写入 GitHub Secrets，不回显" /></label>
                         </div>
@@ -2475,7 +2515,7 @@ window.SubscriptionsManager = (function () {
                       <div class="dpr-embedding-save-row">
                         <button id="dpr-reranker-save-btn" class="arxiv-tool-btn dpr-settings-primary-btn" type="button">保存 reranker 设置</button>
                       </div>
-                      <div id="dpr-reranker-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">关闭时会写入 DPR_SKIP_RERANK=true；启用时会写入 reranker endpoint、模型与 API Key。</div>
+                      <div id="dpr-reranker-settings-msg" class="dpr-settings-message dpr-embedding-settings-msg">关闭时会写入 Variables：DPR_SKIP_RERANK=true；启用时 endpoint/模型写入 Variables，API Key 写入 Secrets。</div>
                     </div>
                   </div>
                 </div>
@@ -3383,10 +3423,12 @@ window.SubscriptionsManager = (function () {
       normalizeEmbeddingTimeout: (value) => normalizeEmbeddingTimeout(value),
       resolveEmbeddingServiceState: (secret) => resolveEmbeddingServiceState(secret),
       buildEmbeddingSecretsPayload: (settings) => buildEmbeddingSecretsPayload(settings),
+      buildEmbeddingVariablesPayload: (settings) => buildEmbeddingVariablesPayload(settings),
       normalizeRerankerProvider: (value) => normalizeRerankerProvider(value),
       normalizeRerankerEnabled: (value) => normalizeRerankerEnabled(value),
       resolveRerankerServiceState: (secret) => resolveRerankerServiceState(secret),
       buildRerankerSecretsPayload: (settings) => buildRerankerSecretsPayload(settings),
+      buildRerankerVariablesPayload: (settings) => buildRerankerVariablesPayload(settings),
       normalizeResearchDirections: (value) => normalizeResearchDirections(value),
       resolveResearchDirections: (config) => resolveResearchDirections(cloneDeep(config || {})),
       normalizePeriodicReports: (value) => normalizePeriodicReports(cloneDeep(value || {})),

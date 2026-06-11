@@ -2,7 +2,7 @@ name: daily-paper-reader
 
 on:
   schedule:
-    - cron: "30 18 * * 0-4" # 北京时间周一至周五 02:30（UTC 周日至周四 18:30）
+    - cron: "0 19 * * 0-4" # 北京时间周一至周五 03:00（UTC 周日至周四 19:00）
   workflow_dispatch:
     inputs:
       run_enrich:
@@ -31,39 +31,34 @@ concurrency:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    if: github.repository == 'BBIC-Lab/AI_Paper_Hub'
+    runs-on: [self-hosted, linux, dpr-local-inference]
     timeout-minutes: 120
     env:
-      DPR_LLM_PROVIDER: ${{ secrets.DPR_LLM_PROVIDER }}
+      DPR_LLM_PROVIDER: ${{ vars.DPR_LLM_PROVIDER || 'openai' }}
       DPR_LLM_API_KEY: ${{ secrets.DPR_LLM_API_KEY }}
-      DPR_LLM_BASE_URL: ${{ secrets.DPR_LLM_BASE_URL }}
-      DPR_LLM_MODEL: ${{ secrets.DPR_LLM_MODEL }}
-      DPR_LLM_REWRITE_MODEL: ${{ secrets.DPR_LLM_REWRITE_MODEL }}
-      DPR_LLM_FILTER_MODEL: ${{ secrets.DPR_LLM_FILTER_MODEL }}
-      DPR_LLM_SUMMARY_MODEL: ${{ secrets.DPR_LLM_SUMMARY_MODEL }}
-      DPR_SKIP_RERANK: ${{ secrets.DPR_SKIP_RERANK || 'true' }}
-      DPR_INFERENCE_BASE_URL: ${{ secrets.DPR_INFERENCE_BASE_URL }}
-      INFERENCE_BASE_URL: ${{ secrets.INFERENCE_BASE_URL }}
-      DPR_EMBED_PROFILE: ${{ secrets.DPR_EMBED_PROFILE || 'default_remote' }}
-      DPR_EMBED_MODEL: ${{ secrets.DPR_EMBED_MODEL }}
-      DPR_EMBED_ENDPOINT: ${{ secrets.DPR_EMBED_ENDPOINT }}
-      EMBED_ENDPOINT: ${{ secrets.EMBED_ENDPOINT }}
-      DPR_EMBED_DEFAULT_API_URL: ${{ secrets.DPR_EMBED_DEFAULT_API_URL }}
-      DPR_EMBED_DEFAULT_API_KEY: ${{ secrets.DPR_EMBED_DEFAULT_API_KEY }}
-      DPR_EMBED_API_URL: ${{ secrets.DPR_EMBED_API_URL }}
-      DPR_EMBED_API_KEY: ${{ secrets.DPR_EMBED_API_KEY }}
-      EMBED_API_KEY: ${{ secrets.EMBED_API_KEY }}
-      DPR_EMBED_PROVIDER: ${{ secrets.DPR_EMBED_PROVIDER || 'legacy' }}
-      DPR_EMBED_API_TIMEOUT: ${{ secrets.DPR_EMBED_API_TIMEOUT || '60' }}
-      DPR_EMBED_REMOTE_FALLBACK: ${{ secrets.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
-      DPR_DISABLE_SUPABASE_VECTOR: ${{ secrets.DPR_DISABLE_SUPABASE_VECTOR || 'false' }}
-      DPR_RERANK_PROVIDER: ${{ secrets.DPR_RERANK_PROVIDER }}
-      DPR_RERANK_MODEL: ${{ secrets.DPR_RERANK_MODEL }}
-      DPR_RERANK_ENDPOINT: ${{ secrets.DPR_RERANK_ENDPOINT }}
-      RERANK_ENDPOINT: ${{ secrets.RERANK_ENDPOINT }}
-      DPR_RERANK_API_KEY: ${{ secrets.DPR_RERANK_API_KEY }}
-      RERANK_API_KEY: ${{ secrets.RERANK_API_KEY }}
-      DPR_RERANK_API_TIMEOUT: ${{ secrets.DPR_RERANK_API_TIMEOUT || '60' }}
+      DPR_LLM_BASE_URL: ${{ vars.DPR_LLM_BASE_URL }}
+      DPR_LLM_MODEL: ${{ vars.DPR_LLM_MODEL }}
+      DPR_LLM_REWRITE_MODEL: ${{ vars.DPR_LLM_REWRITE_MODEL }}
+      DPR_LLM_FILTER_MODEL: ${{ vars.DPR_LLM_FILTER_MODEL }}
+      DPR_LLM_SUMMARY_MODEL: ${{ vars.DPR_LLM_SUMMARY_MODEL }}
+      MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+      DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'false' }}
+      DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'custom' }}
+      DPR_EMBED_PROVIDER: ${{ vars.DPR_EMBED_PROVIDER || 'openai' }}
+      DPR_EMBED_MODEL: ${{ vars.DPR_EMBED_MODEL || 'BAAI/bge-small-en-v1.5' }}
+      DPR_EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
+      EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
+      DPR_EMBED_API_KEY: ${{ secrets.MODEL_API_KEY }}
+      DPR_EMBED_API_TIMEOUT: ${{ vars.DPR_EMBED_API_TIMEOUT || '60' }}
+      DPR_EMBED_REMOTE_FALLBACK: ${{ vars.DPR_EMBED_REMOTE_FALLBACK || 'fail' }}
+      DPR_DISABLE_SUPABASE_VECTOR: ${{ vars.DPR_DISABLE_SUPABASE_VECTOR || 'false' }}
+      DPR_RERANK_PROVIDER: ${{ vars.DPR_RERANK_PROVIDER || 'openai' }}
+      DPR_RERANK_MODEL: ${{ vars.DPR_RERANK_MODEL || 'Qwen/Qwen3-Reranker-0.6B' }}
+      DPR_RERANK_ENDPOINT: ${{ vars.DPR_RERANK_ENDPOINT || 'http://127.0.0.1:8011/v1/rerank' }}
+      RERANK_ENDPOINT: ${{ vars.DPR_RERANK_ENDPOINT || 'http://127.0.0.1:8011/v1/rerank' }}
+      DPR_RERANK_API_KEY: ${{ secrets.MODEL_API_KEY }}
+      DPR_RERANK_API_TIMEOUT: ${{ vars.DPR_RERANK_API_TIMEOUT || '60' }}
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -71,6 +66,32 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Verify private downstream target
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REPOSITORY}" != "BBIC-Lab/AI_Paper_Hub" ]; then
+            echo "::error::daily-paper-reader is only allowed in private downstream BBIC-Lab/AI_Paper_Hub."
+            exit 1
+          fi
+
+          origin_url="$(git remote get-url origin || true)"
+          case "$origin_url" in
+            *"BBIC-Lab/AI_Paper_Hub"*) ;;
+            *)
+              echo "::error::origin is not the BBIC private downstream repository; refusing to run."
+              exit 1
+              ;;
+          esac
+          case "$origin_url" in
+            *"AI_Daily_Paper_Reader"*)
+              echo "::error::origin points to the public upstream repository; refusing to run."
+              exit 1
+              ;;
+          esac
+
+          echo "Private downstream origin verified; generated reports will be pushed only to origin."
 
       - name: Check auto daily status
         id: daily_auto
@@ -125,6 +146,130 @@ jobs:
           DELAY=$(shuf -i 0-3599 -n 1)
           echo "Sleeping ${DELAY}s (≈$((DELAY/60))min) to stagger fork runs over 1 hour …"
           sleep $DELAY
+
+      - name: Preflight local inference
+        if: steps.daily_auto.outputs.enabled != 'false'
+        run: |
+          set -euo pipefail
+
+          fail() {
+            echo "::error::$1" >&2
+            exit 1
+          }
+
+          require_loopback_endpoint() {
+            name="$1"
+            url="$2"
+            port="$3"
+            path="$4"
+            if [ -z "$url" ]; then
+              fail "$name is empty; set the repository Variable or keep the workflow default."
+            fi
+            case "$url" in
+              "http://127.0.0.1:${port}${path}"|"http://localhost:${port}${path}") ;;
+              *)
+                fail "$name must be http://127.0.0.1:${port}${path} or http://localhost:${port}${path} on the self-hosted runner."
+                ;;
+            esac
+          }
+
+          check_health() {
+            name="$1"
+            url="$2"
+            code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "$url" || true)"
+            if [ "$code" != "200" ]; then
+              fail "$name health check failed at $url with HTTP ${code:-curl-failed}; ensure the local service is running on spark-d326 loopback."
+            fi
+            echo "$name health OK."
+          }
+
+          [ -n "${MODEL_API_KEY:-}" ] || fail "MODEL_API_KEY GitHub Secret is required for Bearer preflight."
+          [ -n "${DPR_EMBED_MODEL:-}" ] || fail "DPR_EMBED_MODEL is required."
+          [ -n "${DPR_RERANK_MODEL:-}" ] || fail "DPR_RERANK_MODEL is required."
+          [ "${DPR_SKIP_RERANK:-true}" = "false" ] || fail "DPR_SKIP_RERANK must be false to use the local reranker."
+
+          require_loopback_endpoint "DPR_EMBED_ENDPOINT" "$DPR_EMBED_ENDPOINT" "8010" "/v1/embeddings"
+          require_loopback_endpoint "DPR_RERANK_ENDPOINT" "$DPR_RERANK_ENDPOINT" "8011" "/v1/rerank"
+          check_health "Embedding" "http://127.0.0.1:8010/health"
+          check_health "Reranker" "http://127.0.0.1:8011/health"
+
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+
+          def fail(message: str) -> None:
+              print(f"::error::{message}", file=sys.stderr)
+              raise SystemExit(1)
+
+
+          def post_json(name: str, url: str, payload: dict, timeout_var: str) -> dict:
+              body = json.dumps(payload).encode("utf-8")
+              request = urllib.request.Request(
+                  url,
+                  data=body,
+                  headers={
+                      "Content-Type": "application/json",
+                      "Authorization": f"Bearer {os.environ['MODEL_API_KEY']}",
+                  },
+                  method="POST",
+              )
+              try:
+                  timeout = int(os.environ.get(timeout_var, "60") or "60")
+              except ValueError:
+                  fail(f"{timeout_var} must be an integer number of seconds.")
+              try:
+                  with urllib.request.urlopen(request, timeout=timeout) as response:
+                      if response.status < 200 or response.status >= 300:
+                          fail(f"{name} preflight failed with HTTP {response.status}.")
+                      raw = response.read()
+              except urllib.error.HTTPError as exc:
+                  fail(f"{name} preflight failed with HTTP {exc.code}; check model name, endpoint, and service auth.")
+              except Exception as exc:
+                  fail(f"{name} preflight failed before response: {exc.__class__.__name__}: {exc}")
+              try:
+                  return json.loads(raw.decode("utf-8") or "{}")
+              except Exception as exc:
+                  fail(f"{name} preflight returned non-JSON response: {exc.__class__.__name__}.")
+
+
+          embed = post_json(
+              "Embedding",
+              os.environ["DPR_EMBED_ENDPOINT"],
+              {"model": os.environ["DPR_EMBED_MODEL"], "input": ["preflight"]},
+              "DPR_EMBED_API_TIMEOUT",
+          )
+          data = embed.get("data")
+          if not isinstance(data, list) or not data:
+              fail("Embedding preflight response missing non-empty data list.")
+          embedding = data[0].get("embedding") if isinstance(data[0], dict) else None
+          if not isinstance(embedding, list) or not embedding:
+              fail("Embedding preflight response missing embedding vector.")
+          print("Embedding model interface OK.")
+
+          rerank = post_json(
+              "Reranker",
+              os.environ["DPR_RERANK_ENDPOINT"],
+              {
+                  "model": os.environ["DPR_RERANK_MODEL"],
+                  "query": "preflight",
+                  "documents": ["first candidate", "second candidate"],
+                  "top_n": 1,
+              },
+              "DPR_RERANK_API_TIMEOUT",
+          )
+          results = rerank.get("results")
+          if results is None and isinstance(rerank.get("output"), dict):
+              results = rerank["output"].get("results")
+          if results is None:
+              results = rerank.get("data")
+          if not isinstance(results, list):
+              fail("Reranker preflight response missing results/data list.")
+          print("Reranker model interface OK.")
+          PY
 
       - name: Setup Python
         if: steps.daily_auto.outputs.enabled != 'false'
@@ -314,6 +459,10 @@ jobs:
 
           git commit -m "[chore] daily pipeline"
 
+          if [ "${GITHUB_REPOSITORY}" != "BBIC-Lab/AI_Paper_Hub" ]; then
+            echo "::error::Refusing to push daily results outside private downstream BBIC-Lab/AI_Paper_Hub."
+            exit 1
+          fi
           git fetch origin "$branch"
           git rebase -X theirs "origin/$branch"
           git push origin HEAD:"$branch"

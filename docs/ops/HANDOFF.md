@@ -1,8 +1,8 @@
 # 私有论文工作站初始化交接
 
-审计时间：2026-06-11 11:28 HKT
+审计时间：2026-06-11 13:02 HKT
 主机：spark-d326
-范围：私有下游工作站仓库初始化与同步边界配置；已安装 self-hosted runner，未改 workflow，未启动/停止模型服务，未改防火墙，未推送代码。
+范围：私有下游工作站仓库初始化、同步边界配置与 daily workflow 私有化；已安装 self-hosted runner，未启动/停止模型服务，未改防火墙，未推送代码。
 敏感信息规则：本文件不记录 Token、API Key、凭据值；后续也不要把密钥写入本文件、终端日志或 Git。
 
 ## 环境结论
@@ -56,21 +56,19 @@
 
 ## Workflow 检查
 
-当前 workflow 文件均仍使用 `runs-on: ubuntu-latest`：
+本次只修改私有下游 daily workflow：
 
-- `.github/workflows/daily-paper-reader.yml:34`
-- `.github/workflows/email-daily-brief.yml:26`
-- `.github/workflows/local-pdf-deep-read.yml:36`
-- `.github/workflows/maintain-biorxiv.yml:29`
-- `.github/workflows/maintain-chemrxiv.yml:27`
-- `.github/workflows/maintain-medrxiv.yml:27`
-- `.github/workflows/maintain-supabase.yml:25`
-- `.github/workflows/periodic-report.yml:47`
-- `.github/workflows/privacy-guard.yml:15`
-- `.github/workflows/reset-content.yml:20`
-- `.github/workflows/sync.yml:18`
+- `.github/workflows/daily-paper-reader.yml` 使用 `runs-on: [self-hosted, linux, dpr-local-inference]`。
+- 保留 `workflow_dispatch`，用于手工测试。
+- 定时任务为 `0 19 * * 0-4`；GitHub Actions cron 使用 UTC，对应北京时间周一至周五 03:00。
+- Job 级 guard 限定 `github.repository == 'BBIC-Lab/AI_Paper_Hub'`，避免在公开上游误运行。
+- Embedding endpoint 默认 `http://127.0.0.1:8010/v1/embeddings`，reranker endpoint 默认 `http://127.0.0.1:8011/v1/rerank`；endpoint 通过仓库 Variables 注入或使用 workflow 默认值。
+- `MODEL_API_KEY`、`DPR_LLM_API_KEY` 等 Key 只来自 GitHub Actions Secrets；文件和日志不记录真实值。
+- Preflight 检查 `8010/health`、`8011/health`，并使用 Bearer Key 请求 embedding/rerank 模型接口；不打印 Header 和 Key。
+- 日报生成结果只 `git push origin HEAD:<branch>`，并在 push 前再次确认运行仓库是私有下游。
+- 前端站点预计为 `https://bbic-lab.github.io/AI_Paper_Hub/`；前端设置页可把 endpoint/model 写入 GitHub Actions Variables，把 API Key 写入 GitHub Actions Secrets。
 
-未按本次任务修改任何 workflow。
+其他 workflow 暂未修改，仍保留原有 runner 配置。
 
 ## Self-hosted runner
 
@@ -123,7 +121,8 @@
 
 - 私有 GitHub 仓库地址和权限已确认：`git@github.com-bbic:BBIC-Lab/AI_Paper_Hub.git`。
 - runner 已注册：名称 `spark-d326-bbic`，label `dpr-local-inference`，以普通用户 `jy` 运行。
-- GitHub Secrets 中需要配置的非公开值：LLM、Embedding、Reranker、Supabase/SMTP 等密钥值；仅通过 GitHub Secrets 或安全通道设置。
+- GitHub Secrets 中需要配置的非公开值：`MODEL_API_KEY`（本机 embedding/rerank Bearer Key）、`DPR_LLM_API_KEY`（如日报摘要仍需 LLM）、Supabase/SMTP 等密钥值；仅通过 GitHub Secrets 或安全通道设置。
+- GitHub Variables 中需要配置或确认的非敏感值：`DPR_EMBED_ENDPOINT`、`DPR_RERANK_ENDPOINT`、`DPR_EMBED_MODEL`、`DPR_RERANK_MODEL`，以及可选 LLM model/base URL/provider 变量。
 - 私有工作站部署分支策略：跟随 `origin/main`、固定私有分支，还是使用当前审计分支。
 
 ## 本次修改
@@ -135,3 +134,4 @@
 - 新增非敏感边界说明：`docs/ops/PRIVATE_WORKSTATION.md`。
 - 更新本交接文件：`docs/ops/HANDOFF.md`。
 - 安装并启动 self-hosted runner：名称 `spark-d326-bbic`，label `dpr-local-inference`，服务状态为 `systemd --user enabled/active`。
+- 私有化 daily workflow：改用 spark-d326 self-hosted runner、本机 loopback embedding/rerank endpoint、Secrets 注入 Bearer Key、preflight 与 origin-only push guard。

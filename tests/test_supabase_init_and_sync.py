@@ -85,19 +85,26 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         self.assertIn('FETCH_DAYS="9"', text)
         self.assertIn('ARGS=(--fetch-days "$FETCH_DAYS")', text)
 
-    def test_daily_workflow_runs_weekdays_with_five_day_default(self):
+    def test_daily_workflow_uses_private_runner_and_local_inference(self):
         root = pathlib.Path(__file__).resolve().parents[1]
         workflow_path = root / ".github" / "workflows" / "daily-paper-reader.yml"
         text = workflow_path.read_text(encoding="utf-8")
         workflow = yaml.safe_load(text) or {}
         on_block = workflow.get("on") or workflow.get(True) or {}
+        job = workflow["jobs"]["run"]
         schedule = (on_block.get("schedule") or [])
         inputs = (((on_block.get("workflow_dispatch") or {}).get("inputs")) or {})
         fetch_days = (inputs.get("fetch_days") or {})
-        self.assertEqual(schedule[0].get("cron"), "30 18 * * 0-4")
+        self.assertEqual(schedule[0].get("cron"), "0 19 * * 0-4")
+        self.assertEqual(job.get("runs-on"), ["self-hosted", "linux", "dpr-local-inference"])
+        self.assertEqual(job.get("if"), "github.repository == 'BBIC-Lab/AI_Paper_Hub'")
         self.assertEqual(fetch_days.get("default"), "5")
         self.assertIn('FETCH_DAYS="5"', text)
         self.assertIn("ARGS+=(--fetch-ignore-seen)", text)
+        self.assertIn("http://127.0.0.1:8010/v1/embeddings", text)
+        self.assertIn("http://127.0.0.1:8011/v1/rerank", text)
+        self.assertIn("MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}", text)
+        self.assertIn('git push origin HEAD:"$branch"', text)
 
     def test_email_workflow_has_schedule_marker_and_manual_dispatch(self):
         root = pathlib.Path(__file__).resolve().parents[1]
