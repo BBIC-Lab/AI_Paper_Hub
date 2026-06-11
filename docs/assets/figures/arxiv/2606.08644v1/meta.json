@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-003.webp",
+      "caption": "Figure 1: Information flow of crucial tokens using interchange interventions in Gemma-9B. y-axis: model layers; x-axis: shared original prompt template. Each colored token is varied in a separate experiment: Exp1. Reference box, Exp2. Swap target box, Exp 3. Object, all other black tokens are unchanged; cell: reports normalized IIA, darker cells indicating stronger causal mediation.",
+      "page": 4,
+      "index": 3,
+      "width": 758,
+      "height": 428
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-006.webp",
+      "caption": "Figure 2: Path patching circuit for the retrieval conditioned rebinding. Rows denote functional head groups A–E at specific tokens; Columns denote layers. Horizontal arrows indicate attention mediated value routing. Vertical dashed arrows indicate residual stream composition between head groups, with V and Q denoting value and query mediated composition. Information flows via the chain (E V−→) D Q−→ C V−→ B Q−→ A→ logit. E′ marks the context side box–object binding formation, while E marks a later binding anchor representation that writes the binding information into the readout circuit. The dotted Group E path is model dependent: it is active in some models, but not in Gemma-9B after pruning – binding anchor information may be routed by other heads or already available in the destination position’s residual stream at readout.",
+      "page": 5,
+      "index": 6,
+      "width": 850,
+      "height": 290
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-001.webp",
+      "caption": "Figure 5: Information flow via causal mediation analysis per-experiment setup and result.",
+      "page": 10,
+      "index": 1,
+      "width": 500,
+      "height": 1328
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-004.webp",
+      "caption": "Figure 6: Additional causal mediation diagnostic comparing post swap prefix patching with readout position patching. Top: We patch activations from c into o either at the period following the swap instruction (post swap prefix patching; blue arrow) or at the answer colon position (readout patching; orange arrow). Bottom: Change in mean counterfactual minus original logit margin relative to the clean baseline. Positive values indicate that the patch shifts the model toward the counterfactual answer.",
+      "page": 12,
+      "index": 4,
+      "width": 937,
+      "height": 553
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-005.webp",
+      "caption": "Figure 7: Role specific head patching effects across other models. ∆logit(rabbit) is represented by fully colored",
+      "page": 12,
+      "index": 5,
+      "width": 856,
+      "height": 253
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08644v1/fig-002.webp",
+      "caption": "Table 5: Q/K binding ID interventions on Group B. The random control uses a matched norm random direction. ∆R: change in log attention ratio toward the counterfactual over the original target; ∆logit: corresponding change in the counterfactual original object logit difference; Switch: switch rate of top attended context token from i to j. Gray cells mark the diagnostic Q-side, K-side and Q+K cancellation interventions.",
+      "page": 14,
+      "index": 2,
+      "width": 629,
+      "height": 586
+    }
+  ]
+}

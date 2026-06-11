@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10944v1/fig-001.webp",
+      "caption": "Figure 1: Accelerating long-context prefill. For masked attention, Thinformer Express attains larger speed-ups over FlashAttention 2 than the Triton HyperAttention algorithm (b) while improving the runtime-perplexity trade-off on LongBench-E tasks (c). (a) For unmasked attention, our I/O-aware Triton implementation also provides speed-ups over the original Torch-compiled Thinformer.",
+      "page": 7,
+      "index": 1,
+      "width": 821,
+      "height": 723
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10944v1/fig-002.webp",
+      "caption": "Figure 2: Accelerating KV cache compression. Across leading KV cache compression methods and LongBench-E tasks, Thinformer Express substantially reduces runtime while preserving quality. Error bands display ±1 standard error across all benchmark questions. See Sec. 4 for more details.",
+      "page": 8,
+      "index": 2,
+      "width": 794,
+      "height": 337
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10944v1/fig-003.webp",
+      "caption": "Figure 3: Memory- and compute-efficient long-form decoding. On competition-level MATH-500 problems that benefit from step-by-step reasoning, Thinformer Express improves both the cache size-accuracy trade-off (left) and time-accuracy trade-off (right) of long-form decoding. Error bands display ±1 standard error across all 500 benchmark questions. See Sec. 4 for more details.",
+      "page": 9,
+      "index": 3,
+      "width": 795,
+      "height": 264
+    }
+  ]
+}

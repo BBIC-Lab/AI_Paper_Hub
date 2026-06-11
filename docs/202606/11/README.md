@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-11</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-11 18:23 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -11,11 +11,10 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日精读2篇前沿论文，速读10篇，聚焦LLM概率探针与注意力沉陷的统一视角。</p>
-<p>最值得关注：InA-Probe用指令感知探针让LLM时序预测准确率提升显著；注意力沉陷现象被统一为两种算法方案。</p>
-<p>从时序预测到优化器对比，建议今日优先阅读这两篇高分精读，快速把握LLM能力边界的新解法。</p>
+      <p>今日精读两篇论文，聚焦 LLM 时序预测的主动探测策略与注意力沉没现象的统一框架。</p>
+<p>InA-Probe 首次将指令感知主动学习引入时序预测，而注意力沉没研究给出两种简洁算法解耦计算与记忆。</p>
+<p>建议深入尝试 InA-Probe 的探测思想，并结合 Muon 优化器检验其在不同架构下的鲁棒性。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/11/README">打开完整日报</a>
   </div>
   <section class="dpr-daily-paper-section is-deep">
     <h2>精读区</h2>
@@ -159,3 +158,6 @@
 </article></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>

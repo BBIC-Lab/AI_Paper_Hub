@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-003.webp",
+      "caption": "Table 1. A holistic comparison of BUDDY with related approaches: static depth pruning and dynamic depth routing. BUDDYsupports all four properties simultaneously under this definition. Budget Strict: deterministic control over the exact number of executed Transformer blocks for the user’s budget constraint. Budget Flexibility: the same model meets users’ diverse budgets. Input Adaptive: automatically adapts the inference path based on the input. Decode Adaptive: dynamically adjusting its decoding path during the generation process.",
+      "page": 2,
+      "index": 3,
+      "width": 1013,
+      "height": 233
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-007.webp",
+      "caption": "Figure 2. Evolution of layer importance ranking shifts with context length on the WikiText-2 dataset during autoregressive decoding. The heatmap illustrates how layer importance (e.g., layer 14) fluctuates throughout the decoding process.",
+      "page": 3,
+      "index": 7,
+      "width": 494,
+      "height": 496
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-012.webp",
+      "caption": "Figure 3. Overview of the BUDDY framework. The framework consists of three key components: (1) Decision Module that adaptively selects layers based on context and budget constraints, (2) KV-aware Planner that reuses first-layer KV cache and updates global context during decoding, and (3) Budget Predictor that automatically provides estimated budgets when not explicitly provided.",
+      "page": 4,
+      "index": 12,
+      "width": 989,
+      "height": 483
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-019.webp",
+      "caption": "Table 2. Performance comparison on Llama3-8B across eight Commonsense reasoning benchmarks for different pruning methods at various sparsity levels (12.5%-50%). Boldface indicates the best performance, and the Underline means the second-order performance. BUDDY achieves the best or competitive average performance across pruning ratios while using a single multi-budget model.",
+      "page": 5,
+      "index": 19,
+      "width": 1013,
+      "height": 611
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-001.webp",
+      "caption": "Table 3. Performance comparison on Qwen2.5-7B-Instruct across eight commonsense reasoning benchmarks for different pruning methods at various sparsity levels (14.3%-57.1%). Boldface indicates the best performance, and the Underline means the second-order performance. BUDDY achieves the best or competitive average performance across pruning ratios while using a single multi-budget model.",
+      "page": 6,
+      "index": 1,
+      "width": 1013,
+      "height": 610
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-004.webp",
+      "caption": "Table 4. Speed analysis on the Alpaca and SAMSum datasets. The speed is measured as tokens/s.",
+      "page": 7,
+      "index": 4,
+      "width": 1013,
+      "height": 222
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-010.webp",
+      "caption": "Figure 6. A visual illustration of the BUDDY’s average decision of each transformer block on 37.5% sparsity (12 layers removed). The color green indicates that the blocks are likely important to be maintained, the color grey indicates that the blocks are likely to be pruned, and the color yellow means the importance of layers varies across tasks and samples.",
+      "page": 8,
+      "index": 10,
+      "width": 1005,
+      "height": 276
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-011.webp",
+      "caption": "Table 6. Ablation study on prior knowledge integration for score fusion in the Decision Module. Average accuracy (%) is reported.",
+      "page": 8,
+      "index": 11,
+      "width": 494,
+      "height": 706
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-017.webp",
+      "caption": "Figure 7. Input-dependent layer importance ranking distributions across different inputs on the WikiText-2 datasets. The chart shows how layer rankings vary significantly across inputs, demonstrating the necessity for dynamic pruning decisions.",
+      "page": 12,
+      "index": 17,
+      "width": 797,
+      "height": 294
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-016.webp",
+      "caption": "Figure 8. Input-dependent layer importance ranking distributions across different inputs on the PTB datasets. The chart shows how layer rankings vary significantly across inputs, demonstrating the necessity for dynamic pruning decisions.",
+      "page": 12,
+      "index": 16,
+      "width": 803,
+      "height": 293
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-015.webp",
+      "caption": "Table 10. Performance comparison on Llama2-7B across eight Commonsense reasoning benchmarks for different pruning methods at various sparsity levels (12.5%-50%). Boldface indicates the best performance, and the Underline means the second-order performance. BUDDY achieves the best average performance at moderate-to-high sparsity levels and remains competitive at light sparsity.",
+      "page": 17,
+      "index": 15,
+      "width": 1013,
+      "height": 611
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-009.webp",
+      "caption": "Figure 9. A visual illustration of the BUDDY’s average decision of each transformer block on 12.5% sparsity (4 layers removed). The color green indicates that the blocks are likely important to be maintained, the color grey indicates that the blocks are likely to be pruned, and the color yellow means the importance of layers varies across tasks and samples.",
+      "page": 18,
+      "index": 9,
+      "width": 1007,
+      "height": 276
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-008.webp",
+      "caption": "Table 11. Performance comparison on Llama1-13B across eight Commonsense Reasoning benchmarks for different pruning methods at various sparsity levels (12.5%-50%). Boldface indicates the best performance, and the Underline means the second-order performance. BUDDY achieves the best average performance at moderate-to-high sparsity levels and remains competitive at light sparsity.",
+      "page": 18,
+      "index": 8,
+      "width": 1013,
+      "height": 525
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-014.webp",
+      "caption": "Figure 10. A visual illustration of the BUDDY’s average decision of each transformer block on 25.0% sparsity (8 layers removed). The color green indicates that the blocks are likely important to be maintained, the color grey indicates that the blocks are likely to be pruned, and the color yellow means the importance of layers varies across tasks and samples.",
+      "page": 19,
+      "index": 14,
+      "width": 995,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-013.webp",
+      "caption": "Figure 11. A visual illustration of the BUDDY’s average decision of each transformer block on 50.0% sparsity (16 layers removed). The color green indicates that the blocks are likely important to be maintained, the color grey indicates that the blocks are likely to be pruned, and the color yellow means the importance of layers varies across tasks and samples.",
+      "page": 19,
+      "index": 13,
+      "width": 1007,
+      "height": 277
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-018.webp",
+      "caption": "Table 12. Performance comparison on Llama 2-7B and Qwen 2.5-7B-Instruct on GSM8K benchmarks for different pruning methods at various sparsity levels (12.5%-25%). Boldface indicates the best performance, and the Underline means the second-order performance. BUDDY achieves the best average performance at moderate-to-high sparsity levels and remains competitive at light sparsity.",
+      "page": 20,
+      "index": 18,
+      "width": 759,
+      "height": 388
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-002.webp",
+      "caption": "Table 14. Speed analysis on the Alpaca and SAMSum datasets. The speed is measured as tokens/s.",
+      "page": 21,
+      "index": 2,
+      "width": 913,
+      "height": 406
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-005.webp",
+      "caption": "Figure 12. Training details of GRPO. Training loss, reward, CE, and entropy are reported.",
+      "page": 22,
+      "index": 5,
+      "width": 982,
+      "height": 575
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09514v1/fig-006.webp",
+      "caption": "Figure 13. Budget Predictor evaluation and analysis across tasks. Left: average performance retention and average execution ratio when the budget is selected automatically by the Budget Predictor. Right: instance-level budget distribution over five discrete budget intervals, showing that the predictor adapts its compute allocation across tasks rather than collapsing to a single budget.",
+      "page": 22,
+      "index": 6,
+      "width": 1003,
+      "height": 339
+    }
+  ]
+}

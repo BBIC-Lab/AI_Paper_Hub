@@ -1,0 +1,621 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-11T10:17:53.065339+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 10,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 16,
+    "quick_skim_target": 11,
+    "quick_selected": 10,
+    "deep_selected_before_profile_limit": 6,
+    "quick_selected_before_profile_limit": 11,
+    "profile_daily_limits": {
+      "NDAI": {
+        "deep": 5,
+        "quick": 10
+      }
+    },
+    "profile_limit_dropped_by_tag": {
+      "NDAI": {
+        "deep": 1,
+        "quick": 1
+      }
+    },
+    "profile_limit_dropped": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.08601v1",
+      "source": "arxiv",
+      "title": "InA-Probe: Instruction-Aware Active Probing for Time Series Forecasting with LLMs",
+      "abstract": "Large Language Models (LLMs) have recently demonstrated impressive potential for time series forecasting. However, existing methods predominantly rely on passive modality alignment or static task reprogramming, which often fail to capture fine-grained, non-stationary temporal patterns or to adapt to nuanced task intents. In this paper, we propose Instruction-aware Active Probing (InA-Probe), which shifts the paradigm from passive alignment toward an active, instruction-driven probing mechanism. Specifically, we design a Multi-Level Instruction Injection mechanism that enriches the model with both global task objectives and fine-grained, patch-level semantic priors. Building on this, an Adaptive Query Generation module produces sample-specific probes that are dynamically modulated by the temporal context. These probes are then refined through a dual-stage attention process: they first internalize task-specific intents via Instruction-Aware Self-Attention, and subsequently interrogate the projected temporal representations through Temporal Cross-Attention to extract salient patterns. Comprehensive experiments on seven real-world benchmarks show that InA-Probe consistently outperforms state-of-the-art deep learning and LLM-based baselines, excelling in both one-for-all generalization and zero-shot transfer while reducing forecasting error by up to 37\\% in challenging cross-domain scenarios. Ablation studies further confirm that the synergy between adaptive querying and fine-grained instructions is key to unlocking the reasoning power of LLMs for complex time series.",
+      "authors": [
+        "Peiliang Gong",
+        "Emadeldeen Eldele",
+        "Chenyu Liu",
+        "Ziyu Jia",
+        "Yi Ding",
+        "Xinliang Zhou",
+        "Lianchao Gu",
+        "Qi Zhu",
+        "Yang Liu",
+        "Daoqiang Zhang",
+        "Xiaoli Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-07T12:27:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.08601v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "instruction-aware active probing for time series forecasting",
+      "llm_evidence_cn": "指令感知主动探测用于时间序列预测",
+      "llm_evidence": "指令感知主动探测用于时间序列预测",
+      "canonical_evidence": "指令感知主动探测用于时间序列预测",
+      "llm_tldr_en": "Active probing method to improve LLM-based time series forecasting with instructions.",
+      "llm_tldr_cn": "主动探测方法，利用指令提升基于LLM的时间序列预测",
+      "llm_tldr": "主动探测方法，利用指令提升基于LLM的时间序列预测",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08105v1",
+      "source": "arxiv",
+      "title": "A Unifying View of Attention Sinks: Two Algorithms, Two Solutions",
+      "abstract": "When attention concentrates on a single token, a sink, what is the model actually computing? Attention sinks are ubiquitous in softmax transformers, yet this shared visual signature can hide fundamentally different algorithms. We show that visually similar sink patterns can reflect two distinct mechanisms: {i} adaptive nop, where a head suppresses its update by routing to a null token, and {ii} broadcast, where a sink aggregates and redistributes global information. In that case, sinks serve an analogous role: a safe destination when there is nothing useful to compute. Proposed interventions like gating or registers work because they implicitly target one or the other, revealing a duality between method and assumed mechanism: gating implicitly assumes nop; registers implicitly assume broadcast. Each mechanism leaves distinct traces (nop sinks exhibit negligible value norms; broadcast sinks induce low-rank outputs) which we formalize on synthetic tasks and use to derive practical diagnostics. Applied to pretrained vision transformers, these diagnostics reveal that both mechanisms exist at scale: sinks transition from CLS in early layers to patches in deeper layers, and concentrate in specialized heads. Strikingly, register tokens, designed for broadcast, are repurposed to also serve nop, confirming that neither intervention alone suffices. Combining gating with registers yields complementary gains in stability and performance. Overall, we find that the same attention pattern can reflect two very different computations and effective intervention requires first asking what the model is actually computing.",
+      "authors": [
+        "Lukas Fesser",
+        "Mozes Jacobs",
+        "Thomas Fel",
+        "Andy Keller",
+        "Sham Kakade"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-06T11:10:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.08105v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "attention sink mechanisms analysis",
+      "llm_evidence_cn": "注意力汇聚机制分析",
+      "llm_evidence": "注意力汇聚机制分析",
+      "canonical_evidence": "注意力汇聚机制分析",
+      "llm_tldr_en": "Unifies two distinct attention sink algorithms in transformers, revealing different underlying mechanisms.",
+      "llm_tldr_cn": "统一了Transformer中两种不同的注意力汇聚算法，揭示了不同的底层机制。",
+      "llm_tldr": "统一了Transformer中两种不同的注意力汇聚算法，揭示了不同的底层机制。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08332v1",
+      "source": "arxiv",
+      "title": "SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization",
+      "abstract": "Self-supervised learning (SSL) has achieved remarkable representation learning performance, but many existing methods rely on large batch sizes, memory banks, momentum encoders, or global synchronization mechanisms that substantially increase computational cost and training complexity. In this work, we propose Semantic Mutual Information (SMI), a lightweight self-supervised objective derived from a mutual-information-inspired dependency formulation under Gaussian assumptions. Unlike conventional correlation matching objectives that operate on high-dimensional feature correlation matrices, SMI performs optimization on a sample-level dependency matrix through a nonlinear transformation of pairwise correlations. This formulation induces distinct optimization dynamics that emphasize strongly dependent semantic pairs while maintaining representation diversity. Experimental results on ImageNet using a ResNet-50 backbone demonstrate that SMI achieves competitive linear evaluation performance relative to state-of-the-art SSL approaches while substantially reducing computational complexity. Across multiple low-resource benchmarks, SMI consistently improves transfer performance over Barlow Twins, particularly on fine-grained datasets. Furthermore, analyses of optimization dynamics and representation geometry suggest improved alignment--redundancy balance, greater feature diversity, and more spatially localized semantic representations. These results indicate that nonlinear dependency optimization provides an effective and computationally efficient alternative to conventional correlation-based self-supervised learning objectives.",
+      "authors": [
+        "Pritam Mishra",
+        "Coloma Ballester",
+        "Dimosthenis Karatzas"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-06T20:50:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.08332v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "proposes efficient self-supervised representation learning",
+      "llm_evidence_cn": "提出高效的自监督表示学习方法",
+      "llm_evidence": "提出高效的自监督表示学习方法",
+      "canonical_evidence": "提出高效的自监督表示学习方法",
+      "llm_tldr_en": "SMI provides a lightweight self-supervised objective for efficient representation learning.",
+      "llm_tldr_cn": "SMI提供轻量级自监督目标，实现高效表示学习。",
+      "llm_tldr": "SMI提供轻量级自监督目标，实现高效表示学习。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08630v1",
+      "source": "arxiv",
+      "title": "Tyan-WP: A Wind Power Foundation Model for Ultra-Short-Term Probabilistic Forecasting",
+      "abstract": "Global wind power capacity, especially in China, is booming, with new farms spanning diverse terrains and climates. The industry urgently needs accurate wind power foundation models to shorten commissioning and accelerate grid connection. This is because site-specific time series models (TSMs) are not well suited to data-scarce scenarios and generalize poorly, while generic large time series models (LTSMs) are mostly limited to univariate inputs and cannot fully exploit static site attributes or the dependencies between power and meteorological covariates, leading to insufficient accuracy. To fill this gap, we propose \\textbf{Tyan-WP}, the first wind power foundation model for ultra-short-term probabilistic forecasting. Pretrained on a large-scale wind power dataset covering more than 126,000 U.S. sites over seven years, Tyan-WP further improves zero-shot forecasting through two domain-specific module designs: static site embedding using coordinate, terrain, and ecoregion metadata, and a power-aware meteorological fusion (PAMF) module that models interactions between historical power and meteorological covariates. Under a unified evaluation protocol, Tyan-WP surpasses eight site-specific supervised TSMs on 10 in-domain sites and outperforms eleven generic LTSMs on 127 in-domain sites, reducing MAE by 19.9%, RMSE by 16.6%, CRPS by 22.2%, and AQL by 21.7%, while raising R^2 by 16.7%. It further demonstrates strong cross-geography generalization on six real U.K. sites. These results show that the wind power foundation model can achieve accurate zero-shot forecasting without target-site training, providing a practical pathway for rapid turbine onboarding and probabilistic risk management at new wind farms.",
+      "authors": [
+        "Jiahui Huang",
+        "Ao Luo",
+        "Lei Liu",
+        "Hongwei Zhao",
+        "Tengyuan Liu",
+        "Ruibo Guo",
+        "Bo Wang",
+        "Zhao Wang",
+        "Bin Li"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-07T13:50:09+00:00",
+      "link": "https://arxiv.org/pdf/2606.08630v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "wind power foundation model for ultra-short-term probabilistic forecasting",
+      "llm_evidence_cn": "风电基础模型用于超短期概率预测",
+      "llm_evidence": "风电基础模型用于超短期概率预测",
+      "canonical_evidence": "风电基础模型用于超短期概率预测",
+      "llm_tldr_en": "First pre-trained foundation model for wind power time series forecasting.",
+      "llm_tldr_cn": "首个预训练的风电时间序列预测基础模型",
+      "llm_tldr": "首个预训练的风电时间序列预测基础模型",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08749v1",
+      "source": "arxiv",
+      "title": "Active Source-free Domain Adaptation in Open-set Medical Image Segmentation via Decomposed Uncertainty and Prototype Discrepancy",
+      "abstract": "Deep learning (DL) methods are challenged to demonstrate robust performance across different segmentation datasets due to domain shifts, but active domain adaptation techniques enhance their generalization performance by querying a few samples from target domains for adaptation training. However in clinical practice, target domains often include private classes of new anatomical structures or pathologies that are not presented in the source data, and existing methods implement closed-set segmentation where source and target domains have the same segmentation classes. Additionally, source data are often inaccessible during adaptation due to strict data privacy regulations. To address these limitations, we propose an Active Source-free Open-set Domain Adaptation (ASFOSDA) method which is the first work to implement active learning for adapting DL models in open-set medical image segmentation without the access to source data. This method employs an active open-set query strategy to select the most informative target samples for training models based on Class-aware Decomposed Uncertainty (CDU) and Class-agnostic Prototype Discrepancy (CPD). CDU measures sample aleatoric uncertainty and model epistemic uncertainty by employing test time augmentation in stochastic processes. CPD measures cross-domain and self-domain discrepancy for selecting diverse samples. Subsequently, to boost the adaptation performance by enhancing training samples, a Target-refined Self-training strategy is proposed to generate high-quality pseudo labels for unselected samples, thus combining them with labeled samples for a semi-supervised training. We evaluated our method on cross-domain open-set volumetric medical image segmentation tasks, and it outperformed state-of-the-art adaptation methods.",
+      "authors": [
+        "Jin Yang",
+        "Yichi Zhang",
+        "Peijie Qiu",
+        "Xiaobing Yu"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV"
+      ],
+      "published": "2026-06-07T17:46:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.08749v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "active source-free domain adaptation",
+      "llm_evidence_cn": "主动无源域适应",
+      "llm_evidence": "主动无源域适应",
+      "canonical_evidence": "主动无源域适应",
+      "llm_tldr_en": "Addresses open-set domain adaptation in medical image segmentation without source data access.",
+      "llm_tldr_cn": "解决医学图像分割中无源数据的开放集域适应问题。",
+      "llm_tldr": "解决医学图像分割中无源数据的开放集域适应问题。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "domain adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.09658v1",
+      "source": "arxiv",
+      "title": "Muon Learns More Robust and Transferable Features than Adam",
+      "abstract": "Muon has recently emerged as a state-of-the-art optimizer for pretraining Large Language Models (LLMs) and vision classifiers. Despite its efficiency advantage over Adam and SGD, the feature-learning advantage of Muon remains unclear. This paper investigates Muon's feature-learning advantage through the lens of robustness and transferability. First, by evaluating pretrained models on corrupted images and texts, we show that features learned by Muon are consistently more robust than those learned by Adam and SGD across different architectures, including transformers and Convolutional Neural Networks (CNNs). Using trained layer-wise probes, we further show that this robustness advantage is reflected in larger logit margins across layers. Second, by training linear classifiers or fine-tuning full models from pretrained parameters on downstream tasks, we demonstrate that Muon-learned features transfer more effectively than those learned by Adam and SGD. This transferability advantage is further supported by the diversity of hidden states across layers, as measured by effective rank. Finally, in a representative classification problem with multi-component features, we prove that Muon attains larger margins and higher effective rank than Adam and SGD, providing theoretical support for our empirical findings.",
+      "authors": [
+        "Tianyu Ruan",
+        "Fengzhuo Zhang",
+        "Shuche Wang",
+        "Shihua Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T15:42:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.09658v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "investigates feature transferability of Muon optimizer",
+      "llm_evidence_cn": "研究Muon优化器学习特征的迁移性",
+      "llm_evidence": "研究Muon优化器学习特征的迁移性",
+      "canonical_evidence": "研究Muon优化器学习特征的迁移性",
+      "llm_tldr_en": "Muon optimizer learns more robust and transferable features than Adam, improving pretraining.",
+      "llm_tldr_cn": "Muon优化器比Adam学习更鲁棒和可迁移的特征，提升预训练效果。",
+      "llm_tldr": "Muon优化器比Adam学习更鲁棒和可迁移的特征，提升预训练效果。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.08935v1",
+      "source": "arxiv",
+      "title": "PAI: Preserving Amplitude Information in Representation-Based Time-Series Anomaly Detection",
+      "abstract": "Representation-based time-series anomaly detection algorithms significantly outperform other methods on diverse anomaly detection tasks. However, we notice that they suffer from a major limitation in our evaluation - their learned embeddings are often amplitude-agnostic. Losing amplitude information can degrade performance on amplitude related anomalies, and this failure is prevalent across all existing representation-based methods. To address aforementioned issues, we propose a new anomaly scoring scheme named PAI. PAI consists of two complementary modules, a diagnostic module and a final score augmentation function. The diagnostic module compares cosine and Euclidean scoring on the same representation bank to test whether amplitude information is already captured in the learned representation. Then in final score augmentation function, PAI computes a point-wise median and MAD deviation score and a local mean-shift score-which are fused with the representation score to produce the final anomaly score. On the TSB-AD-U-Eva and TAB UV datasets, PAI improves all four evaluated representation-based methods across every reported metric, achieving average VUS-PR gains of 98.4% and 36.8%, respectively. Among all evaluated combinations, PaAno + PAI achieves the best performance, outperforming the state-of-the-art method by 15%. Further evaluation on bootstrap confidence intervals, anomaly-type breakdowns, and a TS2Vec input-normalization ablation further support the proposed scheme. These results suggest that explicitly retaining amplitude information is important for representation-based time-series anomaly detection, which has been underemphasized in existing scoring schemes. Code is available at: https://github.com/pantheon5100/PAI",
+      "authors": [
+        "Kang Zhang",
+        "Wei Jian Lau",
+        "Shoushou Ren",
+        "Dong Lin",
+        "Joon Son Chung",
+        "Chuanhao Sun"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T02:24:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.08935v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "representation-based time-series anomaly detection",
+      "llm_evidence_cn": "基于表示的时间序列异常检测",
+      "llm_evidence": "基于表示的时间序列异常检测",
+      "canonical_evidence": "基于表示的时间序列异常检测",
+      "llm_tldr_en": "Proposes PAI to preserve amplitude information in representation-based time-series anomaly detection.",
+      "llm_tldr_cn": "提出PAI方法在基于表示的时间序列异常检测中保留幅度信息。",
+      "llm_tldr": "提出PAI方法在基于表示的时间序列异常检测中保留幅度信息。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08204v1",
+      "source": "arxiv",
+      "title": "Neural Field Tokenizations with Hierarchy and Spatial Locality Priors",
+      "abstract": "Neural fields parameterize data as functions from coordinates to values, providing a unified framework for representation learning across modalities. Existing approaches are dominated by per-sample meta-learning, which scales poorly due to memory-intensive inner-loop optimization. The natural alternative -- feed-forward encoding -- typically introduces modality-specific assumptions, sacrificing the generality that makes learning with neural fields attractive. We argue that locality and hierarchy are useful priors for learning field representations that can be injected without compromising modality-agnosticism. We propose LH-NeF, a framework to learn general-purpose tokenized representations of continuous signals. A locality-preserving hierarchical encoder maps raw coordinate-value field observations to structured tokens, from which the field is reconstructed during training. By replacing meta-learning's inner loop with a single forward pass, LH-NeF uses 42$\\times$ less memory and supports 133$\\times$ larger batches than the strongest modality-agnostic baseline. Across images, 3D shapes, and climate fields, our learned representations match or exceed performance of modality-agnostic, modality-specific, and specialized generative neural field baselines on both reconstruction and downstream tasks.",
+      "authors": [
+        "Alonso Urbano",
+        "David W. Romero",
+        "Max Zimmer",
+        "Sebastian Pokutta"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-06-06T14:43:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.08204v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "general-purpose tokenized representation learning for continuous signals via neural fields",
+      "llm_evidence_cn": "通过神经场对连续信号进行通用分词表示学习",
+      "llm_evidence": "通过神经场对连续信号进行通用分词表示学习",
+      "canonical_evidence": "通过神经场对连续信号进行通用分词表示学习",
+      "llm_tldr_en": "Hierarchical locality-preserving neural field framework for modality-agnostic representation learning",
+      "llm_tldr_cn": "层级结构保持局部性的神经场框架，用于模态无关的表示学习",
+      "llm_tldr": "层级结构保持局部性的神经场框架，用于模态无关的表示学习",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.09718v1",
+      "source": "arxiv",
+      "title": "Evaluating the Representation Space of Diffusion Models via Self-Supervised Principles",
+      "abstract": "Diffusion models have demonstrated remarkable generative capabilities and have also emerged as powerful self-supervised representation learners, yet the connection between these two abilities remains less explored. Drawing inspiration from self-supervised learning (SSL), we introduce a framework for jointly evaluating the representation and generation capabilities of diffusion models. Specifically, we decompose features into invariant and residual components and derive the Invariant Contamination Ratio (ICR), a Fisher-based metric that quantifies how residual variation contaminates invariant signal in feature space. We use this framework to analyze both discriminative and generative behavior of diffusion models. On the representation side, we find that invariance peaks at intermediate noise levels, which also yield the best downstream classification performance. On the generative side, we study how training transitions from genuine generalization to memorization in data-limited regimes, and show that ICR serves as a sensitive training-time indicator of early learning: increasing residual energy along Fisher directions marks the onset of memorization, detectable from training features alone without external evaluators or held-out test sets. Overall, our results show that diffusion models can be monitored from a self-supervised perspective through the geometry of their learned representations.",
+      "authors": [
+        "Xiao Li",
+        "Yixuan Jia",
+        "Zekai Zhang",
+        "Xiang Li",
+        "Lianghe Shi",
+        "Jinxin Zhou",
+        "Zhihui Zhu",
+        "Liyue Shen",
+        "Qing Qu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-06-08T16:44:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.09718v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Evaluates representation learning in diffusion models via self-supervised principles",
+      "llm_evidence_cn": "通过自监督原则评估扩散模型中的表示学习",
+      "llm_evidence": "通过自监督原则评估扩散模型中的表示学习",
+      "canonical_evidence": "通过自监督原则评估扩散模型中的表示学习",
+      "llm_tldr_en": "Framework to jointly evaluate representation and generation in diffusion models",
+      "llm_tldr_cn": "联合评估扩散模型表示和生成的框架",
+      "llm_tldr": "联合评估扩散模型表示和生成的框架",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09342v1",
+      "source": "arxiv",
+      "title": "Parameter-Efficient Continual Learning for Automatic Speech Recognition",
+      "abstract": "Speech foundation models enable strong general-purpose ASR and are attractive for downstream adaptation. However, their size and the catastrophic forgetting induced by sequential fine-tuning demand parameter-efficient and regularized training methods, motivating parameter-efficient continual learning (PECL). While PECL has been widely studied in NLP and vision, it has received less attention in ASR. In this paper, we propose a simple yet effective PECL method based on recent advances in parameter-efficient fine-tuning for ASR. We partition pretrained weight matrices into head and tail subspaces according to singular values and restrict adaptation to approximate rotations within the low-energy tail subspace, preserving dominant components and reducing forgetting. For subsequent tasks, rotations are combined via weight averaging to further improve retention. Experiments on two benchmarks demonstrate reduced forgetting and superior overall performance compared to recent PECL baselines.",
+      "authors": [
+        "Steven Vander Eeckt",
+        "Hugo Van hamme"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-08T11:08:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.09342v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "parameter-efficient continual learning for transfer",
+      "llm_evidence_cn": "参数高效持续学习用于迁移",
+      "llm_evidence": "参数高效持续学习用于迁移",
+      "canonical_evidence": "参数高效持续学习用于迁移",
+      "llm_tldr_en": "Introduces a PECL method for ASR that adapts pretrained models while preventing catastrophic forgetting.",
+      "llm_tldr_cn": "提出用于自动语音识别的参数高效持续学习方法，在防止灾难性遗忘的同时适配预训练模型。",
+      "llm_tldr": "提出用于自动语音识别的参数高效持续学习方法，在防止灾难性遗忘的同时适配预训练模型。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08644v1",
+      "source": "arxiv",
+      "title": "A retrieval conditioned rebinding circuit for dynamic entity tracking in large language models",
+      "abstract": "To interpret context correctly and retrieve relevant information, large language models must bind entities to their attributes and update these bindings as state changes. We analyze how LLMs implement this binding process in a dynamic state tracking. Using causal interventions, we identify a retrieval conditioned rebinding mechanism, a compact attention head circuit that encodes swap relevant binding information and reinstates it at readout. Across Gemma and Llama models, this circuit supports rebinding behavior, but the representational signature of the mechanism differs across model families. In Gemma models, the binding signature is clearly expressed in the query/key subspaces of the relevant attention heads, whereas in Llama models, the binding information is carried primarily in key vectors. Overall, our results reveal an interpretable mechanism for context dependent state tracking in LLMs.",
+      "authors": [
+        "Soyoung Oh",
+        "Vera Demberg"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-07T14:16:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.08644v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "identifies attention head circuit for dynamic entity tracking",
+      "llm_evidence_cn": "识别用于动态实体追踪的注意力头电路",
+      "llm_evidence": "识别用于动态实体追踪的注意力头电路",
+      "canonical_evidence": "识别用于动态实体追踪的注意力头电路",
+      "llm_tldr_en": "Reveals an attention circuit in LLMs that rebinds entity information dynamically.",
+      "llm_tldr_cn": "揭示LLM中动态重绑定实体信息的注意力电路。",
+      "llm_tldr": "揭示LLM中动态重绑定实体信息的注意力电路。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.10392v1",
+      "source": "arxiv",
+      "title": "Instruction Finetuning DeepSeek-R1-8B Model Using LoRA and NEFTune",
+      "abstract": "Financial named-entity recognition (NER) is essential for translating unstructured financial reports and news into structured knowledge graphs. However, general-purpose large language models (LLMs) often misclassify financial entities or ignore domain-specific patterns. This paper investigates the use of DeepSeek-R1-8B, a recent open-source large language model, combined with Low-Rank Adaptation (LoRA) and Noisy Embedding Fine-Tuning (NEFTune) for financial NER. Each annotated sentence in our corpus of 1693 samples is converted into an instruction-input-output triple. We insert lightweight LoRA matrices into the Transformer layers and apply NEFTune to improve generalisation by adding uniform noise to embedding vectors during training. Experiments show that the LoRA-adapted DeepSeek-R1-8B achieves a micro-F1 of 0.901 on seven entity types (Company, Date, Location, Money, Person, Product and Quantity), and adding NEFTune further boosts the micro-F1 to 0.912, outperforming Llama3-8B, Qwen3-8B, Baichuan2-7B, T5 and BERT-Base baselines.",
+      "authors": [
+        "Wu Yuerong",
+        "Mingni Luo"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-09T04:14:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.10392v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Applies LoRA (transfer learning) for instruction finetuning of LLM",
+      "llm_evidence_cn": "应用LoRA（迁移学习）微调大语言模型",
+      "llm_evidence": "应用LoRA（迁移学习）微调大语言模型",
+      "canonical_evidence": "应用LoRA（迁移学习）微调大语言模型",
+      "llm_tldr_en": "Finetunes DeepSeek-R1-8B with LoRA and NEFTune for financial NER",
+      "llm_tldr_cn": "使用LoRA和NEFTune微调DeepSeek-R1-8B用于金融NER",
+      "llm_tldr": "使用LoRA和NEFTune微调DeepSeek-R1-8B用于金融NER",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09514v1",
+      "source": "arxiv",
+      "title": "BUDDY: BUdget-Driven DYnamic Depth Routing for Adaptive Large Language Model Inference",
+      "abstract": "Large language models (LLMs) incur high inference cost due to their depth and parameter scale. Depth pruning can reduce latency by skipping redundant Transformer blocks, but existing methods (i) provide limited control under user-specific compute budgets and (ii) typically fix the routing path, failing to adapt as the context grows during decoding. We propose Buddy, a budget-driven dynamic depth routing framework. Buddy uses a lightweight Decision Module to score intermediate layers conditioned on the input and deterministically executes the top-k layers to satisfy a given budget. To support decode-time adaptation, Buddy reuses the first-layer KV cache as a low-overhead global context source and pools it together with the newest token representation before each routing decision. When no explicit budget is provided, an optional Budget Predictor estimates an input-dependent compute level to balance quality and efficiency. Experiments on Llama-family and Qwen models show that Buddy is competitive with strong static pruning baselines and often improves the accuracy-compute trade-off, while uniquely supporting strict budget control, decode-time rerouting, and multiple budgets within a single trained model.",
+      "authors": [
+        "Yuhua Zhou",
+        "Shaoqi Yu",
+        "Shichao Weng",
+        "Changhai Zhou",
+        "Mingze Yin",
+        "Fei Yang",
+        "Aimin Pan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-08T14:06:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.09514v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "dynamic depth routing framework for adaptive LLM inference during decoding",
+      "llm_evidence_cn": "用于自适应LLM推理的动态深度路由框架，在解码过程中",
+      "llm_evidence": "用于自适应LLM推理的动态深度路由框架，在解码过程中",
+      "canonical_evidence": "用于自适应LLM推理的动态深度路由框架，在解码过程中",
+      "llm_tldr_en": "Budget-driven dynamic depth routing for adaptive LLM inference with decode-time adaptation",
+      "llm_tldr_cn": "预算驱动的动态深度路由，用于自适应LLM推理及解码时适应",
+      "llm_tldr": "预算驱动的动态深度路由，用于自适应LLM推理及解码时适应",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "sequence decoding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.10944v1",
+      "source": "arxiv",
+      "title": "Express Language Modeling",
+      "abstract": "We introduce a new tool, Express, for converting a non-causal attention approximation into a causal approximation with matching approximation guarantees. When combined with the state-of-the-art Thinformer approximation, Express improves upon the best known causal attention guarantees, delivering $\\log^{3/2}(n)/s$ approximation error with only $O(s)$ memory and $O(s^2 \\log^2(n))$ compression overhead for a sequence of length $n$. We pair these developments with an efficient I/O-aware Triton implementation, demonstrate substantial speedups over FlashAttention 2, and use Express to overcome four resource bottlenecks in the language modeling pipeline: long-context prefill, KV cache compression, long-form memory-constrained decoding, and long-form compute-constrained decoding.",
+      "authors": [
+        "Albert Gong",
+        "Annabelle Michael Carrell",
+        "Raaz Dwivedi",
+        "Lester Mackey"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DS",
+        "math.ST",
+        "stat.ME",
+        "stat.ML"
+      ],
+      "published": "2026-06-09T14:48:56+00:00",
+      "link": "https://arxiv.org/pdf/2606.10944v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Develops Express for converting non-causal to causal attention with improved efficiency",
+      "llm_evidence_cn": "开发Express将非因果注意力转换为因果注意力，提升效率",
+      "llm_evidence": "开发Express将非因果注意力转换为因果注意力，提升效率",
+      "canonical_evidence": "开发Express将非因果注意力转换为因果注意力，提升效率",
+      "llm_tldr_en": "Express achieves efficient causal attention approximation for language modeling",
+      "llm_tldr_cn": "Express实现了高效因果注意力近似用于语言建模",
+      "llm_tldr": "Express实现了高效因果注意力近似用于语言建模",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09954v1",
+      "source": "arxiv",
+      "title": "Does Normalization Choice Matter for Causal Large Time-Series Models?",
+      "abstract": "Large models for time-series forecasting have been emerged as a promising paradigm for training models on heterogeneous collections of signals. These models typically rely on causal autoregressive architectures, where each observation is sequentially predicted from past. In practice, real-world time-series exhibit non-stationarities, which significantly influence predictive performance. To mitigate this, normalization is commonly employed. However, in efficient causal settings it might induce information leakage from future observations during training. Recent alternatives, including causal normalization and statistics computed from initial observations, have been proposed to address this issue, but their practical implications remain insufficiently understood. In this work, we evaluate normalization strategies for transformer-based large time-series models trained with patching and efficient causal strategy. We showcase that normalization choice significantly influences both training convergence and forecasting performance.",
+      "authors": [
+        "Samy-Melwan Vilhes",
+        "Gilles Gasso",
+        "Mokhtar Z Alaya"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T10:51:56+00:00",
+      "link": "https://arxiv.org/pdf/2606.09954v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "causal large time-series models normalization study",
+      "llm_evidence_cn": "因果大规模时间序列模型归一化研究",
+      "llm_evidence": "因果大规模时间序列模型归一化研究",
+      "canonical_evidence": "因果大规模时间序列模型归一化研究",
+      "llm_tldr_en": "Investigates the impact of normalization choices on causal large time-series forecasting models.",
+      "llm_tldr_cn": "研究归一化选择对因果大规模时间序列预测模型的影响。",
+      "llm_tldr": "研究归一化选择对因果大规模时间序列预测模型的影响。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

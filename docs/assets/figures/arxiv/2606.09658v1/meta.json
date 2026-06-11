@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-002.webp",
+      "caption": "Figure 1: Robustness evaluations on vision and language tasks. (a) ResNet-18 and (b) ViT-S are evaluated on ImageNet-C, while (c) GPT-2 and (d) GPT-2 Medium are evaluated on FineWeb10B-C. Shaded bands denote ± one standard deviation over three random seeds. Muon achieves the best mean performance in all four panels, with consistent gains across transformer-based vision and language models. These suggest more robust learned features of Muon under corrupted inputs.",
+      "page": 7,
+      "index": 2,
+      "width": 964,
+      "height": 534
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-007.webp",
+      "caption": "Figure 2: Layer-wise classification margin for (a) ViT-S and (b) GPT-2. For each layer, we train a linear probe and report the mean sample-level margin (correct logit minus the largest distractor logit) on validation data. Shaded bands denote ± one standard deviation over three seeds. Across both architectures, Muon achieves larger margins across most layers, suggesting stronger representation-level robustness.",
+      "page": 8,
+      "index": 7,
+      "width": 836,
+      "height": 300
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-010.webp",
+      "caption": "Figure 3: Classification accuracy (↑) across four downstream vision tasks. Pretrained backbones are frozen; only the linear classifier is trained. Muon matches or surpasses Adam and SGD across all eight backbone–task combinations, indicating that its pretrained vision features transfer more effectively.",
+      "page": 9,
+      "index": 10,
+      "width": 960,
+      "height": 241
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-004.webp",
+      "caption": "Figure 4: Instruction-tuning perplexity (↓) on three downstream datasets. Each nanoGPT checkpoint is fully fine-tuned on each downstream dataset. Muon-pretrained models achieve lower perplexity than Adam-pretrained models across all benchmarks, indicating stronger transferability of the pretrained language representations.",
+      "page": 10,
+      "index": 4,
+      "width": 756,
+      "height": 220
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-001.webp",
+      "caption": "Figure 5: Layer-wise feature spectrum across transformer depth. Panels (a) and (b) report results for ViT-S, while panels (c) and (d) report results for GPT-2. Panels (a) and (c) show the effective rank of hidden representations, and panels (b) and (d) show the top-10 energy fraction. Shaded bands denote ± one standard deviation over three random seeds. Overall, Muon generally yields higher effective rank and lower Top-10 energy across layers, indicating more spectrally diverse hidden representations.",
+      "page": 11,
+      "index": 1,
+      "width": 944,
+      "height": 216
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-008.webp",
+      "caption": "Figure 6: Multi-component feature structure (Assumption 5.1), shown as the transposed feature matrix F⊤ ∈ RC×(m+C) for the case m=3, n=2, C=m · n=6. Each row corresponds to one class c = (g, r), where g indexes its block and r its position within the block. The feature of every class decomposes into two parts. The shared component a ·RT (blue, first m columns) is determined solely by the block index g: all classes in the same block activate the same coordinate eg with magnitude a, encoding their semantic relatedness. The unique component b · IC (red, remaining C columns) assigns each class its own coordinate e(g,r) with magnitude b, ensuring all classes remain individually distinguishable.",
+      "page": 12,
+      "index": 8,
+      "width": 644,
+      "height": 343
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-006.webp",
+      "caption": "Figure 7: Pairwise absolute cosine similarity of centered input-embedding vectors, reordered by hierarchical clustering with optimal leaf ordering. The shared block structure across ViT-S and GPT-2 supports Assumption 5.1.",
+      "page": 13,
+      "index": 6,
+      "width": 723,
+      "height": 278
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-009.webp",
+      "caption": "Table 2: Robustness of optimizers across image and language pretraining. For ResNet-18 and ViT-S we report Top-1 accuracy (%, ↑) on ImageNet-C across the four standard corruption categories (Noise, Blur, Weather, Digital), with the rightmost column averaging over all 15 corruption types. For GPT-2 and GPT-medium we report perplexity (↓) on FineWeb-C across four text-corruption types (Add, Drop, Key, Swap), with the rightmost column averaging over the four. Values are mean ± std over 3 seeds, except GPT-medium which is reported from a single run. The best optimizer per column is in bold.",
+      "page": 27,
+      "index": 9,
+      "width": 964,
+      "height": 482
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-005.webp",
+      "caption": "Table 3: Linear-probe transfer for vision and instruction-tuning adaptation for language. For ResNet-18 and ViT-S, we report linear-probe accuracy (%, ↑) on four downstream image classification benchmarks. For GPT-2 and GPT-medium, we report fine-tuning test perplexity (↓) on three instruction datasets. Vision results and GPT-2 results are mean ± std over 3 seeds; GPT-medium is reported from a single run. The best optimizer per column is in bold.",
+      "page": 28,
+      "index": 5,
+      "width": 964,
+      "height": 558
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09658v1/fig-003.webp",
+      "caption": "Figure 8: Layer-wise analysis on GPT-2 Medium. (a) Classification margin. (b) Effective rank and (c) Top-10 energy fraction of hidden representations. Overall, Muon yields higher margin, higher eRank, and lower Top10E than Adam.",
+      "page": 29,
+      "index": 3,
+      "width": 976,
+      "height": 234
+    }
+  ]
+}

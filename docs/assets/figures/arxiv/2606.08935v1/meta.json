@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-004.webp",
+      "caption": "Figure 2: PAI workflow. PAI augments the scoring scheme of exsiting representation-based TSAD methods with two parallel branches. PAI replaces the cosine distance with Euclidean distance in the representation scoring function branch. Concurrently, it computes two more train calibrated raw amplitude scores which are then fused with the score from the representation branch to form the final anomaly score. Modules with colored background show new or modified components in the scoring scheme introduced by PAI, while the other modules are unchanged from the original TSAD method.",
+      "page": 3,
+      "index": 4,
+      "width": 814,
+      "height": 345
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-001.webp",
+      "caption": "Table 2: Main results on TSB-AD-U-Eva. We report univariate time-series anomaly detection performance across classical, neural, and representation-based methods. For each metric, the best and second-best values are shown in bold and underlined, respectively. All scores are averaged over five runs.",
+      "page": 6,
+      "index": 1,
+      "width": 840,
+      "height": 577
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-007.webp",
+      "caption": "Figure 4: VUS-PR by TSB-AD anomaly type.",
+      "page": 8,
+      "index": 7,
+      "width": 384,
+      "height": 337
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-010.webp",
+      "caption": "Figure 5: Weight robustness of PaAno + PAI on TSB-AD-U-Eva. The heat map shows the full weight grid for the fusion rule zeuc + λgzmag + λqzT2 at W = 32, reported as the five-seed mean ∆ VUS-PR relative to the PaAno base score. The selected fixed configuration lies within a broad positive plateau rather than at an isolated optimum.",
+      "page": 9,
+      "index": 10,
+      "width": 799,
+      "height": 377
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-008.webp",
+      "caption": "Table 7: Component ablation on TSB-AD-U-Eva. Rows isolate the Euclidean representation-bank term, the two raw-scale scores, and their pairwise/full fusions. The TSPulse rows use encoder-bank distance for the representation term; the native prediction/reconstruction head is not included in this table.",
+      "page": 12,
+      "index": 8,
+      "width": 636,
+      "height": 415
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-009.webp",
+      "caption": "Table 8: TS2Vec with and without input normalization on TSB-AD-U-Eva. Input normalization reduces the Euclidean-minus-cosine gap, but it also lowers the pure cosine representation score. The ablation therefore supports the normalization mechanism with this caveat.",
+      "page": 12,
+      "index": 9,
+      "width": 830,
+      "height": 249
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-005.webp",
+      "caption": "Table 9: Protocol-aligned cross-corpus results on TAB UV. PAI uses the fixed score-fusion parameters selected on TSB-AD-U-Eva.",
+      "page": 13,
+      "index": 5,
+      "width": 818,
+      "height": 192
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-006.webp",
+      "caption": "Table 10: Full protocol-aligned representation-method comparison on TAB UV. The table separates cosine distance, Euclidean distance, raw-scale fusion, and TSPulse native-head fusion. Non-protocolaligned PaAno-family TAB results are omitted.",
+      "page": 13,
+      "index": 6,
+      "width": 768,
+      "height": 298
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-003.webp",
+      "caption": "Table 11: Parameter counts and run times for the benchmark methods. PAI score-fusion rows inherit the learned parameters of the base method; the raw-scale terms have no learned parameters. A dash denotes nonparametric methods or unavailable counts in the source table.",
+      "page": 14,
+      "index": 3,
+      "width": 314,
+      "height": 508
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08935v1/fig-002.webp",
+      "caption": "Table 12: Weight-grid robustness on TSB-AD-U-Eva. Each row evaluates wez(e) + λgz(magG) + λqz(T2) on the common time-series instances. Bold marks the best value in each metric within a method block.",
+      "page": 15,
+      "index": 2,
+      "width": 660,
+      "height": 862
+    }
+  ]
+}

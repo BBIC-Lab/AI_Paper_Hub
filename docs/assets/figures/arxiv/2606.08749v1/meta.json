@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08749v1/fig-001.webp",
+      "caption": "Fig. 1. Active Source-free Open-set Domain Adaptation in medical image segmentation. (A) Active Open-set Query strategy: After test time augmentation was employed, Class-aware Aleatoric Uncertainty and Class-aware Epistemic Uncertainty were measured, and combined to measure Class-aware Decomposed Uncertainty. Class-agnostic Prototype Discrepancy measured self-domain discrepancy and cross-domain discrepancy among low- and high-uncertainty samples. (B) Targetrefined Self-training: Target samples with high scores were selected for annotation Tl = {(Xl,Y l)} and training the network, and then this network regenerated and refined pseudo-labels for unselected samples with low scores Tu = {(Xu,Y u)}. Finally, labeled and pseudo-labeled samples were combined for semi-supervised training.",
+      "page": 3,
+      "index": 1,
+      "width": 716,
+      "height": 220
+    }
+  ]
+}

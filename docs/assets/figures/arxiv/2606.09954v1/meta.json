@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-003.webp",
+      "caption": "Table 1: Critical difference diagram (Demšar, 2006) results across context sizes w for each normalization strategy aggregated by datasets and forecasting horizons. The best overall mean rank for each metric and context size is shown in bold, and the second-best is underlined (lower ranks indicate better performance). Strategies connected within the same group (ranka) are not statistically distinguishable according to the Nemenyi test with α = 0.05. Best group is a, second-best group is b, and so on. Results are aggregated over all test signals and forecasting horizons.",
+      "page": 4,
+      "index": 3,
+      "width": 801,
+      "height": 202
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-006.webp",
+      "caption": "Figure 3: Inference time versus horizon length h, comparing normalization strategies and the use of key–value caching in Causal+sinh−1 across different context lengths. Similar behavior is observed without the sinh−1 transformation.",
+      "page": 9,
+      "index": 6,
+      "width": 816,
+      "height": 385
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-005.webp",
+      "caption": "Figure 4: Forecast for each normalization strategy on a synthetic non-stationary sinusoidal signal at initialization.",
+      "page": 12,
+      "index": 5,
+      "width": 821,
+      "height": 186
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-001.webp",
+      "caption": "Figure 6: Forecasting performance across prediction horizons on the Synthetic dataset for four context lengths (128, 256, 512, 1024).",
+      "page": 15,
+      "index": 1,
+      "width": 796,
+      "height": 794
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-007.webp",
+      "caption": "Figure 7: Forecasting performance across prediction horizons on the UTSD-12G dataset for four context lengths (128, 256, 512, 1024).",
+      "page": 16,
+      "index": 7,
+      "width": 796,
+      "height": 794
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-004.webp",
+      "caption": "Figure 8: Forecasting performance across prediction horizons on the GIFT-Eval dataset for four context lengths (128, 256, 512, 1024).",
+      "page": 17,
+      "index": 4,
+      "width": 796,
+      "height": 794
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09954v1/fig-002.webp",
+      "caption": "Figure 9: Scaled Quantile Loss as a forecasting performance metric across prediction horizons on all datasets, evaluated for four context lengths (128, 256, 512, and 1024).",
+      "page": 18,
+      "index": 2,
+      "width": 795,
+      "height": 794
+    }
+  ]
+}

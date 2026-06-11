@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-008.webp",
+      "caption": "Figure 1: Same Visual Signature, Different Algorithms. Visually, attention sinks appear identically as vertical stripes where multiple tokens attend to a single position. However, this pattern can implement two fundamentally different algorithms. (Left) Adaptive NOP: The sink acts as a suppression mechanism (“trash can”). Tokens attend here to effectively perform an identity operation and avoid updating their state. (Right) Broadcast: The sink acts as a communication hub (“coffee cup”). Tokens attend here to retrieve shared global information, actively writing a payload to the residual stream. We provide diagnostics to distinguish these regimes, showing that distinct interventions are required for each.",
+      "page": 2,
+      "index": 8,
+      "width": 702,
+      "height": 443
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-001.webp",
+      "caption": "Figure 3: Broadcast sink signatures. A two-layer model trained on global broadcast learns a modular solution: (A) Layer 1 forms a broadcast hub while Layer 2 remains identity-like; (B) sink values retain content-scale norms; (C) query-key geometry selects the source token; and (D) the broadcast update is rank-1.",
+      "page": 6,
+      "index": 1,
+      "width": 736,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-012.webp",
+      "caption": "Figure 7: (A) High-entropy gating makes sinks appear faster. When the head is forced to perform a NOP for about half the tokens (maximal uncertainty about whether to update), optimization quickly discovers a dedicated sink position to reliably suppress updates. (B) Even an imperfect NOP pressure makes sinks appear. Decreasing the NOP factor γ pushes the desired output closer to zero on gated tokens, which increases the incentive to route to a null token and results in higher sink plateaus.",
+      "page": 13,
+      "index": 12,
+      "width": 658,
+      "height": 242
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-007.webp",
+      "caption": "Table 2: ViT-Large architecture specifications for LeJEPA experiments.",
+      "page": 21,
+      "index": 7,
+      "width": 632,
+      "height": 338
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-006.webp",
+      "caption": "Table 3: Optimization hyperparameters for LeJEPA experiments.",
+      "page": 21,
+      "index": 6,
+      "width": 556,
+      "height": 320
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-009.webp",
+      "caption": "Table 5: Training data augmentation pipeline for LeJEPA experiments. Four augmented views are generated per image.",
+      "page": 22,
+      "index": 9,
+      "width": 656,
+      "height": 276
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-010.webp",
+      "caption": "Table 8: Existing assets used in this work and their licenses or terms of use.",
+      "page": 23,
+      "index": 10,
+      "width": 722,
+      "height": 214
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-011.webp",
+      "caption": "Figure 8: (Left) Registers absorb sink behavior. In DINOv2-G + Reg.(4), register tokens (pink) capture nearly all attention mass across layers, displacing patch and [CLS] sinks. (Right) Registers inherit both regimes. Register sinks cluster into the same two phenotypes: NOP (low norm, majority) and broadcast (high norm, rank-1). Registers are repurposed for both mechanisms.",
+      "page": 23,
+      "index": 11,
+      "width": 739,
+      "height": 232
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-013.webp",
+      "caption": "Figure 9: Sink token transition across layers. EVA Giant and Clip OpenAI Large both exhibit a handoff pattern, although the pattern is more pronounced in EVA: [CLS] serves as the sink in early layers but yields to patch tokens in later layers.",
+      "page": 24,
+      "index": 13,
+      "width": 829,
+      "height": 237
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-014.webp",
+      "caption": "Figure 10: Head specialization in EVA Giant. The entropy of values per layer shows that sink behavior is head-specific.",
+      "page": 24,
+      "index": 14,
+      "width": 748,
+      "height": 462
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-003.webp",
+      "caption": "Figure 11: Head specialization in Clip OpenAI Large. The entropy of values per layer shows that sink behavior is head-specific.",
+      "page": 25,
+      "index": 3,
+      "width": 748,
+      "height": 463
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-002.webp",
+      "caption": "Figure 12: Dual Phenomenology in EVA Giant. Sinks cluster into NOP sinks (low norm, bottom) and broadcast sinks (moderate to high norm, ≈rank-1 update, left). Both regimes coexist within the same model.",
+      "page": 25,
+      "index": 2,
+      "width": 790,
+      "height": 571
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-005.webp",
+      "caption": "Figure 13: Dual Phenomenology in Clip OpenAI Large. Sinks cluster into NOP sinks (low norm, bottom) and broadcast sinks (moderate to high norm, ≈rank-1 update, left). Both regimes coexist within the same model.",
+      "page": 26,
+      "index": 5,
+      "width": 790,
+      "height": 631
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08105v1/fig-004.webp",
+      "caption": "Figure 14: Gating and registers mitigate high norms. Distribution of token norms across layers on the ImageNet-1k validation set.",
+      "page": 26,
+      "index": 4,
+      "width": 817,
+      "height": 217
+    }
+  ]
+}

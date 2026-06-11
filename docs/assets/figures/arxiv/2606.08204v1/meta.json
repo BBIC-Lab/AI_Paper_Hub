@@ -1,0 +1,142 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-004.webp",
+      "caption": "Figure 1: LH-NeF overview. (a) Observations from an input are embedded into the Cemb-dimensional tokenizer input space (Appx. B.1) and sorted by a locality-preserving ordering, then processed by L grouped attention blocks, yielding the tokenized representation Y(L). The locality-preserving ordering ensures each group’s spatial support covers a compact region of the coordinate space ( / ). (b) To render the field fθ at any coordinate x, the renderer routes x to the k nearest groups, weighting each group’s contribution via a learnable Gaussian kernel. Per-group cross-attention outputs are then aggregated into h(x) via a weighted sum, FiLM-conditioned on the query’s relative coordinate x̃, and decoded into the field value fθ(x).",
+      "page": 2,
+      "index": 4,
+      "width": 811,
+      "height": 314
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-008.webp",
+      "caption": "Table 1: Methods for learning on datasets of neural fields. OPT = optimization-based. † labels used during meta-learning.",
+      "page": 3,
+      "index": 8,
+      "width": 830,
+      "height": 280
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-005.webp",
+      "caption": "Table 3: Downstream tasks on frozen latent representations. Bold: best among modality-agnostic representation learning methods. Underline: best overall.",
+      "page": 7,
+      "index": 5,
+      "width": 731,
+      "height": 261
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-007.webp",
+      "caption": "Figure 4: Receptive fields of the tokenizer hierarchy for the ERA5 (46×90 lat-lon grid on S2) LH-NeF tokenizer configuration. HiP (top): groups follow flat lat-lon raster order, producing latitude bands that lump unrelated climate regions together. LH-NeF (bottom): the S2 cell sort key produces compact, geographically coherent regions at every level. Each color represents one group.",
+      "page": 14,
+      "index": 7,
+      "width": 756,
+      "height": 338
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-003.webp",
+      "caption": "Figure 5: Receptive fields of the tokenizer hierarchy for the CIFAR-10 (32×32) LH-NeF tokenizer configuration. HiP (top): groups are horizontal stripes with no 2D locality. LH-NeF (bottom): groups are spatially compact patches that coarsen hierarchically. Each color represents one group.",
+      "page": 15,
+      "index": 3,
+      "width": 756,
+      "height": 372
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-016.webp",
+      "caption": "Figure 6: Receptive field LH-NeF tokenizer hierarchy on a ShapeNet chair (323 voxels, k-d tree ordering).",
+      "page": 16,
+      "index": 16,
+      "width": 760,
+      "height": 199
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-017.webp",
+      "caption": "Figure 7: Voronoi partition of 3D space induced by k-d tree group centroids (G=64, four groups highlighted per shape). Colored points: observed surface samples belonging to each highlighted group. Semi-transparent colored cells: the corresponding Voronoi regions extending into unoccupied space. Groups adapt each input’s point cloud geometry. From left to right: chair, bag, table, lamp.",
+      "page": 16,
+      "index": 17,
+      "width": 826,
+      "height": 194
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-013.webp",
+      "caption": "Figure 8: FiLM scale parameter γ (six different channels) evaluated on a 32×32 query grid with the trained CIFAR10 checkpoint. The modulation pattern repeats identically across all spatial groups (see overlay in Figure 5 Block 3), showing how the group-normalized coordinate frame x̃ = (x− µg)/λg makes the FiLM output invariant to the spatial position of the group. Since all groups share the same spatial extent on uniform grids, this figure demonstrates translation invariance; on variable-geometry data (e.g. point clouds), the same property additionally ensures scale invariance across groups of different sizes.",
+      "page": 17,
+      "index": 13,
+      "width": 748,
+      "height": 444
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-009.webp",
+      "caption": "Table 6: LH-NeF tokenizer block hierarchy per dataset. Each row shows the LH-NeF tokenizer variant used on each dataset; the conditioning representation is extracted from the final block. G: groups, K: tokens/group, C: channels, SA: self-attention layers. ImageNet uses 4 blocks (block 0–3); all others use 3 (block 0–2).",
+      "page": 18,
+      "index": 9,
+      "width": 810,
+      "height": 185
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-011.webp",
+      "caption": "Table 8: LH-NeF renderer hyperparameters per dataset.",
+      "page": 19,
+      "index": 11,
+      "width": 760,
+      "height": 235
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-012.webp",
+      "caption": "Table 10: LH-NeF training configuration per dataset.",
+      "page": 19,
+      "index": 12,
+      "width": 832,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-006.webp",
+      "caption": "Table 11: Diffusion model hyperparameters per dataset. Input structure (G, K, C) is inherited from the tokenizer output representation.",
+      "page": 22,
+      "index": 6,
+      "width": 606,
+      "height": 715
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-010.webp",
+      "caption": "Table 13: CIFAR-10 classification hyperparameters (frozen-latent ConvNeXt classifier).",
+      "page": 23,
+      "index": 10,
+      "width": 460,
+      "height": 446
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-014.webp",
+      "caption": "Table 15: ENF reproduction hyperparameters per dataset. CIFAR-10 hyperparameters and parameter count (522K) are reported by the authors. For all other datasets, parameter counts are computed from the authors’ official JAX implementation using reported hyperparameters.",
+      "page": 24,
+      "index": 14,
+      "width": 627,
+      "height": 224
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-015.webp",
+      "caption": "Table 17: Spatial Functa hyperparameters per dataset.",
+      "page": 24,
+      "index": 15,
+      "width": 432,
+      "height": 288
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-001.webp",
+      "caption": "Figure 9: Additional unconditional generation samples on CelebA-HQ 642 from a diffusion transformer trained on the frozen LH-NeF tokenizations.",
+      "page": 25,
+      "index": 1,
+      "width": 832,
+      "height": 571
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08204v1/fig-002.webp",
+      "caption": "Figure 10: ShapeNet16 voxel occupancy reconstructions at 323 resolution. Top: ground-truth occupancy grids. Bottom: LH-NeF reconstructions.",
+      "page": 26,
+      "index": 2,
+      "width": 829,
+      "height": 342
+    }
+  ]
+}
