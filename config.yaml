@@ -1,4 +1,4 @@
-﻿github:
+github:
   owner: ''
   repo: AI_Daily_Paper_Reader
 arxiv_paper_setting:
@@ -27,54 +27,112 @@ subscriptions:
     diff_threshold_pct: 15
   keyword_recall_mode: or
   intent_profiles:
-    - tag: SR
-      description: 符号回归
+    - tag: NDAI
+      description: AI启发神经解码方法
       enabled: true
-      daily_paper_limit: 10
+      paper_sources:
+        - arxiv
+      deep_daily_paper_limit: 5
+      quick_daily_paper_limit: 10
       keywords:
-        - keyword: symbolic regression
-          keyword_cn: 符号回归
-          query: fundamental principles and methods of symbolic regression
-        - keyword: genetic programming
-          keyword_cn: 遗传编程
-          query: evolutionary algorithms and genetic programming for symbolic regression
-        - keyword: mathematical expression discovery
-          keyword_cn: 数学表达式发现
-          query: automated discovery of mathematical expressions from data
-        - keyword: equation discovery
-          keyword_cn: 方程发现
-          query: algorithms for scientific equation discovery and modeling
-        - keyword: interpretable machine learning
-          keyword_cn: 可解释机器学习
-          query: interpretability and transparency of symbolic regression models
-        - keyword: PySR
-          keyword_cn: PySR库
-          query: high-performance symbolic regression libraries and tools
-        - keyword: symbolic transformer
-          keyword_cn: 符号Transformer
-          query: neural symbolic regression using transformer architectures
-        - keyword: physics-informed regression
-          keyword_cn: 物理启发回归
-          query: incorporating physical constraints into symbolic regression
+        - keyword: attention mechanisms
+          keyword_cn: ''
+          query: attention mechanisms
+        - keyword: transfer learning
+          keyword_cn: ''
+          query: transfer learning
+        - keyword: domain adaptation
+          keyword_cn: ''
+          query: domain adaptation
+        - keyword: sequence decoding
+          keyword_cn: ''
+          query: sequence decoding
+        - keyword: representation learning
+          keyword_cn: ''
+          query: representation learning
+        - keyword: time series modeling
+          keyword_cn: ''
+          query: time series modeling
       intent_queries:
-        - query: state of the art symbolic regression algorithms
-          query_cn: 最先进的符号回归算法
+        - query: representation learning for neural activity
+          query_cn: ''
           enabled: true
           source: manual
           note: ''
-        - query: comparison between symbolic regression and neural networks
-          query_cn: 符号回归与神经网络的对比
+        - query: sequence modeling for neural data
+          query_cn: ''
           enabled: true
           source: manual
           note: ''
-        - query: applications of symbolic regression in physics and engineering
-          query_cn: 符号回归在物理与工程中的应用
+        - query: transfer learning for brain computer interfaces
+          query_cn: ''
           enabled: true
           source: manual
           note: ''
-        - query: how to handle noisy data in symbolic regression
-          query_cn: 符号回归如何处理噪声数据
+        - query: decoding neural signals into language or actions
+          query_cn: ''
           enabled: true
           source: manual
           note: ''
-      updated_at: '2026-03-02T03:40:27.571Z'
+      updated_at: '2026-06-11T05:47:18.642Z'
+reader_profile:
+  research_directions: []
+daily_reports:
+  enabled: true
+periodic_reports:
+  enabled: true
+  default_input_mode: artifacts
+  language: zh-CN
+  max_candidates: 240
+  max_topics: 10
+  representative_papers: 12
+  weekly:
+    enabled: true
+    schedule: 30 23 * * 5
+    input_mode: artifacts
+    recrawl_days: 10
+    max_candidates: 240
+    representative_papers: 12
+    topic_limits:
+      related_topics: 10
+      topic_timeline: 10
+      cooccurrence_topics: 10
+      cooccurrence_pairs: 12
+  monthly:
+    enabled: true
+    schedule: 30 23 1 * *
+    input_mode: artifacts
+    recrawl_days: 30
+    max_candidates: 240
+    representative_papers: 12
+    topic_limits:
+      topics: 10
+      related_topics: 12
+      topic_timeline: 12
+      word_cloud_terms: 36
+      cooccurrence_topics: 12
+      cooccurrence_pairs: 18
+      comparison_topics: 10
+  charts:
+    topics: true
+    sources: true
+    score_distribution: true
+    timeline: true
+    topic_timeline: true
+  topic_aliases: {}
+  include_low_score_novelty: false
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
