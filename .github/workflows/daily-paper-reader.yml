@@ -334,14 +334,35 @@ jobs:
           SRC_DIR="$TOOL_DIR/src"
           JAR_PATH="$TOOL_DIR/pdffigures2.jar"
 
+          retry() {
+            local attempt=1
+            local delay=5
+            until "$@"; do
+              if [ "$attempt" -ge 6 ]; then
+                return 1
+              fi
+              echo "Retry ${attempt}/5 after ${delay}s: $*" >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
           mkdir -p "$TOOL_DIR"
           if [ ! -f "$JAR_PATH" ]; then
-            rm -rf "$SRC_DIR"
-            git clone --depth 1 https://github.com/allenai/pdffigures2 "$SRC_DIR"
+            if [ ! -d "$SRC_DIR/.git" ]; then
+              if [ -e "$SRC_DIR" ]; then
+                echo "::error::$SRC_DIR exists but is not a git checkout; move it aside before retrying."
+                exit 1
+              fi
+              retry git clone --depth 1 https://github.com/allenai/pdffigures2 "$SRC_DIR"
+            fi
             cd "$SRC_DIR"
-            curl -fsSL -o sbt.tgz https://github.com/sbt/sbt/releases/download/v1.10.1/sbt-1.10.1.tgz
-            tar -xzf sbt.tgz
-            ./sbt/bin/sbt assembly
+            if [ ! -x ./sbt/bin/sbt ]; then
+              retry curl --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 300 -fsSL -o sbt.tgz https://github.com/sbt/sbt/releases/download/v1.10.1/sbt-1.10.1.tgz
+              tar -xzf sbt.tgz
+            fi
+            retry ./sbt/bin/sbt assembly
             cp pdffigures2.jar "$JAR_PATH"
           fi
 
