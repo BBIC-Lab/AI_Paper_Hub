@@ -92,6 +92,7 @@
 - 2026-06-11 17:16 HKT 复测失败原因：`Prepare pdffigures2` 阶段已克隆源码，但从 GitHub 下载 `sbt-1.10.1.tgz` 时代理链路 TLS 断开；已改为复用已克隆目录，并对 `git clone`、`curl`、`sbt assembly` 加重试，避免网络抖动时整段重来。
 - 2026-06-11 17:21 HKT 本机预编译发现：`sbt`/coursier 的 JVM 不可靠继承 `https_proxy`，会直连外网；已在 `Prepare pdffigures2` 中按 runner 的 `https_proxy` 注入 JVM proxy options。使用 runner toolcache JDK17 预编译成功，`$HOME/.cache/dpr-tools/pdffigures2/pdffigures2.jar` 已就绪。
 - 2026-06-11 17:47 HKT 复测失败原因：`Commit results` 直接 `git add archive/...`，被 `.gitignore` 的 `archive/*` 拦截；已改为普通添加 `docs`/`config.yaml`，并仅对私有日报状态和 `archive/*/recommend` 使用 `git add -f`。
+- 2026-06-11 17:57 HKT 复测发现：旧 run 自动跳过 Step 1 本地候选池，Supabase 向量 RPC TLS 抖动后无本地 raw fallback，导致 Embedding/RRF/Rerank 实际跳过；已在私有 daily workflow 强制 `DPR_DISABLE_SUPABASE_VECTOR=true`，保留本地候选池并使用 127.0.0.1:8010 完成 embedding 验收。
 - 模型端口：`8010`、`8011` 均仅监听 `127.0.0.1`；`/health` 均返回 HTTP 200，响应体为空。
 - Push 边界：`upstream` push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`；本机 `pre-push` hook 只允许推送到私有 `origin`，并阻止公开上游目标。
 - 日志审计：本机 runner diagnostic log 未命中 API Key / Bearer / Authorization 泄露特征；当前尚无 workflow worker log，原因是本机没有 GitHub CLI 和可用 GitHub API token，`workflow_dispatch` 需要在 GitHub 页面手工触发后补充远端日志与产物验收。
