@@ -305,14 +305,16 @@ jobs:
           import re
 
           # self-hosted 工作站使用 8010/8011 远程推理，跳过本地 torch/CUDA 栈。
-          skip = re.compile(r"^(sqlite3|sentence-transformers|torch|nvidia-|cuda-toolkit)\\b", re.I)
+          skip_names = {"sqlite3", "sentence-transformers", "torch", "cuda-toolkit"}
+          skip_prefixes = ("nvidia-",)
           kept = []
           skipped = []
           for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
               item = line.strip()
               if not item:
                   continue
-              if skip.match(item):
+              package = re.split(r"\s*(?:[<>=!~]=?|;|\[)", item, 1)[0].lower().replace("_", "-")
+              if package in skip_names or package.startswith(skip_prefixes):
                   skipped.append(item)
                   continue
               kept.append(line)
