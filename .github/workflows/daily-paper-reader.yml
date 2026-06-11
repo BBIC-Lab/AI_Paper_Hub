@@ -46,7 +46,7 @@ jobs:
       DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'false' }}
       DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'custom' }}
       DPR_EMBED_PROVIDER: ${{ vars.DPR_EMBED_PROVIDER || 'openai' }}
-      DPR_EMBED_MODEL: ${{ vars.DPR_EMBED_MODEL || 'BAAI/bge-small-en-v1.5' }}
+      DPR_EMBED_MODEL: ${{ vars.DPR_EMBED_MODEL || 'BAAI/bge-m3' }}
       DPR_EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
       EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
       DPR_EMBED_API_KEY: ${{ secrets.MODEL_API_KEY }}
