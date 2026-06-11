@@ -490,21 +490,26 @@ jobs:
           branch="${GITHUB_REF_NAME:-main}"
 
           shopt -s nullglob
-          paths=(docs config.yaml)
+          public_paths=(docs config.yaml)
+          private_archive_paths=()
           if [ -f archive/arxiv_seen.json ]; then
-            paths+=(archive/arxiv_seen.json)
+            private_archive_paths+=(archive/arxiv_seen.json)
           fi
           if [ -f archive/crawl_state.json ]; then
-            paths+=(archive/crawl_state.json)
+            private_archive_paths+=(archive/crawl_state.json)
           fi
           if [ -f archive/carryover.json ]; then
-            paths+=(archive/carryover.json)
+            private_archive_paths+=(archive/carryover.json)
           fi
           for d in archive/*/recommend; do
-            paths+=("$d")
+            private_archive_paths+=("$d")
           done
 
-          git add "${paths[@]}"
+          git add "${public_paths[@]}"
+          if [ "${#private_archive_paths[@]}" -gt 0 ]; then
+            # archive/* is ignored for public safety; force-add only private daily artifacts.
+            git add -f "${private_archive_paths[@]}"
+          fi
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
