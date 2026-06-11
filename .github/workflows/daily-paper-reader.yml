@@ -35,13 +35,13 @@ jobs:
     runs-on: [self-hosted, linux, dpr-local-inference]
     timeout-minutes: 120
     env:
-      DPR_LLM_PROVIDER: ${{ vars.DPR_LLM_PROVIDER || 'openai' }}
+      DPR_LLM_PROVIDER: ${{ vars.DPR_LLM_PROVIDER || secrets.DPR_LLM_PROVIDER || 'openai' }}
       DPR_LLM_API_KEY: ${{ secrets.DPR_LLM_API_KEY }}
-      DPR_LLM_BASE_URL: ${{ vars.DPR_LLM_BASE_URL }}
-      DPR_LLM_MODEL: ${{ vars.DPR_LLM_MODEL }}
-      DPR_LLM_REWRITE_MODEL: ${{ vars.DPR_LLM_REWRITE_MODEL }}
-      DPR_LLM_FILTER_MODEL: ${{ vars.DPR_LLM_FILTER_MODEL }}
-      DPR_LLM_SUMMARY_MODEL: ${{ vars.DPR_LLM_SUMMARY_MODEL }}
+      DPR_LLM_BASE_URL: ${{ vars.DPR_LLM_BASE_URL || secrets.DPR_LLM_BASE_URL }}
+      DPR_LLM_MODEL: ${{ vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_REWRITE_MODEL: ${{ vars.DPR_LLM_REWRITE_MODEL || secrets.DPR_LLM_REWRITE_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_FILTER_MODEL: ${{ vars.DPR_LLM_FILTER_MODEL || secrets.DPR_LLM_FILTER_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_SUMMARY_MODEL: ${{ vars.DPR_LLM_SUMMARY_MODEL || secrets.DPR_LLM_SUMMARY_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
       MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
       DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'false' }}
       DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'custom' }}
@@ -185,6 +185,11 @@ jobs:
           }
 
           [ -n "${MODEL_API_KEY:-}" ] || fail "MODEL_API_KEY GitHub Secret is required for Bearer preflight."
+          [ -n "${DPR_LLM_API_KEY:-}" ] || fail "DPR_LLM_API_KEY GitHub Secret is required for LLM refine/docs."
+          llm_filter_model="${DPR_LLM_FILTER_MODEL:-${DPR_LLM_MODEL:-}}"
+          llm_summary_model="${DPR_LLM_SUMMARY_MODEL:-${DPR_LLM_MODEL:-}}"
+          [ -n "$llm_filter_model" ] || fail "DPR_LLM_FILTER_MODEL or DPR_LLM_MODEL is required for Step 4 LLM refine."
+          [ -n "$llm_summary_model" ] || fail "DPR_LLM_SUMMARY_MODEL or DPR_LLM_MODEL is required for Step 6 docs generation."
           [ -n "${DPR_EMBED_MODEL:-}" ] || fail "DPR_EMBED_MODEL is required."
           [ -n "${DPR_RERANK_MODEL:-}" ] || fail "DPR_RERANK_MODEL is required."
           [ "${DPR_SKIP_RERANK:-true}" = "false" ] || fail "DPR_SKIP_RERANK must be false to use the local reranker."
