@@ -334,6 +334,23 @@ jobs:
           SRC_DIR="$TOOL_DIR/src"
           JAR_PATH="$TOOL_DIR/pdffigures2.jar"
 
+          configure_java_proxy() {
+            local proxy="${https_proxy:-${HTTPS_PROXY:-}}"
+            if [ -z "$proxy" ]; then
+              return 0
+            fi
+            proxy="${proxy#*://}"
+            proxy="${proxy%%/*}"
+            local host="${proxy%%:*}"
+            local port="${proxy##*:}"
+            if [ -z "$host" ] || [ -z "$port" ] || [ "$host" = "$port" ]; then
+              echo "::warning::Unable to parse HTTPS proxy for Java tools; continuing without JVM proxy options."
+              return 0
+            fi
+            # sbt/coursier runs inside the JVM and does not reliably honor https_proxy.
+            export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dhttp.proxyHost=${host} -Dhttp.proxyPort=${port} -Dhttps.proxyHost=${host} -Dhttps.proxyPort=${port} -Dhttp.nonProxyHosts=localhost|127.0.0.1"
+          }
+
           retry() {
             local attempt=1
             local delay=5
@@ -350,6 +367,7 @@ jobs:
 
           mkdir -p "$TOOL_DIR"
           if [ ! -f "$JAR_PATH" ]; then
+            configure_java_proxy
             if [ ! -d "$SRC_DIR/.git" ]; then
               if [ -e "$SRC_DIR" ]; then
                 echo "::error::$SRC_DIR exists but is not a git checkout; move it aside before retrying."

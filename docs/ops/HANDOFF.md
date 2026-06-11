@@ -90,6 +90,7 @@
 - 2026-06-11 16:35 HKT 复测失败原因：依赖安装拉取 `sentence-transformers -> torch -> nvidia-cufft` 时因 PyPI TLS EOF 失败；daily workflow 已改为远程推理安装 profile，跳过 `sentence-transformers`/`torch`/CUDA 依赖，避免下载本地 GPU 轮子。
 - 2026-06-11 17:13 HKT 复测发现：远程推理安装 profile 的跳过正则把 `\b` 写成字面量反斜杠，`sentence-transformers` 未被过滤，仍触发 `torch`/CUDA 大包下载；已改为按包名解析并跳过 `sentence-transformers`、`torch`、`nvidia-*`、`cuda-toolkit`。
 - 2026-06-11 17:16 HKT 复测失败原因：`Prepare pdffigures2` 阶段已克隆源码，但从 GitHub 下载 `sbt-1.10.1.tgz` 时代理链路 TLS 断开；已改为复用已克隆目录，并对 `git clone`、`curl`、`sbt assembly` 加重试，避免网络抖动时整段重来。
+- 2026-06-11 17:21 HKT 本机预编译发现：`sbt`/coursier 的 JVM 不可靠继承 `https_proxy`，会直连外网；已在 `Prepare pdffigures2` 中按 runner 的 `https_proxy` 注入 JVM proxy options。使用 runner toolcache JDK17 预编译成功，`$HOME/.cache/dpr-tools/pdffigures2/pdffigures2.jar` 已就绪。
 - 模型端口：`8010`、`8011` 均仅监听 `127.0.0.1`；`/health` 均返回 HTTP 200，响应体为空。
 - Push 边界：`upstream` push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`；本机 `pre-push` hook 只允许推送到私有 `origin`，并阻止公开上游目标。
 - 日志审计：本机 runner diagnostic log 未命中 API Key / Bearer / Authorization 泄露特征；当前尚无 workflow worker log，原因是本机没有 GitHub CLI 和可用 GitHub API token，`workflow_dispatch` 需要在 GitHub 页面手工触发后补充远端日志与产物验收。
