@@ -1,8 +1,8 @@
 # 私有论文工作站初始化交接
 
-审计时间：2026-06-10 21:12 HKT
+审计时间：2026-06-11 11:28 HKT
 主机：spark-d326
-范围：私有下游工作站仓库初始化与同步边界配置；未安装 runner，未改 workflow，未启动/停止模型服务，未改防火墙，未推送代码。
+范围：私有下游工作站仓库初始化与同步边界配置；已安装 self-hosted runner，未改 workflow，未启动/停止模型服务，未改防火墙，未推送代码。
 敏感信息规则：本文件不记录 Token、API Key、凭据值；后续也不要把密钥写入本文件、终端日志或 Git。
 
 ## 环境结论
@@ -32,12 +32,12 @@
 - 当前分支：`main`，跟踪 `upstream/main`，状态为 `main...upstream/main [ahead 10]`。
 - 远端：
   - `upstream`: `git@github.com:Jurio0304/AI_Daily_Paper_Reader.git`，fetch only；push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`。
-  - `origin`: `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git`，作为私有下游推送目标。
+  - `origin`: `git@github.com-bbic:BBIC-Lab/AI_Paper_Hub.git`，作为私有下游推送目标；`github.com-bbic` 使用本机 BBIC 专用 SSH key。
 - 本机 Git 保护：
   - `branch.main.remote=upstream`，默认从公开上游拉取。
   - `branch.main.pushRemote=origin`、`remote.pushDefault=origin`、`push.default=current`，默认只向私有下游推送。
   - `.git/hooks/pre-push` 阻止向非 `origin` 远端推送，并阻止直接推送到 `AI_Daily_Paper_Reader`。
-- 已尝试只读检查 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git`，返回 `Repository not found`；首次 push 前需确认私有仓库已创建且当前 SSH key 有权限。
+- 已只读检查 `git@github.com-bbic:BBIC-Lab/AI_Paper_Hub.git`，访问成功且当前为空仓库。
 
 ## 下游生成结果边界
 
@@ -71,6 +71,12 @@
 - `.github/workflows/sync.yml:18`
 
 未按本次任务修改任何 workflow。
+
+## Self-hosted runner
+
+- runner 名称：`spark-d326-bbic`。
+- 自定义 label：`dpr-local-inference`。
+- 服务状态：`systemd --user`，当前 `enabled` 且 `active (running)`；以普通用户 `jy` 运行。
 
 ## 配置项控制矩阵
 
@@ -106,19 +112,17 @@
 
 ## 风险点
 
-- 私有下游远端地址按 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git` 配置，但只读探测返回 `Repository not found`；不要 push，直到仓库地址/权限经维护者确认。
+- 私有下游远端已切换为 `git@github.com-bbic:BBIC-Lab/AI_Paper_Hub.git`；当前为空仓库，首次 push 前仍需确认要公开给该私有组织的内容边界。
 - 下游工作目录基于本机公开上游 HEAD 初始化；该 HEAD 比 `upstream/main` 超前 10 个提交。
 - 个性化 `config.yaml` / `docs/config.yaml` 若包含私有订阅或服务参数，不得同步回公开上游；API Key 仍必须走环境变量、`.env`、`secret.private` 或 GitHub Secrets。
-- 当前用户无法无交互 sudo；安装 runner、写 systemd unit 或调整服务时可能需要手工 sudo。
+- 当前用户无法无交互 sudo；runner 已采用 `systemd --user` 运行，`Linger=no`，重启后若需无人登录自启需手工启用 linger。
 - `python` 命令缺失；脚本应优先使用 `python3` 或项目指定运行器。
 - 健康端点仅返回 HTTP 200 且空响应体；只能确认端口和 HTTP 层存活，不能确认模型权重或推理质量。
 
 ## 需要手工提供的信息
 
-- 私有 GitHub 仓库地址和权限确认：当前暂按 `git@github.com:Jurio0304/BBIC_AI_Paper_Hub.git` 配置。
-- runner 绑定目标：私有仓库级、组织级或 enterprise 级，以及期望 runner 名称和 labels。
-- 是否允许后续用 sudo 安装/注册 runner，以及 runner 以哪个 Linux 用户运行。
-- GitHub runner 注册 token：仅在安装时通过安全交互/环境注入，不写入 Git、不写入交接文件、不打印。
+- 私有 GitHub 仓库地址和权限已确认：`git@github.com-bbic:BBIC-Lab/AI_Paper_Hub.git`。
+- runner 已注册：名称 `spark-d326-bbic`，label `dpr-local-inference`，以普通用户 `jy` 运行。
 - GitHub Secrets 中需要配置的非公开值：LLM、Embedding、Reranker、Supabase/SMTP 等密钥值；仅通过 GitHub Secrets 或安全通道设置。
 - 私有工作站部署分支策略：跟随 `origin/main`、固定私有分支，还是使用当前审计分支。
 
@@ -126,6 +130,8 @@
 
 - 初始化私有下游工作目录：`/home/jy/BBIC_AI_Paper_Hub`。
 - 配置 `upstream` / `origin` 远端、默认拉取/推送策略和本机 `pre-push` 误推保护。
+- 切换 `origin` 到 `BBIC-Lab/AI_Paper_Hub`，并配置本机 `github.com-bbic` SSH host alias。
 - 更新下游 `.gitignore`，排除运行态、缓存、日志、凭据、本地上传、全文/原始 PDF 等内容。
 - 新增非敏感边界说明：`docs/ops/PRIVATE_WORKSTATION.md`。
 - 更新本交接文件：`docs/ops/HANDOFF.md`。
+- 安装并启动 self-hosted runner：名称 `spark-d326-bbic`，label `dpr-local-inference`，服务状态为 `systemd --user enabled/active`。
