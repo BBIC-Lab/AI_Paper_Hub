@@ -296,20 +296,32 @@ jobs:
             ~/.cache/coursier
             ~/.ivy2/cache
             ~/.sbt
-          key: ${{ runner.os }}-dpr-embed-deps-v1-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-dpr-remote-deps-v1-${{ hashFiles('requirements.txt') }}
 
-      - name: Install deps (skip sqlite3)
+      - name: Install deps (remote inference profile)
         if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           python - <<'PY'
           import re
-          lines = open("requirements.txt", "r", encoding="utf-8").read().splitlines()
-          lines = [l for l in lines if l.strip() and not re.match(r"^sqlite3\\b", l)]
-          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(lines))
+
+          # self-hosted 工作站使用 8010/8011 远程推理，跳过本地 torch/CUDA 栈。
+          skip = re.compile(r"^(sqlite3|sentence-transformers|torch|nvidia-|cuda-toolkit)\\b", re.I)
+          kept = []
+          skipped = []
+          for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
+              item = line.strip()
+              if not item:
+                  continue
+              if skip.match(item):
+                  skipped.append(item)
+                  continue
+              kept.append(line)
+          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(kept))
+          print("Skipped remote-runner deps:", ", ".join(skipped) or "<none>")
           PY
           python -m pip install --upgrade pip
           python -m pip install uv
-          uv pip install --system -r /tmp/req.txt
+          UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-120}" uv pip install --system -r /tmp/req.txt
 
       - name: Prepare pdffigures2
         if: steps.daily_auto.outputs.enabled != 'false'

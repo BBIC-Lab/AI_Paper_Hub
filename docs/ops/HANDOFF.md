@@ -87,6 +87,7 @@
 - Workflow 权限：需要提交结果的 workflow 保留 `contents: write`；只读维护检查保留 `contents: read`。
 - Endpoint：daily workflow 的 Embedding / Reranker endpoint 默认值和 preflight 均强制为 `http://127.0.0.1:8010/v1/embeddings`、`http://127.0.0.1:8011/v1/rerank`，不再接受 `localhost` 或其他地址。
 - 2026-06-11 15:51 HKT 复测失败原因：Embedding preflight 使用旧默认模型 `BAAI/bge-small-en-v1.5` 返回 404；本机 8010 实际 served model 为 `BAAI/bge-m3`，已把 daily workflow 默认 `DPR_EMBED_MODEL` 修正为 `BAAI/bge-m3`。
+- 2026-06-11 16:35 HKT 复测失败原因：依赖安装拉取 `sentence-transformers -> torch -> nvidia-cufft` 时因 PyPI TLS EOF 失败；daily workflow 已改为远程推理安装 profile，跳过 `sentence-transformers`/`torch`/CUDA 依赖，避免下载本地 GPU 轮子。
 - 模型端口：`8010`、`8011` 均仅监听 `127.0.0.1`；`/health` 均返回 HTTP 200，响应体为空。
 - Push 边界：`upstream` push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`；本机 `pre-push` hook 只允许推送到私有 `origin`，并阻止公开上游目标。
 - 日志审计：本机 runner diagnostic log 未命中 API Key / Bearer / Authorization 泄露特征；当前尚无 workflow worker log，原因是本机没有 GitHub CLI 和可用 GitHub API token，`workflow_dispatch` 需要在 GitHub 页面手工触发后补充远端日志与产物验收。
