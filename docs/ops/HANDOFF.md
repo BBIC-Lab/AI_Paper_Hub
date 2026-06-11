@@ -94,6 +94,7 @@
 - 2026-06-11 17:47 HKT 复测失败原因：`Commit results` 直接 `git add archive/...`，被 `.gitignore` 的 `archive/*` 拦截；已改为普通添加 `docs`/`config.yaml`，并仅对私有日报状态和 `archive/*/recommend` 使用 `git add -f`。
 - 2026-06-11 17:57 HKT 复测发现：旧 run 自动跳过 Step 1 本地候选池，Supabase 向量 RPC TLS 抖动后无本地 raw fallback，导致 Embedding/RRF/Rerank 实际跳过；已在私有 daily workflow 强制 `DPR_DISABLE_SUPABASE_VECTOR=true`，保留本地候选池并使用 127.0.0.1:8010 完成 embedding 验收。
 - 2026-06-11 18:11 HKT 复测失败原因：Step 4 LLM refine 缺少 filter 模型配置；daily workflow 只读取 Variables 中的 `DPR_LLM_MODEL`/任务模型，未像其他 workflow 一样支持 Secrets。已改为 Variables 优先、Secrets 兜底，并在 preflight 阶段检查 LLM API Key、filter model 和 summary model。
+- 2026-06-11 18:23 HKT 复测失败原因：日报产物已生成并完成本地提交，但最后 `git push origin HEAD:main` 访问 GitHub 时出现 `gnutls_handshake() failed`；已在 `Commit results` 中设置 Git HTTPS HTTP/1.1，并对 fetch/rebase/push 增加指数退避重试。
 - 模型端口：`8010`、`8011` 均仅监听 `127.0.0.1`；`/health` 均返回 HTTP 200，响应体为空。
 - Push 边界：`upstream` push URL 为 `DISABLED_NO_PUSH_TO_PUBLIC_UPSTREAM`；本机 `pre-push` hook 只允许推送到私有 `origin`，并阻止公开上游目标。
 - 日志审计：本机 runner diagnostic log 未命中 API Key / Bearer / Authorization 泄露特征；当前尚无 workflow worker log，原因是本机没有 GitHub CLI 和可用 GitHub API token，`workflow_dispatch` 需要在 GitHub 页面手工触发后补充远端日志与产物验收。

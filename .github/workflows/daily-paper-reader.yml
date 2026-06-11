@@ -527,6 +527,24 @@ jobs:
             echo "::error::Refusing to push daily results outside private downstream BBIC-Lab/AI_Paper_Hub."
             exit 1
           fi
-          git fetch origin "$branch"
-          git rebase -X theirs "origin/$branch"
-          git push origin HEAD:"$branch"
+          git config --local http.version HTTP/1.1
+
+          sync_and_push() {
+            git rebase --abort >/dev/null 2>&1 || true
+            git fetch origin "$branch"
+            git rebase -X theirs "origin/$branch"
+            git push origin HEAD:"$branch"
+          }
+
+          attempt=1
+          delay=5
+          until sync_and_push; do
+            if [ "$attempt" -ge 6 ]; then
+              echo "::error::Failed to push daily results after ${attempt} attempts."
+              exit 1
+            fi
+            echo "Git sync/push failed; retry ${attempt}/5 after ${delay}s." >&2
+            sleep "$delay"
+            attempt=$((attempt + 1))
+            delay=$((delay * 2))
+          done
