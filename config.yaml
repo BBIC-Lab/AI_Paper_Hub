@@ -76,7 +76,13 @@ subscriptions:
           note: ''
       updated_at: '2026-06-11T05:47:18.642Z'
 reader_profile:
-  research_directions: []
+  research_directions:
+    - Brain-computer interface
+    - neural decoding
+    - online adaptation
+    - neural time-series modeling
+    - representation drift
+    - handwriting/speech BCI
 daily_reports:
   enabled: true
 periodic_reports:
