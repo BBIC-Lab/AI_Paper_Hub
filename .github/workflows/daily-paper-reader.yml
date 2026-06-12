@@ -32,7 +32,7 @@ concurrency:
 jobs:
   run:
     if: github.repository == 'BBIC-Lab/AI_Paper_Hub'
-    runs-on: [self-hosted, linux, dpr-local-inference]
+    runs-on: ${{ fromJSON(vars.DPR_RUNNER_LABELS || '["ubuntu-latest"]') }}
     timeout-minutes: 120
     env:
       DPR_LLM_PROVIDER: ${{ vars.DPR_LLM_PROVIDER || secrets.DPR_LLM_PROVIDER || 'openai' }}
@@ -54,7 +54,8 @@ jobs:
       DPR_EMBED_API_KEY: ${{ secrets.MODEL_API_KEY }}
       DPR_EMBED_API_TIMEOUT: ${{ vars.DPR_EMBED_API_TIMEOUT || '60' }}
       DPR_EMBED_REMOTE_FALLBACK: ${{ vars.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
-      # Self-hosted 验收必须保留本地候选池，避免 Supabase 向量 RPC 抖动跳过 embedding。
+      DPR_SKIP_LOCAL_EMBED_DEPS: ${{ vars.DPR_SKIP_LOCAL_EMBED_DEPS || 'false' }}
+      # 默认远程 embedding 也保留本地候选池，避免 Supabase 向量 RPC 抖动跳过 embedding。
       DPR_DISABLE_SUPABASE_VECTOR: "true"
       DPR_RERANK_PROVIDER: ${{ vars.DPR_RERANK_PROVIDER || 'openai' }}
       DPR_RERANK_MODEL: ${{ vars.DPR_RERANK_MODEL || 'Qwen/Qwen3-Reranker-0.6B' }}
@@ -150,7 +151,7 @@ jobs:
           echo "Sleeping ${DELAY}s (≈$((DELAY/60))min) to stagger fork runs over 1 hour …"
           sleep $DELAY
 
-      - name: Preflight local inference
+      - name: Preflight inference settings
         if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           set -euo pipefail
@@ -402,29 +403,33 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-dpr-remote-deps-v1-${{ hashFiles('requirements.txt') }}
 
-      - name: Install deps (remote inference profile)
+      - name: Install deps
         if: steps.daily_auto.outputs.enabled != 'false'
         run: |
-          python - <<'PY'
-          import re
+          if [ "${DPR_SKIP_LOCAL_EMBED_DEPS:-false}" = "true" ]; then
+            python - <<'PY'
+            import re
 
-          # self-hosted 工作站使用 8010/8011 远程推理，跳过本地 torch/CUDA 栈。
-          skip_names = {"sqlite3", "sentence-transformers", "torch", "cuda-toolkit"}
-          skip_prefixes = ("nvidia-",)
-          kept = []
-          skipped = []
-          for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
-              item = line.strip()
-              if not item:
-                  continue
-              package = re.split(r"\s*(?:[<>=!~]=?|;|\[)", item, 1)[0].lower().replace("_", "-")
-              if package in skip_names or package.startswith(skip_prefixes):
-                  skipped.append(item)
-                  continue
-              kept.append(line)
-          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(kept))
-          print("Skipped remote-runner deps:", ", ".join(skipped) or "<none>")
-          PY
+            # 高级自建远程推理可跳过本地 torch 栈；默认 embedding 仍保留本地 fallback。
+            skip_names = {"sqlite3", "sentence-transformers", "torch", "cuda-toolkit"}
+            skip_prefixes = ("nvidia-",)
+            kept = []
+            skipped = []
+            for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
+                item = line.strip()
+                if not item:
+                    continue
+                package = re.split(r"\s*(?:[<>=!~]=?|;|\[)", item, 1)[0].lower().replace("_", "-")
+                if package in skip_names or package.startswith(skip_prefixes):
+                    skipped.append(item)
+                    continue
+                kept.append(line)
+            open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(kept))
+            print("Skipped local embedding deps:", ", ".join(skipped) or "<none>")
+            PY
+          else
+            cp requirements.txt /tmp/req.txt
+          fi
           python -m pip install --upgrade pip
           python -m pip install uv
           UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-120}" uv pip install --system -r /tmp/req.txt

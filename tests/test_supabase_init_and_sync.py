@@ -85,7 +85,7 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         self.assertIn('FETCH_DAYS="9"', text)
         self.assertIn('ARGS=(--fetch-days "$FETCH_DAYS")', text)
 
-    def test_daily_workflow_uses_private_runner_and_local_inference(self):
+    def test_daily_workflow_uses_default_remote_embedding_runner(self):
         root = pathlib.Path(__file__).resolve().parents[1]
         workflow_path = root / ".github" / "workflows" / "daily-paper-reader.yml"
         text = workflow_path.read_text(encoding="utf-8")
@@ -96,7 +96,7 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         inputs = (((on_block.get("workflow_dispatch") or {}).get("inputs")) or {})
         fetch_days = (inputs.get("fetch_days") or {})
         self.assertEqual(schedule[0].get("cron"), "0 19 * * 0-4")
-        self.assertEqual(job.get("runs-on"), ["self-hosted", "linux", "dpr-local-inference"])
+        self.assertEqual(job.get("runs-on"), "${{ fromJSON(vars.DPR_RUNNER_LABELS || '[\"ubuntu-latest\"]') }}")
         self.assertEqual(job.get("if"), "github.repository == 'BBIC-Lab/AI_Paper_Hub'")
         self.assertEqual(fetch_days.get("default"), "5")
         self.assertIn('FETCH_DAYS="5"', text)
@@ -104,6 +104,8 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         self.assertIn("DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'true' }}", text)
         self.assertIn("DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'default_remote' }}", text)
         self.assertIn("https://embed.zwwen.online/embed", text)
+        self.assertIn("DPR_SKIP_LOCAL_EMBED_DEPS: ${{ vars.DPR_SKIP_LOCAL_EMBED_DEPS || 'false' }}", text)
+        self.assertIn("默认 embedding 仍保留本地 fallback", text)
         self.assertIn("DPR_EMBED_REMOTE_FALLBACK=local allows runtime local fallback", text)
         self.assertIn("Reranker preflight skipped because DPR_SKIP_RERANK is not false", text)
         self.assertNotIn("DPR_SKIP_RERANK must be false", text)
