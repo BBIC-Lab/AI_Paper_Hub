@@ -1765,7 +1765,7 @@ window.SubscriptionsSmartQuery = (function () {
     const inputId = realKind === 'intent' ? 'dpr-bulk-intent-input' : 'dpr-bulk-keyword-input';
     const placeholder = realKind === 'intent'
       ? '每行 1 条意图 Query；可写成：query | 中文直译'
-      : '每行 1 条关键词；可写成：keyword | 中文直译 | 语义 query';
+      : '每行 1 条关键词；可写成：keyword | 中文直译';
     const fields = realKind === 'intent'
       ? [
           ['query', '英文意图 Query'],
@@ -1774,7 +1774,6 @@ window.SubscriptionsSmartQuery = (function () {
       : [
           ['keyword', '关键词'],
           ['keyword_cn', '中文直译'],
-          ['query', '语义 Query'],
         ];
     const empty = `
       <div class="dpr-query-bulk-empty">
@@ -1783,7 +1782,7 @@ window.SubscriptionsSmartQuery = (function () {
       </div>
     `;
     const rows = list.map((item, idx) => `
-      <div class="dpr-query-bulk-item">
+      <div class="dpr-query-bulk-item ${realKind === 'intent' ? 'is-intent' : 'is-keyword'}">
         <input class="dpr-query-item-check" type="checkbox" data-kind="${realKind}" data-index="${idx}" />
         <span class="dpr-query-bulk-index">${String(idx + 1).padStart(2, '0')}</span>
         <span class="dpr-query-bulk-fields ${realKind === 'intent' ? 'is-intent' : 'is-keyword'}">
@@ -1817,7 +1816,7 @@ window.SubscriptionsSmartQuery = (function () {
           <textarea id="${inputId}" rows="2" placeholder="${escapeHtml(placeholder)}"></textarea>
           <button class="arxiv-tool-btn dpr-settings-primary-btn dpr-query-bulk-add-btn" type="button" data-action="bulk-add-query-item" data-kind="${realKind}">批量新增</button>
         </div>
-        <div class="dpr-query-bulk-list">${rows || empty}</div>
+        <div class="dpr-query-bulk-list ${realKind === 'intent' ? 'is-intent' : 'is-keyword'}">${rows || empty}</div>
       </div>
     `;
   };

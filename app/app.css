@@ -7852,6 +7852,14 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   gap: 8px;
 }
 
+.dpr-query-bulk-list.is-keyword {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dpr-query-bulk-list.is-intent {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .dpr-query-bulk-item {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
@@ -7891,7 +7899,7 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
 }
 
 .dpr-query-bulk-fields.is-keyword {
-  grid-template-columns: minmax(130px, 0.8fr) minmax(130px, 0.8fr) minmax(180px, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .dpr-query-bulk-fields.is-intent {
@@ -8388,6 +8396,7 @@ body.dpr-chat-drawer-open #dpr-paper-actions {
   .dpr-query-footer-grid,
   .dpr-query-footer-row,
   .dpr-query-bulk-add-row,
+  .dpr-query-bulk-list.is-keyword,
   .dpr-query-bulk-fields.is-keyword,
   .dpr-query-bulk-fields.is-intent,
   .dpr-modal-add-inline {
