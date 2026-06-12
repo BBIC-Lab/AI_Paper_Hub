@@ -1,16 +1,16 @@
 {
   "mode": "standard",
-  "generated_at": "2026-06-11T22:09:40.979524+00:00",
+  "generated_at": "2026-06-12T08:11:24.434585+00:00",
   "stats": {
     "mode": "standard",
     "tag_count": 1,
-    "deep_divecandidates": 6,
+    "deep_divecandidates": 38,
     "deep_cap": 6,
     "deep_selected": 5,
-    "quick_candidates": 13,
+    "quick_candidates": 54,
     "quick_skim_target": 11,
     "quick_selected": 10,
-    "deep_selected_before_profile_limit": 6,
+    "deep_selected_before_profile_limit": 19,
     "quick_selected_before_profile_limit": 11,
     "profile_daily_limits": {
       "NDAI": {
@@ -20,473 +20,306 @@
     },
     "profile_limit_dropped_by_tag": {
       "NDAI": {
-        "deep": 1,
+        "deep": 14,
         "quick": 1
       }
     },
-    "profile_limit_dropped": 2
+    "profile_limit_dropped": 15
   },
   "deep_dive": [
     {
-      "id": "2606.09353v1",
+      "id": "2606.11066v1",
       "source": "arxiv",
-      "title": "Beyond Humans: Multispecies Animal Face Recognition Using Transfer Learning",
-      "abstract": "Individual animal recognition can be useful in the search for lost or stolen pets, the tracking of individuals of endangered species, and the recognition of animals in crowded farms. Present recognition techniques mostly use physical devices, e.g., microchips, often impractical and difficult to apply. These could be replaced by remote recognition via the animal's face; if accurate enough, it provides several advantages: it is non-invasive, can work at a distance, and is difficult to counterfeit, as, for instance, in the case of substituting sick animals for healthy ones in the food industry. The few existing datasets with sufficient per-subject images annotated with a single animal identity are not large enough to train current deep learning architectures. We rather investigate the possibility of transfer learning, exploiting pre-trained network models as backbones. Our experiments compared FaceNet, which is specifically trained on large databases of human faces, with the Vision Transformer (ViT) pre-trained on ImageNet, i.e., on object categories. We used three face datasets of very different animals: dogs, primates (lemurs, golden monkeys, and chimpanzees), and cattle. We report the results and, for each dataset, compare them with the state of the art (SOTA) ad hoc-trained deep networks. The capture conditions differ among the three datasets. Image quality (resolution, motion blur, diverse poses, etc.) decreases from dogs to cattle to primates. The best performance was achieved with dogs, where ViT reached a mean verification accuracy of 96.85% and a Rank-1 Identification Rate of 84.34%. The results for endangered primates are still encouraging, but performance varies across animal classes and tasks (verification or identification), and does not always outperform SOTA. For cattle, the ViT results outperform SOTA, while FaceNet is still competitive.",
+      "title": "GRAFT: Gain-Recalibrated Adapters for Transformer-Based Neural Population Activity Modeling",
+      "abstract": "Neural population activity models can recover rich temporal structure from binned spikes, but their read-in and readout layers often remain tied to a fixed set of recorded neurons. This coupling limits reuse in long-term brain-computer interfaces, where recorded neuron identities, counts, and response statistics can change across days. We introduce GRAFT, a Transformer-based neural population activity model that separates reusable temporal dynamics from a recalibratable neuron interface. The neuron interface controls how recorded neurons enter and leave the shared backbone, and auxiliary gain and positional mechanisms support neural activity modeling inside the Transformer. On MC Maze under the standard NLB'21 protocol, GRAFT reaches 0.3866 co-bps as an ensemble, setting a new state of the art on the primary co-bps metric among public and reported NLB'21 results. In a cross-day protocol constructed from the NLB'21 MC Maze dataset series, GRAFT recalibrates from MC Maze to the scaled MC Maze datasets (Large/Medium/Small) by updating only 9.21% of parameters, reaching 0.3749, 0.3112, and 0.3152 co-bps with restricted target-day support sets. These results show that the same interface-backbone separation supports both strong Transformer-based neural population activity modeling and data-efficient cross-day recalibration.",
       "authors": [
-        "Maria De Marsico",
-        "Anil K. Jain",
-        "Annalaura Miglino"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV",
-        "cs.AI"
-      ],
-      "published": "2026-06-08T11:27:11+00:00",
-      "link": "https://arxiv.org/pdf/2606.09353v1",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Uses transfer learning for animal face recognition",
-      "llm_evidence_cn": "使用迁移学习进行动物面部识别",
-      "llm_evidence": "使用迁移学习进行动物面部识别",
-      "canonical_evidence": "使用迁移学习进行动物面部识别",
-      "llm_tldr_en": "Transfer learning applied to multispecies animal face recognition, achieving strong results with limited data.",
-      "llm_tldr_cn": "将迁移学习用于多物种动物面部识别，用有限数据取得好效果。",
-      "llm_tldr": "将迁移学习用于多物种动物面部识别，用有限数据取得好效果。",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "transfer learning",
-      "matched_requirement_id": "req-2",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2606.11779v1",
-      "source": "arxiv",
-      "title": "Battery detection of XRay images using transfer learning",
-      "abstract": "The need for detecting and sorting batteries is drastically increasing for many applications. This study proves the potential of transfer learning in predicting whether the image contains a battery or not, the location and identifying three types of batteries, namely: prismatic, pouch, and cylindrical Lithium-Ion Batteries (LIB). Particularly, it focuses on the transfer learning method in two applications: Training a large-scale dataset to detect electronic devices using a pre-trained YOLOv5m, then using these latter trained weights to detect and classify the batteries. The precision of battery detection achieves 94%, which outperforms the pretrained YOLOv5m weights with 5%, in 22 ms inference time.",
-      "authors": [
-        "Nermeen Abou Baker",
-        "David Rohrschneider",
-        "Uwe Handmann"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-06-10T08:09:09+00:00",
-      "link": "https://arxiv.org/pdf/2606.11779v1",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "transfer learning for battery detection in X-ray images",
-      "llm_evidence_cn": "迁移学习用于X射线图像电池检测",
-      "llm_evidence": "迁移学习用于X射线图像电池检测",
-      "canonical_evidence": "迁移学习用于X射线图像电池检测",
-      "llm_tldr_en": "Uses transfer learning with YOLOv5m to detect and classify batteries in X-ray images.",
-      "llm_tldr_cn": "使用YOLOv5m迁移学习检测和分类X射线图像中的电池",
-      "llm_tldr": "使用YOLOv5m迁移学习检测和分类X射线图像中的电池",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "transfer learning",
-      "matched_requirement_id": "req-2",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2606.11860v1",
-      "source": "arxiv",
-      "title": "RePAIR: Predictive Self-Supervised Representation Learning in Chess",
-      "abstract": "In this paper, we introduce Representation Prediction via Autoencoding using Iterative Refinement (RePAIR) - a novel self-supervised representation learning architecture that synthesizes Masked Autoencoders (MAE), Joint Embedding Predictive Architectures (JEPA), and Bidirectional Encoder Representations from Transformers (BERT). We demonstrate how it can be used to encode objects in sequential data like consecutive chess positions into compact yet meaningful representations. The basic principle of the architecture is to mask large portions of a sequence of latent states, similar to BERT and MAE. Then, we apply a lightweight Predictor to the latent representations that repairs gaps in the sequence in a lower-dimensional embedding space akin to JEPA. Our experiments in the domain of chess show that the Encoder refines the board representations such that meaningful chess concepts emerge clustered in the latent space. Furthermore, reconstructions of the masked board states show that the model is able to reason about the piece movements without relying on costly reinforcement learning methods. Lastly, we find that the resulting representation space allows for quick and intuitive dissections of chess games by observing the game path trajectories in this semantically rich space.",
-      "authors": [
-        "Christoph Koller",
-        "Johannes Fürnkranz",
-        "Timo Bertram"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-06-10T09:36:31+00:00",
-      "link": "https://arxiv.org/pdf/2606.11860v1",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "self-supervised representation learning on sequential data with predictive masking",
-      "llm_evidence_cn": "序列数据的自监督表征学习，使用预测掩码",
-      "llm_evidence": "序列数据的自监督表征学习，使用预测掩码",
-      "canonical_evidence": "序列数据的自监督表征学习，使用预测掩码",
-      "llm_tldr_en": "Proposes RePAIR, a self-supervised representation learning method for sequential data using masking and prediction, applicable to neural activity modeling.",
-      "llm_tldr_cn": "提出RePAIR，一种用于序列数据的自监督表征学习方法，通过掩码和预测来学习，可应用于神经活动建模。",
-      "llm_tldr": "提出RePAIR，一种用于序列数据的自监督表征学习方法，通过掩码和预测来学习，可应用于神经活动建模。",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "representation learning",
-      "matched_requirement_id": "req-5",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2606.12058v1",
-      "source": "arxiv",
-      "title": "Phase Transitions in Attention: A Bayesian Theory of Copy Head Emergence",
-      "abstract": "Attention is the key mechanism underlying in-context learning in transformers, and attention patterns have been observed empirically to emerge abruptly during training. We present a Bayesian theory of feature learning in attention; we then focus on how the copy subcircuit in the first layer of an induction head is learned by analyzing a single-layer softmax attention network trained on a copy task. We derive a closed-form posterior over the attention matrix and reduce it to a low-dimensional order parameter space. This reduction reveals a phase transition in the amount of training data, which we verify using both Bayesian sampling and standard training with Adam. We contrast our results with linear attention and find that softmax attention exhibits a \\emph{first-order phase transition} while in linear attention an initial \\emph{second-order phase transition} is followed by a smooth, continuous evolution toward the structured attention pattern (\\emph{crossover}). Our work provides a first-principles theoretical account of the abrupt emergence of the copy subcircuit, reminiscent of the one observed in training large language models.",
-      "authors": [
-        "Itay Lavie",
-        "Kirsten Fischer",
-        "Andrey Lekov",
-        "Frederic Van Maele",
-        "Zohar Ringel",
-        "Moritz Helias"
-      ],
-      "primary_category": "stat.ML",
-      "categories": [
-        "stat.ML",
-        "cond-mat.dis-nn",
-        "cs.LG"
-      ],
-      "published": "2026-06-10T13:26:56+00:00",
-      "link": "https://arxiv.org/pdf/2606.12058v1",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Bayesian theory of feature learning in attention; phase transitions in attention",
-      "llm_evidence_cn": "注意力的贝叶斯特征学习理论；注意力相变",
-      "llm_evidence": "注意力的贝叶斯特征学习理论；注意力相变",
-      "canonical_evidence": "注意力的贝叶斯特征学习理论；注意力相变",
-      "llm_tldr_en": "Develops a Bayesian theory explaining abrupt emergence of attention patterns in transformers.",
-      "llm_tldr_cn": "提出贝叶斯理论解释Transformer中注意力模式的突然出现。",
-      "llm_tldr": "提出贝叶斯理论解释Transformer中注意力模式的突然出现。",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "attention mechanisms",
-      "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2606.12200v1",
-      "source": "arxiv",
-      "title": "Implicit Neural Representations of Individual Behavior",
-      "abstract": "We study policy representation learning from unlabeled multi-policy behavioral data. Each episode is generated by a fixed policy, but policy labels are unavailable. This setting appears in robotics play, demonstrations, games, racing, and other datasets where heterogeneous behaviors are mixed without annotations. We introduce \\emph{Behavioral INR}, a self-supervised generative model that adapts implicit neural representations (INRs) from vision to behavior. Instead of mapping coordinates to RGB values, Behavioral INR represents a policy as a state-action function mapping states to subsequent actions. An episode-level latent modulates this function through FiLM layers, yielding a generative prior over policies and allowing policy identity to be inferred without supervision. Because INRs treat each datapoint as samples from an underlying function, the same model naturally accommodates variable episode lengths and different sampling granularities, as in vision INRs with different image resolutions. We also define policy-level out-of-distribution (OOD) shifts along state-distribution and action-distribution axes, which arise when policies overlap in states or actions but are not captured by standard behavioral OOD settings based only on new agents or environments. We evaluate on synthetic Gaussian random field data, MuJoCo demonstrations with controlled OOD splits, and real-world chess, Formula 1 racing, robotics, and Seek-Avoid datasets. Behavioral INR most consistently improves policy identifiability in the hardest continuous state-action settings, especially when longer episodes, more policies, and OOD splits reduce the usefulness of marginal shortcuts; amortized history encoders remain competitive when policy identity can be recovered from symbolic repetition or low-dimensional action statistics. We release code and checkpoints.",
-      "authors": [
-        "Andrew Kang",
-        "Priya Narasimhan"
+        "Xiangsheng Ge",
+        "Yang Xie"
       ],
       "primary_category": "cs.LG",
       "categories": [
         "cs.LG",
-        "cs.AI"
-      ],
-      "published": "2026-06-10T15:19:41+00:00",
-      "link": "https://arxiv.org/pdf/2606.12200v1",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "representation learning for policies",
-      "llm_evidence_cn": "策略表示学习",
-      "llm_evidence": "策略表示学习",
-      "canonical_evidence": "策略表示学习",
-      "llm_tldr_en": "Learns implicit neural representations of individual policies from unlabeled behavioral data.",
-      "llm_tldr_cn": "从无标签行为数据中学习策略的隐式神经表示。",
-      "llm_tldr": "从无标签行为数据中学习策略的隐式神经表示。",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "representation learning",
-      "matched_requirement_id": "req-5",
-      "selection_source": "fresh_fetch"
-    }
-  ],
-  "quick_skim": [
-    {
-      "id": "2606.09824v2",
-      "source": "arxiv",
-      "title": "TSseek: Regular Expression-Based Similarity Search for Distributed Time Series Datasets",
-      "abstract": "Similarity search is a fundamental operation in time series analysis. Most existing techniques, however, require users to supply a precise sequence of values (typically an entire time series object) as the query input. This rigid requirement limits real-world applications, where users instead want to express patterns, trends, or value ranges. Flexible, pattern-based search has been explored in text retrieval and complex event processing, but remains underexplored for large-scale distributed time series.   To close this gap, we propose TSseek, a regular-expression-powered search framework for distributed time series datasets. TSseek's query language enables users to compose patterns encompassing trends, value ranges, and wildcard segments. We show that conventional approximation techniques (e.g., PAA and SAX) and their index structures are ill-suited for such queries because they cannot operate on regular-expression query constructs.   In TSseek, we map the time series objects and the query constructs into the same space by approximating time series objects as sequences of line segments that retain both trend (slope direction) and value range, and translating query constructs into bounding rectangles. To support efficient processing, we build TSseek-X, a distributed spatial index over the time series segments. TSseek supports two fundamental query types, namely whole-matching queries (over entire series) and subsequence-matching queries (over arbitrary windows within a series).   Across benchmark and real-world datasets, full-scan, model-based, and SAX-based baselines all sacrifice either accuracy or speed, whereas TSseek returns exact answers efficiently. Also, for subsequence workloads, it achieves significant speedups over state-of-the-art subsequence matching engines.",
-      "authors": [
-        "Xiaoshuai Li",
-        "Khalid Alnuaim",
-        "Mohamed Y. Eltabakh",
-        "Elke A. Rundensteiner"
-      ],
-      "primary_category": "cs.DB",
-      "categories": [
-        "cs.DB"
-      ],
-      "published": "2026-06-08T17:58:47+00:00",
-      "link": "https://arxiv.org/pdf/2606.09824v2",
-      "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
-      ],
-      "llm_score": 7.0,
-      "llm_evidence_en": "regular expression based similarity search for time series",
-      "llm_evidence_cn": "基于正则表达式的时间序列相似性搜索",
-      "llm_evidence": "基于正则表达式的时间序列相似性搜索",
-      "canonical_evidence": "基于正则表达式的时间序列相似性搜索",
-      "llm_tldr_en": "Framework for pattern-based similarity search in distributed time series datasets",
-      "llm_tldr_cn": "分布式时间序列数据集中基于模式的相似性搜索框架",
-      "llm_tldr": "分布式时间序列数据集中基于模式的相似性搜索框架",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "time series modeling",
-      "matched_requirement_id": "req-6",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "7"
-    },
-    {
-      "id": "2606.08382v1",
-      "source": "arxiv",
-      "title": "STAR-KV: Low-Rank KV Cache Compression via Soft Thresholding for Adaptive Rank Control",
-      "abstract": "Low-rank projection has emerged as a promising approach for compressing the KV cache by exploiting hidden-dimension redundancy. However, prior methods rely on fixed or heuristic rank selection and struggle to achieve aggressive compression with minimal accuracy degradation. We propose STAR-KV, an adaptive low-rank KV cache compression framework with fine-grained rank control. STAR-KV encompasses 1) a differentiable thresholding mechanism that enables optimal rank selection at both attention-head and block levels, 2) a hybrid decomposition strategy that applies different low-rank factorizations according to the sensitivity of key and value projections, and 3) a low-rank-aware mixed precision quantization that leverages data statistics for near lossless low-bit quantization. Evaluated across multiple LLMs and benchmarks, STAR-KV achieves up to 75% KV cache compression and up to 20x overall KV cache reduction when combined with quantization. Enabled by custom Triton-based GPU kernels, STAR-KV delivers up to 6.9x speedup for the attention module and 3.1x end-to-end generation throughput. Our code is publicly available at: https://github.com/PriyanshBhatnagar/STAR-KV.",
-      "authors": [
-        "Priyansh Bhatnagar",
-        "Ashkan Moradifirouzabadi",
-        "Se-Hyun Yang",
-        "SeungJae Lee",
-        "Jungwook Choi",
-        "Mingu Kang"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG",
-        "cs.AI"
-      ],
-      "published": "2026-06-07T00:24:02+00:00",
-      "link": "https://arxiv.org/pdf/2606.08382v1",
-      "tags": [
-        "keyword:NDAI"
-      ],
-      "llm_score": 6.0,
-      "llm_evidence_en": "KV cache compression for attention mechanisms",
-      "llm_evidence_cn": "注意力机制的KV缓存压缩",
-      "llm_evidence": "注意力机制的KV缓存压缩",
-      "canonical_evidence": "注意力机制的KV缓存压缩",
-      "llm_tldr_en": "Adaptive low-rank compression of KV cache via soft thresholding for attention heads.",
-      "llm_tldr_cn": "通过软阈值自适应低秩压缩注意力头缓存。",
-      "llm_tldr": "通过软阈值自适应低秩压缩注意力头缓存。",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "attention mechanisms",
-      "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "6"
-    },
-    {
-      "id": "2606.11091v1",
-      "source": "arxiv",
-      "title": "QUIET: Quantifying Underutilized Influential Edges for Targeted Synchronization",
-      "abstract": "Network control theory can be used to model intrinsic and extrinsic strategies to steer neural dynamics. Standard approaches are node-centric, structural, and focused on achieving desired instantaneous states. Here, we develop an edge-centric approach which incorporates both structure and function to achieve extended patterns of neural dynamics characterized by desired synchronization states. Our method, Quantifying Underutilized Influential Edges for Targeted Synchronization (QUIET), is an edge-centric framework that integrates structural controllability of individual white matter connections and mutual information between pairwise functional timeseries to identify energy-efficient synchronization pathways. QUIET identifies quiet highways, edges that are structurally influential but functionally underutilized, to optimize regional synchronization. We validated QUIET across 75 synthetic configurations, where QUIET-ranked edge sets significantly outperformed random selection in 93% of cases (p<0.01). The framework, tested on Human Connectome Project participants, revealed that the control energy required for synchronization of the salience network correlates with fluid intelligence. QUIET, applied to healthy adults undergoing dexmedetomidine-induced unresponsiveness, showed that the frontoparietal and default-mode networks exhibited the largest control energy required for synchronization in both awake and sedated states. QUIET is released as a stand-alone software to be used to study theoretically-defined synchronization pathways, which in turn could inform testable hypotheses in perturbative studies.",
-      "authors": [
-        "Sovesh Mohapatra",
-        "Christoffer G. Alexandersen",
-        "Panagiotis Fotiadis",
-        "Max B. Kelz",
-        "John A. Detre",
-        "Fabio Pasqualetti",
-        "Dani S. Bassett"
-      ],
-      "primary_category": "eess.SY",
-      "categories": [
-        "eess.SY",
         "q-bio.NC"
       ],
-      "published": "2026-06-09T16:50:59+00:00",
-      "link": "https://arxiv.org/pdf/2606.11091v1",
+      "published": "2026-06-09T16:29:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.11066v1",
       "tags": [
-        "keyword:NDAI",
         "query:NDAI"
       ],
-      "llm_score": 7.0,
-      "llm_evidence_en": "neural dynamics control using functional timeseries mutual information",
-      "llm_evidence_cn": "利用功能时间序列互信息的神经动力学控制",
-      "llm_evidence": "利用功能时间序列互信息的神经动力学控制",
-      "canonical_evidence": "利用功能时间序列互信息的神经动力学控制",
-      "llm_tldr_en": "Edge-centric framework integrating structural and functional timeseries for neural synchronization control",
-      "llm_tldr_cn": "整合结构和功能时间序列的边中心框架用于神经同步控制",
-      "llm_tldr": "整合结构和功能时间序列的边中心框架用于神经同步控制",
+      "llm_score": 10.0,
+      "llm_evidence_en": "Transformer neural population model with adapter for BCI",
+      "llm_evidence_cn": "用于脑机接口的Transformer神经群体模型与适配器",
+      "llm_evidence": "用于脑机接口的Transformer神经群体模型与适配器",
+      "canonical_evidence": "用于脑机接口的Transformer神经群体模型与适配器",
+      "llm_tldr_en": "GRAFT is a Transformer-based neural activity model with recalibratable neuron interface for BCIs",
+      "llm_tldr_cn": "GRAFT是基于Transformer的神经活动模型，具有可重新校准的神经元接口，适用于脑机接口",
+      "llm_tldr": "GRAFT是基于Transformer的神经活动模型，具有可重新校准的神经元接口，适用于脑机接口",
       "llm_tags": [
-        "query:ndai"
+        "query:ndai:composite"
       ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "time series modeling",
-      "matched_requirement_id": "req-6",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "7"
+      "matched_query_tag": "query:ndai:composite",
+      "matched_query_text": "Papers central to AI启发神经解码方法, especially work that connects or combines: attention mechanisms; transfer learning; domain adaptation; sequence decoding; representation learning; time series modeling; decoding neural signals into language or actions; transfer learning for brain computer interfaces; sequence modeling for neural data; representation learning for neural activity.",
+      "matched_requirement_id": "req-composite-ndai",
+      "selection_source": "fresh_fetch"
     },
     {
-      "id": "2606.08669v1",
+      "id": "2606.08583v1",
       "source": "arxiv",
-      "title": "A Comparison of SSL-Based Feature Extractors and Back-End Classifiers for Spoofing Detection: A Multi-Corpus Training and Cross-Linguistic Analysis",
-      "abstract": "Voice biometric systems face growing threats from spoofing attacks, yet the evaluation of detection models remains inconsistent across datasets. To investigate these unpredictable fluctuations, we conduct a comprehensive benchmark of four self-supervised learning feature extractors paired with four back-end classifiers. We compare the hierarchical local feature extraction of ResNet with the global sequence and relational modeling of attention and graph-based back-ends. Through multi-corpus training across three scenarios and six evaluation datasets, our empirical analysis yields two critical findings. First, we expose a domain bias within the ASVspoof 5 dataset, showing that naive data scaling actively degrades performance. Second, our cross-linguistic analysis reveals that fine-tuning with just 8 hours of target-language data enhances detection robustness. Together, these findings emphasize the critical need for domain-aware and language-specific adaptation in spoofing detection.",
+      "title": "A spectral audit framework reveals task-dependent aperiodic reliance across EEG and ECG deep learning",
+      "abstract": "Deep learning on physiological time series is interpreted through domain-specific features -- oscillatory rhythms in EEG, morphological complexes in ECG -- yet these signals sit atop a broadband aperiodic 1/f-like envelope that covaries with arousal, age, and pathology. We introduce a spectral audit framework combining aperiodic/periodic decomposition, phase-preserving Fourier interventions, sham controls, and simulation validation. Aperiodic reliance was task-dependent and architecture-general: across six neural architectures, flattening drops exceeded 0.42 balanced-accuracy points for sleep-wake classification, reached 0.07-0.13 for clinical abnormality detection, and remained minimal for motor imagery. Six of seven EEG foundation models showed FDR-significant aperiodic reliance on clinical EEG; age/sex and recording-era controls reduced but did not eliminate the effect. Applying the audit to PTB-XL ECG revealed neural drops of 0.32--0.36 persisting after demographic matching, confirming this confound class extends beyond EEG. Aperiodic controls should become standard for interpretable physiological time-series deep learning.",
       "authors": [
-        "Anh-Tuan Dao",
-        "Driss Matrouf",
-        "Mickael Rouvier",
-        "Nicholas Evans"
-      ],
-      "primary_category": "cs.SD",
-      "categories": [
-        "cs.SD",
-        "cs.LG"
-      ],
-      "published": "2026-06-07T15:20:38+00:00",
-      "link": "https://arxiv.org/pdf/2606.08669v1",
-      "tags": [
-        "keyword:NDAI"
-      ],
-      "llm_score": 6.0,
-      "llm_evidence_en": "compares attention back-ends for sequence modeling",
-      "llm_evidence_cn": "比较注意力机制后端用于序列建模",
-      "llm_evidence": "比较注意力机制后端用于序列建模",
-      "canonical_evidence": "比较注意力机制后端用于序列建模",
-      "llm_tldr_en": "Benchmark of SSL feature extractors with attention and graph back-ends for spoofing detection.",
-      "llm_tldr_cn": "自监督特征提取器与注意力和图后端的基准测试用于欺骗检测",
-      "llm_tldr": "自监督特征提取器与注意力和图后端的基准测试用于欺骗检测",
-      "llm_tags": [
-        "query:ndai"
-      ],
-      "matched_query_tag": "query:ndai",
-      "matched_query_text": "attention mechanisms",
-      "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "6"
-    },
-    {
-      "id": "2606.11831v1",
-      "source": "arxiv",
-      "title": "From Uniform to Learned Graph Priors: Diffusion for Structure Discovery",
-      "abstract": "Neural relational inference (NRI) methods discover interaction graphs from trajectories through variational reasoning on discrete potential edges. However, these methods typically rely on oversimplified, factorized graph priors. Such priors, typically nearing uniform distributions, treat edges as independent entities. This systemic misalignment does not match the real-world systems and yields diffuse and indecisive edge posteriors limiting the reliability of structural discovery. To address this, we propose \\textit{Diff-prior}, a diffusion-parameterized adaptive prior used to calibrate latent graph distribution rather than generate graphs. Our core insight is to reframe prior integration as a learnable denoising-style calibration that organizes scattered, uncertain edge posteriors into a more reliable overall structure which can be trained by the diffusion model. Diff-prior learns an adaptive structure prior that performs structured calibration on the edge posteriors during inference, guiding it towards a distribution closer to the underlying structure. The diff-prior operates before structural sampling and acts as a denoising calibrator directly on the encoder edge distribution, which provides a generic training paradigm over structured variables. Experiments on standard benchmarks validated our framework, and the results indicate that Diff-prior improves the performance of structure inference and generates more decisive edge posteriors across multiple NRI-family architectures. The code is available on https://github.com/Hardy158118/Diffprior.",
-      "authors": [
-        "Qi Shao",
-        "Hao Guo",
-        "Jiawen Chen",
-        "Duxin Chen",
-        "Wenwu Yu"
+        "Jasmeet Singh Bindra",
+        "Siddharth Panwar",
+        "Shubhajit Roy Chowdhury"
       ],
       "primary_category": "cs.LG",
       "categories": [
         "cs.LG",
-        "cs.AI"
+        "eess.SP"
       ],
-      "published": "2026-06-10T09:14:45+00:00",
-      "link": "https://arxiv.org/pdf/2606.11831v1",
+      "published": "2026-06-07T11:37:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.08583v1",
       "tags": [
         "keyword:NDAI",
         "query:NDAI"
       ],
-      "llm_score": 7.0,
-      "llm_evidence_en": "diffusion-based adaptive prior for learning latent graphs from trajectories, relevant to neural activity structure discovery",
-      "llm_evidence_cn": "基于扩散的自适应先验，用于从轨迹学习潜在图结构，与神经活动结构发现相关",
-      "llm_evidence": "基于扩散的自适应先验，用于从轨迹学习潜在图结构，与神经活动结构发现相关",
-      "canonical_evidence": "基于扩散的自适应先验，用于从轨迹学习潜在图结构，与神经活动结构发现相关",
-      "llm_tldr_en": "Introduces Diff-prior, a diffusion-parameterized prior that calibrates latent graph distributions from trajectory data, useful for inferring neural connectivity.",
-      "llm_tldr_cn": "提出Diff-prior，一种扩散参数化的先验，用于从轨迹数据校准潜在图分布，可用于推断神经连接。",
-      "llm_tldr": "提出Diff-prior，一种扩散参数化的先验，用于从轨迹数据校准潜在图分布，可用于推断神经连接。",
+      "llm_score": 9.0,
+      "llm_evidence_en": "spectral audit framework for EEG deep learning",
+      "llm_evidence_cn": "用于EEG深度学习的频谱审计框架",
+      "llm_evidence": "用于EEG深度学习的频谱审计框架",
+      "canonical_evidence": "用于EEG深度学习的频谱审计框架",
+      "llm_tldr_en": "Introduces a framework to analyze aperiodic reliance in EEG deep learning models",
+      "llm_tldr_cn": "提出分析EEG深度学习模型非周期性依赖的框架",
+      "llm_tldr": "提出分析EEG深度学习模型非周期性依赖的框架",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "sequence modeling for neural data",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.08691v1",
+      "source": "arxiv",
+      "title": "Hierarchical Projection for Adaptive Knowledge Transfer",
+      "abstract": "Modern data-driven applications increasingly involve learning from multiple heterogeneous sources, where a target dataset is limited but related information is available across domains. Naively combining these sources can degrade performance when relevance varies or spurious signals are present, posing a fundamental challenge for trustworthy cross-domain learning. We propose Projection Transfer Learning (ProjectionTL), a unified framework that integrates hierarchical Bayesian modeling with adaptive projection for selective knowledge transfer. The key idea is to decouple transfer at two levels: first, we construct a source-guided hierarchical prior that aggregates information across sources using data-driven weights, capturing global alignment between each source and the target; second, we refine this borrowing through a posterior-projection step that operates at the feature level, selectively retaining coordinates that exhibit local agreement with the target signal. This two-stage design enables the method to simultaneously perform source selection and feature selection, thereby mitigating negative transfer while preserving interpretability. ProjectionTL provides a principled approach to integrating heterogeneous data across domains, bridging statistical modeling and modern machine learning paradigms for robust and interpretable transfer. Through simulations and real-world biomedical applications, we demonstrate improved accuracy, stability, and interpretability compared to existing methods. Our framework offers a scalable and generalizable strategy for trustworthy cross-domain learning in high-dimensional settings.",
+      "authors": [
+        "Samhita Pal",
+        "Tian Gu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ME"
+      ],
+      "published": "2026-06-07T15:44:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.08691v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Hierarchical projection for adaptive knowledge transfer",
+      "llm_evidence_cn": "层级投影自适应知识迁移",
+      "llm_evidence": "层级投影自适应知识迁移",
+      "canonical_evidence": "层级投影自适应知识迁移",
+      "llm_tldr_en": "Proposes ProjectionTL for selective knowledge transfer across heterogeneous sources.",
+      "llm_tldr_cn": "提出ProjectionTL实现异构源间的选择性知识迁移。",
+      "llm_tldr": "提出ProjectionTL实现异构源间的选择性知识迁移。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09159v1",
+      "source": "arxiv",
+      "title": "Unified Energy for Invariant and Independent Decoding in Diffusion Language Models",
+      "abstract": "Diffusion Language Models (DLMs) enable parallel text generation by iteratively denoising a full sequence, offering attractive flexibility compared to auto-regressive (AR) decoding. However, existing methods fail to fully capture token relationships, leading to a performance gap relative to AR baselines, especially as the degree of parallelism increases. In this paper, we give a systematic analysis of the gap, identifying three key factors: (i) model capacity, (ii) dependency, and (iii) invariance. To address these issues, we first propose an invariant energy (Inv-E) together with an effective sampling-based estimator to handle the invariance issue. By further combining with the independent energy (Ind-E), we obtain a unified energy (Uni-E), that accounts for all these factors. Uni-E enjoys a unique advantage: it can be computed exactly without sampling-based partition estimation. Besides, Uni-E is model agnostic and can therefore be scaled to models of arbitrary size. We further prove that Uni-E can correct the distribution shift caused by dependency and invariance. Extensive experiments across Diffusion Language Models (DLMs) and Diffusion Large Language Models (DLLMs) demonstrate the effectiveness of the proposed Uni-E.",
+      "authors": [
+        "Yuchen Yan",
+        "Minkai Xu",
+        "Zaiquan Yang",
+        "Yatao Bian"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T07:50:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.09159v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Proposes unified energy for decoding in diffusion language models",
+      "llm_evidence_cn": "提出扩散语言模型解码的统一能量",
+      "llm_evidence": "提出扩散语言模型解码的统一能量",
+      "canonical_evidence": "提出扩散语言模型解码的统一能量",
+      "llm_tldr_en": "New decoding method for diffusion LMs addressing token dependencies",
+      "llm_tldr_cn": "新解码方法解决扩散LM中token依赖问题",
+      "llm_tldr": "新解码方法解决扩散LM中token依赖问题",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "sequence decoding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09770v1",
+      "source": "arxiv",
+      "title": "Discovering Functionally Selective Brain Regions with a Deep Topographic Multimodal Model",
+      "abstract": "Nearby neurons in cortex share similar response profiles, producing systematic spatial organization across sensory and cognitive systems. Recent topographic models reproduce aspects of this structure but remain unimodal and spatially constrain each layer separately, yielding fragmented maps that capture neither the contiguity of cortical processing streams nor their integration across modalities. We introduce Topo-Omni, a topographic multimodal model in which visual, auditory, and language/cognitive processing share a single contiguous in-silico sheet. Built by fine-tuning a pretrained foundation model with a spatial smoothness objective, this architecture develops clusters across modalities that are consistent with human neuroimaging, from sensory to cognitive systems. Driving or suppressing a cluster selectively biases or impairs perception, paralleling human intervention studies. Finally, we use our model to screen for novel clusters in-silico and discover new natural landscape and animal networks which we validate in human data. A single spatial principle thus organizes representations across modalities and processing stages, yielding testable hypotheses about cortical organization.",
+      "authors": [
+        "Badr AlKhamissi",
+        "Johannes Mehrer",
+        "Lara Marinov",
+        "Ahmed Abdelaal",
+        "Abdulkadir Gokce",
+        "Martin Schrimpf"
+      ],
+      "primary_category": "q-bio.NC",
+      "categories": [
+        "q-bio.NC",
+        "cs.LG"
+      ],
+      "published": "2026-06-08T17:31:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.09770v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "discovers brain regions using topographic multimodal model",
+      "llm_evidence_cn": "使用地形多模态模型发现功能选择性脑区",
+      "llm_evidence": "使用地形多模态模型发现功能选择性脑区",
+      "canonical_evidence": "使用地形多模态模型发现功能选择性脑区",
+      "llm_tldr_en": "A topographic multimodal model fine-tuned to discover functionally selective brain regions",
+      "llm_tldr_cn": "通过微调的地形多模态模型发现功能选择性脑区",
+      "llm_tldr": "通过微调的地形多模态模型发现功能选择性脑区",
       "llm_tags": [
         "query:ndai"
       ],
       "matched_query_tag": "query:ndai",
       "matched_query_text": "representation learning for neural activity",
-      "matched_requirement_id": "req-7",
-      "selection_source": "fresh_fetch",
-      "quick_tier": "7"
-    },
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
     {
-      "id": "2606.10743v1",
+      "id": "2606.08578v1",
       "source": "arxiv",
-      "title": "Hand-centric Human-to-Robot Trajectory Transfer from Video Demonstrations via Open-World Contact Localization",
-      "abstract": "Learning from human video demonstrations remains challenging due to noisy hand-object interactions, unseen objects with partial observation, and cross-embodiment discrepancy. To address these challenges, we present \\textit{HOWTransfer} (\\emph{H}and-\\emph{O}bject \\emph{O}pen-\\emph{W}orld Transfer), a hand-centric framework that distills human demonstrations into contact-aware, taxonomy-informed, and diverse robotic trajectories. Instead of relying on object-specific descriptions, vision-language queries, or explicit object-state tracking, \\emph{HOWTransfer} recovers temporally consistent 3D hand motion and localizes temporal contact intervals by reasoning over observed hand-object interaction cues. The localized contact onsets are then used to retarget human grasp intent into multi-modal parallel-jaw grasp hypotheses, which are propagated along the recovered wrist trajectory to generate robot-executable motions. Finally, a trajectory editing stage refines contact alignment and produces diverse executable variants from a single demonstration. Experiments across diverse manipulation tasks show that \\emph{HOWTransfer} enables accurate contact localization and high-quality robot motion retargeting with $86\\%$ success, which is preferred over teleoperated trajectories in a blinded preference study.",
+      "title": "Lost in the Non-convex Loss Landscape: How to Fine-tune the Large Time Series Model?",
+      "abstract": "Recently, large time series models (LTSMs) have gained increasing attention due to their similarities to large language models, including flexible context length, scalability, and task generality, outperforming advanced task-specific models. However, prior studies indicate that pre-trained LTSMs may exhibit a poorly conditioned non-convex loss landscape, leading to limited trainability. As a result, direct fine-tuning tends to cause overfitting and suboptimal performance, sometimes even worse than training from scratch, substantially diminishing the benefits of pre-training. To overcome this limitation, we propose Smoothed Full Fine-tuning (SFF), a novel fine-tuning technology. Specifically, we construct an auxiliary LTSM via random initialization to obtain a smoother loss landscape, and then linearly interpolate its weights with those of the pre-trained model to smooth the original landscape. This process improves trainability while preserving pre-trained knowledge, thereby enabling more effective downstream fine-tuning. From an optimization perspective, SFF perturbs sharp minima without significantly harming flat regions, facilitating escape from poor local basins toward smoother and more generalizable solutions. Extensive experiments on benchmark datasets demonstrate consistent improvements across eight representative LTSMs, including Timer, TimesFM, MOMENT, UniTS, MOIRAI, Chronos, TTMs, and Sundial, on diverse downstream tasks. The code is available at the link: https://github.com/Meteor-Stars/SFF.",
       "authors": [
-        "Yitian Shi",
-        "Di Wen",
-        "Zhengqi Han",
-        "Zicheng Guo",
-        "Yu Hu",
-        "Edgar Welte",
-        "Kunyu Peng",
-        "Rainer Stiefelhagen",
-        "Rania Rayyes"
+        "Xu Zhang",
+        "Peang Wang",
+        "Wei Wang"
       ],
-      "primary_category": "cs.RO",
+      "primary_category": "cs.LG",
       "categories": [
-        "cs.RO"
+        "cs.LG"
       ],
-      "published": "2026-06-09T11:53:29+00:00",
-      "link": "https://arxiv.org/pdf/2606.10743v1",
+      "published": "2026-06-07T11:25:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.08578v1",
       "tags": [
-        "keyword:NDAI",
-        "query:NDAI"
+        "keyword:NDAI"
       ],
-      "llm_score": 6.0,
-      "llm_evidence_en": "human-to-robot trajectory transfer via hand-object interaction",
-      "llm_evidence_cn": "通过手-物交互的人到机器人轨迹迁移",
-      "llm_evidence": "通过手-物交互的人到机器人轨迹迁移",
-      "canonical_evidence": "通过手-物交互的人到机器人轨迹迁移",
-      "llm_tldr_en": "HOWTransfer distills human video demonstrations into robot trajectories.",
-      "llm_tldr_cn": "HOWTransfer将人类视频演示转化为机器人轨迹",
-      "llm_tldr": "HOWTransfer将人类视频演示转化为机器人轨迹",
+      "llm_score": 8.0,
+      "llm_evidence_en": "fine-tuning large time series models",
+      "llm_evidence_cn": "微调大时间序列模型",
+      "llm_evidence": "微调大时间序列模型",
+      "canonical_evidence": "微调大时间序列模型",
+      "llm_tldr_en": "SFF smooths the loss landscape to enable effective fine-tuning of large time series models.",
+      "llm_tldr_cn": "SFF平滑损失景观以有效微调大时间序列模型。",
+      "llm_tldr": "SFF平滑损失景观以有效微调大时间序列模型。",
       "llm_tags": [
         "query:ndai"
       ],
       "matched_query_tag": "query:ndai",
-      "matched_query_text": "transfer learning",
-      "matched_requirement_id": "req-2",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
       "selection_source": "fresh_fetch",
-      "quick_tier": "6"
+      "quick_tier": "8plus"
     },
     {
-      "id": "2606.11868v1",
+      "id": "2606.08560v1",
       "source": "arxiv",
-      "title": "MemNovo: Look Back at the Spectrum for Balanced De Novo Peptide Sequencing from Mass Spectrometry",
-      "abstract": "De novo peptide sequencing from tandem mass spectrometry is pivotal in proteomics, enabling identification of novel peptides without reference databases. While recent Transformer-based encoder-decoder models have achieved remarkable performance, we uncover a critical pathology in their inference dynamics. Through comprehensive feature scaling experiments, we demonstrate that existing auto-regressive peptide decoders tend to over-rely on generated-sequence priors while progressively under-utilizing fine-grained physical evidence from the input mass spectrum. This phenomenon leads to suboptimal results, where generated peptide sequences are biologically plausible yet not faithful to the input spectrum. To rectify this, we propose MemNovo, a training-free and plug-and-play mechanism that re-balances peptide and spectral contributions at inference time. MemNovo alleviates the information bottleneck by establishing a persistent spectral memory bank and injecting retrieved features directly into the final decoding stage via an ultra-conservative residual connection. Theoretical analysis confirms that this mechanism restores the mutual information between the decoder state and the raw spectrum. Extensive experiments on the Nine Species benchmark with two representative baselines, Casanovo and InstaNovo, demonstrate that MemNovo consistently improves both amino acid precision and peptide precision, achieving up to 39.1% relative improvement in peptide precision for Casanovo and up to 3.9% for InstaNovo, with negligible computational overhead.",
+      "title": "CP-factorization for high dimensional tensor time series and double projection iterations",
+      "abstract": "We adopt the canonical polyadic (CP) decomposition to model high-dimensional tensor time series. Our primary goal is to identify and estimate the factor loadings in the CP decomposition. We propose a one-pass estimation procedure through standard eigen-analysis for a matrix constructed based on the serial dependence structure of the data. The asymptotic properties of the proposed estimator are established under a general setting as long as the factor loading vectors are linearly independent, allowing the factors to be correlated and the factor loading vectors to be not nearly orthogonal. The procedure adapts to the sparsity of the factor loading vectors, accommodates weak factors, and demonstrates strong performance across a wide range of scenarios. To further reduce estimation errors, we also introduce an iterative algorithm based on a novel double projection approach. We theoretically justify the improved convergence rate of the iterative estimator, and derive the associated limiting distribution. A consistent estimator of the asymptotic variance is also provided, which plays a key role in the related inference problems. All results are validated through extensive simulations and two real data applications.",
       "authors": [
-        "Dongxin Lyu",
-        "Jingbo Zhou",
-        "Hongxin Xiang",
-        "Yuqiang Li",
-        "Jun Xia"
+        "Jinyuan Chang",
+        "Guanglin Huang",
+        "Qiwei Yao",
+        "Long Yu"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME",
+        "econ.EM",
+        "stat.ML"
+      ],
+      "published": "2026-06-07T10:34:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.08560v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "CP decomposition for high-dimensional tensor time series",
+      "llm_evidence_cn": "高维张量时间序列的CP分解",
+      "llm_evidence": "高维张量时间序列的CP分解",
+      "canonical_evidence": "高维张量时间序列的CP分解",
+      "llm_tldr_en": "Proposes a CP-factorization method for high-dimensional tensor time series with a one-pass estimation procedure.",
+      "llm_tldr_cn": "提出一种高维张量时间序列的CP分解方法，采用单遍估计过程。",
+      "llm_tldr": "提出一种高维张量时间序列的CP分解方法，采用单遍估计过程。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08573v1",
+      "source": "arxiv",
+      "title": "Titans-as-a-Layer: Test-Time Memory for Conversational Speech Emotion Recognition",
+      "abstract": "Speech emotion recognition (SER) is commonly formulated as utterance-level classification, although conversational emotion depends on a speaker's usual vocal range and the emotional context established by previous utterances. Speech-language models provide strong pretrained acoustic and semantic representations, and can adapts them to SER labels via finetune, but this mechanism still missing per-dialogue state. We study whether test-time neural memory can supply this missing context while leaving the large audio language models (LALMs) backbone intact. Building on Titans, we introduce a plug-and-play Memory-as-a-Layer (MAL) adapter that writes dialogue history into a small neural memory and reads it back as an audio-token-aligned residual update, avoiding changes to the host model's token positions. Across different audio LLMs and emotion recognition datasets evaluations, our design improves SER performs across different evaluation metrics, supporting test-time memory as a residual contextual mechanism for conversational SER.",
+      "authors": [
+        "Daniel Chen",
+        "Qicong Hu",
+        "Yang Xiao",
+        "Ting Dang",
+        "Hong Jia"
       ],
       "primary_category": "cs.LG",
       "categories": [
         "cs.LG",
-        "q-bio.QM"
+        "cs.CL"
       ],
-      "published": "2026-06-10T09:43:30+00:00",
-      "link": "https://arxiv.org/pdf/2606.11868v1",
+      "published": "2026-06-07T11:07:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.08573v1",
       "tags": [
-        "keyword:NDAI",
         "query:NDAI"
       ],
-      "llm_score": 7.0,
-      "llm_evidence_en": "Transformer encoder-decoder for de novo peptide sequencing addressing decoder pathology",
-      "llm_evidence_cn": "用于从头肽段测序的Transformer编码器-解码器，解决解码器病理",
-      "llm_evidence": "用于从头肽段测序的Transformer编码器-解码器，解决解码器病理",
-      "canonical_evidence": "用于从头肽段测序的Transformer编码器-解码器，解决解码器病理",
-      "llm_tldr_en": "Fixes decoder over-reliance on sequence priors in peptide sequencing, improving spectrum fidelity.",
-      "llm_tldr_cn": "修正肽段测序中解码器对序列先验的过度依赖，提高谱图保真度。",
-      "llm_tldr": "修正肽段测序中解码器对序列先验的过度依赖，提高谱图保真度。",
+      "llm_score": 6.0,
+      "llm_evidence_en": "Test-time neural memory for conversational sequence context",
+      "llm_evidence_cn": "测试时神经记忆用于对话序列上下文",
+      "llm_evidence": "测试时神经记忆用于对话序列上下文",
+      "canonical_evidence": "测试时神经记忆用于对话序列上下文",
+      "llm_tldr_en": "Adds test-time memory to speech emotion recognition for leveraging conversational dialogue history.",
+      "llm_tldr_cn": "在语音情感识别中加入测试时记忆模块利用对话历史。",
+      "llm_tldr": "在语音情感识别中加入测试时记忆模块利用对话历史。",
       "llm_tags": [
         "query:ndai"
       ],
@@ -494,42 +327,73 @@
       "matched_query_text": "sequence decoding",
       "matched_requirement_id": "req-4",
       "selection_source": "fresh_fetch",
-      "quick_tier": "7"
+      "quick_tier": "6"
     },
     {
-      "id": "2606.10759v1",
+      "id": "2606.08594v1",
       "source": "arxiv",
-      "title": "miniReranker: Efficient Multimodal Reranking through Visual Cache Reuse and Interaction Sparsity",
-      "abstract": "Multimodal large language models (MLLMs) have recently shown strong potential as point-wise rerankers by directly modeling query--document relevance through next-token prediction. However, point-wise reranking suffers from substantial repeated computation across query--document pairs, while the causal structure of transformers allows only prefix segments to be reused via pre-caching. To address the misalignment of existing query-first and document-first formats with both VQA-style prompting and computation-aware reuse, we propose a \\textit{vision-first} formulation that improves both cache reuse efficiency and reranking performance. However, the remaining cost is still considerable and stems from three main sources: (1) \\textit{model depth}, for which we reduce active parameters via early exit; (2) \\textit{cross-segment attention}, which we restrict to a narrow interaction band across a few layers; and (3) \\textit{visual tokens}, where we reduce the number of tokens via embedder-guided pruning. Together, these designs form miniReranker, which reduces reranking runtime to <1% of the dense implementation under high-reuse settings for a single query, while preserving >96% of the dense model performance.",
+      "title": "How Much Capacity Does EEG Denoising Need? Ultra-Compact Networks reveal Benchmark Saturation and Metric-Utility Gap",
+      "abstract": "Deep learning EEG denoising architectures have scaled from tens of thousands to tens of millions of parameters, yet no prior study has isolated model capacity as the experimental variable or tested whether reconstruction metrics predict downstream neural-signal utility. We address both gaps by fixing architecture, loss, data split, and training recipe while sweeping only channel width from 1.05K to 40.26K parameters in a minimal depthwise-separable convolutional U-Net. Models were evaluated on the EEGDenoiseNet benchmark, cross-dataset BCI transfer tests, controlled baseline retraining, and downstream motor-imagery classification with five decoder families across all nine BCI Competition IV-2a subjects. Reconstruction performance saturated by 3-6.5K parameters, with post-elbow gains of at most 0.015 correlation coefficient per log10-parameter unit. An 8.46M-parameter baseline retrained under the same pipeline matched the 40.26K compact variant on EOG--a 200x parameter gap yielding no advantage--while a Patch-Transformer control reproduced the same diminishing-return shape. Downstream evaluation exposed a classifier-dependent metric-utility gap: reconstruction-optimized denoising significantly degraded CSP+LDA classification across all nine subjects and three artifact types (best denoised accuracy 0.547 vs. 0.612 noisy baseline; Bonferroni p=0.0488), persisting on naturally recorded trials (Delta=-0.047; BH-FDR q=0.0049). End-to-end neural decoders showed variable or neutral effects. Standard EEG denoising benchmarks are saturated far below current model capacity, and reconstruction metrics do not predict BCI utility. Ultra-compact models at 33-46 KB and 1.27-2.61M FLOPs/segment are practical for edge deployment. These findings argue for capacity-controlled evaluation, harder task-aware benchmarks, and mandatory downstream validation.",
       "authors": [
-        "Yingqi Fan",
-        "Xuan Lu",
-        "Anhao Zhao",
-        "Junlong Tong",
-        "Ping Nie",
-        "Kai Zou",
-        "Yunpu Ma",
-        "Wei Zhang",
-        "Xiaoyu Shen"
+        "Jasmeet Singh Bindra",
+        "Siddharth Panwar",
+        "Shubhajit Roy Chowdhury"
       ],
-      "primary_category": "cs.IR",
+      "primary_category": "cs.LG",
       "categories": [
-        "cs.IR"
+        "cs.LG",
+        "eess.SP"
       ],
-      "published": "2026-06-09T12:11:02+00:00",
-      "link": "https://arxiv.org/pdf/2606.10759v1",
+      "published": "2026-06-07T12:17:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.08594v1",
       "tags": [
         "keyword:NDAI",
         "query:NDAI"
       ],
-      "llm_score": 6.0,
-      "llm_evidence_en": "Proposes efficient multimodal reranking using attention-based vision-first formulation",
-      "llm_evidence_cn": "提出基于注意力机制的视觉优先多模态重排序方法",
-      "llm_evidence": "提出基于注意力机制的视觉优先多模态重排序方法",
-      "canonical_evidence": "提出基于注意力机制的视觉优先多模态重排序方法",
-      "llm_tldr_en": "miniReranker improves multimodal reranking efficiency by leveraging attention and cache reuse.",
-      "llm_tldr_cn": "miniReranker 通过注意力和缓存重用提升多模态重排序效率。",
-      "llm_tldr": "miniReranker 通过注意力和缓存重用提升多模态重排序效率。",
+      "llm_score": 8.0,
+      "llm_evidence_en": "cross-dataset BCI transfer with EEG denoising networks",
+      "llm_evidence_cn": "基于EEG去噪网络的跨数据集脑机接口迁移",
+      "llm_evidence": "基于EEG去噪网络的跨数据集脑机接口迁移",
+      "canonical_evidence": "基于EEG去噪网络的跨数据集脑机接口迁移",
+      "llm_tldr_en": "Evaluates capacity of EEG denoising nets and tests cross-dataset transfer for BCI.",
+      "llm_tldr_cn": "评估EEG去噪网络容量，并测试脑机接口跨数据集迁移。",
+      "llm_tldr": "评估EEG去噪网络容量，并测试脑机接口跨数据集迁移。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning for brain computer interfaces",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.08562v1",
+      "source": "arxiv",
+      "title": "Inside the LLM Word Factory",
+      "abstract": "Transformer language models process input provided as subword fragments, but natural language semantics usually rely on word-level concepts. Detokenization is the process where models reconcile these two facts, aggregating subwords into word-level representations through their computation. Prior work has found that this takes place mostly in early-to-middle layers, but so far the exact mechanics of the process have not been pinned down. We venture deep into detokenization using activation patching in controlled paired experiments that isolate the contribution of different model components, localizing English detokenization in Llama2-7B to a two-stage process at Layer 1. Attention transmits a token-specific signal from nonfinal subwords, using sequential relays if necessary, while the MLP composes it with the local embedding. This two-stage structure generalizes to twelve models from eight families, but the depth over which it takes place depends on the flavor of positional encoding: RoPE-based models detokenize over 1 to 5 layers, while learned-absolute models take 5 to 10. Finally, we provide a probe for determining the success of the detokenization process based on early-layer activations alone, performing at 0.94-0.97 AUROC depending on the amount of context.",
+      "authors": [
+        "Benzi Busigin",
+        "Yuval Pinter"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-07T10:36:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.08562v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "studies attention mechanics in transformers",
+      "llm_evidence_cn": "研究Transformer中的注意力机制",
+      "llm_evidence": "研究Transformer中的注意力机制",
+      "canonical_evidence": "研究Transformer中的注意力机制",
+      "llm_tldr_en": "Analyzes detokenization via attention in LLMs",
+      "llm_tldr_cn": "通过注意力机制分析LLM中的去标记化过程",
+      "llm_tldr": "通过注意力机制分析LLM中的去标记化过程",
       "llm_tags": [
         "query:ndai"
       ],
@@ -537,37 +401,114 @@
       "matched_query_text": "attention mechanisms",
       "matched_requirement_id": "req-1",
       "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.08604v2",
+      "source": "arxiv",
+      "title": "Gryphon: A Unified Architecture for Semantic-ID Generation and Item-Level Scoring in Industrial Recommendations",
+      "abstract": "Generative retrieval (GR) has become a scalable approach to candidate generation: each item is assigned a short hierarchical token sequence called a Semantic ID (SID), and the next item's SID is decoded autoregressively. A practical limitation is that the decoder's beam search optimizes the likelihood of token sequences, not the relevance of the underlying items. These objectives diverge when sequence likelihood is poorly calibrated due to beam search error accumulation, and when several items collapse onto a single SID and receive identical scores. We introduce Gryphon, an encoder-decoder generative recommendation architecture that adds a jointly trained item-level scoring component alongside SID generation, reusing the encoder's user representation computed in a single forward pass. Instead of ranking SIDs by accumulated token likelihood, Gryphon resolves each generated SID to its concrete items and re-scores those items directly, which sidesteps miscalibrated sequence scores and separates items that collide on the same identifier. On an industrial music service, with item-level scoring trained under a next-item-prediction objective, Gryphon attains the highest item-level Recall@1000, above the strongest baselines (+3.7% over vanilla GR and +2.5% over collision-resolved GR) at comparable parameter count and latency. Gryphon's item-level ranking also surpasses its beam-likelihood ranking of the same candidates (+4.2% gain), demonstrating the benefit of item-level scoring in GR. Deployed as the sole candidate source in a 7-day A/B test, Gryphon produced no statistically significant change in total listening time (+0.25%) while replacing a pipeline of more than 15 candidate generators and a separate preranking stage, substantially simplifying the candidate-generation system.",
+      "authors": [
+        "Daria Tikhonovich",
+        "Oleg Sorokin",
+        "Vladislav Dodonov",
+        "Mariia Ulianova",
+        "Ilya Murzin"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-06-07T12:31:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.08604v2",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "autoregressive decoding of semantic IDs for recommendation",
+      "llm_evidence_cn": "用于推荐的自回归语义ID解码",
+      "llm_evidence": "用于推荐的自回归语义ID解码",
+      "canonical_evidence": "用于推荐的自回归语义ID解码",
+      "llm_tldr_en": "Gryphon adds item-level scoring to generative retrieval with sequence decoding.",
+      "llm_tldr_cn": "Gryphon在生成检索中添加物品级评分与序列解码。",
+      "llm_tldr": "Gryphon在生成检索中添加物品级评分与序列解码。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "sequence decoding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
       "quick_tier": "6"
     },
     {
-      "id": "2606.11962v1",
+      "id": "2606.09653v1",
       "source": "arxiv",
-      "title": "Composite likelihood inference of fractional Gaussian processes with sequentially optimal subset selection",
-      "abstract": "The composite likelihood method reduces the computational cost of parameter estimation in time series by considering several subsets of observations instead of all observations at once. The asymptotic properties of this method are related to the Godambe information, an extension of the Fisher information that accounts for the dependence between subsets of observations. We aim to apply this method to linear Gaussian models, in particular fractional Brownian motion and fractional Gaussian noise. We derive theoretical expressions for their Fisher information and their Godambe information and deduce a subset selection design that sequentially maximizes the Godambe information. The size of the subsets then allows us to control the trade-off between estimation accuracy and computational cost. Through simulations, we compare this method with the method of moments and maximum likelihood estimation, and we apply it to real data, namely volatility series of a stock index and a wind speed time series.",
+      "title": "A Unifying Framework for Concept-Based Representational Similarity",
+      "abstract": "Learned representations across models and modalities often exhibit striking structural similarities, suggesting shared underlying concept decompositions. However, concept alignment remains poorly defined: existing approaches optimize different objectives under the same terminology, obscuring what is actually aligned.   We propose a unifying framework that decomposes alignment along two axes: what is aligned (representations vs. concepts) and at what level (instance-wise vs. distributional). This induces four corresponding properties -- instance-wise and distributional variants of translation and concept consistency -- and reveals precisely which of these guarantees existing methods provide. We further introduce \\InterVenchA, an intervention-based benchmark that separately measures extraction quality, translation quality, and concept consistency. Through theory and experiments, we show that commonly assumed equivalences between alignment objectives fail in practice: optimizing one property does not reliably recover the others, and purely unsupervised objectives fail to recover meaningful instance-level alignment. We then propose the Coupled Sparse Autoencoder (CoSAE), which jointly enforces complementary alignment objectives. Strong alignment emerges only in this regime. Surprisingly, as little as 0.1\\% paired data is sufficient to recover instance-level alignment when anchoring distributional objectives.   Overall, our results show that concept alignment is fundamentally multi-objective: it must be defined, measured, and optimized as such.",
       "authors": [
-        "Mathis Fourreau",
-        "Matthieu Garcin"
+        "Grégoire Dhimoïla",
+        "Victor Boutin",
+        "Agustin Martin Picard",
+        "Thomas Fel",
+        "Thomas Serre"
       ],
-      "primary_category": "stat.ME",
+      "primary_category": "cs.LG",
       "categories": [
-        "stat.ME",
-        "q-fin.ST",
-        "stat.CO"
+        "cs.LG"
       ],
-      "published": "2026-06-10T11:41:54+00:00",
-      "link": "https://arxiv.org/pdf/2606.11962v1",
+      "published": "2026-06-08T15:42:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.09653v1",
       "tags": [
         "keyword:NDAI",
         "query:NDAI"
       ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "framework for representation similarity and concept alignment",
+      "llm_evidence_cn": "表示相似性和概念对齐框架",
+      "llm_evidence": "表示相似性和概念对齐框架",
+      "canonical_evidence": "表示相似性和概念对齐框架",
+      "llm_tldr_en": "Unifies concept-based representational similarity with intervention benchmark.",
+      "llm_tldr_cn": "统一概念基础表示相似性并引入干预基准。",
+      "llm_tldr": "统一概念基础表示相似性并引入干预基准。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.08896v1",
+      "source": "arxiv",
+      "title": "FAME: Forecastability-Aware Mixture of Experts for Heterogeneous Time Series Forecasting",
+      "abstract": "Large-scale retail and industrial forecasting systems contain many heterogeneous time series whose lifecycle, sparsity, volatility, seasonality, spectral patterns, and contextual sensitivity differ substantially. A single forecasting model rarely performs well across all regimes, while dense ensembles increase inference cost and provide limited insight into expert suitability. This paper studies forecastability-aware expert routing: learning how data characteristics determine the suitability of forecasting experts. We propose \\method{}, a sparse mixture-of-experts framework that represents each series with a multidimensional forecastability fingerprint, mines expert-suitability targets from validation performance, and trains a cost-aware sparse router to activate a small budgeted set of experts for each series. Using a production-scale vending-machine sales dataset from Shandong New Beiyang (SNBC), where the forecasting component has been integrated into the replenishment-planning pipeline, together with public retail benchmarks, we show that expert suitability varies systematically across data regimes. On the industrial dataset with 5,000+ machines and 60M+ transactions, \\method{} Top-2 reduces MSE by 12.4\\% over the strongest single expert, LightGBM, while executing 1.92 experts per series on average. The deployed component produces demand forecasts, while inventory-oriented gains are estimated by an offline replay simulator under a fixed replenishment policy rather than by online intervention. The framework turns heterogeneous sales forecasting from heuristic model selection into data mining of forecastability patterns and expert specialization. Code is available at https://github.com/hit636/FAME",
+      "authors": [
+        "Qianyang Li",
+        "Xingjun Zhang",
+        "Shaoxun Wang",
+        "Tao Peng",
+        "Jia Wei"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-08T00:47:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.08896v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
       "llm_score": 7.0,
-      "llm_evidence_en": "Composite likelihood inference for fractional Gaussian time series",
-      "llm_evidence_cn": "分数高斯时间序列的复合似然推断",
-      "llm_evidence": "分数高斯时间序列的复合似然推断",
-      "canonical_evidence": "分数高斯时间序列的复合似然推断",
-      "llm_tldr_en": "Proposes subset selection for composite likelihood estimation in fractional Gaussian time series.",
-      "llm_tldr_cn": "提出分数高斯时间序列中复合似然估计的子集选择方法。",
-      "llm_tldr": "提出分数高斯时间序列中复合似然估计的子集选择方法。",
+      "llm_evidence_en": "mixture of experts for heterogeneous time series forecasting",
+      "llm_evidence_cn": "用于异构时间序列预测的专家混合模型",
+      "llm_evidence": "用于异构时间序列预测的专家混合模型",
+      "canonical_evidence": "用于异构时间序列预测的专家混合模型",
+      "llm_tldr_en": "Proposes forecastability-aware mixture of experts for time series forecasting",
+      "llm_tldr_cn": "提出基于可预测性的专家混合模型用于时间序列预测",
+      "llm_tldr": "提出基于可预测性的专家混合模型用于时间序列预测",
       "llm_tags": [
         "query:ndai"
       ],
@@ -578,39 +519,74 @@
       "quick_tier": "7"
     },
     {
-      "id": "2606.12077v1",
+      "id": "2606.10435v1",
       "source": "arxiv",
-      "title": "Efficient Time Series Clustering from Multiscale Reservoir Dynamics with Granular-Ball Anchoring Graph Optimization",
-      "abstract": "Time-series clustering remains challenging due to the inherent trade-off between clustering effectiveness and computational efficiency. Similarity-based methods often suffer from quadratic complexity caused by pairwise distance computations, while deep learning-based approaches typically rely on costly iterative training and a large number of trainable parameters. In this paper, we propose MSRGC-Net, an efficient time-series clustering framework that integrates multiscale reservoir computing, granular-ball-based anchoring graph construction, and consensus learning. MSRGC-Net adopts a training-free reservoir computing paradigm to extract multiscale temporal representations from raw time series without backpropagation, significantly reducing computational overhead. To capture the intrinsic structure of the resulting representations, granular-ball computing is employed to adaptively model data distributions via density-consistent regions, yielding compact and robust anchor graph representations. Furthermore, a consensus-based anchoring graph optimization strategy is introduced to effectively align multiscale reservoir representations and integrate complementary information across temporal scales. Extensive experiments on widely used univariate and multivariate benchmark datasets demonstrate that MSRGC-Net consistently outperforms state-of-the-art methods in clustering performance while maintaining superior computational efficiency.",
+      "title": "Parallel Causal Associative Fields: Gated Sparse Memory for Long-Context Language Modeling",
+      "abstract": "Transformers achieve strong language modeling performance by providing direct token-to-token communication paths, but causal self-attention scales quadratically with context length. Recurrent and state-space models reduce this cost, yet compress history into sequentially updated fixed-size states. This paper studies a third primitive: a parallel content-addressed memory over causal successor records. The proposed Parallel Causal Associative Field (PCAF) writes local records from a context window into hash buckets, retrieves a bounded candidate set for the current query, forms a sparse cache distribution over successor tokens, and mixes that cache with a parametric local language model through a learned gate. The resulting model maintains sparse long-context access while avoiding a single fixed recurrent state bottleneck. We evaluate PCAF under full autoregressive pretraining on WikiText-103 and PG-19 using a distributed Google Cloud TPU v4-32 pod. At 303M parameters and context length T = 2048, PCAF-semantic reaches 36.31 perplexity on WikiText-103 and 52.45 perplexity on PG-19, compared with 47.49 and 53.84 for a matched dense Transformer. PCAF-semantic simultaneously processes 0.61-0.62M tokens/s across the TPU pod, versus 0.43M tokens/s for dense and local attention baselines. Supporting 41M-parameter multi-seed sweeps and single-GPU component ablations show that the associative cache, retrieval capacity, and learned gate materially affect the speed-quality trade-off.",
       "authors": [
-        "Yifan Wang",
-        "Lifeng Shen",
-        "Shuyin Xia",
-        "Yi Wang"
+        "Muhammad Ahmed"
       ],
       "primary_category": "cs.LG",
       "categories": [
-        "cs.LG"
+        "cs.LG",
+        "cs.CL"
       ],
-      "published": "2026-06-10T13:42:35+00:00",
-      "link": "https://arxiv.org/pdf/2606.12077v1",
+      "published": "2026-06-09T05:23:17+00:00",
+      "link": "https://arxiv.org/pdf/2606.10435v1",
       "tags": [
-        "keyword:NDAI"
+        "keyword:NDAI",
+        "query:NDAI"
       ],
-      "llm_score": 7.0,
-      "llm_evidence_en": "efficient time series clustering using multiscale reservoir computing",
-      "llm_evidence_cn": "使用多尺度储层计算的高效时间序列聚类",
-      "llm_evidence": "使用多尺度储层计算的高效时间序列聚类",
-      "canonical_evidence": "使用多尺度储层计算的高效时间序列聚类",
-      "llm_tldr_en": "MSRGC-Net clusters time series efficiently with multiscale reservoir dynamics.",
-      "llm_tldr_cn": "MSRGC-Net利用多尺度储层动力学高效聚类时间序列。",
-      "llm_tldr": "MSRGC-Net利用多尺度储层动力学高效聚类时间序列。",
+      "llm_score": 8.0,
+      "llm_evidence_en": "Parallel content-addressed memory as alternative to causal self-attention",
+      "llm_evidence_cn": "并行内容寻址记忆作为因果自注意力的替代方案",
+      "llm_evidence": "并行内容寻址记忆作为因果自注意力的替代方案",
+      "canonical_evidence": "并行内容寻址记忆作为因果自注意力的替代方案",
+      "llm_tldr_en": "Proposes PCAF using sparse memory to replace self-attention for efficient long-context modeling.",
+      "llm_tldr_cn": "提出PCAF稀疏记忆替代自注意力，高效长上下文建模。",
+      "llm_tldr": "提出PCAF稀疏记忆替代自注意力，高效长上下文建模。",
       "llm_tags": [
         "query:ndai"
       ],
       "matched_query_tag": "query:ndai",
-      "matched_query_text": "time series modeling",
-      "matched_requirement_id": "req-6",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09189v1",
+      "source": "arxiv",
+      "title": "Pretrained, Frozen, Still Leaking: Auditing Cross-Encoder Attribute Transfer in EEG Foundation Models",
+      "abstract": "EEG foundation-model releases are usually audited one endpoint at a time: raw-reconstruction, membership inference, identity linkage, or DP-SGD on the downstream head. We audit the same released embeddings under all four endpoints jointly, on BIOT, LaBraM, and EEGPT, and show that each single-endpoint audit clears releases that still leak spectral attributes. The decisive evidence is a cross-encoder transfer audit: a single ridge attribute decoder learned from one frozen encoder transfers, via a fitted linear bridge, to held-out-subject test splits of every other encoder, with subject-disjoint matched-control 95% CI lower bound at least 0.081 across all six BIOT/LaBraM/EEGPT directions. We prove a sufficient condition: two encoders sharing a nontrivial attribute-coordinate projector overlap beta admit a chained ridge bridge attacker with centered-gain lower bound sqrt(beta/(1+tau^2)) - eps_br - rho_0, and back-solve beta in [0.008, 0.198]. To turn the joint audit into a deployment-readable decision rule we introduce an audit-endpoint disagreement score (AEDS), prove sufficient conditions for its positivity, and bootstrap-calibrate it per cell; AEDS is positive in all eight matched-CI cells (BIOT/LaBraM/EEGPT on EEGMMI; LaBraM on Sleep-EDF, 54-channel LIMO, CHB-MIT pediatric scalp EEG) with p<0.001, while a head-level Carlini LiRA membership audit reaches AUC only 0.50-0.70. Standard defenses fail under audit: a Wiener-style noise-aware adaptive attacker, the LiRA audit, and DP-SGD at every utility-preserving epsilon in {4,8} leave the attribute channel essentially unchanged. The contribution is an audit framework that turns scattered single-endpoint defenses into a joint release decision, supported by a cross-encoder bridge theorem and adaptive-attacker, LiRA, and DP-SGD baselines; the audit licenses release-blocking, not raw-waveform exfiltration or held-out-subject identity recovery.",
+      "authors": [
+        "Jianwei Tai"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T08:24:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.09189v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Cross-encoder transfer audit on EEG foundation models",
+      "llm_evidence_cn": "EEG基础模型的跨编码器迁移审计",
+      "llm_evidence": "EEG基础模型的跨编码器迁移审计",
+      "canonical_evidence": "EEG基础模型的跨编码器迁移审计",
+      "llm_tldr_en": "Reveals that EEG foundation models leak spectral attributes even when single-endpoint audits pass.",
+      "llm_tldr_cn": "揭示即使通过单端点审计，EEG基础模型也会泄露频谱属性。",
+      "llm_tldr": "揭示即使通过单端点审计，EEG基础模型也会泄露频谱属性。",
+      "llm_tags": [
+        "query:ndai"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning for brain computer interfaces",
+      "matched_requirement_id": "req-8",
       "selection_source": "fresh_fetch",
       "quick_tier": "7"
     }

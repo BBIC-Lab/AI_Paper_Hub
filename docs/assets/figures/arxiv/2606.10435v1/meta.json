@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-011.webp",
+      "caption": "Figure 1: PCAF architecture. A causal local network produces hidden states and a parametric token distribution. In parallel, an address function routes causal successor records into hash buckets. At most K retrieved records are scored against the current query to form pcache, and a learned gate combines it with pparam. Full autoregressive training applies this computation at every causal position.",
+      "page": 5,
+      "index": 11,
+      "width": 648,
+      "height": 648
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-009.webp",
+      "caption": "Table 1: Large-scale full autoregressive JAX results on a Google Cloud TPU v4-32 cluster. All models are trained at sequence lengths T = 1024 and T = 2048; throughput is measured across the full TPU pod in millions of tokens per second (M tok/s). The number in parentheses denotes the global batch size. Dense and local attention baselines trigger out-of-memory (OOM) errors at batch size 256 for sequence length T = 2048, limiting them to a maximum batch size of 32.",
+      "page": 9,
+      "index": 9,
+      "width": 968,
+      "height": 602
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-010.webp",
+      "caption": "Figure 2: Best-so-far full autoregressive validation perplexity on WikiText-103 at sequence lengths T = 1024 and T = 2048 on a TPU v4-32 cluster. The vertical axis focuses on the competitive perplexity regime after the initial high-loss transient; Table 1 reports the exact best and final values.",
+      "page": 9,
+      "index": 10,
+      "width": 752,
+      "height": 332
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-002.webp",
+      "caption": "Figure 3: Best-so-far full autoregressive validation perplexity on PG-19 at sequence lengths T = 1024 and T = 2048 on a TPU v4-32 cluster. The vertical axis focuses on the competitive perplexity regime, making the lower PCAF-semantic best perplexity visible even when raw validation curves later overfit upward; Table 1 reports the exact best and final values.",
+      "page": 10,
+      "index": 2,
+      "width": 752,
+      "height": 332
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-001.webp",
+      "caption": "Table 2: 41M-parameter TPU results and sensitivity sweeps. Rows marked “full AR” use the full autoregressive loss over all positions. Rows marked “NT diagnostic” are next-token-only diagnostic runs from a single sampled context window and are included only to isolate routing, bucket-count, and top-K behavior. Throughput is reported across the TPU v4-32 pod.",
+      "page": 11,
+      "index": 1,
+      "width": 968,
+      "height": 687
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-008.webp",
+      "caption": "Table 3: Next-token diagnostic baselines on WikiText-103 using TPU v4-32. Throughput is reported in million tokens per second across the full pod.",
+      "page": 12,
+      "index": 8,
+      "width": 972,
+      "height": 221
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-006.webp",
+      "caption": "Table 4: Next-token PCAF routing and gating diagnostics on WikiText-103 using TPU v4-32.",
+      "page": 12,
+      "index": 6,
+      "width": 972,
+      "height": 224
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-007.webp",
+      "caption": "Figure 4: Next-token validation perplexity curves on WikiText-103 at sequence lengths T = 1024 (left) and T = 2048 (right) on a TPU v4-32 cluster.",
+      "page": 12,
+      "index": 7,
+      "width": 790,
+      "height": 360
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-004.webp",
+      "caption": "Figure 5: Training throughput comparison for the next-token diagnostic runs on WikiText-103 (TPU v4-32).",
+      "page": 13,
+      "index": 4,
+      "width": 492,
+      "height": 494
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-005.webp",
+      "caption": "Table 5: WikiText-2 next-token prediction at context length 1024. Lower perplexity is better. Best results in bold.",
+      "page": 13,
+      "index": 5,
+      "width": 964,
+      "height": 311
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10435v1/fig-003.webp",
+      "caption": "Table 6: WikiText-2 next-token prediction at context length 2048. PCAF-context benefits from the longer context while sparse attention becomes slower and less accurate under this memory budget.",
+      "page": 14,
+      "index": 3,
+      "width": 964,
+      "height": 313
+    }
+  ]
+}

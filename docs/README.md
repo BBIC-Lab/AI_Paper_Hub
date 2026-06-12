@@ -3,7 +3,7 @@
     <div class="dpr-daily-kicker">Daily Research Brief</div>
     <h3>最新日报</h3>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
-      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-12 06:12 北京时间</strong></div>
+      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-12 16:17 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
       <div class="dpr-daily-stat"><span>总数</span><strong>15</strong></div>
       <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>5 / 10</strong></div>
@@ -11,9 +11,9 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日聚焦迁移学习新场景，从多物种动物面部识别到电池X光缺陷检测，精读高分论文，并速览时序搜索、图同步与结构发现。</p>
-<p>最值得关注的是迁移学习打破人类面部局限，以高准确率实现跨物种感知，以及利用扩散模型从均匀先验中无监督提取图结构。</p>
-<p>建议普通读者先读“Beyond Humans”获取跨领域灵感，再结合“扩散先验”论文探索用生成式方法自动发现数据底层关系。</p>
+      <p>今日精读2篇顶刊，从15篇AI与神经科学论文中，重点挖掘出满分工作的GRAFT适配器模型与揭示深度学习“忽视规律”的谱审计框架。</p>
+<p>最值得细看的结论是：GRAFT用增益重校准机制让Transformer高效适应不同脑区神经信号；谱审计则首次量化出EEG和ECG模型在分类中意外依赖非周期性成分。</p>
+<p>建议从业者读一读GRAFT，把这种适配器策略套用到自己的时序建模，再参考谱审计思路，排查一下你的模型是否走了“偏门”。</p>
     </div>
     <a class="dpr-daily-detail-link" href="#/202606/12/README">打开完整日报</a>
   </div>
@@ -22,46 +22,46 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09353v1-beyond-humans-multispecies-animal-face-recognition-using-transfer-learning">Beyond Humans: Multispecies Animal Face Recognition Using Transfer Learning</a>
-    <div class="dpr-daily-paper-title-zh">超越人类：基于迁移学习的多物种动物面部识别</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用迁移学习进行动物面部识别</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11066v1-graft-gain-recalibrated-adapters-for-transformer-based-neural-population-activity-modeling">GRAFT: Gain-Recalibrated Adapters for Transformer-Based Neural Population Activity Modeling</a>
+    <div class="dpr-daily-paper-title-zh">GRAFT：基于Transformer的神经群体活动建模的增益重校准适配器</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">10.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于脑机接口的Transformer神经群体模型与适配器</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">02</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11779v1-battery-detection-of-xray-images-using-transfer-learning">Battery detection of XRay images using transfer learning</a>
-    <div class="dpr-daily-paper-title-zh">基于迁移学习的X射线图像电池检测</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>迁移学习用于X射线图像电池检测</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08583v1-a-spectral-audit-framework-reveals-task-dependent-aperiodic-reliance-across-eeg-and-ecg-deep-learning">A spectral audit framework reveals task-dependent aperiodic reliance across EEG and ECG deep learning</a>
+    <div class="dpr-daily-paper-title-zh">频谱审计框架揭示脑电图与心电图深度学习中的任务依赖性非周期性依赖</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于EEG深度学习的频谱审计框架</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">03</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11860v1-repair-predictive-self-supervised-representation-learning-in-chess">RePAIR: Predictive Self-Supervised Representation Learning in Chess</a>
-    <div class="dpr-daily-paper-title-zh">RePAIR：国际象棋中的预测性自监督表示学习</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>序列数据的自监督表征学习，使用预测掩码</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08691v1-hierarchical-projection-for-adaptive-knowledge-transfer">Hierarchical Projection for Adaptive Knowledge Transfer</a>
+    <div class="dpr-daily-paper-title-zh">用于自适应知识迁移的分层投影</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>层级投影自适应知识迁移</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">04</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.12058v1-phase-transitions-in-attention-a-bayesian-theory-of-copy-head-emergence">Phase Transitions in Attention: A Bayesian Theory of Copy Head Emergence</a>
-    <div class="dpr-daily-paper-title-zh">注意力中的相变：复制头涌现的贝叶斯理论</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>注意力的贝叶斯特征学习理论；注意力相变</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09159v1-unified-energy-for-invariant-and-independent-decoding-in-diffusion-language-models">Unified Energy for Invariant and Independent Decoding in Diffusion Language Models</a>
+    <div class="dpr-daily-paper-title-zh">扩散语言模型中用于不变与独立解码的统一能量</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>提出扩散语言模型解码的统一能量</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">05</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.12200v1-implicit-neural-representations-of-individual-behavior">Implicit Neural Representations of Individual Behavior</a>
-    <div class="dpr-daily-paper-title-zh">个体行为的隐式神经表示</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>策略表示学习</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09770v1-discovering-functionally-selective-brain-regions-with-a-deep-topographic-multimodal-model">Discovering Functionally Selective Brain Regions with a Deep Topographic Multimodal Model</a>
+    <div class="dpr-daily-paper-title-zh">利用深度拓扑多模态模型发现功能选择性脑区</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用地形多模态模型发现功能选择性脑区</div>
   </div>
 </article></div>
   </section>
@@ -70,91 +70,91 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09824v2-tsseek-regular-expression-based-similarity-search-for-distributed-time-series-datasets">TSseek: Regular Expression-Based Similarity Search for Distributed Time Series Datasets</a>
-    <div class="dpr-daily-paper-title-zh">TSseek: 基于正则表达式的分布式时间序列数据集相似性搜索</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于正则表达式的时间序列相似性搜索</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08578v1-lost-in-the-non-convex-loss-landscape-how-to-fine-tune-the-large-time-series-model">Lost in the Non-convex Loss Landscape: How to Fine-tune the Large Time Series Model?</a>
+    <div class="dpr-daily-paper-title-zh">迷失在非凸损失景观中：如何微调大型时间序列模型？</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>微调大时间序列模型</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">02</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11091v1-quiet-quantifying-underutilized-influential-edges-for-targeted-synchronization">QUIET: Quantifying Underutilized Influential Edges for Targeted Synchronization</a>
-    <div class="dpr-daily-paper-title-zh">QUIET：量化未充分利用的有影响力的边以实现目标同步</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>利用功能时间序列互信息的神经动力学控制</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08594v1-how-much-capacity-does-eeg-denoising-need-ultra-compact-networks-reveal-benchmark-saturation-and-metric-utility-gap">How Much Capacity Does EEG Denoising Need? Ultra-Compact Networks reveal Benchmark Saturation and Metric-Utility Gap</a>
+    <div class="dpr-daily-paper-title-zh">EEG去噪需要多大容量？超紧凑网络揭示基准饱和与度量-效用差距</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于EEG去噪网络的跨数据集脑机接口迁移</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">03</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11831v1-from-uniform-to-learned-graph-priors-diffusion-for-structure-discovery">From Uniform to Learned Graph Priors: Diffusion for Structure Discovery</a>
-    <div class="dpr-daily-paper-title-zh">从均匀先验到学习图先验：扩散用于结构发现</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于扩散的自适应先验，用于从轨迹学习潜在图结构，与神经活动结构发现相关</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09653v1-a-unifying-framework-for-concept-based-representational-similarity">A Unifying Framework for Concept-Based Representational Similarity</a>
+    <div class="dpr-daily-paper-title-zh">基于概念的表示相似性统一框架</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>表示相似性和概念对齐框架</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">04</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11868v1-memnovo-look-back-at-the-spectrum-for-balanced-de-novo-peptide-sequencing-from-mass-spectrometry">MemNovo: Look Back at the Spectrum for Balanced De Novo Peptide Sequencing from Mass Spectrometry</a>
-    <div class="dpr-daily-paper-title-zh">MemNovo：回顾谱图以实现均衡的从头肽测序</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于从头肽段测序的Transformer编码器-解码器，解决解码器病理</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.10435v1-parallel-causal-associative-fields-gated-sparse-memory-for-long-context-language-modeling">Parallel Causal Associative Fields: Gated Sparse Memory for Long-Context Language Modeling</a>
+    <div class="dpr-daily-paper-title-zh">并行因果关联场：面向长上下文语言建模的门控稀疏记忆</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>并行内容寻址记忆作为因果自注意力的替代方案</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">05</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.11962v1-composite-likelihood-inference-of-fractional-gaussian-processes-with-sequentially-optimal-subset-selection">Composite likelihood inference of fractional Gaussian processes with sequentially optimal subset selection</a>
-    <div class="dpr-daily-paper-title-zh">分数高斯过程的复合似然推断与顺序最优子集选择</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08560v1-cp-factorization-for-high-dimensional-tensor-time-series-and-double-projection-iterations">CP-factorization for high dimensional tensor time series and double projection iterations</a>
+    <div class="dpr-daily-paper-title-zh">高维张量时间序列的CP分解与双投影迭代</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>分数高斯时间序列的复合似然推断</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>高维张量时间序列的CP分解</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">06</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.12077v1-efficient-time-series-clustering-from-multiscale-reservoir-dynamics-with-granular-ball-anchoring-graph-optimization">Efficient Time Series Clustering from Multiscale Reservoir Dynamics with Granular-Ball Anchoring Graph Optimization</a>
-    <div class="dpr-daily-paper-title-zh">基于粒球锚定图优化的多尺度储层动力学高效时间序列聚类</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08562v1-inside-the-llm-word-factory">Inside the LLM Word Factory</a>
+    <div class="dpr-daily-paper-title-zh">深入LLM词汇工厂</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用多尺度储层计算的高效时间序列聚类</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>研究Transformer中的注意力机制</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">07</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08382v1-star-kv-low-rank-kv-cache-compression-via-soft-thresholding-for-adaptive-rank-control">STAR-KV: Low-Rank KV Cache Compression via Soft Thresholding for Adaptive Rank Control</a>
-    <div class="dpr-daily-paper-title-zh">STAR-KV：基于软阈值自适应秩控制的低秩KV缓存压缩</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>注意力机制的KV缓存压缩</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08896v1-fame-forecastability-aware-mixture-of-experts-for-heterogeneous-time-series-forecasting">FAME: Forecastability-Aware Mixture of Experts for Heterogeneous Time Series Forecasting</a>
+    <div class="dpr-daily-paper-title-zh">FAME：面向异构时间序列预测的可预测性感知专家混合方法</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于异构时间序列预测的专家混合模型</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">08</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08669v1-a-comparison-of-ssl-based-feature-extractors-and-back-end-classifiers-for-spoofing-detection-a-multi-corpus-training-and-cross-linguistic-analysis">A Comparison of SSL-Based Feature Extractors and Back-End Classifiers for Spoofing Detection: A Multi-Corpus Training and Cross-Linguistic Analysis</a>
-    <div class="dpr-daily-paper-title-zh">基于自监督学习的特征提取器与后端分类器在欺骗检测中的比较：多语料训练与跨语言分析</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>比较注意力机制后端用于序列建模</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.09189v1-pretrained-frozen-still-leaking-auditing-cross-encoder-attribute-transfer-in-eeg-foundation-models">Pretrained, Frozen, Still Leaking: Auditing Cross-Encoder Attribute Transfer in EEG Foundation Models</a>
+    <div class="dpr-daily-paper-title-zh">预训练、冻结、仍在泄漏：审计EEG基础模型中的跨编码器属性迁移</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>EEG基础模型的跨编码器迁移审计</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">09</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.10743v1-hand-centric-human-to-robot-trajectory-transfer-from-video-demonstrations-via-open-world-contact-localization">Hand-centric Human-to-Robot Trajectory Transfer from Video Demonstrations via Open-World Contact Localization</a>
-    <div class="dpr-daily-paper-title-zh">以手为中心从视频演示中通过开放世界接触定位实现人-机器人轨迹转移</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08573v1-titans-as-a-layer-test-time-memory-for-conversational-speech-emotion-recognition">Titans-as-a-Layer: Test-Time Memory for Conversational Speech Emotion Recognition</a>
+    <div class="dpr-daily-paper-title-zh">Titans-as-a-Layer：对话语音情感识别的测试时记忆</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过手-物交互的人到机器人轨迹迁移</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>测试时神经记忆用于对话序列上下文</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">10</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/12/2606.10759v1-minireranker-efficient-multimodal-reranking-through-visual-cache-reuse-and-interaction-sparsity">miniReranker: Efficient Multimodal Reranking through Visual Cache Reuse and Interaction Sparsity</a>
-    <div class="dpr-daily-paper-title-zh">miniReranker: 通过视觉缓存重用与交互稀疏性实现高效多模态重排序</div>
+    <a class="dpr-daily-paper-title" href="#/202606/12/2606.08604v2-gryphon-a-unified-architecture-for-semantic-id-generation-and-item-level-scoring-in-industrial-recommendations">Gryphon: A Unified Architecture for Semantic-ID Generation and Item-Level Scoring in Industrial Recommendations</a>
+    <div class="dpr-daily-paper-title-zh">Gryphon：工业推荐中语义ID生成与物品级评分的统一架构</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>提出基于注意力机制的视觉优先多模态重排序方法</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于推荐的自回归语义ID解码</div>
   </div>
 </article></div>
   </section>

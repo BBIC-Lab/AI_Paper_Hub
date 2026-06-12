@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09653v1/fig-001.webp",
+      "caption": "Figure 1: Summary of the proposed framework. Left : Illustration of a generative process where observations stem from a shared space through modality-specific generators gi. Feature extractors (ϕi) learn to invert this generative process up to some transform ψi. Top right : Different properties of ψi that achieve different types of alignment. Bottom right : summary of previous SAE-based methods for concept extraction, along with which property they are trained to satisfy. Pair-free indicates whether instance-wise pairs of inputs are required for the alignment during training and inference of each SAE.",
+      "page": 2,
+      "index": 1,
+      "width": 818,
+      "height": 255
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09653v1/fig-002.webp",
+      "caption": "Table 1: SAE quality on vision embeddings under different regularization regimes.",
+      "page": 7,
+      "index": 2,
+      "width": 831,
+      "height": 201
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09653v1/fig-003.webp",
+      "caption": "Table 2: SAE quality on vision embeddings under different regularization regimes.",
+      "page": 8,
+      "index": 3,
+      "width": 831,
+      "height": 228
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09653v1/fig-004.webp",
+      "caption": "Figure 5: Concept alignment in our CoSAE is strong enough to support competitive downstream behavior. ImageNet zero-shot accuracy of our CoSAE trained on unimodal backbones.",
+      "page": 9,
+      "index": 4,
+      "width": 456,
+      "height": 327
+    }
+  ]
+}

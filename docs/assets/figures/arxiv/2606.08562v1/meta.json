@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-004.webp",
+      "caption": "Figure 1: Experimental design and activation patching. (a) Each word the tokenizer renders as a single token is run twice: as the canonical single token and as an artificial split. Canonicity compares the layer-30 residual streams at the canonical position and the split’s last subword position. (b) LST pairs share the second token; FST pairs share the first. Each pair has one successful and one failed split, with canonicity values shown. (c) Activation patching",
+      "page": 2,
+      "index": 4,
+      "width": 912,
+      "height": 396
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-001.webp",
+      "caption": "Table 1: Per-model dataset sizes. Pool: unique words that the model’s tokenizer encodes as exactly one token, after merging the three source lists, lowercasing, and deduplication. Threshold: per-model minimum metric gap |∆canonicity| required to retain a pair, calibrated to cross-architecture variation in cosine-similarity spread (Ethayarajh, 2019). 2-token pairs: contrastive pairs used in activation patching, summed across the LST and FST settings.",
+      "page": 11,
+      "index": 1,
+      "width": 440,
+      "height": 298
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-008.webp",
+      "caption": "Figure 7: Per-layer Spearman correlation between cosine similarity to the canonical representation and three next-token behavioral metrics—KL divergence (blue), top-1 agreement (orange), and top-5 overlap (green)—across 12 architectures. The x-axis is relative depth; KL correlation is plotted as −ρKL so that higher is better on all three curves. Across every model, all three correlations rise with depth and peak near relative depth ∼ 0.95 (the n− 2 layer used as the measurement point in §2.1), then drop at the final layer due to next-token-prediction reshaping. BLOOM-7B1 shows noisier curves but the same overall shape.",
+      "page": 12,
+      "index": 8,
+      "width": 891,
+      "height": 482
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-006.webp",
+      "caption": "Table 2: Behavioral effect of the two interventions of §3, scored against the canonical single-token run. top-1 and top-5 are agreement rates with the canonical nexttoken prediction; KL is KL(pcanon∥·), lower is better; canonicitysrc at n−2, shown for comparison. RANDOM patches from an unrelated word.",
+      "page": 13,
+      "index": 6,
+      "width": 457,
+      "height": 398
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-005.webp",
+      "caption": "Table 3: Architectural details and patching results for all 12 models, 2-token words, LST configuration. L1 (%): percentage of canonicitysrc gap closed by patching Layer-1 resid_post. L@80%: first layer at which ≥ 80% of the gap is closed. Models are sorted within each group by L1. SP = SentencePiece.",
+      "page": 14,
+      "index": 5,
+      "width": 927,
+      "height": 373
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-002.webp",
+      "caption": "Table 4: Depth required for detokenization as a function of word length, across all 12 models. ℓ∗80% is the first layer at which patching resid_post at the last subword position closes ≥ 80% of the canonicitysrc gap.",
+      "page": 15,
+      "index": 2,
+      "width": 406,
+      "height": 417
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-003.webp",
+      "caption": "Figure 10: Localizing the two-stage mechanism across twelve architectures. Red curve (left y-axis): percentage of the canonicitysrc gap closed by patching resid_post at position 1 from a successful run into a failed one, layer by layer. Blue curve (right y-axis): percentage damage to canonicity when patching mlp_out from a failed run into a successful one. First 20 layers shown for all models.",
+      "page": 15,
+      "index": 3,
+      "width": 902,
+      "height": 440
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-009.webp",
+      "caption": "Figure 11: Percentage of canonicitysrc gap closed per layer via resid_post patching at the final subword position, for words of length k ∈ {2, 3, 4} tokens. One panel per model. First-layer indices at which each curve reaches 80% gap-closed are listed in Table 4.",
+      "page": 16,
+      "index": 9,
+      "width": 895,
+      "height": 482
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08562v1/fig-007.webp",
+      "caption": "Figure 12: Layerwise probe AUROC for all 12 architectures at k=2. Solid blue: Isolated probe. Solid orange: In-context probe. Dashed green: Isolated→In-context (probe fit on Isolated activations, evaluated on In-context activations of held-out words). Shaded regions show 95% confidence intervals across 5 folds. Vertical dotted line: l∗ per model. The Llama2-7B pattern holds across every architecture: Isolated and In-context rise to a plateau by l∗ and stay high; Isolated→In-context tracks them through l∗ and decays through middle layers as preceding-token context aggregates into the last subword position.",
+      "page": 17,
+      "index": 7,
+      "width": 939,
+      "height": 618
+    }
+  ]
+}

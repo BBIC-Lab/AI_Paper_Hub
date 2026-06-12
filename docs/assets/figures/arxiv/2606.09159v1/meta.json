@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-001.webp",
+      "caption": "Figure 1: Challenges of Diffusion Language Models and the framework of our unified energy (Uni-E). Uni-E uses a proxy model to capture both dependency and invariance to guide the decoding process.",
+      "page": 6,
+      "index": 1,
+      "width": 917,
+      "height": 403
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-010.webp",
+      "caption": "Table 1: Perplexity of all the methods. The Lower is better. ∗ denotes reproduced results, † taken from [42], ‡ taken from [36]. The best result is in bold and the second best is underlined (except AR).",
+      "page": 9,
+      "index": 10,
+      "width": 937,
+      "height": 336
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-006.webp",
+      "caption": "Table 2: Generative Perplexity under Llama2, Llama3, and GPT2. ↓ means the lower is better. The best results are highlighted with bold. ∗ denotes reproduced results, † taken from [42].",
+      "page": 10,
+      "index": 6,
+      "width": 1019,
+      "height": 262
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-007.webp",
+      "caption": "Figure 3: Hyper-parameter and efficiency analysis. From left to right, the first two figures show the influence of candidate size k and sampling window w respectively; the last two figures show the tradeoff between Gen PPL/entropy and wall-clock time. Llama2 is used as the oracle model.",
+      "page": 10,
+      "index": 7,
+      "width": 940,
+      "height": 223
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-002.webp",
+      "caption": "Table 3: Benchmark results. † taken from [39]. ‡ taken from [43]. ∗ means reproduced results.",
+      "page": 11,
+      "index": 2,
+      "width": 929,
+      "height": 417
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-008.webp",
+      "caption": "Table 9: Several benchmark results. Improvements of applying Uni-Energy to their backbone models are shown in green. † taken from [39]. ‡ taken from [43]. ∗ denotes reproduced results.",
+      "page": 23,
+      "index": 8,
+      "width": 929,
+      "height": 463
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-009.webp",
+      "caption": "Figure 5: The invariant decoding case of Uni-E.",
+      "page": 24,
+      "index": 9,
+      "width": 832,
+      "height": 494
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-003.webp",
+      "caption": "Figure 6: The independent decoding case of Uni-E.",
+      "page": 25,
+      "index": 3,
+      "width": 832,
+      "height": 410
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-004.webp",
+      "caption": "Figure 7: The non-invariant decoding case of MDLM.",
+      "page": 25,
+      "index": 4,
+      "width": 832,
+      "height": 450
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09159v1/fig-005.webp",
+      "caption": "Figure 8: The non-independent decoding case of MDLM.",
+      "page": 26,
+      "index": 5,
+      "width": 832,
+      "height": 449
+    }
+  ]
+}

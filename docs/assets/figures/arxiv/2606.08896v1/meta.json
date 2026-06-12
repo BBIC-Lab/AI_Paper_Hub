@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-003.webp",
+      "caption": "Fig. 1. Schematic overview of FAME. Heterogeneous sales series are represented by forecastability fingerprints, expert validation produces suitability signals, and a sparse router selects at most r active experts for forecast fusion. All reported industrial comparisons use the fixed expert pool specified in the baselines and expert-pool subsection.",
+      "page": 3,
+      "index": 3,
+      "width": 910,
+      "height": 437
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-005.webp",
+      "caption": "Fig. 2. Training and inference workflow. Offline training builds the fixed expert pool, validation loss matrix, oracle suitability targets, and sparse router. Online inference follows Eqs. (1)–(4): extract the current fingerprint, output expert probabilities, execute only active experts under the Top-r budget, and fuse selected forecasts. Expert names in the schematic are illustrative; reported experiments use the fixed pool in Sec. V-B.",
+      "page": 4,
+      "index": 5,
+      "width": 936,
+      "height": 506
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-001.webp",
+      "caption": "TABLE IV REPRESENTATIVE HYPERPARAMETERS USED IN PRODUCTION EVALUATION.",
+      "page": 6,
+      "index": 1,
+      "width": 442,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-002.webp",
+      "caption": "TABLE V INDUSTRIAL PRODUCTION RESULTS. SINGLE-EXPERT ROWS ARE REPRESENTATIVE; ROUTING/ENSEMBLE ROWS USE THE FIXED TEN-EXPERT POOL. “EXEC.” IS REALIZED ACTIVE EXPERTS AFTER PRUNING. COST IS NORMALIZED BY LIGHTGBM; THE ORACLE REFERENCE IS DIAGNOSTIC. NEGATIVE REDUCTIONS INDICATE WORSE MSE THAN LIGHTGBM.",
+      "page": 7,
+      "index": 2,
+      "width": 732,
+      "height": 324
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-004.webp",
+      "caption": "TABLE VII REGIME-LEVEL SPECIALIZATION ON THE INDUSTRIAL TEST SET. COUNTS ARE ANONYMIZED AND ROUNDED FOR CONFIDENTIALITY.",
+      "page": 8,
+      "index": 4,
+      "width": 660,
+      "height": 290
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08896v1/fig-006.webp",
+      "caption": "TABLE XIV REPRODUCIBILITY AND LEAKAGE-CONTROL SETTINGS.",
+      "page": 9,
+      "index": 6,
+      "width": 466,
+      "height": 291
+    }
+  ]
+}

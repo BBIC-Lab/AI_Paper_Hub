@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08604v2/fig-001.webp",
+      "caption": "Figure 1: Gryphon inference: beam search generates candidate SIDs, which are resolved to all matching items and re-scoredwith ILSM,while beam likelihood is discarded from ranking",
+      "page": 2,
+      "index": 1,
+      "width": 531,
+      "height": 373
+    }
+  ]
+}

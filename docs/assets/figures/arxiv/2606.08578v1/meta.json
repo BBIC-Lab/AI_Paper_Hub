@@ -1,0 +1,286 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-008.webp",
+      "caption": "Figure 1: Loss landscape comparisons based on the LTSM Timer and exchange rate dataset. Smoother is better. The unsmooth loss landscape shows a non-convex structure and indicates poorer trainability (Li et al., 2018), e.g., Figure 1(a). More cases are shown in Appendix Figure 7 and Figure 8.",
+      "page": 2,
+      "index": 8,
+      "width": 829,
+      "height": 208
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-023.webp",
+      "caption": "Figure 2: Smoothed Full Fine-tuning (SFF). By linearly interpolating the pretrained and randomly initialized LTSMs, we obtain a smoothed model that preserves pretrained knowledge while exhibiting a smoother and more trainable loss landscape, thereby enabling more stable and effective fine-tuning.",
+      "page": 4,
+      "index": 23,
+      "width": 829,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-009.webp",
+      "caption": "Table 1: MSE results of fine-tuning the LTSM Timer for TSF with prediction length 96 under different data proportions. SFF, FF, and TFS denote smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively. Full standard deviations and additional results under 1%–20% data proportions, as well as MAE results, are reported in Appendix Tables 15, 16, 17, 18, 19, and 20.",
+      "page": 7,
+      "index": 9,
+      "width": 818,
+      "height": 295
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-010.webp",
+      "caption": "Figure 3: MSE of different fine-tuning strategies on Timer with prediction length 96, across multiple datasets (test sets) under varying data proportions (1%–100%).",
+      "page": 7,
+      "index": 10,
+      "width": 829,
+      "height": 243
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-022.webp",
+      "caption": "Table 2: Anomaly detection results with Timer. Predicted MSE on anomalous segments is reported, with higher values indicating better performance. Results over 250 datasets and four seeds are summarized in six groups, with full results and standard deviations in Appendix Tables 22 and 23.",
+      "page": 8,
+      "index": 22,
+      "width": 845,
+      "height": 217
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-021.webp",
+      "caption": "Table 3: Fine-tuning MSE of applying SFF to TimesFM and MOMENT with prediction length 96. Full standard deviations and MAE results are reported in Appendix Tables 24 and 25.",
+      "page": 8,
+      "index": 21,
+      "width": 808,
+      "height": 242
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-020.webp",
+      "caption": "Table 4: MSE of fine-tuning additional LTSMs for TSF with prediction length 96. “-” indicates unavailable preprocessed datasets (Chronos) or out-of-memory errors (Sundial). Results for prediction length 720 are reported in Appendix Table 13.",
+      "page": 8,
+      "index": 20,
+      "width": 814,
+      "height": 219
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-030.webp",
+      "caption": "Table 5: MSE comparison of SFF with linear probing (LP), and linear probing followed by full fine-tuning (LPFF) (Kumar et al.) on TSF with Timer and prediction length 96. Average performance is computed over each group of three data proportions. Full standard deviations and MAE results are reported in Tables 26 and 27. Detailed MSE, MAE, and standard deviations for individual proportions are provided in Appendix Tables 28, 29, 30, 31, 32, and 33.",
+      "page": 9,
+      "index": 30,
+      "width": 808,
+      "height": 296
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-015.webp",
+      "caption": "Table 7: Zero-shot forecasting MSE of additional LTSMs with prediction length 96. Results for length 720 are reported in Appendix Table 14. UniTS is excluded as it targets few-shot learning.",
+      "page": 10,
+      "index": 15,
+      "width": 766,
+      "height": 219
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-024.webp",
+      "caption": "Table 9: Statistics of eight public datasets. Data size denotes the number of samples in train, validation, and test set for the single variable. In the experiment, each variable is separately split to construct samples and then merged, so the total number of samples needs to be multiplied by the number of variables. Frequency denotes the sampling interval of time points.",
+      "page": 17,
+      "index": 24,
+      "width": 692,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-034.webp",
+      "caption": "Figure 7: Loss landscape comparisons based on the LTSM Timer and weather dataset. The smoother the surface, the better.",
+      "page": 20,
+      "index": 34,
+      "width": 829,
+      "height": 194
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-033.webp",
+      "caption": "Figure 8: Loss landscape comparisons based on the LTSM Timer and electricity dataset. The smoother the surface, the better.",
+      "page": 20,
+      "index": 33,
+      "width": 829,
+      "height": 206
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-035.webp",
+      "caption": "Figure 9: Time series forecasting of the LTSM Timer on various datasets with 100% available data proportion. We show the comparisons of training and testing losses for training from scratch on (black lines and bars), direct full fine-tuning (green lines and bars), and smoothing the loss landscape then full fine-tuning (blue lines and bars).",
+      "page": 20,
+      "index": 35,
+      "width": 829,
+      "height": 275
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-005.webp",
+      "caption": "Figure 10: Time series imputation task on Timer with the mask ratio 25%. The experimental settings follow the Timer’s codes: https://github.com/thuml/Large-Time-Series-Model? tab=readme-ov-file .",
+      "page": 21,
+      "index": 5,
+      "width": 829,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-013.webp",
+      "caption": "Table 13: MSE of fine-tuning more LTSMs for the TSF task with prediction length 720. SFF, and FF are smoothed full fine-tuning and full fine-tuning.",
+      "page": 22,
+      "index": 13,
+      "width": 830,
+      "height": 653
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-014.webp",
+      "caption": "Table 14: Zero-shot forecasting MSE of more LTSMs with prediction length 720. “-” indicates that the preprocessed dataset is not included (Chronos) or out of memory (Sundial).",
+      "page": 22,
+      "index": 14,
+      "width": 814,
+      "height": 218
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-017.webp",
+      "caption": "Table 15: MSE of fine-tuning LTSM Timer for time series forecasting under 1%, 2%, 3% and 4% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 23,
+      "index": 17,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-016.webp",
+      "caption": "Table 16: MSE of fine-tuning LTSM Timer for time series forecasting under 5%, 10%, 15% and 20% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 23,
+      "index": 16,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-029.webp",
+      "caption": "Table 17: MSE of fine-tuning LTSM Timer for time series forecasting under 25%, 50%, 75% and 100% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 24,
+      "index": 29,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-028.webp",
+      "caption": "Table 18: MAE of fine-tuning LTSM Timer for time series forecasting under 1%, 2%, 3% and 4% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 24,
+      "index": 28,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-002.webp",
+      "caption": "Table 19: MAE of fine-tuning LTSM Timer for time series forecasting under 5%, 10%, 15% and 20% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 25,
+      "index": 2,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-003.webp",
+      "caption": "Table 20: MAE of fine-tuning LTSM Timer for time series forecasting under 25%, 50%, 75% and 100% proportion of available data. SFF, FF, and TFS are smoothed full fine-tuning, full fine-tuning, and training from scratch, respectively.",
+      "page": 25,
+      "index": 3,
+      "width": 826,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-001.webp",
+      "caption": "Table 21: MAE of Smoothing the loss landscape then perform zero-shot forecasting.",
+      "page": 25,
+      "index": 1,
+      "width": 830,
+      "height": 208
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-004.webp",
+      "caption": "Table 22: The complete anomaly detection results on 250 datasets, reporting the average MSE values of anomalous segments in each dataset under four random seeds, where higher values are better, because this reduces the risk of normal segments being misjudged as anomalies.",
+      "page": 26,
+      "index": 4,
+      "width": 830,
+      "height": 1058
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-027.webp",
+      "caption": "Table 23: Standard deviations on 250 anomaly detection datasets under four random seeds.",
+      "page": 27,
+      "index": 27,
+      "width": 826,
+      "height": 1058
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-019.webp",
+      "caption": "Table 24: Complete standard deviation and MSE of applying our smoothed fine-tuning (SFF) on other LTSMs TimesFM and MOMENT.",
+      "page": 28,
+      "index": 19,
+      "width": 831,
+      "height": 366
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-018.webp",
+      "caption": "Table 25: Complete standard deviation and MAE of applying our smoothed fine-tuning (SFF) on other LTSMs TimesFM and MOMENT.",
+      "page": 28,
+      "index": 18,
+      "width": 842,
+      "height": 366
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-012.webp",
+      "caption": "Table 26: Full standard deviation and MSE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF). The average performance is reported for each group of three different data proportions, e.g., “Avg. on 1%, 2%, 3%”.",
+      "page": 29,
+      "index": 12,
+      "width": 810,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-011.webp",
+      "caption": "Table 27: Full standard deviation and MAE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF). The average performance is reported for each group of three different data proportions, e.g., “Avg. on 1%, 2%, 3%”.",
+      "page": 29,
+      "index": 11,
+      "width": 808,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-006.webp",
+      "caption": "Table 28: Full standard deviation and MSE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 1%, 2%, 3%, and 4% proportion of available data.",
+      "page": 30,
+      "index": 6,
+      "width": 830,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-007.webp",
+      "caption": "Table 29: Full standard deviation and MSE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 5%, 10%, 15%, and 20% proportion of available data.",
+      "page": 30,
+      "index": 7,
+      "width": 830,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-032.webp",
+      "caption": "Table 30: Full standard deviation and MSE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 25%, 50%, 75%, and 100% proportion of available data.",
+      "page": 31,
+      "index": 32,
+      "width": 824,
+      "height": 454
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-031.webp",
+      "caption": "Table 31: Full standard deviation and MAE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 1%, 2%, 3%, and 4% proportion of available data.",
+      "page": 31,
+      "index": 31,
+      "width": 830,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-025.webp",
+      "caption": "Table 32: Full standard deviation and MAE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 5%, 10%, 15%, and 20% proportion of available data.",
+      "page": 32,
+      "index": 25,
+      "width": 830,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08578v1/fig-026.webp",
+      "caption": "Table 33: Full standard deviation and MAE of comparing our smoothed full fine-tuning (SFF) with linear-probing (LP) and linear-probing then full fine-tuning (LPFF) under 25%, 50%, 75%, and 100% proportion of available data.",
+      "page": 32,
+      "index": 26,
+      "width": 826,
+      "height": 456
+    }
+  ]
+}

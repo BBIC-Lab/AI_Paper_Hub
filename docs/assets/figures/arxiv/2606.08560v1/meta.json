@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-008.webp",
+      "caption": "Table 1: Relative frequency estimates of Ppr̃ ă rq, Ppr̃ “ rq and Ppr̃ ą rq with r̃ determined by the ER estimator (20), the log-ER estimator (21) and the Unfolded-ER estimator based on 2000 repetitions. All numbers reported below are multiplied by 100.",
+      "page": 19,
+      "index": 8,
+      "width": 976,
+      "height": 778
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-004.webp",
+      "caption": "Table 2: The averages and standard deviations (in parentheses) of the estimation errors (22) for different methods based on 2000 repetitions. Bold numbers indicate the smallest average estimation error among all competing methods. All numbers reported below are multiplied by 100.",
+      "page": 21,
+      "index": 4,
+      "width": 977,
+      "height": 1275
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-005.webp",
+      "caption": "Figure 1: The lineplots for the averages of estimation errors (22) in the first 20 iterative steps based on 2000 repetitions. The sample size n “ 400. The legend is defined as follows: (i) Pro.iter initialized with Pro.init (´■´), (ii) Pro.iter initialized with cPCA (´ △ ´), (iii) Pro.iter initialized with RP-PCA (´ ˝ ´), (iv) HOPE (´▲´), and (v) CC-ISO (´ ‚ ´).",
+      "page": 22,
+      "index": 5,
+      "width": 714,
+      "height": 660
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-006.webp",
+      "caption": "Figure 2: The histograms of tŵz1,1τ̂ ´1 z1,1 ph1qu ? nhJ 1tâz1,1 ´ signpaJ 1,1âz1,1q ¨ a1,1 ´ ϑ̂z1,1u based on 2000 repetitions. The sample size n “ 400. The red curve plots the density of N p0, 1q.",
+      "page": 23,
+      "index": 6,
+      "width": 714,
+      "height": 660
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-010.webp",
+      "caption": "Figure 3: The histograms of tŵz1,1τ̂ ´1 z1,1 ph2qu ? nhJ 2tâz1,1 ´ signpaJ 1,1âz1,1q ¨ a1,1 ´ ϑ̂z1,1u based on 2000 repetitions. The sample size n “ 400. The red curve plots the density of N p0, 1q.",
+      "page": 24,
+      "index": 10,
+      "width": 714,
+      "height": 660
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-002.webp",
+      "caption": "Table 3: Estimations of the loading vectors ai,2 P R6 for the pollution-variable mode based on Pro.iter. Standard errors reported in parentheses are calculated based on the asymptotic variance estimation ŵ´2 i,j τ̂ 2 i,jphq. ˚, ˚˚, and ˚˚˚ indicate significance at the levels 5%, 1%, and 1‰, respectively, based on two-sided t-tests.",
+      "page": 25,
+      "index": 2,
+      "width": 536,
+      "height": 258
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-001.webp",
+      "caption": "Figure 4: The lineplots for the averages and standard deviations (shaded region) of runtime based on 100 repetitions. The sample size n “ 400. The legend is defined as follows: (i) Pro.iter initialized with Pro.init (´■´), (ii) HOPE (´▲´), and (iii) CC-ISO (´ ‚ ´).",
+      "page": 25,
+      "index": 1,
+      "width": 714,
+      "height": 663
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-003.webp",
+      "caption": "Figure 5: Estimations of the loading vectors ai,1 P R12 for the monitoring-station mode based on Pro.iter.",
+      "page": 26,
+      "index": 3,
+      "width": 890,
+      "height": 477
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-009.webp",
+      "caption": "Figure 6: Estimations of the loading vectors ai,3 P R24 for the diurnal mode based on Pro.iter. The gray shaded region represents the pointwise 95% confidence interval for the estimated loadings. Standard errors are calculated based on the asymptotic variance estimation ŵ´2 i,j τ̂ 2 i,jphq.",
+      "page": 27,
+      "index": 9,
+      "width": 890,
+      "height": 301
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08560v1/fig-007.webp",
+      "caption": "Figure 7: The time series plots of the two estimated latent factors based on Pro.iter. The dark blue solid line represents the 30-day one-sided simple moving average.",
+      "page": 28,
+      "index": 7,
+      "width": 977,
+      "height": 973
+    }
+  ]
+}

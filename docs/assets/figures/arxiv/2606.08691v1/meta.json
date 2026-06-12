@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-005.webp",
+      "caption": "Figure 1: Schematic diagram of the proposed two-stage ProjectionTL.",
+      "page": 5,
+      "index": 5,
+      "width": 826,
+      "height": 332
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-006.webp",
+      "caption": "Figure 2: Illustration of multi-modal transfer learning problem with block-missingness.",
+      "page": 5,
+      "index": 6,
+      "width": 664,
+      "height": 276
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-001.webp",
+      "caption": "Figure 3: Boxplots of average estimation error (MSE, left panel) and support recovery by Matthews Correlation Coefficient (MCC, right panel) of ProjectionTL, TRADER, TransGLM, and CONCERT are shown as functions of the overlap ratio ω ∈ [0.6, 1]. Results are averaged over 100 Monte Carlo replicates with n0 = nk = 100, p = 200, s0 = 5.",
+      "page": 7,
+      "index": 1,
+      "width": 827,
+      "height": 441
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-004.webp",
+      "caption": "Figure 4: Multimodal data structure of the ADNI transfer-learning design.",
+      "page": 9,
+      "index": 4,
+      "width": 664,
+      "height": 415
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-002.webp",
+      "caption": "Figure 5: Out-of-sample prediction MSE minus in-sample prediction MSE comparison of full-target vs the validation-set.",
+      "page": 13,
+      "index": 2,
+      "width": 582,
+      "height": 575
+    },
+    {
+      "url": "assets/figures/arxiv/2606.08691v1/fig-003.webp",
+      "caption": "Figure 6: Sensitivity of ProjectionTL to the projection tuning parameter λ across overlap ratios ω ∈ {0.6, 0.7, 0.8, 0.9, 1.0}; Target LASSO is shown as a fixed reference.",
+      "page": 13,
+      "index": 3,
+      "width": 793,
+      "height": 342
+    }
+  ]
+}
