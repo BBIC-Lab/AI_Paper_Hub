@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-005.webp",
+      "caption": "Figure 1: AUROC curve for the LSTM baseline.",
+      "page": 10,
+      "index": 5,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-001.webp",
+      "caption": "Figure 2: Precision-recall curve for the LSTM baseline.",
+      "page": 11,
+      "index": 1,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-002.webp",
+      "caption": "Figure 3: AUROC curve for the monolithic LNN baseline.",
+      "page": 11,
+      "index": 2,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-011.webp",
+      "caption": "Figure 4: Precision-recall curve for the monolithic LNN baseline.",
+      "page": 12,
+      "index": 11,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-012.webp",
+      "caption": "Figure 5: AUROC curve for the MoE model with LNN experts.",
+      "page": 12,
+      "index": 12,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-008.webp",
+      "caption": "Figure 6: Precision-recall curve for the MoE model with LNN experts.",
+      "page": 13,
+      "index": 8,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-009.webp",
+      "caption": "Figure 7: AUROC curve for the proposed Multi-Rate-MoE model.",
+      "page": 13,
+      "index": 9,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-006.webp",
+      "caption": "Figure 8: Precision-recall curve for the proposed Multi-Rate-MoE model.",
+      "page": 14,
+      "index": 6,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-007.webp",
+      "caption": "Figure 9: AUROC curve for the proposed Multi-Rate-MoE model with attention mechanisms.",
+      "page": 14,
+      "index": 7,
+      "width": 826,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-004.webp",
+      "caption": "Figure 10: Precision-recall curve for the proposed Multi-Rate-MoE model with attention mechanisms.",
+      "page": 15,
+      "index": 4,
+      "width": 829,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-003.webp",
+      "caption": "Figure 11: AUROC curve comparison of LSTM, Monolithic LNN, MoE, Multi-Rate-MOE, and Multi-Rate-MOE with Attention. The proposed Multi-Rate-MOE with Attention achieves the highest AUROC performance.",
+      "page": 15,
+      "index": 3,
+      "width": 829,
+      "height": 579
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-013.webp",
+      "caption": "Figure 12: Precision–Recall curve comparison of different models. The proposed Multi-Rate-MOE variants outperform baseline models in terms of AUPRC.",
+      "page": 16,
+      "index": 13,
+      "width": 829,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-014.webp",
+      "caption": "Figure 13: Memory comparison of different architectures. Multi-Rate-MOE achieves lower memory usage than LSTM, while attention mechanisms introduce moderate additional memory cost.",
+      "page": 16,
+      "index": 14,
+      "width": 829,
+      "height": 481
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12240v1/fig-010.webp",
+      "caption": "Figure 14: AUROC under different input noise levels. The proposed Multi-Rate-MoE with Attention model demonstrates stronger robustness and slower performance degradation compared to LSTM and monolithic LNN baselines as noise increases.",
+      "page": 17,
+      "index": 10,
+      "width": 664,
+      "height": 464
+    }
+  ]
+}

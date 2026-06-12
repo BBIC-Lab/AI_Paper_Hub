@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-003.webp",
+      "caption": "Figure 1. Overview of the proposed synergistic prompt and prototype learning framework. The framework is trained in two stages: Stage-1 freezes both the image and text encoders, and aligns unlabeled day/night images with learnable textual prompts via instance-aware dynamicbias adaptation. Stage-2 activates the image encoder and incorporates: (i) intra-domain identity association using prototype memory banks to enhance feature discriminability within each domain, and (ii) cross-domain prototype matching to identify reliable positive and negative prototype pairs, establishing annotation-free identity correspondences across day and night domains.",
+      "page": 3,
+      "index": 3,
+      "width": 1036,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-008.webp",
+      "caption": "Figure 2. Illustration of the Cross-Domain Prototype Matching.",
+      "page": 5,
+      "index": 8,
+      "width": 521,
+      "height": 279
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-001.webp",
+      "caption": "Table 1. Performance comparison with state-of-the-art methods on supervised and unsupervised tasks. FSL and USL denote fullysupervised and unsupervised learning methods, respectively. Bold and underline indicate the best and second-best results.",
+      "page": 6,
+      "index": 1,
+      "width": 1031,
+      "height": 320
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-002.webp",
+      "caption": "Table 2. Zero-shot generalization performance of unsupervised methods. “DN-Wild→DN-348” indicates training on DN-Wild in an unsupervised manner and directly evaluating on DN-348 without fine-tuning.“DN-348→DN-Wild” denotes the reverse.",
+      "page": 6,
+      "index": 2,
+      "width": 1031,
+      "height": 227
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-005.webp",
+      "caption": "Figure 4. Cosine similarity distributions of positive and negative day–night pairs on the DN-348 dataset. δ denotes the margin between the mean similarities of positive and negative pairs.",
+      "page": 8,
+      "index": 5,
+      "width": 500,
+      "height": 368
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-006.webp",
+      "caption": "Figure 6. Performance comparison of clustering metrics against state-of-the-art methods on DN-348.",
+      "page": 12,
+      "index": 6,
+      "width": 509,
+      "height": 336
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-007.webp",
+      "caption": "Figure 7. Comparative visualization of Grad-CAM activation maps for the baseline model and the proposed method.",
+      "page": 12,
+      "index": 7,
+      "width": 519,
+      "height": 362
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12258v1/fig-004.webp",
+      "caption": "Figure 8. A comparison of the top-5 retrieval results under cross-domain day-night conditions is presented for the proposed method and the baseline. A green bounding box indicates a match with the ground truth identity, whereas a red box denotes a mismatch.",
+      "page": 13,
+      "index": 4,
+      "width": 1036,
+      "height": 697
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-001.webp",
+      "caption": "Figure 1: Analytical pipeline overview. (a) We investigate whether there are fluctuations and dynamics in semantics using word depths and SBERT similarity. (b) Next, we ask whether specific semantic contents (word depths) are associated with longer or shorter timescales in these fluctuations.",
+      "page": 6,
+      "index": 1,
+      "width": 793,
+      "height": 546
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-006.webp",
+      "caption": "Table 2. Comparison of ACW-0 between original and shuffled texts.",
+      "page": 17,
+      "index": 6,
+      "width": 726,
+      "height": 258
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-005.webp",
+      "caption": "Table 3. Comparison of PLE and mean frequencies between original and shuffled texts.",
+      "page": 19,
+      "index": 5,
+      "width": 847,
+      "height": 347
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-003.webp",
+      "caption": "Figure 3: Demonstration of one subject’s PSD of Word Depths and SBERT similarities compared to the corresponding shuffled texts.",
+      "page": 22,
+      "index": 3,
+      "width": 814,
+      "height": 385
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-004.webp",
+      "caption": "Table 4. The Linear Mixed Effect results between ACW-0 categories and word depths for three different datasets.",
+      "page": 23,
+      "index": 4,
+      "width": 864,
+      "height": 407
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11371v1/fig-002.webp",
+      "caption": "Figure 4: LMM results. Due to the multitude of datapoints, the ACW-0 categories were binned (bins=20) for optimal visualization. The average word depth of each bin was calculated and plotted. The LMM results were not based on the binned ACW-0 categories. As shown in all three datasets, only the original texts show negative relationship between the two: longer ACW-0s are related to lower word depths, namely, more generic words. Continuous lines represent significant correlations (p-value < .05), whereas dashed lines represent non-significant correlations (p ≥ .05) b. To further evaluate if H-H show differences with other ACW variables. The fixed effects between various ACW variables and word depths are plotted. As, shown, the decreasing trend of fixed effects is significant only in H-H dataset",
+      "page": 25,
+      "index": 2,
+      "width": 814,
+      "height": 445
+    }
+  ]
+}

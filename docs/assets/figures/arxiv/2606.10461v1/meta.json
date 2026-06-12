@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10461v1/fig-002.webp",
+      "caption": "Figure 1. Overview of ERAlign for energy-based representation alignment between GNNs and LLMs on text-attributed graphs.",
+      "page": 4,
+      "index": 2,
+      "width": 1015,
+      "height": 461
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10461v1/fig-001.webp",
+      "caption": "Table 1. Node classification performance under the full-supervised setting with accuracy±std (%) reported. Bold and underline highlight the best and second-best results, respectively.",
+      "page": 6,
+      "index": 1,
+      "width": 1012,
+      "height": 427
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10461v1/fig-003.webp",
+      "caption": "Figure 5. 2D t-SNE visualizations on Cora dataset. Solid and hollow points denote GNN and LLM embeddings, respectively.",
+      "page": 9,
+      "index": 3,
+      "width": 477,
+      "height": 281
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10461v1/fig-005.webp",
+      "caption": "Table 8. Dataset statistics of TAG benchmark datasets.",
+      "page": 16,
+      "index": 5,
+      "width": 956,
+      "height": 236
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10461v1/fig-004.webp",
+      "caption": "Table 9. Node classification performance under various semi-supervised settings with accuracy±std (%) shown. Bold and underline highlight the best and second-best results, respectively.",
+      "page": 20,
+      "index": 4,
+      "width": 1012,
+      "height": 407
+    }
+  ]
+}

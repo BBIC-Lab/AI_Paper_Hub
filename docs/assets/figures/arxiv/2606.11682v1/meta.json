@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-003.webp",
+      "caption": "Figure 1: An overview of TI-Adapter. Blocks marked with red flames are trainable, while blocks marked with blue snowflakes remain frozen during training. The image branch supports two adaptation options: applying an embedding-level image adapter after the final ResNet representation, or inserting BCAdapters into selected ResNet layers.",
+      "page": 7,
+      "index": 3,
+      "width": 804,
+      "height": 445
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-009.webp",
+      "caption": "Table 1: Quantitative comparison on 20 tabular-image multimodal datasets, including 12 classification datasets and 8 regression datasets. Results are reported as mean±std. The best result on each dataset is highlighted in bold and underlined. Mean Rank denotes the average rank across datasets within each task, and Best/Worst counts the number of datasets on which each method achieves the best or worst performance.",
+      "page": 16,
+      "index": 9,
+      "width": 814,
+      "height": 794
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-007.webp",
+      "caption": "Figure 2: Performance difference relative to full ResNet fine-tuning. (a) Accuracy gain on 12 classification datasets. (b) Relative MSE reduction on 8 regression datasets. Positive values indicate better performance than full fine-tuning, while negative values indicate worse performance. For compactness, BCA1 and BCA2 denote BCAdapter1 and BCAdapter2, respectively.",
+      "page": 17,
+      "index": 7,
+      "width": 771,
+      "height": 288
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-004.webp",
+      "caption": "Figure 3: Performance–parameter efficiency trade-off across 20 tabular-image multimodal datasets. The x-axis denotes the unified mean rank, where a lower rank indicates better predictive performance. The y-axis denotes the average trainable parameter ratio relative to full fine-tuning. Methods closer to the bottom-left corner achieve a better trade-off between predictive performance and parameter efficiency.",
+      "page": 18,
+      "index": 4,
+      "width": 739,
+      "height": 515
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-006.webp",
+      "caption": "Figure 4: Ablation study on the number of ResNet layers equipped with BCAdapters. For compactness, BCA1, BCA2, BCA3, and BCA4 denote BCAdapter1, BCAdapter2, BCAdapter3, and BCAdapter4,respectively. (a) and (b) show performance improvement over full fine-tuning, measured by accuracy gain and MSE reduction. (c) and (d) show the GPU memory ratio and trainable parameter ratio relative to full fine-tuning.",
+      "page": 19,
+      "index": 6,
+      "width": 737,
+      "height": 558
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-005.webp",
+      "caption": "Table A.2: Dataset statistics. #Samples denotes the total number of samples in each dataset, #Features denotes the number of tabular features, and #Classes denotes the number of target classes for classification datasets.",
+      "page": 23,
+      "index": 5,
+      "width": 538,
+      "height": 776
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-008.webp",
+      "caption": "Table B.3: Performance of deeper adapter-depth variants on 20 datasets. BCAdapter3 inserts ConvAdapters into the last three ResNet layers, while BCAdapter4 inserts ConvAdapters into all four ResNet layers. Classification results are reported by accuracy, and regression results are reported by MSE.",
+      "page": 24,
+      "index": 8,
+      "width": 562,
+      "height": 818
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-001.webp",
+      "caption": "Table B.5: Peak GPU memory usage and ratios relative to full fine-tuning. The memory ratio is computed within each dataset and then averaged across datasets.",
+      "page": 25,
+      "index": 1,
+      "width": 814,
+      "height": 269
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11682v1/fig-002.webp",
+      "caption": "Table B.4: Trainable parameter numbers and ratios relative to full fine-tuning. The parameter ratio is computed for each dataset relative to the corresponding full fine-tuning setting and then averaged across datasets.",
+      "page": 25,
+      "index": 2,
+      "width": 658,
+      "height": 268
+    }
+  ]
+}

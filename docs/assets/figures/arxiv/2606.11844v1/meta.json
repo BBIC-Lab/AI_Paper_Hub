@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-007.webp",
+      "caption": "Fig. 1. AGF architecture for heterogeneous continual anomaly detection. Task-specific tabular datasets with different feature dimensions are learned using AGF to perform anomaly prediction by knowledge accumulation without shared raw samples. After each task, the buffer is created via tabular dataset distillation to store compact synthetic samples and added to the replay memory that is used in subsequent tasks.",
+      "page": 5,
+      "index": 7,
+      "width": 688,
+      "height": 383
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-002.webp",
+      "caption": "Fig. 2. Influence of replay capacity measured by instances per class (IPC). Increasing IPC consistently improves performance across Balanced Accuracy, PR-AUC, and ROC-AUC. Dataset distillation achieves the strongest results across all capacities, while herding is highly sensitive to memory size and random sampling shows moderate gains.",
+      "page": 10,
+      "index": 2,
+      "width": 706,
+      "height": 226
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-003.webp",
+      "caption": "Fig. 3. Conceptual illustration of continual anomaly detection across heterogeneous tabular datasets. Each task corresponds to a dataset with a different feature schema and decision boundary. In standard sequential learning (top), models trained independently on each task cannot effectively transfer anomaly knowledge across datasets. The proposed AGF with TaskFusion framework (bottom) aligns heterogeneous feature spaces into a shared representation and augments training through boundary-aware interpolation (represented as .) and cross-task mixing (represented as x). This enables the model to accumulate anomaly knowledge across tasks, improving decision boundary stability and detection performance under heterogeneous continual learning. Here, green represents the normal (inlier) space and red represents the anomaly space.",
+      "page": 14,
+      "index": 3,
+      "width": 685,
+      "height": 430
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-001.webp",
+      "caption": "Table 3. Description of the 21 tabular outlier detection datasets used in our study, in terms of Sample counts, Columns, Outlier counts/% and Fields.",
+      "page": 15,
+      "index": 1,
+      "width": 508,
+      "height": 528
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-005.webp",
+      "caption": "Fig. 4. Taskwise performance evolution during continual learning. Each curve tracks a task as new datasets are introduced. Finetuning shows repeated drops due to catastrophic forgetting. AGF without OE partially reduces degradation, while AGF with OE and augmentation maintains nearly stable performance across tasks.",
+      "page": 17,
+      "index": 5,
+      "width": 709,
+      "height": 231
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-004.webp",
+      "caption": "Fig. 6. Evolution of the learned latent G-space across the continual learning sequence. Each row corresponds to a task, while columns show the embedding of the same task after subsequent tasks are learned. Blue and red points denote inliers and outliers, respectively. The overall geometry of previously learned tasks remains stable over time, and inlier–outlier separation is preserved, indicating minimal representation drift and robustness against catastrophic forgetting.",
+      "page": 19,
+      "index": 4,
+      "width": 725,
+      "height": 544
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11844v1/fig-006.webp",
+      "caption": "Fig. 7. Anomaly score stability across tasks. For each task, histograms compare anomaly score distributions at learning time (blue) and after completion of the full task sequence (orange). The strong overlap between distributions indicates that decision boundaries remain stable over continual updates, demonstrating preservation of previously learned anomaly detection behavior.",
+      "page": 20,
+      "index": 6,
+      "width": 725,
+      "height": 541
+    }
+  ]
+}

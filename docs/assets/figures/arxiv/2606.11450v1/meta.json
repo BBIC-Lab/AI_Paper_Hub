@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-001.webp",
+      "caption": "Figure 1. Top-1 accuracy of linear evaluation and training time of different masked skeleton reconstruction methods (NTU-60 xsub).",
+      "page": 1,
+      "index": 1,
+      "width": 434,
+      "height": 368
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-008.webp",
+      "caption": "Figure 2. The framework of our proposed AMR.",
+      "page": 4,
+      "index": 8,
+      "width": 977,
+      "height": 254
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-003.webp",
+      "caption": "Table 1. Comparisons with the state-of-the-art masked skeleton reconstruction methods on NTU-60 and PKU-II under linear evaluation protocol. All pre-training runs were completed under identical hardware conditions using a single L20 GPU.",
+      "page": 6,
+      "index": 3,
+      "width": 798,
+      "height": 258
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-004.webp",
+      "caption": "Table 2. Comparisons with the state-of-the-art methods on NTU120 under linear evaluation protocol.",
+      "page": 6,
+      "index": 4,
+      "width": 320,
+      "height": 424
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-002.webp",
+      "caption": "Table 3. Comparisons with the state-of-the-art methods with semisupervised learning on NTU-60 dataset.",
+      "page": 6,
+      "index": 2,
+      "width": 404,
+      "height": 445
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-006.webp",
+      "caption": "Figure 3. Impact of patch size on model performance.",
+      "page": 7,
+      "index": 6,
+      "width": 405,
+      "height": 317
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-005.webp",
+      "caption": "Table 4. Comparisons with the state-of-the-art methods under the transfer learning setting.",
+      "page": 7,
+      "index": 5,
+      "width": 383,
+      "height": 318
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11450v1/fig-007.webp",
+      "caption": "Figure 4. Visualization of joint importance for the “take off a hat” action. Joints with high weight are depicted in blue.",
+      "page": 8,
+      "index": 7,
+      "width": 979,
+      "height": 321
+    }
+  ]
+}
