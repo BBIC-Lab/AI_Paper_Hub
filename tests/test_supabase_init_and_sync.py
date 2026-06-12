@@ -104,6 +104,7 @@ class SupabaseInitAndSyncTest(unittest.TestCase):
         self.assertIn("DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'true' }}", text)
         self.assertIn("DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'default_remote' }}", text)
         self.assertIn("https://embed.zwwen.online/embed", text)
+        self.assertIn("DPR_EMBED_REMOTE_FALLBACK=local allows runtime local fallback", text)
         self.assertIn("Reranker preflight skipped because DPR_SKIP_RERANK is not false", text)
         self.assertNotIn("DPR_SKIP_RERANK must be false", text)
         self.assertIn("http://127.0.0.1:8011/v1/rerank", text)

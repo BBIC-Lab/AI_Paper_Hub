@@ -184,6 +184,14 @@ jobs:
           RERANK_ENABLED_VALUES = {"0", "false", "no", "off"}
 
 
+          class PreflightError(RuntimeError):
+              pass
+
+
+          def warn(message: str) -> None:
+              print(f"::warning::{message}", flush=True)
+
+
           def env_text(*names: str, default: str = "") -> str:
               for name in names:
                   value = str(os.environ.get(name) or "").strip()
@@ -250,22 +258,34 @@ jobs:
               try:
                   with urllib.request.urlopen(request, timeout=timeout) as response:
                       if response.status < 200 or response.status >= 300:
-                          fail(f"{name} preflight failed with HTTP {response.status}.")
+                          raise PreflightError(f"{name} preflight failed with HTTP {response.status}.")
                       raw = response.read()
+              except PreflightError:
+                  raise
               except urllib.error.HTTPError as exc:
-                  fail(f"{name} preflight failed with HTTP {exc.code}; check model name, endpoint, and service auth.")
+                  raise PreflightError(
+                      f"{name} preflight failed with HTTP {exc.code}; check model name, endpoint, and service auth."
+                  ) from exc
               except Exception as exc:
-                  fail(f"{name} preflight failed before response: {exc.__class__.__name__}: {exc}")
+                  raise PreflightError(
+                      f"{name} preflight failed before response: {exc.__class__.__name__}: {exc}"
+                  ) from exc
               try:
                   return json.loads(raw.decode("utf-8") or "{}")
               except Exception as exc:
-                  fail(f"{name} preflight returned non-JSON response: {exc.__class__.__name__}.")
+                  raise PreflightError(
+                      f"{name} preflight returned non-JSON response: {exc.__class__.__name__}."
+                  ) from exc
 
 
           def preflight_embedding() -> None:
               profile = normalize_profile(env_text("DPR_EMBED_PROFILE", default="default_remote"))
               provider = normalize_provider(env_text("DPR_EMBED_PROVIDER", default="legacy"))
               model = env_text("DPR_EMBED_MODEL", default="BAAI/bge-small-en-v1.5")
+              fallback = env_text("DPR_EMBED_REMOTE_FALLBACK", default="local").lower()
+              if fallback not in {"local", "fail"}:
+                  fallback = "local"
+              allow_local_fallback = fallback == "local"
               if profile in {"local", "advanced"}:
                   print(f"Embedding preflight skipped for {profile} profile; runtime will load the local model.")
                   return
@@ -285,7 +305,13 @@ jobs:
                   if provider == "openai"
                   else {"texts": ["preflight"]}
               )
-              embed = post_json("Embedding", url, payload, "DPR_EMBED_API_TIMEOUT", api_key)
+              try:
+                  embed = post_json("Embedding", url, payload, "DPR_EMBED_API_TIMEOUT", api_key)
+              except PreflightError as exc:
+                  if allow_local_fallback:
+                      warn(f"{exc}; continuing because DPR_EMBED_REMOTE_FALLBACK=local allows runtime local fallback.")
+                      return
+                  fail(str(exc))
               vectors = None
               data = embed.get("data") if isinstance(embed, dict) else None
               if isinstance(data, list) and data:
@@ -294,7 +320,11 @@ jobs:
               if vectors is None and isinstance(embed, dict):
                   vectors = embed.get("embeddings")
               if not isinstance(vectors, list) or not vectors or not isinstance(vectors[0], list) or not vectors[0]:
-                  fail("Embedding preflight response missing embedding vector.")
+                  message = "Embedding preflight response missing embedding vector."
+                  if allow_local_fallback:
+                      warn(f"{message}; continuing because DPR_EMBED_REMOTE_FALLBACK=local allows runtime local fallback.")
+                      return
+                  fail(message)
               print(f"Embedding model interface OK ({profile}/{provider}).")
 
 
@@ -314,18 +344,21 @@ jobs:
                   fail("DPR_RERANK_MODEL is required when DPR_SKIP_RERANK=false.")
               if not api_key:
                   fail("MODEL_API_KEY or DPR_RERANK_API_KEY is required when DPR_SKIP_RERANK=false.")
-              rerank = post_json(
-                  "Reranker",
-                  endpoint,
-                  {
-                      "model": model,
-                      "query": "preflight",
-                      "documents": ["first candidate", "second candidate"],
-                      "top_n": 1,
-                  },
-                  "DPR_RERANK_API_TIMEOUT",
-                  api_key,
-              )
+              try:
+                  rerank = post_json(
+                      "Reranker",
+                      endpoint,
+                      {
+                          "model": model,
+                          "query": "preflight",
+                          "documents": ["first candidate", "second candidate"],
+                          "top_n": 1,
+                      },
+                      "DPR_RERANK_API_TIMEOUT",
+                      api_key,
+                  )
+              except PreflightError as exc:
+                  fail(str(exc))
               results = rerank.get("results")
               if results is None and isinstance(rerank.get("output"), dict):
                   results = rerank["output"].get("results")
