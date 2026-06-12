@@ -237,6 +237,9 @@ def main() -> None:
     q_tag = bm25_q.get("tag") or emb_q.get("tag") or ""
     q_paper_tag = bm25_q.get("paper_tag") or emb_q.get("paper_tag") or ""
     q_text = bm25_q.get("query_text") or emb_q.get("query_text") or ""
+    q_track = bm25_q.get("query_track") or emb_q.get("query_track") or ""
+    q_mix = bm25_q.get("recommend_mix") or emb_q.get("recommend_mix") or {}
+    q_core_context = bm25_q.get("core_context") or emb_q.get("core_context") or ""
 
     bm25_ranks = normalize_rank_list(bm25_q.get("sim_scores"))
     emb_ranks = normalize_rank_list(emb_q.get("sim_scores"))
@@ -260,6 +263,9 @@ def main() -> None:
         "tag": q_tag,
         "paper_tag": q_paper_tag,
         "query_text": q_text,
+        "query_track": q_track,
+        "recommend_mix": q_mix,
+        "core_context": q_core_context,
         "sim_scores": sim_scores,
       }
     )

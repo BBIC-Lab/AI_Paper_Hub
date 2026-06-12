@@ -15,7 +15,7 @@ except Exception:  # pragma: no cover - package import fallback
     from src.core import artifacts as core_artifacts
     from src.core import paths as core_paths
 
-from subscription_plan import count_subscription_tags, get_profile_daily_paper_limits
+from subscription_plan import count_subscription_tags, get_profile_daily_paper_limits, get_profile_recommend_mix
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
@@ -64,6 +64,15 @@ PRIORITY_DEEP_SCORE = 9.0
 CARRYOVER_MIN_SCORE = 8.0
 CARRYOVER_UNTAGGED = "untagged"
 ARXIV_VERSIONED_ID_RE = re.compile(r"^(\d{4}\.\d{4,5})(?:v(\d+))?$", re.IGNORECASE)
+DEFAULT_RECOMMEND_MIX = {"core_ratio": 2, "inspiration_ratio": 3}
+TRACK_CORE = "core"
+TRACK_INSPIRATION = "inspiration"
+TRACK_BRIDGE = "bridge"
+TRACK_LABELS = {
+    TRACK_CORE: "强相关",
+    TRACK_INSPIRATION: "通用启发",
+    TRACK_BRIDGE: "桥接方法",
+}
 
 
 def log(message: str) -> None:
@@ -310,6 +319,29 @@ def load_config_profile_daily_limits() -> Dict[str, Dict[str, int]]:
         return {}
 
 
+def load_config_profile_recommend_mix() -> Dict[str, Dict[str, int]]:
+    """读取每个 profile 的强相关/通用启发配比。"""
+    if not os.path.exists(CONFIG_FILE):
+        return {}
+    try:
+        import yaml  # type: ignore
+    except Exception:
+        log("[WARN] PyYAML not installed, skip profile recommend mix.")
+        return {}
+
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except Exception as exc:
+        log(f"[WARN] failed to read config.yaml for recommend mix: {exc}")
+        return {}
+    try:
+        return get_profile_recommend_mix(data if isinstance(data, dict) else {})
+    except Exception as exc:
+        log(f"[WARN] failed to parse profile recommend mix: {exc}")
+        return {}
+
+
 def load_arxiv_paper_setting() -> Dict[str, Any]:
     if not os.path.exists(CONFIG_FILE):
         return {}
@@ -435,6 +467,30 @@ def parse_score(value: Any) -> float:
         return 0.0
 
 
+def normalize_recommend_mix(value: Any) -> Dict[str, int]:
+    raw = value if isinstance(value, dict) else {}
+    try:
+        core = int(raw.get("core_ratio"))
+    except Exception:
+        core = DEFAULT_RECOMMEND_MIX["core_ratio"]
+    try:
+        inspiration = int(raw.get("inspiration_ratio"))
+    except Exception:
+        inspiration = DEFAULT_RECOMMEND_MIX["inspiration_ratio"]
+    core = core if core >= 0 else DEFAULT_RECOMMEND_MIX["core_ratio"]
+    inspiration = inspiration if inspiration >= 0 else DEFAULT_RECOMMEND_MIX["inspiration_ratio"]
+    if core <= 0 and inspiration <= 0:
+        return dict(DEFAULT_RECOMMEND_MIX)
+    return {"core_ratio": core, "inspiration_ratio": inspiration}
+
+
+def normalize_relevance_track(value: Any, default: str = TRACK_CORE) -> str:
+    text = str(value or "").strip().lower()
+    if text in {TRACK_CORE, TRACK_INSPIRATION, TRACK_BRIDGE}:
+        return text
+    return default
+
+
 def item_paper_id(item: Dict[str, Any]) -> str:
     return str(item.get("id") or item.get("paper_id") or "").strip()
 
@@ -477,8 +533,8 @@ def prefer_dedup_candidate(candidate: Dict[str, Any], existing: Dict[str, Any]) 
     if is_fresh_item(candidate) != is_fresh_item(existing):
         return is_fresh_item(candidate)
 
-    candidate_score = parse_score(candidate.get("llm_score"))
-    existing_score = parse_score(existing.get("llm_score"))
+    candidate_score = parse_score(candidate.get("selection_score") or candidate.get("llm_score"))
+    existing_score = parse_score(existing.get("selection_score") or existing.get("llm_score"))
     if candidate_score != existing_score:
         return candidate_score > existing_score
 
@@ -521,7 +577,52 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         if prev is not None and score <= float(prev.get("llm_score", 0)):
             continue
         paper = dict(paper_map[pid])
+        core_score = parse_score(item.get("core_relevance_score"))
+        inspiration_score = parse_score(item.get("inspiration_score"))
+        has_dual_scores = "core_relevance_score" in item or "inspiration_score" in item
+        if has_dual_scores:
+            score = max(score, core_score, inspiration_score)
+        relevance_track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+        if has_dual_scores:
+            if core_score >= 8.0 and inspiration_score >= 8.0:
+                relevance_track = TRACK_BRIDGE
+            elif inspiration_score > core_score:
+                relevance_track = TRACK_INSPIRATION
+            else:
+                relevance_track = TRACK_CORE
+        elif relevance_track == TRACK_INSPIRATION:
+            inspiration_score = score
+        else:
+            core_score = score
+
+        rerank_core = parse_score(paper.get("rerank_core_score"))
+        rerank_inspiration = parse_score(paper.get("rerank_inspiration_score"))
+        if not rerank_core and normalize_relevance_track(paper.get("rerank_track"), "") == TRACK_CORE:
+            rerank_core = parse_score(paper.get("rerank_score"))
+        if not rerank_inspiration and normalize_relevance_track(paper.get("rerank_track"), "") == TRACK_INSPIRATION:
+            rerank_inspiration = parse_score(paper.get("rerank_score"))
+
+        if relevance_track == TRACK_INSPIRATION:
+            selection_score = inspiration_score + 2.0 * rerank_inspiration
+            selection_lane = TRACK_INSPIRATION
+        elif relevance_track == TRACK_BRIDGE:
+            core_selection = core_score + 2.0 * rerank_core
+            inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
+            selection_score = max(core_selection, inspiration_selection)
+            selection_lane = TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION
+        else:
+            selection_score = core_score + 2.0 * rerank_core
+            selection_lane = TRACK_CORE
+
         paper["llm_score"] = score
+        paper["core_relevance_score"] = core_score
+        paper["inspiration_score"] = inspiration_score
+        paper["relevance_track"] = relevance_track
+        paper["relevance_track_label"] = TRACK_LABELS.get(relevance_track, TRACK_LABELS[TRACK_CORE])
+        paper["selection_score"] = float(selection_score)
+        paper["selection_lane"] = selection_lane
+        paper["track_evidence_en"] = str(item.get("track_evidence_en") or "").strip()
+        paper["track_evidence_cn"] = str(item.get("track_evidence_cn") or "").strip()
         evidence_cn = str(item.get("evidence_cn") or "").strip()
         evidence_en = str(item.get("evidence_en") or "").strip()
         tldr_cn = str(item.get("tldr_cn") or "").strip()
@@ -540,6 +641,9 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         matched_query_tag = str(item.get("matched_query_tag") or "").strip()
         if matched_query_tag and matched_query_tag not in tags:
             tags.append(matched_query_tag)
+        track_tag = f"paper:{TRACK_LABELS.get(relevance_track, TRACK_LABELS[TRACK_CORE])}"
+        if track_tag not in tags:
+            tags.append(track_tag)
         paper["llm_tags"] = tags
         paper["matched_query_tag"] = matched_query_tag
         paper["matched_query_text"] = str(item.get("matched_query_text") or "").strip()
@@ -587,7 +691,14 @@ def build_candidates(
 
 
 def sort_by_score(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return sorted(items, key=lambda x: (-float(x.get("llm_score", 0)), str(x.get("id") or "")))
+    return sorted(
+        items,
+        key=lambda x: (
+            -float(x.get("selection_score", x.get("llm_score", 0)) or 0),
+            -float(x.get("llm_score", 0) or 0),
+            str(x.get("id") or ""),
+        ),
+    )
 
 
 def profile_limit_key(tag: Any) -> str:
@@ -642,9 +753,193 @@ def normalize_profile_section_limits(raw_limit: Any) -> Tuple[int, int]:
     return legacy_limit, legacy_limit
 
 
+def ensure_selection_fields(item: Dict[str, Any]) -> Dict[str, Any]:
+    copied = dict(item)
+    track = normalize_relevance_track(copied.get("relevance_track"), TRACK_CORE)
+    core_score = parse_score(copied.get("core_relevance_score"))
+    inspiration_score = parse_score(copied.get("inspiration_score"))
+    llm_score = parse_score(copied.get("llm_score"))
+    if core_score <= 0 and inspiration_score <= 0 and llm_score > 0:
+        if track == TRACK_INSPIRATION:
+            inspiration_score = llm_score
+        else:
+            core_score = llm_score
+    rerank_core = parse_score(copied.get("rerank_core_score"))
+    rerank_inspiration = parse_score(copied.get("rerank_inspiration_score"))
+    if track == TRACK_INSPIRATION:
+        selection_score = inspiration_score + 2.0 * rerank_inspiration
+        lane = TRACK_INSPIRATION
+    elif track == TRACK_BRIDGE:
+        core_selection = core_score + 2.0 * rerank_core
+        inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
+        selection_score = max(core_selection, inspiration_selection)
+        lane = copied.get("selection_lane")
+        lane = lane if lane in {TRACK_CORE, TRACK_INSPIRATION} else (TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION)
+    else:
+        selection_score = core_score + 2.0 * rerank_core
+        lane = TRACK_CORE
+    copied["core_relevance_score"] = core_score
+    copied["inspiration_score"] = inspiration_score
+    copied["relevance_track"] = track
+    copied["relevance_track_label"] = TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])
+    copied["selection_score"] = parse_score(copied.get("selection_score") or selection_score)
+    copied["selection_lane"] = lane
+    tags = normalize_tags(copied.get("llm_tags"))
+    track_tag = f"paper:{TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])}"
+    if track_tag not in tags:
+        tags.append(track_tag)
+    copied["llm_tags"] = tags
+    return copied
+
+
+def allocate_mix_quota(target: int, mix: Dict[str, int]) -> Dict[str, int]:
+    safe_target = max(int(target or 0), 0)
+    normalized = normalize_recommend_mix(mix)
+    core_ratio = int(normalized.get("core_ratio") or 0)
+    inspiration_ratio = int(normalized.get("inspiration_ratio") or 0)
+    if safe_target <= 0:
+        return {TRACK_CORE: 0, TRACK_INSPIRATION: 0}
+    if core_ratio <= 0:
+        return {TRACK_CORE: 0, TRACK_INSPIRATION: safe_target}
+    if inspiration_ratio <= 0:
+        return {TRACK_CORE: safe_target, TRACK_INSPIRATION: 0}
+    total = core_ratio + inspiration_ratio
+    core_float = safe_target * core_ratio / total
+    core_quota = int(core_float)
+    inspiration_quota = safe_target - core_quota
+    # 余数优先给小数部分更大的通路；2:3, target=5 会得到 2/3。
+    if core_quota + inspiration_quota < safe_target:
+        core_quota += 1
+    return {TRACK_CORE: core_quota, TRACK_INSPIRATION: inspiration_quota}
+
+
+def aggregate_recommend_mix(profile_mixes: Dict[str, Dict[str, int]] | None) -> Dict[str, int]:
+    if not profile_mixes:
+        return dict(DEFAULT_RECOMMEND_MIX)
+    core = 0
+    inspiration = 0
+    for raw in profile_mixes.values():
+        mix = normalize_recommend_mix(raw)
+        core += int(mix.get("core_ratio") or 0)
+        inspiration += int(mix.get("inspiration_ratio") or 0)
+    return normalize_recommend_mix({"core_ratio": core, "inspiration_ratio": inspiration})
+
+
+def lookup_profile_mix(
+    profile_recommend_mix: Dict[str, Dict[str, int]] | None,
+    *keys: str,
+) -> Dict[str, int]:
+    mixes = profile_recommend_mix or {}
+    lowered = {str(k).lower(): v for k, v in mixes.items()}
+    for key in keys:
+        if key in mixes:
+            return normalize_recommend_mix(mixes[key])
+        lowered_value = lowered.get(str(key).lower())
+        if lowered_value is not None:
+            return normalize_recommend_mix(lowered_value)
+    return dict(DEFAULT_RECOMMEND_MIX)
+
+
+def select_by_recommend_mix(
+    candidates: List[Dict[str, Any]],
+    target: int,
+    mix: Dict[str, int] | None = None,
+) -> List[Dict[str, Any]]:
+    if target <= 0:
+        return []
+    normalized_mix = normalize_recommend_mix(mix or DEFAULT_RECOMMEND_MIX)
+    quotas = allocate_mix_quota(target, normalized_mix)
+    enabled = {
+        lane
+        for lane, ratio in (
+            (TRACK_CORE, int(normalized_mix.get("core_ratio") or 0)),
+            (TRACK_INSPIRATION, int(normalized_mix.get("inspiration_ratio") or 0)),
+        )
+        if ratio > 0
+    }
+    if not enabled:
+        return []
+
+    prepared = [ensure_selection_fields(item) for item in candidates if isinstance(item, dict)]
+    selected: List[Dict[str, Any]] = []
+    selected_keys = set()
+
+    def eligible_for_lane(item: Dict[str, Any], lane: str) -> bool:
+        track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+        item_lane = item.get("selection_lane")
+        if track == TRACK_BRIDGE:
+            return lane in enabled
+        return (item_lane or track) == lane
+
+    def lane_score(item: Dict[str, Any], lane: str) -> float:
+        if lane == TRACK_INSPIRATION:
+            return parse_score(item.get("inspiration_score")) + 2.0 * parse_score(item.get("rerank_inspiration_score"))
+        return parse_score(item.get("core_relevance_score")) + 2.0 * parse_score(item.get("rerank_core_score"))
+
+    def pick_for_lane(lane: str, need: int, allow_bridge: bool) -> None:
+        if need <= 0:
+            return
+        pool = []
+        for item in prepared:
+            key = paper_dedup_key(item)
+            if not key or key in selected_keys:
+                continue
+            track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+            if not allow_bridge and track == TRACK_BRIDGE:
+                continue
+            if eligible_for_lane(item, lane):
+                pool.append(item)
+        pool = sorted(pool, key=lambda item: (-lane_score(item, lane), -parse_score(item.get("llm_score")), str(item.get("id") or "")))
+        for item in pool[:need]:
+            copied = dict(item)
+            copied["selection_lane"] = lane
+            selected.append(copied)
+            key = paper_dedup_key(copied)
+            if key:
+                selected_keys.add(key)
+
+    for lane in (TRACK_CORE, TRACK_INSPIRATION):
+        pick_for_lane(lane, quotas.get(lane, 0), allow_bridge=False)
+
+    lane_order = [lane for lane in (TRACK_CORE, TRACK_INSPIRATION) if lane in enabled]
+    while len(selected) < target:
+        shortages = {
+            lane: max(quotas.get(lane, 0) - sum(1 for item in selected if item.get("selection_lane") == lane), 0)
+            for lane in lane_order
+        }
+        lane = max(lane_order, key=lambda key: (shortages.get(key, 0), quotas.get(key, 0), -lane_order.index(key)), default="")
+        if not lane or shortages.get(lane, 0) <= 0:
+            break
+        before = len(selected)
+        pick_for_lane(lane, 1, allow_bridge=True)
+        if len(selected) == before:
+            break
+
+    if len(selected) < target:
+        remaining = [
+            item
+            for item in prepared
+            if paper_dedup_key(item)
+            and paper_dedup_key(item) not in selected_keys
+            and (item.get("selection_lane") in enabled or normalize_relevance_track(item.get("relevance_track"), TRACK_CORE) == TRACK_BRIDGE)
+        ]
+        for item in sort_by_score(remaining):
+            if len(selected) >= target:
+                break
+            fallback_lane = TRACK_CORE if TRACK_CORE in enabled else TRACK_INSPIRATION
+            lane = item.get("selection_lane") if item.get("selection_lane") in enabled else fallback_lane
+            copied = dict(item)
+            copied["selection_lane"] = lane
+            selected.append(copied)
+            selected_keys.add(paper_dedup_key(copied))
+
+    return selected[:target]
+
+
 def apply_profile_daily_limits(
     result: Dict[str, Any],
     profile_limits: Dict[str, Dict[str, int]] | None,
+    profile_recommend_mix: Dict[str, Dict[str, int]] | None = None,
 ) -> Dict[str, Any]:
     if not profile_limits:
         return result
@@ -678,10 +973,9 @@ def apply_profile_daily_limits(
             for item in quick_items
             if key in item_profile_limit_keys(item, profile_limits)
         ]
-        deep_sorted = sort_by_score(deep_for_tag)
-        quick_sorted = sort_by_score(quick_for_tag)
-        picked_deep = deep_sorted[:deep_limit]
-        picked_quick = quick_sorted[:quick_limit]
+        mix = lookup_profile_mix(profile_recommend_mix, tag, key)
+        picked_deep = select_by_recommend_mix(deep_for_tag, deep_limit, mix)
+        picked_quick = select_by_recommend_mix(quick_for_tag, quick_limit, mix)
         allowed_deep_ids = {
             item_paper_id(item)
             for item in picked_deep
@@ -733,6 +1027,10 @@ def apply_profile_daily_limits(
     stats["profile_daily_limits"] = {
         tag: {"deep": deep_limit, "quick": quick_limit}
         for _key, (tag, deep_limit, quick_limit) in normalized_limits.items()
+    }
+    stats["profile_recommend_mix"] = {
+        tag: lookup_profile_mix(profile_recommend_mix, tag, _key)
+        for _key, (tag, _deep_limit, _quick_limit) in normalized_limits.items()
     }
     stats["profile_limit_dropped_by_tag"] = dropped_by_tag
     stats["profile_limit_dropped"] = max(
@@ -1051,14 +1349,16 @@ def process_mode(
     cfg: Dict[str, Any],
     carryover_ratio: float,
     profile_daily_limits: Dict[str, Dict[str, int]] | None = None,
+    profile_recommend_mix: Dict[str, Dict[str, int]] | None = None,
 ) -> Dict[str, Any]:
-    candidates = dedupe_papers_by_key(candidates)
+    candidates = dedupe_papers_by_key([ensure_selection_fields(item) for item in candidates if isinstance(item, dict)])
     if cfg.get("all_quick_min_score") is not None:
         return process_mode_all_quick_min_score(
             candidates=candidates,
             mode=mode,
             min_score=float(cfg.get("all_quick_min_score") or 0),
             profile_daily_limits=profile_daily_limits,
+            profile_recommend_mix=profile_recommend_mix,
         )
 
     deep_candidates = [p for p in candidates if float(p.get("llm_score", 0)) >= 8.0]
@@ -1076,9 +1376,10 @@ def process_mode(
     ]
 
     cap = None
+    recommend_mix = aggregate_recommend_mix(profile_recommend_mix)
     deep_selected: List[Dict[str, Any]] = []
     if cfg.get("deep_unlimited"):
-        deep_selected = priority_deep_candidates + regular_deep_candidates
+        deep_selected = sort_by_score(priority_deep_candidates + regular_deep_candidates)
     else:
         deep_base = int(cfg.get("deep_base") or 0)
         cap = deep_base + tag_count
@@ -1093,11 +1394,7 @@ def process_mode(
             if strategy == "score":
                 extra_selected = regular_deep_candidates[:need]
             else:
-                extra_selected = select_deep_with_carryover(
-                    regular_deep_candidates,
-                    need,
-                    carryover_ratio,
-                )
+                extra_selected = select_by_recommend_mix(regular_deep_candidates, need, recommend_mix)
             deep_selected = priority_deep_candidates + extra_selected
 
     selected_keys = {paper_dedup_key(p) for p in deep_selected if paper_dedup_key(p)}
@@ -1118,7 +1415,10 @@ def process_mode(
     quick_base = int(cfg.get("quick_base") or 0)
     quick_target = quick_base + tag_count
     quick_strategy = str(cfg.get("quick_strategy") or "uniform")
-    quick_selected = select_quick_skim(quick_candidates, quick_target, quick_strategy)
+    if quick_strategy == "legacy":
+        quick_selected = select_quick_skim(quick_candidates, quick_target, quick_strategy)
+    else:
+        quick_selected = select_by_recommend_mix(quick_candidates, quick_target, recommend_mix)
 
     stats = {
         "mode": mode,
@@ -1129,6 +1429,7 @@ def process_mode(
         "quick_candidates": len(quick_candidates),
         "quick_skim_target": quick_target,
         "quick_selected": len(quick_selected),
+        "recommend_mix": recommend_mix,
     }
 
     result = {
@@ -1138,7 +1439,7 @@ def process_mode(
         "deep_dive": sanitize_items(deep_selected),
         "quick_skim": sanitize_items(quick_selected),
     }
-    return apply_profile_daily_limits(result, profile_daily_limits)
+    return apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
 
 
 def process_mode_all_quick_min_score(
@@ -1146,11 +1447,12 @@ def process_mode_all_quick_min_score(
     mode: str,
     min_score: float,
     profile_daily_limits: Dict[str, Dict[str, int]] | None = None,
+    profile_recommend_mix: Dict[str, Dict[str, int]] | None = None,
 ) -> Dict[str, Any]:
     """
     回溯窗口（days）场景：不再做“精读/速览配额分配”，而是将达到阈值的论文全部输出到速览区。
     """
-    candidates = dedupe_papers_by_key(candidates)
+    candidates = dedupe_papers_by_key([ensure_selection_fields(item) for item in candidates if isinstance(item, dict)])
     threshold = float(min_score)
     picked = [p for p in candidates if float(p.get("llm_score", 0)) >= threshold]
     picked = sort_by_score(picked)
@@ -1174,7 +1476,7 @@ def process_mode_all_quick_min_score(
         "deep_dive": [],
         "quick_skim": sanitize_items(picked),
     }
-    return apply_profile_daily_limits(result, profile_daily_limits)
+    return apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
 
 def force_all_into_quick(result: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -1293,9 +1595,11 @@ def main() -> None:
 
     tag_count, tag_list = load_config_tag_count()
     profile_daily_limits = load_config_profile_daily_limits()
+    profile_recommend_mix = load_config_profile_recommend_mix()
     active_carryover_tags = [normalize_carryover_tag(tag) for tag in tag_list if normalize_carryover_tag(tag)]
     log(f"[INFO] config tags={tag_count} | {tag_list}")
     log(f"[INFO] profile daily paper limits={profile_daily_limits}")
+    log(f"[INFO] profile recommend mix={profile_recommend_mix}")
     log(f"[INFO] arxiv_paper_setting mode={mode_text} days_window={lookback_days} carryover_days={carryover_days}")
 
     group_start(f"Step 5 - select {os.path.basename(input_path)}")
@@ -1358,6 +1662,7 @@ def main() -> None:
                     "quick_skim_target": int((MODES.get(mode) or {}).get("quick_base") or 0) + tag_count,
                     "quick_selected": 0,
                     "profile_daily_limits": profile_daily_limits,
+                    "profile_recommend_mix": profile_recommend_mix,
                 },
                 "deep_dive": [],
                 "quick_skim": [],
@@ -1386,6 +1691,7 @@ def main() -> None:
                 mode=mode,
                 min_score=float(args.all_quick_min_score),
                 profile_daily_limits=profile_daily_limits,
+                profile_recommend_mix=profile_recommend_mix,
             )
         else:
             result = process_mode(
@@ -1395,6 +1701,7 @@ def main() -> None:
                 cfg,
                 carryover_ratio=CARRYOVER_RATIO,
                 profile_daily_limits=profile_daily_limits,
+                profile_recommend_mix=profile_recommend_mix,
             )
             if args.all_quick:
                 result = force_all_into_quick(result)

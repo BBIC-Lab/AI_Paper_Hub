@@ -30,6 +30,15 @@ SUPPORTED_STAGES = {"A", "B", "C"}
 DEFAULT_KEYWORD_RECALL_MODE = "or"
 SUPPORTED_KEYWORD_RECALL_MODES = {"or", "boolean_mixed"}
 DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10
+DEFAULT_RECOMMEND_MIX = {"core_ratio": 2, "inspiration_ratio": 3}
+
+try:
+  from research_profile import normalize_research_directions
+except Exception:  # pragma: no cover - 兼容 package 导入路径
+  try:
+    from src.research_profile import normalize_research_directions
+  except Exception:  # pragma: no cover
+    normalize_research_directions = None  # type: ignore
 
 
 def _now_iso() -> str:
@@ -66,6 +75,34 @@ def _as_positive_int(v: Any, default: int) -> int:
   except Exception:
     return default
   return value if value > 0 else default
+
+
+def _as_nonnegative_int(v: Any, default: int) -> int:
+  try:
+    value = int(v)
+  except Exception:
+    return default
+  return value if value >= 0 else default
+
+
+def normalize_recommend_mix(value: Any) -> Dict[str, int]:
+  """规范化强相关/通用启发配比；单侧允许为 0，双 0 视为无效配置。"""
+  raw = value if isinstance(value, dict) else {}
+  core = _as_nonnegative_int(raw.get("core_ratio"), DEFAULT_RECOMMEND_MIX["core_ratio"])
+  inspiration = _as_nonnegative_int(raw.get("inspiration_ratio"), DEFAULT_RECOMMEND_MIX["inspiration_ratio"])
+  if core <= 0 and inspiration <= 0:
+    return dict(DEFAULT_RECOMMEND_MIX)
+  return {"core_ratio": core, "inspiration_ratio": inspiration}
+
+
+def _track_enabled(recommend_mix: Dict[str, int], track: str) -> bool:
+  if track == "core":
+    return int(recommend_mix.get("core_ratio") or 0) > 0
+  if track == "inspiration":
+    return int(recommend_mix.get("inspiration_ratio") or 0) > 0
+  if track == "bridge":
+    return _track_enabled(recommend_mix, "core") and _track_enabled(recommend_mix, "inspiration")
+  return True
 
 
 def _get_legacy_daily_paper_limit(profile: Dict[str, Any]) -> int:
@@ -177,6 +214,14 @@ def _normalize_query_item(item: Any) -> str:
     or item.get('text')
     or ''
   )
+
+
+def _normalize_research_direction_list(value: Any) -> List[str]:
+  if callable(normalize_research_directions):
+    return normalize_research_directions(value)  # type: ignore[misc]
+  if isinstance(value, list):
+    return _uniq_keep_order([_norm_text(item) for item in value])
+  return _uniq_keep_order([_norm_text(value)])
 
 
 def _normalize_intent_query_entry(item: Any) -> Dict[str, Any]:
@@ -319,7 +364,12 @@ def _normalize_keyword_expr(expr: str) -> str:
   return clean_expr_for_embedding(_norm_text(expr)) or _norm_text(expr)
 
 
-def _normalize_profile(profile: Dict[str, Any], idx: int, known_sources: List[str]) -> Dict[str, Any]:
+def _normalize_profile(
+  profile: Dict[str, Any],
+  idx: int,
+  known_sources: List[str],
+  reader_research_directions: List[str] | None = None,
+) -> Dict[str, Any]:
   tag = _norm_text(profile.get("tag") or "")
   description = _norm_text(profile.get("description") or "")
   if not tag:
@@ -328,6 +378,8 @@ def _normalize_profile(profile: Dict[str, Any], idx: int, known_sources: List[st
   kw_rules_in = profile.get("keywords") or []
   kw_rules: List[Dict[str, Any]] = _normalize_keyword_list(kw_rules_in, profile_index=idx)
   intent_queries: List[Dict[str, Any]] = _normalize_query_list(profile.get("intent_queries"), profile_index=idx)
+  profile_research_directions = _normalize_research_direction_list(profile.get("research_directions") or [])
+  research_directions = profile_research_directions or list(reader_research_directions or [])
   paper_sources, _ = validate_profile_paper_sources(profile, known_sources=known_sources)
   paper_sources = _runtime_source_override(paper_sources)
 
@@ -338,6 +390,8 @@ def _normalize_profile(profile: Dict[str, Any], idx: int, known_sources: List[st
     "paper_sources": paper_sources,
     "deep_daily_paper_limit": _get_section_daily_paper_limit(profile, "deep"),
     "quick_daily_paper_limit": _get_section_daily_paper_limit(profile, "quick"),
+    "recommend_mix": normalize_recommend_mix(profile.get("recommend_mix")),
+    "research_directions": research_directions,
     "keywords": kw_rules,
     "intent_queries": intent_queries,
     "updated_at": _norm_text(profile.get("updated_at") or _now_iso()),
@@ -347,7 +401,11 @@ def _normalize_profile(profile: Dict[str, Any], idx: int, known_sources: List[st
   return result
 
 
-def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict[str, Any]:
+def _build_from_profiles(
+  subs: Dict[str, Any],
+  known_sources: List[str],
+  reader_research_directions: List[str] | None = None,
+) -> Dict[str, Any]:
   raw_profiles = subs.get("intent_profiles") or []
   runtime_tag_filters = _runtime_profile_tag_filters()
   profiles: List[Dict[str, Any]] = []
@@ -355,7 +413,7 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
     for idx, p in enumerate(raw_profiles):
       if not isinstance(p, dict):
         continue
-      normalized_profile = _normalize_profile(p, idx, known_sources)
+      normalized_profile = _normalize_profile(p, idx, known_sources, reader_research_directions)
       if runtime_tag_filters and not _profile_matches_runtime_filter(normalized_profile.get("tag") or "", runtime_tag_filters):
         continue
       profiles.append(normalized_profile)
@@ -376,10 +434,65 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
       continue
     tags.append(tag)
     paper_sources = profile.get("paper_sources") or []
+    recommend_mix = normalize_recommend_mix(profile.get("recommend_mix"))
+    research_directions = _normalize_research_direction_list(profile.get("research_directions") or [])
+    # 通用启发 query 需要知道核心上下文，但不要求论文自身属于该领域。
+    core_context_items = research_directions or [
+      _norm_text(item.get("query"))
+      for item in (profile.get("intent_queries") or [])
+      if isinstance(item, dict) and _as_bool(item.get("enabled"), True) and _norm_text(item.get("query"))
+    ]
+    core_context = "; ".join(_uniq_keep_order(core_context_items)[:8])
     paper_tag_keyword = f"keyword:{tag}"
     paper_tag_query = f"query:{tag}"
 
+    if research_directions and _track_enabled(recommend_mix, "core"):
+      for direction in research_directions:
+        bm25_queries.append(
+          {
+            "type": "research_direction",
+            "tag": tag,
+            "paper_tag": paper_tag_query,
+            "paper_sources": copy.deepcopy(paper_sources),
+            "query_text": direction,
+            "query_terms": [{"text": direction, "weight": MAIN_TERM_WEIGHT}],
+            "boolean_expr": "",
+            "logic_cn": "用户研究方向",
+            "source": "reader_profile",
+            "query_track": "core",
+            "recommend_mix": copy.deepcopy(recommend_mix),
+            "core_context": core_context,
+            "or_soft_weight": OR_SOFT_WEIGHT,
+          }
+        )
+        embedding_queries.append(
+          {
+            "type": "research_direction",
+            "tag": tag,
+            "paper_tag": paper_tag_query,
+            "paper_sources": copy.deepcopy(paper_sources),
+            "query_text": direction,
+            "logic_cn": "用户研究方向",
+            "source": "reader_profile",
+            "query_track": "core",
+            "recommend_mix": copy.deepcopy(recommend_mix),
+            "core_context": core_context,
+          }
+        )
+        context_queries.append(
+          {
+            "tag": paper_tag_query,
+            "query": direction,
+            "logic_cn": "用户研究方向",
+            "query_track": "core",
+            "recommend_mix": copy.deepcopy(recommend_mix),
+            "core_context": core_context,
+          }
+        )
+
     for keyword_rule in profile.get("keywords") or []:
+      if not _track_enabled(recommend_mix, "inspiration"):
+        continue
       normalized = _normalize_keyword_entry(keyword_rule)
       if not normalized:
         continue
@@ -407,6 +520,9 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "boolean_expr": "",
           "logic_cn": logic_cn,
           "source": source,
+          "query_track": "inspiration",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
           "or_soft_weight": OR_SOFT_WEIGHT,
         }
       )
@@ -419,20 +535,37 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "query_text": raw_query,
           "logic_cn": logic_cn,
           "source": source,
+          "query_track": "inspiration",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
           "embedding_cache": copy.deepcopy(normalized.get("embedding_cache")) if isinstance(normalized.get("embedding_cache"), dict) else None,
           "cache_ref": copy.deepcopy(normalized.get("_cache_ref")) if isinstance(normalized.get("_cache_ref"), dict) else None,
         }
       )
-      context_keywords.append({"tag": paper_tag_keyword, "keyword": raw_text, "logic_cn": logic_cn})
+      context_keywords.append(
+        {
+          "tag": paper_tag_keyword,
+          "keyword": raw_text,
+          "logic_cn": logic_cn,
+          "query_track": "inspiration",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
+        }
+      )
       context_queries.append(
         {
           "tag": paper_tag_query,
           "query": raw_query,
           "logic_cn": logic_cn,
+          "query_track": "inspiration",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
         }
       )
 
     for intent_query in profile.get("intent_queries") or []:
+      if not _track_enabled(recommend_mix, "core"):
+        continue
       normalized_intent = _normalize_intent_query_entry(intent_query)
       if not normalized_intent:
         continue
@@ -457,6 +590,9 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "boolean_expr": "",
           "logic_cn": "",
           "source": source,
+          "query_track": "core",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
           "or_soft_weight": OR_SOFT_WEIGHT,
         }
       )
@@ -469,6 +605,9 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "query_text": raw_query,
           "logic_cn": "",
           "source": source,
+          "query_track": "core",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
           "embedding_cache": copy.deepcopy(normalized_intent.get("embedding_cache")) if isinstance(normalized_intent.get("embedding_cache"), dict) else None,
           "cache_ref": copy.deepcopy(normalized_intent.get("_cache_ref")) if isinstance(normalized_intent.get("_cache_ref"), dict) else None,
         }
@@ -478,6 +617,9 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "tag": intent_query_tag,
           "query": raw_query,
           "logic_cn": "",
+          "query_track": "core",
+          "recommend_mix": copy.deepcopy(recommend_mix),
+          "core_context": core_context,
         }
       )
 
@@ -503,8 +645,10 @@ def build_pipeline_inputs(config: Dict[str, Any]) -> Dict[str, Any]:
   stage = get_migration_stage(cfg)
   has_profiles = isinstance(subs.get("intent_profiles"), list) and bool(subs.get("intent_profiles"))
   known_sources = list_known_source_keys(cfg)
+  reader_profile = cfg.get("reader_profile") if isinstance(cfg.get("reader_profile"), dict) else {}
+  reader_research_directions = _normalize_research_direction_list((reader_profile or {}).get("research_directions") or [])
 
-  profile_plan = _build_from_profiles(subs, known_sources) if has_profiles else {}
+  profile_plan = _build_from_profiles(subs, known_sources, reader_research_directions) if has_profiles else {}
   plan: Dict[str, Any]
   source = "legacy"
   fallback_used = False
@@ -561,3 +705,17 @@ def get_profile_daily_paper_limits(config: Dict[str, Any]) -> Dict[str, Dict[str
       "quick": _as_positive_int(profile.get("quick_daily_paper_limit"), DEFAULT_DAILY_SECTION_PAPER_LIMIT),
     }
   return limits
+
+
+def get_profile_recommend_mix(config: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
+  plan = build_pipeline_inputs(config or {})
+  active_tags = {_norm_text(tag).lower() for tag in (plan.get("tags") or []) if _norm_text(tag)}
+  mixes: Dict[str, Dict[str, int]] = {}
+  for profile in plan.get("profiles") or []:
+    if not isinstance(profile, dict):
+      continue
+    tag = _norm_text(profile.get("tag") or "")
+    if not tag or tag.lower() not in active_tags:
+      continue
+    mixes[tag] = normalize_recommend_mix(profile.get("recommend_mix"))
+  return mixes

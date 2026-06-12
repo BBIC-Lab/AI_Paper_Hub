@@ -9,6 +9,7 @@ window.SubscriptionsManager = (function () {
   const MAX_INTENT_QUERIES_PER_PROFILE = 4;
   const MAX_RESEARCH_DIRECTIONS = 8;
   const DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10;
+  const DEFAULT_RECOMMEND_MIX = { core_ratio: 2, inspiration_ratio: 3 };
   const DEFAULT_DAILY_RECALL_WINDOW_DAYS = 5;
   const DEFAULT_CARRYOVER_WINDOW_DAYS = 7;
   const LONG_WINDOW_WARNING_THRESHOLD_DAYS = 7;
@@ -619,6 +620,27 @@ window.SubscriptionsManager = (function () {
     };
   };
 
+  const normalizeRecommendMix = (value) => {
+    const raw = value && typeof value === 'object' ? value : {};
+    const core = Number.parseInt(raw.core_ratio, 10);
+    const inspiration = Number.parseInt(raw.inspiration_ratio, 10);
+    const next = {
+      core_ratio: Number.isFinite(core) && core >= 0 ? core : DEFAULT_RECOMMEND_MIX.core_ratio,
+      inspiration_ratio:
+        Number.isFinite(inspiration) && inspiration >= 0
+          ? inspiration
+          : DEFAULT_RECOMMEND_MIX.inspiration_ratio,
+    };
+    if (next.core_ratio <= 0 && next.inspiration_ratio <= 0) {
+      return { ...DEFAULT_RECOMMEND_MIX };
+    }
+    return next;
+  };
+
+  const resolveRecommendMix = (profile) => normalizeRecommendMix(
+    profile && typeof profile === 'object' ? profile.recommend_mix : {},
+  );
+
   const mergeDefinedFields = (base, override) => {
     const next = { ...(isPlainObject(base) ? base : {}) };
     if (!isPlainObject(override)) return next;
@@ -785,16 +807,33 @@ window.SubscriptionsManager = (function () {
   const getFallbackResearchDirections = (config) => {
     const subs = isPlainObject(config && config.subscriptions) ? config.subscriptions : {};
     const profiles = Array.isArray(subs.intent_profiles) ? subs.intent_profiles : [];
-    const raw = [];
+    const intentRaw = [];
+    const keywordRaw = [];
     profiles.forEach((profile) => {
       if (!isPlainObject(profile)) return;
       if (profile.enabled === false || profile.paused === true) return;
+      (Array.isArray(profile.intent_queries) ? profile.intent_queries : []).forEach((item) => {
+        const normalized = normalizeIntentQueryItem(item);
+        if (normalized && normalized.enabled !== false && normalized.query) intentRaw.push(normalized.query);
+      });
       (Array.isArray(profile.keywords) ? profile.keywords : []).forEach((item) => {
         const normalized = normalizeKeywordItem(item);
-        if (normalized && normalized.keyword) raw.push(normalized.keyword);
+        if (normalized && normalized.keyword) keywordRaw.push(normalized.keyword);
       });
     });
-    return normalizeResearchDirections(raw);
+    return normalizeResearchDirections(intentRaw.length ? intentRaw : keywordRaw);
+  };
+
+  const profilesHaveIntentQueries = (config) => {
+    const subs = isPlainObject(config && config.subscriptions) ? config.subscriptions : {};
+    const profiles = Array.isArray(subs.intent_profiles) ? subs.intent_profiles : [];
+    return profiles.some((profile) => {
+      if (!isPlainObject(profile) || profile.enabled === false || profile.paused === true) return false;
+      return (Array.isArray(profile.intent_queries) ? profile.intent_queries : []).some((item) => {
+        const normalized = normalizeIntentQueryItem(item);
+        return normalized && normalized.enabled !== false && normalized.query;
+      });
+    });
   };
 
   const resolveResearchDirections = (config) => {
@@ -802,7 +841,11 @@ window.SubscriptionsManager = (function () {
     if (configured.length) {
       return { directions: configured, source: 'configured' };
     }
-    return { directions: getFallbackResearchDirections(config), source: 'fallback' };
+    const fallback = getFallbackResearchDirections(config);
+    const source = fallback.length
+      ? (profilesHaveIntentQueries(config) ? 'intent_queries' : 'keywords')
+      : 'empty';
+    return { directions: fallback, source };
   };
 
   const normalizeReaderProfile = (config) => {
@@ -1812,6 +1855,7 @@ window.SubscriptionsManager = (function () {
         const fallbackToArxiv = !Object.prototype.hasOwnProperty.call(p, 'paper_sources');
         const paperSources = normalizePaperSources(p.paper_sources, { fallbackToArxiv });
         const dailyPaperLimits = resolveDailyPaperLimits(p);
+        const recommendMix = resolveRecommendMix(p);
         const keywordRules = (Array.isArray(p.keywords) ? p.keywords : []).map(normalizeKeywordItem).filter(Boolean);
         const normalizedKeywords = dedupeKeywords(keywordRules);
         const normalizedIntentQueries = normalizeIntentQueries(p.intent_queries);
@@ -1826,6 +1870,7 @@ window.SubscriptionsManager = (function () {
           paper_sources: paperSources,
           deep_daily_paper_limit: dailyPaperLimits.deep,
           quick_daily_paper_limit: dailyPaperLimits.quick,
+          recommend_mix: recommendMix,
           keywords: normalizedKeywords,
           intent_queries: normalizedIntentQueries,
           updated_at: normalizeText(p.updated_at) || new Date().toISOString(),
@@ -3464,6 +3509,8 @@ window.SubscriptionsManager = (function () {
       getWindowWarningText: (value) => getWindowWarningText(value),
       normalizeDailyReports: (value) => normalizeDailyReports(cloneDeep(value || {})),
       resolveDailyReports: (config) => resolveDailyReports(cloneDeep(config || {})),
+      normalizeRecommendMix: (value) => normalizeRecommendMix(cloneDeep(value || {})),
+      resolveRecommendMix: (profile) => resolveRecommendMix(cloneDeep(profile || {})),
       buildEmailWorkflowCron: (time, timezone) => buildEmailWorkflowCron(time, timezone),
       normalizeEmbeddingProfile: (value) => normalizeEmbeddingProfile(value),
       normalizeEmbeddingProvider: (value) => normalizeEmbeddingProvider(value),

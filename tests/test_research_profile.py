@@ -28,13 +28,16 @@ def test_resolve_research_directions_prefers_configured_values():
     assert context["directions"] == ["causal discovery", "symbolic regression"]
 
 
-def test_fallback_research_directions_uses_enabled_subscription_keywords():
+def test_fallback_research_directions_prefers_intent_queries_then_keywords():
     config = {
         "reader_profile": {"research_directions": []},
         "subscriptions": {
             "intent_profiles": [
                 {
                     "enabled": True,
+                    "intent_queries": [
+                        {"query": "intent level research need"},
+                    ],
                     "keywords": [
                         {"keyword": "symbolic regression"},
                         {"keyword": "equation discovery"},
@@ -53,7 +56,29 @@ def test_fallback_research_directions_uses_enabled_subscription_keywords():
     }
 
     assert fallback_research_directions_from_subscriptions(config) == [
+        "intent level research need",
+    ]
+    assert resolve_research_directions(config)["source"] == "intent_queries"
+
+
+def test_fallback_research_directions_uses_keywords_when_no_intent_queries():
+    config = {
+        "reader_profile": {"research_directions": []},
+        "subscriptions": {
+            "intent_profiles": [
+                {
+                    "enabled": True,
+                    "keywords": [
+                        {"keyword": "symbolic regression"},
+                        {"keyword": "equation discovery"},
+                    ],
+                },
+            ],
+        },
+    }
+
+    assert fallback_research_directions_from_subscriptions(config) == [
         "symbolic regression",
         "equation discovery",
     ]
-    assert resolve_research_directions(config)["source"] == "fallback"
+    assert resolve_research_directions(config)["source"] == "keywords"

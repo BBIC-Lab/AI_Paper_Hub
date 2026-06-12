@@ -4,7 +4,6 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
-import random
 import re
 import time
 from datetime import datetime, timezone
@@ -30,6 +29,10 @@ CONFIG_FILE = str(core_paths.config_path(ROOT_DIR))
 DEFAULT_FILTER_MODEL = os.getenv("DPR_LLM_FILTER_MODEL") or os.getenv("DPR_LLM_MODEL") or ""
 DEFAULT_FILTER_CONCURRENCY = 4
 MAX_FILTER_RETRIES = 3
+DEFAULT_RECOMMEND_MIX = {"core_ratio": 2, "inspiration_ratio": 3}
+TRACK_CORE = "core"
+TRACK_INSPIRATION = "inspiration"
+TRACK_BRIDGE = "bridge"
 
 
 def log(message: str) -> None:
@@ -86,6 +89,40 @@ def _as_bool(value: Any, default: bool = True) -> bool:
     if lowered in {"1", "true", "yes", "on"}:
         return True
     return default
+
+
+def _as_nonnegative_int(value: Any, default: int) -> int:
+    try:
+        parsed = int(value)
+    except Exception:
+        return default
+    return parsed if parsed >= 0 else default
+
+
+def normalize_recommend_mix(value: Any) -> Dict[str, int]:
+    raw = value if isinstance(value, dict) else {}
+    core = _as_nonnegative_int(raw.get("core_ratio"), DEFAULT_RECOMMEND_MIX["core_ratio"])
+    inspiration = _as_nonnegative_int(raw.get("inspiration_ratio"), DEFAULT_RECOMMEND_MIX["inspiration_ratio"])
+    if core <= 0 and inspiration <= 0:
+        return dict(DEFAULT_RECOMMEND_MIX)
+    return {"core_ratio": core, "inspiration_ratio": inspiration}
+
+
+def normalize_relevance_track(value: Any, default: str = TRACK_CORE) -> str:
+    text = _norm_text(value).lower()
+    if text in {TRACK_CORE, TRACK_INSPIRATION, TRACK_BRIDGE}:
+        return text
+    return default
+
+
+def query_track_enabled(item: Dict[str, Any]) -> bool:
+    track = normalize_relevance_track(item.get("query_track"), TRACK_CORE)
+    mix = normalize_recommend_mix(item.get("recommend_mix"))
+    if track == TRACK_CORE:
+        return int(mix.get("core_ratio") or 0) > 0
+    if track == TRACK_INSPIRATION:
+        return int(mix.get("inspiration_ratio") or 0) > 0
+    return int(mix.get("core_ratio") or 0) > 0 and int(mix.get("inspiration_ratio") or 0) > 0
 
 
 def _unique_keep_order(items: List[str]) -> List[str]:
@@ -183,6 +220,9 @@ def _build_profile_composite_requirement(
 ) -> Dict[str, str] | None:
     if not isinstance(profile, dict) or not _as_bool(profile.get("enabled"), True):
         return None
+    recommend_mix = normalize_recommend_mix(profile.get("recommend_mix"))
+    if int(recommend_mix.get("core_ratio") or 0) <= 0 or int(recommend_mix.get("inspiration_ratio") or 0) <= 0:
+        return None
 
     clauses = _collect_profile_composite_clauses(profile)
     if len(clauses) < 2:
@@ -206,6 +246,8 @@ def _build_profile_composite_requirement(
         "query": composite_query,
         "tag": composite_tag,
         "kind": "composite",
+        "query_track": TRACK_BRIDGE,
+        "recommend_mix": recommend_mix,
         "description_en": (
             f"Find papers central to the combined {focus_label} theme. "
             f"Consider these signals together: {'; '.join(clauses[:8])}"
@@ -227,6 +269,8 @@ def build_user_requirements(
 
     pipeline_inputs = build_pipeline_inputs(config or {})
     for item in pipeline_inputs.get("context_queries") or []:
+        if isinstance(item, dict) and not query_track_enabled(item):
+            continue
         text = (item.get("query") or "").strip()
         if not text:
             continue
@@ -245,6 +289,9 @@ def build_user_requirements(
                 "query": text,
                 "tag": tag,
                 "kind": "direct",
+                "query_track": normalize_relevance_track(item.get("query_track"), TRACK_CORE),
+                "recommend_mix": normalize_recommend_mix(item.get("recommend_mix")),
+                "core_context": _norm_text(item.get("core_context")),
                 "description_en": f"Find papers relevant to this user requirement: {text}",
             }
         )
@@ -258,6 +305,8 @@ def build_user_requirements(
 
     if not requirements:
         for q in fallback_queries:
+            if isinstance(q, dict) and not query_track_enabled(q):
+                continue
             q_type = str(q.get("type") or "").strip().lower()
             if q_type and q_type not in {"llm_query", "intent_query"}:
                 continue
@@ -279,6 +328,9 @@ def build_user_requirements(
                     "query": text,
                     "tag": tag,
                     "kind": "fallback",
+                    "query_track": normalize_relevance_track(q.get("query_track"), TRACK_CORE),
+                    "recommend_mix": normalize_recommend_mix(q.get("recommend_mix")),
+                    "core_context": _norm_text(q.get("core_context")),
                     "description_en": f"Find papers relevant to this user requirement: {text}",
                 }
             )
@@ -335,6 +387,11 @@ def call_filter(
                         "tldr_en": {"type": "string"},
                         "tldr_cn": {"type": "string"},
                         "score": {"type": "number"},
+                        "core_relevance_score": {"type": "number"},
+                        "inspiration_score": {"type": "number"},
+                        "relevance_track": {"type": "string", "enum": ["core", "inspiration", "bridge"]},
+                        "track_evidence_en": {"type": "string"},
+                        "track_evidence_cn": {"type": "string"},
                     },
                     "required": [
                         "id",
@@ -344,6 +401,11 @@ def call_filter(
                         "tldr_en",
                         "tldr_cn",
                         "score",
+                        "core_relevance_score",
+                        "inspiration_score",
+                        "relevance_track",
+                        "track_evidence_en",
+                        "track_evidence_cn",
                     ],
                     "additionalProperties": False,
                 },
@@ -355,53 +417,67 @@ def call_filter(
 
     system_prompt = (
         "You are an intelligent Research Relevance Evaluator. "
-        "Score papers (0-10) based purely on relevance to ANY item in user's requirement list. "
+        "Score papers (0-10) on two parallel lanes: core relevance and general inspiration. "
         "Prioritize conceptual/method relevance over exact term overlap. "
         "Use the rubric and return JSON only."
     )
     req_lines = []
+    enabled_tracks = set()
     for idx, req in enumerate(all_requirements, start=1):
         desc = (req.get("description_en") or req.get("query") or "").strip()
         req_tag = (req.get("tag") or "").strip()
         req_kind = (req.get("kind") or "").strip()
+        req_track = normalize_relevance_track(req.get("query_track"), TRACK_CORE)
+        enabled_tracks.add(req_track)
         if desc:
+            track_text = f"track={req_track}"
             if req_tag and req_kind:
-                req_lines.append(f"{idx}. {desc} [tag={req_tag}; type={req_kind}]")
+                req_lines.append(f"{idx}. {desc} [tag={req_tag}; type={req_kind}; {track_text}]")
             elif req_tag:
-                req_lines.append(f"{idx}. {desc} [tag={req_tag}]")
+                req_lines.append(f"{idx}. {desc} [tag={req_tag}; {track_text}]")
             else:
-                req_lines.append(f"{idx}. {desc}")
+                req_lines.append(f"{idx}. {desc} [{track_text}]")
+    enabled_track_text = ", ".join(sorted(enabled_tracks)) or "core"
     user_prompt = (
         "User requirements list:\n"
         f"{chr(10).join(req_lines)}\n\n"
+        f"Enabled relevance tracks: {enabled_track_text}.\n"
+        "Track definitions:\n"
+        "- core: the paper is strongly related to the user's configured research direction or intent query.\n"
+        "- inspiration: the paper may be a generally useful method/tool/idea that can inspire the user's research; it does not need to belong to the core domain.\n"
+        "- bridge: the paper is both strongly related to the core direction and methodologically inspiring.\n\n"
         "SCORING RUBRIC:\n"
-        "9-10: Direct Requirement Match (same problem target and same evaluation intent)\n"
-        "8-9: Strong Method Match (different wording but equivalent objective/technical core)\n"
-        "6-8: Methodological Bridge (transferable method/approach likely useful for requirement)\n"
+        "9-10: Directly excellent for an enabled track\n"
+        "8-9: Strong semantic/method match for an enabled track\n"
+        "6-8: Transferable method or bridge likely useful for the requirement\n"
         "3-4: Tangential (same broad discipline, weak link)\n"
         "0-2: Noise (irrelevant)\n\n"
         "GUARDRAILS:\n"
         "1) Beware of Polysemy: If a keyword is ambiguous, only match the sense that aligns with the user's intent.\n"
         "2) Reject Literal Matching: Do NOT score high just because the same word appears.\n"
         "3) Reward Conceptual Equivalence: If wording differs but goals/methods are equivalent, score as high relevance.\n"
-        "4) Reward Enabling Methods: If a paper provides a generally applicable method/tool that directly supports requirement tasks, do not under-score it.\n"
+        "4) Reward Enabling Methods: If a paper provides a generally applicable method/tool that can inspire or support the research direction, give a high inspiration_score when warranted.\n"
         "5) Be strict only when mismatch is substantive (different task objective, incompatible setting, or no reusable method).\n"
         "6) Some requirements may be profile-level composite requirements built from multiple keywords. "
         "Use them when a paper is clearly central to the overall theme but does not fit a narrower requirement cleanly.\n"
-        "7) Do not over-score generic LLM-for-science or infrastructure papers under a composite requirement unless they materially advance the core task.\n\n"
+        "7) Do not cap general-method papers merely because they are outside the core domain; judge inspiration value independently.\n"
+        "8) If a track is not enabled, set its corresponding score to 0 and do not choose it as relevance_track.\n\n"
         "Papers:\n"
         f"{json.dumps(docs, ensure_ascii=False)}\n\n"
         "Output JSON format example:\n"
-        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, \"evidence_en\": \"short English phrase\", \"evidence_cn\": \"简短中文短语\", \"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"一句话 TLDR\", \"score\": 7}]}\n\n"
+        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, \"evidence_en\": \"short English phrase\", \"evidence_cn\": \"简短中文短语\", \"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"一句话 TLDR\", \"score\": 7, \"core_relevance_score\": 6, \"inspiration_score\": 8, \"relevance_track\": \"inspiration\", \"track_evidence_en\": \"transferable method\", \"track_evidence_cn\": \"方法可迁移\"}]}\n\n"
         "Requirement: You MUST return exactly one result for every input paper. "
         "The results length must match the papers length, and every input id must appear once.\n\n"
         "Output must be a single-line JSON string. "
         "Do not include line breaks inside any string fields. "
         "Avoid double quotes inside evidence text fields.\n\n"
         "Task: Evaluate papers against the WHOLE requirement list. "
-        "If a paper matches any one point, it can get a high score. "
+        "If a paper matches any enabled lane, it can get a high score. "
         "Set matched_requirement_index to the best-matched requirement (1-based). "
         "Use semantic interpretation, not only lexical overlap, to decide relevance and score tier. "
+        "Set core_relevance_score and inspiration_score independently on a 0-10 scale. "
+        "Set score to the highest valid enabled-track score. "
+        "Set relevance_track to core, inspiration, or bridge; use bridge only when both core_relevance_score and inspiration_score are high. "
         "Evidence must be provided in both languages: "
         "evidence_en (English) and evidence_cn (Chinese). "
         "They should be short phrases linking the paper to the matched requirement; "
@@ -409,9 +485,10 @@ def call_filter(
         "Also generate TLDR in both languages: tldr_en and tldr_cn. "
         "TLDR should be one sentence summarizing what the paper does and why it matters. "
         "Keep TLDR concise: <= 120 characters in English and <= 60 Chinese characters. "
-        "Then give a score (0-10). "
+        "Then give all scores (0-10). "
         "If unrelated, use evidence_en=\"not relevant\", evidence_cn=\"不相关\", "
-        "tldr_en=\"not relevant\", tldr_cn=\"不相关\", score 0, matched_requirement_index=0."
+        "tldr_en=\"not relevant\", tldr_cn=\"不相关\", score 0, core_relevance_score 0, inspiration_score 0, "
+        "relevance_track=\"core\", track_evidence_en=\"not relevant\", track_evidence_cn=\"不相关\", matched_requirement_index=0."
     )
     if retry_note:
         user_prompt += f"\n\nRetry correction note:\n{retry_note}"
@@ -483,7 +560,27 @@ def _normalize_filter_result_item(item: Dict[str, Any]) -> Dict[str, Any]:
     legacy = _norm_text(item.get("evidence"))
     evidence_en = _norm_text(item.get("evidence_en") or legacy)
     evidence_cn = _norm_text(item.get("evidence_cn") or legacy or evidence_en)
-    score = _coerce_score(item.get("score"))
+    legacy_score = _coerce_score(item.get("score"))
+    core_score = _coerce_score(item.get("core_relevance_score"))
+    inspiration_score = _coerce_score(item.get("inspiration_score"))
+    has_dual_scores = "core_relevance_score" in item or "inspiration_score" in item
+    if not has_dual_scores:
+        track_hint = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+        if track_hint == TRACK_INSPIRATION:
+            inspiration_score = legacy_score
+        else:
+            core_score = legacy_score
+    score = max(legacy_score, core_score, inspiration_score)
+    if "score" in item:
+        score = max(legacy_score, core_score, inspiration_score)
+    track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+    if has_dual_scores:
+        if core_score >= 8.0 and inspiration_score >= 8.0:
+            track = TRACK_BRIDGE
+        elif inspiration_score > core_score:
+            track = TRACK_INSPIRATION
+        else:
+            track = TRACK_CORE
     tldr_en = _norm_text(item.get("tldr_en")) or ("not relevant" if score <= 0 else evidence_en)
     tldr_cn = _norm_text(item.get("tldr_cn")) or ("不相关" if score <= 0 else (evidence_cn or tldr_en))
     return {
@@ -494,6 +591,11 @@ def _normalize_filter_result_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "tldr_en": tldr_en,
         "tldr_cn": tldr_cn,
         "score": score,
+        "core_relevance_score": core_score,
+        "inspiration_score": inspiration_score,
+        "relevance_track": track,
+        "track_evidence_en": _norm_text(item.get("track_evidence_en") or evidence_en),
+        "track_evidence_cn": _norm_text(item.get("track_evidence_cn") or evidence_cn),
     }
 
 
@@ -636,8 +738,14 @@ def merge_filter_result(
         return
 
     score = _coerce_score(item.get("score"))
+    core_score = _coerce_score(item.get("core_relevance_score"))
+    inspiration_score = _coerce_score(item.get("inspiration_score"))
+    if "core_relevance_score" in item or "inspiration_score" in item:
+        score = max(score, core_score, inspiration_score)
     evidence_en = _norm_text(item.get("evidence_en"))
     evidence_cn = _norm_text(item.get("evidence_cn"))
+    track_evidence_en = _norm_text(item.get("track_evidence_en") or evidence_en)
+    track_evidence_cn = _norm_text(item.get("track_evidence_cn") or evidence_cn)
     tldr_en = _norm_text(item.get("tldr_en"))
     tldr_cn = _norm_text(item.get("tldr_cn"))
     legacy = _norm_text(item.get("evidence"))
@@ -655,12 +763,25 @@ def merge_filter_result(
     matched_tag = _norm_text((matched_req or {}).get("tag"))
     matched_id = _norm_text((matched_req or {}).get("id"))
     matched_query = _norm_text((matched_req or {}).get("query"))
+    matched_track = normalize_relevance_track((matched_req or {}).get("query_track"), TRACK_CORE)
+    relevance_track = normalize_relevance_track(item.get("relevance_track"), matched_track)
+    if core_score >= 8.0 and inspiration_score >= 8.0:
+        relevance_track = TRACK_BRIDGE
+    elif inspiration_score > core_score and inspiration_score >= score:
+        relevance_track = TRACK_INSPIRATION
+    elif core_score > 0 or inspiration_score > 0:
+        relevance_track = TRACK_CORE if core_score >= inspiration_score else TRACK_INSPIRATION
 
     prev = merged.get(pid)
     if (prev is None) or (score > float(prev.get("score", 0))):
         merged[pid] = {
             "paper_id": pid,
             "score": score,
+            "core_relevance_score": core_score,
+            "inspiration_score": inspiration_score,
+            "relevance_track": relevance_track,
+            "track_evidence_en": track_evidence_en,
+            "track_evidence_cn": track_evidence_cn,
             "evidence_en": evidence_en,
             "evidence_cn": evidence_cn,
             "canonical_evidence": evidence_cn or evidence_en or legacy,
@@ -769,7 +890,6 @@ def process_file(
         group_end()
         return
 
-    random.shuffle(docs)
     batches = chunk_list(docs, batch_size)
     log(
         f"[INFO] global candidates={len(docs)} batches={len(batches)} "

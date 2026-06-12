@@ -25,7 +25,7 @@ except Exception:  # pragma: no cover - package import fallback
   from src.core import artifacts as core_artifacts
   from src.core import paths as core_paths
 
-from filter import E5_QUERY_PREFIX, EmbeddingCoarseFilter, encode_queries
+from filter import EmbeddingCoarseFilter, decorate_passage_text, decorate_query_text, encode_queries
 try:
   from source_backend_router import group_queries_by_source, merge_pipeline_results
   from source_config import ARXIV_SOURCE_KEY, get_source_backend, load_config_with_source_migration, normalize_source_list
@@ -52,7 +52,7 @@ DATE_RE_DAY = re.compile(r"^\d{8}$")
 DATE_RE_RANGE = re.compile(r"^\d{8}-\d{8}$")
 SUPABASE_TIME_FIELDS = ("published",)
 SUPABASE_VECTOR_SHARD_DAYS = 7
-EMBEDDING_CACHE_VERSION = 1
+EMBEDDING_CACHE_VERSION = 2
 EMBEDDING_CACHE_FIELD = "embedding_cache"
 LEGACY_EMBEDDING_CACHE_KEY = "embedding_cache"
 
@@ -184,15 +184,16 @@ class Paper:
 
   @property
   def text_for_embedding(self) -> str:
-    """用于向量化的文本：E5 passage 前缀 + 标题/摘要"""
+    """用于向量化的文本：按 embedding 模型族自动决定 passage 前缀。"""
     title = (self.title or "").strip()
     abstract = (self.abstract or "").strip()
+    model_name = (self.embedding_model or os.getenv("DPR_EMBED_MODEL") or "").strip()
     if title and abstract:
-      return f"passage: Title: {title}\n\nAbstract: {abstract}"
+      return decorate_passage_text(f"Title: {title}\n\nAbstract: {abstract}", model_name)
     if title:
-      return f"passage: Title: {title}"
+      return decorate_passage_text(f"Title: {title}", model_name)
     if abstract:
-      return f"passage: Abstract: {abstract}"
+      return decorate_passage_text(f"Abstract: {abstract}", model_name)
     return ""
 
   def to_dict(self) -> Dict[str, Any]:
@@ -232,15 +233,15 @@ def load_config() -> dict:
     return {}
 
 
-def build_prefixed_query_text(text: str) -> str:
+def build_prefixed_query_text(text: str, model_name: str | None = None) -> str:
   value = str(text or "").strip()
   if not value:
     return ""
-  return f"{E5_QUERY_PREFIX}{value}"
+  return decorate_query_text(value, model_name)
 
 
 def build_query_embedding_hash(model_name: str, query_text: str) -> str:
-  payload = f"v1|{str(model_name or '').strip().lower()}|{build_prefixed_query_text(query_text)}"
+  payload = f"v2|{str(model_name or '').strip().lower()}|{build_prefixed_query_text(query_text, model_name)}"
   return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -307,7 +308,7 @@ def _build_query_cache_payload(model_name: str, query_text: str, vec: np.ndarray
     "hash": cache_hash,
     "model": model_name,
     "query_text": query_text,
-    "prefixed_text": build_prefixed_query_text(query_text),
+    "prefixed_text": build_prefixed_query_text(query_text, model_name),
     "embedding_json": json.dumps(rounded, ensure_ascii=False, separators=(",", ":")),
     "updated_at": now_iso,
   }
@@ -360,7 +361,7 @@ def _ensure_query_cache_target(config: Dict[str, Any], cache_ref: Dict[str, Any]
 
 
 def _cache_entry_matches_query(entry: Dict[str, Any], model_name: str, query_text: str) -> bool:
-  return _parse_cached_query_embedding(entry, expected_model=model_name, expected_text=build_prefixed_query_text(query_text)) is not None
+  return _parse_cached_query_embedding(entry, expected_model=model_name, expected_text=build_prefixed_query_text(query_text, model_name)) is not None
 
 
 def hydrate_query_embeddings_from_config(
@@ -386,7 +387,7 @@ def hydrate_query_embeddings_from_config(
     if not q_text:
       continue
     cache_hash = build_query_embedding_hash(model_name, q_text)
-    prefixed_text = build_prefixed_query_text(q_text)
+    prefixed_text = build_prefixed_query_text(q_text, model_name)
     q["query_embedding_hash"] = cache_hash
     q["prefixed_query_text"] = prefixed_text
 
@@ -420,6 +421,7 @@ def hydrate_query_embeddings_from_config(
       miss_texts,
       batch_size=max(int(batch_size or 1), 1),
       max_length=max_length,
+      model_name=model_name,
     )
     now_iso = datetime.now(timezone.utc).isoformat()
     for idx, cache_hash in enumerate(miss_hashes):
@@ -924,6 +926,7 @@ def rank_papers_for_queries(
       q_emb = encode_queries(
         model,
         [q_text],
+        model_name=getattr(model, "_dpr_model_name", "") or getattr(model, "model_name", ""),
       )[0]  # 形状为 (D,)
 
     # 相似度 = 归一化向量的点积
@@ -952,6 +955,9 @@ def rank_papers_for_queries(
           "paper_tag": q.get("paper_tag"),
           "paper_sources": q.get("paper_sources") or [q.get("active_source") or ARXIV_SOURCE_KEY],
           "query_text": q_text,
+          "query_track": q.get("query_track") or "",
+          "recommend_mix": q.get("recommend_mix") or {},
+          "core_context": q.get("core_context") or "",
           # sim_scores 为字典：paper_id -> { score, rank }
           "sim_scores": sim_scores,
         }
@@ -1004,7 +1010,11 @@ def rank_papers_for_queries_via_supabase(
   if missing_indices:
     if model is None:
       raise RuntimeError("缺少 query embedding 且未提供可编码模型。")
-    encoded_missing = encode_queries(model, missing_texts)
+    encoded_missing = encode_queries(
+      model,
+      missing_texts,
+      model_name=getattr(model, "_dpr_model_name", "") or getattr(model, "model_name", ""),
+    )
     for local_idx, query_idx in enumerate(missing_indices):
       q_embs[query_idx] = np.asarray(encoded_missing[local_idx], dtype=np.float32)
 
@@ -1101,6 +1111,9 @@ def rank_papers_for_queries_via_supabase(
         "paper_tag": q.get("paper_tag"),
         "paper_sources": q.get("paper_sources") or [q.get("active_source") or ARXIV_SOURCE_KEY],
         "query_text": q_text,
+        "query_track": q.get("query_track") or "",
+        "recommend_mix": q.get("recommend_mix") or {},
+        "core_context": q.get("core_context") or "",
         "sim_scores": sim_scores,
       }
     )
@@ -1478,6 +1491,8 @@ def main() -> None:
           )
           group_end()
         else:
+          for paper in papers:
+            paper.embedding_model = args.model
           group_start(f"Step 2.2 - compute embeddings ({os.path.basename(input_path)})")
           coarse_result = filter_inst.filter(items=papers, queries=arxiv_queries)
           group_end()

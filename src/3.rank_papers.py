@@ -3,7 +3,6 @@
 
 import argparse
 import os
-import random
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -37,6 +36,10 @@ GLOBAL_POOL_GUARANTEED_MIN = 5
 GLOBAL_POOL_GUARANTEED_MAX = 20
 GLOBAL_POOL_RRF_MIN = 60
 GLOBAL_POOL_RRF_MAX = 300
+DEFAULT_RECOMMEND_MIX = {"core_ratio": 2, "inspiration_ratio": 3}
+TRACK_CORE = "core"
+TRACK_INSPIRATION = "inspiration"
+RERANK_PASS1_KEEP_PER_BATCH = 30
 
 
 def log(message: str) -> None:
@@ -193,6 +196,58 @@ def _clamp_int(value: float | int, min_value: int, max_value: int) -> int:
   return max(min_value, min(int(value), max_value))
 
 
+def _as_nonnegative_int(value: Any, default: int) -> int:
+  try:
+    parsed = int(value)
+  except Exception:
+    return default
+  return parsed if parsed >= 0 else default
+
+
+def normalize_recommend_mix(value: Any) -> Dict[str, int]:
+  raw = value if isinstance(value, dict) else {}
+  core = _as_nonnegative_int(raw.get("core_ratio"), DEFAULT_RECOMMEND_MIX["core_ratio"])
+  inspiration = _as_nonnegative_int(raw.get("inspiration_ratio"), DEFAULT_RECOMMEND_MIX["inspiration_ratio"])
+  if core <= 0 and inspiration <= 0:
+    return dict(DEFAULT_RECOMMEND_MIX)
+  return {"core_ratio": core, "inspiration_ratio": inspiration}
+
+
+def normalize_query_track(query: Dict[str, Any]) -> str:
+  raw = str(query.get("query_track") or "").strip().lower()
+  if raw in {TRACK_CORE, TRACK_INSPIRATION, "bridge"}:
+    return raw
+  q_type = str(query.get("type") or "").strip().lower()
+  if q_type in {"keyword"}:
+    return TRACK_INSPIRATION
+  return TRACK_CORE
+
+
+def query_track_enabled(query: Dict[str, Any]) -> bool:
+  mix = normalize_recommend_mix(query.get("recommend_mix"))
+  track = normalize_query_track(query)
+  if track == TRACK_CORE:
+    return int(mix.get("core_ratio") or 0) > 0
+  if track == TRACK_INSPIRATION:
+    return int(mix.get("inspiration_ratio") or 0) > 0
+  return int(mix.get("core_ratio") or 0) > 0 and int(mix.get("inspiration_ratio") or 0) > 0
+
+
+def build_track_rerank_query_text(query: Dict[str, Any]) -> str:
+  q_text = str(query.get("rewrite") or query.get("query_text") or "").strip()
+  if normalize_query_track(query) != TRACK_INSPIRATION:
+    return q_text
+  core_context = str(query.get("core_context") or "").strip()
+  if not core_context:
+    return q_text
+  # 通用启发通路：给 reranker 当前研究上下文，但不要求论文属于核心领域。
+  return (
+    f"Find generally useful methods or ideas that may inspire these research directions: "
+    f"{core_context}. Candidate method/query: {q_text}. "
+    "Do not require the paper itself to be in the core domain."
+  )
+
+
 def resolve_global_pool_budget(
   total_papers: int,
   intent_query_count: int,
@@ -228,6 +283,8 @@ def build_global_candidate_ids(
   *,
   guaranteed_per_lane: int,
   global_limit: int,
+  enabled_tracks: set[str] | None = None,
+  target_track: str | None = None,
 ) -> List[str]:
   """
   将所有 query lane 的候选论文合并成统一候选池。
@@ -242,6 +299,13 @@ def build_global_candidate_ids(
   guaranteed_ids: List[str] = []
 
   for q in queries or []:
+    q_track = normalize_query_track(q)
+    if target_track and q_track != target_track:
+      continue
+    if enabled_tracks is not None and q_track not in enabled_tracks:
+      continue
+    if not query_track_enabled(q):
+      continue
     top_ids = get_top_ids(q)
     if not top_ids:
       continue
@@ -301,6 +365,142 @@ def rrf_merge(scores: Dict[int, float], rank_idx: int, orig_idx: int) -> None:
   scores[orig_idx] = scores.get(orig_idx, 0.0) + 1.0 / (RRF_K + rank_idx)
 
 
+def _extract_rerank_results(response: Any) -> List[Dict[str, Any]]:
+  if isinstance(response, dict) and "output" in response:
+    results = response.get("output", {}).get("results", [])
+  elif isinstance(response, dict):
+    results = response.get("results", [])
+  else:
+    results = []
+  return [item for item in (results or []) if isinstance(item, dict)]
+
+
+def _rerank_score(item: Dict[str, Any]) -> float:
+  raw = item.get("relevance_score", item.get("score", 0.0))
+  try:
+    return float(raw)
+  except Exception:
+    return 0.0
+
+
+def _normalize_ranked_scores(items: List[Tuple[int, float]]) -> List[Tuple[int, float]]:
+  if not items:
+    return []
+  values = [score for _, score in items]
+  min_score = min(values)
+  max_score = max(values)
+  denom = max_score - min_score
+  if denom <= 0:
+    return [(idx, 1.0) for idx, _score in items]
+  return [(idx, (score - min_score) / denom) for idx, score in items]
+
+
+def rerank_documents_two_pass(
+  reranker: Any,
+  *,
+  query_text: str,
+  documents: List[str],
+  encoder: Any,
+  rerank_model: str,
+) -> List[Tuple[int, float]]:
+  docs_with_idx = list(enumerate(documents))
+  query_tokens = estimate_tokens(query_text, encoder)
+  batches = iter_batches(docs_with_idx, query_tokens, encoder)
+  if not batches:
+    return []
+
+  pass1: Dict[int, float] = {}
+  for batch_idx, (batch_indices, batch_docs) in enumerate(batches, 1):
+    log(f"[INFO] pass1 rerank batch {batch_idx}/{len(batches)} | docs={len(batch_docs)}")
+    response = reranker.rerank(
+      query=query_text,
+      documents=batch_docs,
+      top_n=len(batch_docs),
+      model=rerank_model,
+    )
+    ranked = sorted(
+      _extract_rerank_results(response),
+      key=lambda item: _rerank_score(item),
+      reverse=True,
+    )
+    keep_n = len(ranked) if len(batches) == 1 else min(len(ranked), RERANK_PASS1_KEEP_PER_BATCH)
+    for item in ranked[:keep_n]:
+      idx = int(item.get("index", -1))
+      if idx < 0 or idx >= len(batch_indices):
+        continue
+      orig_idx = batch_indices[idx]
+      pass1[orig_idx] = max(pass1.get(orig_idx, float("-inf")), _rerank_score(item))
+
+  if not pass1:
+    return []
+  if len(batches) == 1:
+    ranked_once = sorted(pass1.items(), key=lambda item: (-item[1], item[0]))
+    return _normalize_ranked_scores(ranked_once)
+
+  merged_indices = [
+    idx
+    for idx, _score in sorted(pass1.items(), key=lambda item: (-item[1], item[0]))
+  ]
+  merged_docs = [(idx, documents[idx]) for idx in merged_indices]
+  pass2_batches = iter_batches(merged_docs, query_tokens, encoder)
+  pass2_scores: Dict[int, float] = {}
+  for batch_idx, (batch_indices, batch_docs) in enumerate(pass2_batches, 1):
+    log(f"[INFO] pass2 rerank batch {batch_idx}/{len(pass2_batches)} | docs={len(batch_docs)}")
+    response = reranker.rerank(
+      query=query_text,
+      documents=batch_docs,
+      top_n=len(batch_docs),
+      model=rerank_model,
+    )
+    ranked = sorted(
+      _extract_rerank_results(response),
+      key=lambda item: _rerank_score(item),
+      reverse=True,
+    )
+    for rank_idx, item in enumerate(ranked, start=1):
+      idx = int(item.get("index", -1))
+      if idx < 0 or idx >= len(batch_indices):
+        continue
+      orig_idx = batch_indices[idx]
+      if len(pass2_batches) == 1:
+        pass2_scores[orig_idx] = _rerank_score(item)
+      else:
+        rrf_merge(pass2_scores, rank_idx, orig_idx)
+
+  ranked_twice = sorted(pass2_scores.items(), key=lambda item: (-item[1], item[0]))
+  return _normalize_ranked_scores(ranked_twice)
+
+
+def update_paper_rerank_metadata(
+  paper: Dict[str, Any],
+  *,
+  track: str,
+  score: float,
+  rank: int,
+  query_text: str,
+) -> None:
+  if not isinstance(paper, dict):
+    return
+  track_key = "rerank_core_score" if track == TRACK_CORE else "rerank_inspiration_score"
+  old_track_score = paper.get(track_key)
+  try:
+    old_track_value = float(old_track_score)
+  except Exception:
+    old_track_value = -1.0
+  if score > old_track_value:
+    paper[track_key] = float(score)
+
+  try:
+    old_best = float(paper.get("rerank_score"))
+  except Exception:
+    old_best = -1.0
+  if score > old_best:
+    paper["rerank_score"] = float(score)
+    paper["rerank_best_query"] = query_text
+    paper["rerank_track"] = track
+    paper["rerank_rank"] = int(rank)
+
+
 def process_file(
   reranker: Any | None,
   input_path: str,
@@ -315,14 +515,18 @@ def process_file(
     log(f"[WARN] 文件 {os.path.basename(input_path)} 中缺少 papers 或 queries，跳过。")
     return
 
-  # 仅使用语义查询（intent_query 或兼容旧的 llm_query）进行 rerank。
-  def _is_intent_rerank_query(q: Dict[str, Any]) -> bool:
+  # core/inspiration 双通路都可进入 rerank；比例为 0 的通路直接禁用。
+  def _is_rerank_query(q: Dict[str, Any]) -> bool:
     q_type = str(q.get("type") or "").strip().lower()
-    return q_type in {"intent_query", "llm_query"}
+    return q_type in {"intent_query", "llm_query", "keyword", "research_direction"}
 
-  queries = [q for q in all_queries if _is_intent_rerank_query(q)]
+  for q in all_queries:
+    if isinstance(q, dict) and _is_rerank_query(q) and not query_track_enabled(q):
+      q["ranked"] = []
+
+  queries = [q for q in all_queries if _is_rerank_query(q) and query_track_enabled(q)]
   if not queries:
-    log("[WARN] 当前输入中没有可用于 rerank 的意图查询，跳过 rerank。")
+    log("[WARN] 当前输入中没有启用的 core/inspiration rerank 查询，跳过 rerank。")
     # 保持输出结构一致，避免后续步骤读不到文件
     meta_generated_at = data.get("generated_at") or ""
     data["reranked_at"] = datetime.now(timezone.utc).isoformat()
@@ -335,12 +539,28 @@ def process_file(
     len(papers_list),
     len(queries),
   )
-  global_candidate_ids = build_global_candidate_ids(
-    all_queries,
-    guaranteed_per_lane=guaranteed_per_lane,
-    global_limit=global_rrf_top,
+  enabled_tracks = {
+    normalize_query_track(q)
+    for q in queries
+    if normalize_query_track(q) in {TRACK_CORE, TRACK_INSPIRATION}
+  }
+  candidate_ids_by_track: Dict[str, List[str]] = {}
+  for track in (TRACK_CORE, TRACK_INSPIRATION):
+    if track not in enabled_tracks:
+      candidate_ids_by_track[track] = []
+      continue
+    candidate_ids_by_track[track] = build_global_candidate_ids(
+      all_queries,
+      guaranteed_per_lane=guaranteed_per_lane,
+      global_limit=global_rrf_top,
+      enabled_tracks=enabled_tracks,
+      target_track=track,
+    )
+  global_candidate_ids = _unique_keep_order(
+    candidate_ids_by_track.get(TRACK_CORE, []) + candidate_ids_by_track.get(TRACK_INSPIRATION, [])
   )
   data["global_candidate_ids"] = global_candidate_ids
+  data["global_candidate_ids_by_track"] = candidate_ids_by_track
   data["global_pool_lane_top_k"] = lane_top_k
   data["global_pool_limit"] = global_rrf_top
   data["global_pool_guaranteed_per_lane"] = guaranteed_per_lane
@@ -358,7 +578,7 @@ def process_file(
       log("[INFO] 未配置 native rerank provider，使用 Step 2.3 的 sim_scores 生成 ranked。")
       for query in all_queries:
         if isinstance(query, dict):
-          query["ranked"] = build_ranked_from_sim_scores(query)
+          query["ranked"] = build_ranked_from_sim_scores(query) if query_track_enabled(query) else []
       meta_generated_at = data.get("generated_at") or ""
       data["reranked_at"] = datetime.now(timezone.utc).isoformat()
       data["generated_at"] = meta_generated_at
@@ -370,7 +590,7 @@ def process_file(
   encoder = build_token_encoder()
   group_start(f"Step 3 - rerank {os.path.basename(input_path)}")
   log(
-    f"[INFO] 开始 rerank：queries={len(queries)}（仅 intent/语义查询），papers={len(papers_list)}，"
+    f"[INFO] 开始 rerank：queries={len(queries)}（core/inspiration 双通路），papers={len(papers_list)}，"
     f"global_pool={len(global_candidate_ids)}（lane_top_k={lane_top_k}, "
     f"guaranteed_per_lane={guaranteed_per_lane}, global_top={global_rrf_top}），"
     f"batch_size={BATCH_SIZE}，"
@@ -378,85 +598,66 @@ def process_file(
   )
 
   for q_idx, q in enumerate(queries, start=1):
-    q_text = (q.get("rewrite") or q.get("query_text") or "").strip()
-    top_ids = list(global_candidate_ids)
+    q_text = build_track_rerank_query_text(q)
+    track = normalize_query_track(q)
+    top_ids = list(candidate_ids_by_track.get(track) or [])
     if not q_text or not top_ids:
       continue
 
-    group_start(f"Query {q_idx}/{len(queries)} tag={q.get('tag') or ''}")
+    group_start(f"Query {q_idx}/{len(queries)} track={track} tag={q.get('tag') or ''}")
     documents = build_documents(papers_by_id, top_ids)
-    docs_with_idx = list(enumerate(documents))
-    random.shuffle(docs_with_idx)
-
     query_tokens = estimate_tokens(q_text, encoder)
-    batches = iter_batches(docs_with_idx, query_tokens, encoder)
     log(
       f"[INFO] Query {q_idx}/{len(queries)} tag={q.get('tag') or ''} | candidates={len(top_ids)} "
-      f"| batches={len(batches)} | query_tokens≈{query_tokens}"
+      f"| track={track} | query_tokens≈{query_tokens}"
     )
 
-    rrf_scores: Dict[int, float] = {}
-
     try:
-      for batch_idx, (batch_indices, batch_docs) in enumerate(batches, 1):
-        log(
-          f"[INFO] 发送批次 {batch_idx}/{len(batches)} | docs={len(batch_docs)}"
-        )
-        response = reranker.rerank(
-          query=q_text,
-          documents=batch_docs,
-          top_n=len(batch_docs),
-          model=rerank_model,
-        )
-        if isinstance(response, dict) and "output" in response:
-          results = response.get("output", {}).get("results", [])
-        else:
-          results = response.get("results", [])
-
-        ranked = sorted(
-          results or [],
-          key=lambda x: x.get("relevance_score", x.get("score", 0.0)),
-          reverse=True,
-        )
-        for rank_idx, item in enumerate(ranked, start=1):
-          idx = int(item.get("index", -1))
-          if idx < 0 or idx >= len(batch_indices):
-            continue
-          orig_idx = batch_indices[idx]
-          rrf_merge(rrf_scores, rank_idx, orig_idx)
-
-      if not rrf_scores:
+      ranked_scores = rerank_documents_two_pass(
+        reranker,
+        query_text=q_text,
+        documents=documents,
+        encoder=encoder,
+        rerank_model=rerank_model,
+      )
+      if not ranked_scores:
         log("[WARN] 本次 query 未得到有效 rerank 结果，跳过。")
         continue
     finally:
       group_end()
 
-    if not rrf_scores:
+    if not ranked_scores:
       continue
 
-    sorted_items = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
+    sorted_items = sorted(ranked_scores, key=lambda x: (-x[1], x[0]))
     if top_n is not None:
       sorted_items = sorted_items[:top_n]
 
-    rrf_values = [v for _, v in sorted_items]
-    min_rrf = min(rrf_values)
-    max_rrf = max(rrf_values)
-    denom = max_rrf - min_rrf if max_rrf > min_rrf else 1.0
-
     ranked_for_query: List[Dict[str, Any]] = []
-    for idx, rrf_score in sorted_items:
-      norm_score = (rrf_score - min_rrf) / denom
+    for rank_idx, (idx, norm_score) in enumerate(sorted_items, start=1):
       paper_id = top_ids[idx]
+      update_paper_rerank_metadata(
+        papers_by_id.get(paper_id) or {},
+        track=track,
+        score=float(norm_score),
+        rank=rank_idx,
+        query_text=q_text,
+      )
       ranked_for_query.append(
         {
           "paper_id": paper_id,
-          "score": norm_score,
-          "star_rating": score_to_stars(norm_score),
+          "score": float(norm_score),
+          "star_rating": score_to_stars(float(norm_score)),
+          "query_track": track,
+          "rerank_track": track,
+          "rerank_rank": rank_idx,
         }
       )
 
-    ranked_for_query.sort(key=lambda x: x["score"], reverse=True)
+    ranked_for_query.sort(key=lambda x: (-float(x["score"]), str(x.get("paper_id") or "")))
     q["ranked"] = ranked_for_query
+    q["query_track"] = track
+    q["rerank_query_text"] = q_text
 
   meta_generated_at = data.get("generated_at") or ""
   data["reranked_at"] = datetime.now(timezone.utc).isoformat()

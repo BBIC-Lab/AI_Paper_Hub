@@ -16,8 +16,10 @@ from model_loader import is_remote_embedding_enabled, load_sentence_transformer
 if TYPE_CHECKING:
   from sentence_transformers import SentenceTransformer
 
-# E5 系列推荐使用 query/passsage 前缀来区分检索侧与文档侧
+# E5 系列推荐使用 query/passage 前缀；BGE 系列默认不套 E5 前缀。
 E5_QUERY_PREFIX = "query: "
+E5_PASSAGE_PREFIX = "passage: "
+SUPPORTED_EMBED_PREFIX_MODES = {"auto", "e5", "bge", "none", "custom"}
 
 
 def log(message: str) -> None:
@@ -87,6 +89,54 @@ def _set_max_seq_length(model: Any, max_length: int | None) -> None:
       return
     except Exception:
       pass
+
+
+def _model_name_from_obj(model: Any, fallback: str = "") -> str:
+  for attr in ("model_name", "_dpr_model_name", "model_name_or_path"):
+    value = getattr(model, attr, "")
+    if value:
+      return str(value)
+  return str(fallback or os.getenv("DPR_EMBED_MODEL") or "")
+
+
+def resolve_embedding_prefixes(model_name: str | None = None) -> Dict[str, str]:
+  """
+  按模型族解析 query/passage 前缀：
+  - auto: E5 使用官方前缀，BGE/未知模型不强制加前缀；
+  - custom: 完全使用环境变量覆盖。
+  """
+  mode = str(os.getenv("DPR_EMBED_PREFIX_MODE") or "auto").strip().lower()
+  if mode not in SUPPORTED_EMBED_PREFIX_MODES:
+    mode = "auto"
+  custom_query = str(os.getenv("DPR_EMBED_QUERY_PREFIX") or "")
+  custom_passage = str(os.getenv("DPR_EMBED_PASSAGE_PREFIX") or "")
+  if mode == "custom":
+    return {"query": custom_query, "passage": custom_passage}
+  if mode == "e5":
+    return {"query": E5_QUERY_PREFIX, "passage": E5_PASSAGE_PREFIX}
+  if mode in {"bge", "none"}:
+    return {"query": "", "passage": ""}
+
+  name = str(model_name or "").strip().lower()
+  if "e5" in name:
+    return {"query": E5_QUERY_PREFIX, "passage": E5_PASSAGE_PREFIX}
+  return {"query": "", "passage": ""}
+
+
+def decorate_query_text(text: str, model_name: str | None = None) -> str:
+  value = str(text or "").strip()
+  if not value:
+    return ""
+  prefix = resolve_embedding_prefixes(model_name).get("query") or ""
+  return f"{prefix}{value}" if prefix else value
+
+
+def decorate_passage_text(text: str, model_name: str | None = None) -> str:
+  value = str(text or "").strip()
+  if not value:
+    return ""
+  prefix = resolve_embedding_prefixes(model_name).get("passage") or ""
+  return f"{prefix}{value}" if prefix else value
   if hasattr(model, "_first_module"):
     try:
       first = model._first_module()
@@ -101,20 +151,19 @@ def encode_queries(
   texts: List[str],
   batch_size: int = 8,
   max_length: int | None = None,
+  model_name: str | None = None,
 ) -> np.ndarray:
   """
-  编码查询文本向量。
-
-  这里为 E5 系列显式添加 query 前缀：
-  query: <用户查询>
+  编码查询文本向量；前缀由 DPR_EMBED_PREFIX_MODE 和模型名共同决定。
   """
+  resolved_model_name = model_name or _model_name_from_obj(model)
   decorated: List[str] = []
   for t in texts:
     t = (t or "").strip()
     if not t:
       decorated.append("")
     else:
-      decorated.append(f"{E5_QUERY_PREFIX}{t}")
+      decorated.append(decorate_query_text(t, resolved_model_name))
 
   _set_max_seq_length(model, max_length)
 
@@ -229,6 +278,10 @@ class EmbeddingCoarseFilter:
       print(f"[INFO] 正在加载本地向量模型：{self.model_name}，device={self.device}")
       debug_hf_runtime("before SentenceTransformer()")
     self.model = load_sentence_transformer(self.model_name, device=self.device)
+    try:
+      setattr(self.model, "_dpr_model_name", self.model_name)
+    except Exception:
+      pass
     if not remote_mode:
       debug_hf_runtime("after SentenceTransformer()")
     _set_max_seq_length(self.model, self.max_length)
@@ -275,6 +328,7 @@ class EmbeddingCoarseFilter:
         [q_text],
         batch_size=self.batch_size,
         max_length=self.max_length,
+        model_name=self.model_name,
       )[0]
 
       sims = np.dot(item_embeddings, q_emb)

@@ -36,6 +36,16 @@ class QueryEmbeddingCacheTest(unittest.TestCase):
         self.assertEqual(h1, h2)
         self.assertNotEqual(h1, h3)
 
+    def test_embedding_prefix_auto_uses_e5_only_for_e5_models(self):
+        self.assertEqual(
+            self.mod.build_prefixed_query_text("symbolic regression", "BAAI/bge-m3"),
+            "symbolic regression",
+        )
+        self.assertEqual(
+            self.mod.build_prefixed_query_text("symbolic regression", "intfloat/e5-large-v2"),
+            "query: symbolic regression",
+        )
+
     def test_supabase_vector_disabled_reads_env_flag(self):
         old_value = os.environ.get("DPR_DISABLE_SUPABASE_VECTOR")
         try:
@@ -79,7 +89,7 @@ class QueryEmbeddingCacheTest(unittest.TestCase):
             "hash": cached_hash,
             "model": "BAAI/bge-small-en-v1.5",
             "query_text": "cached query",
-            "prefixed_text": "query: cached query",
+            "prefixed_text": "cached query",
             "embedding_json": "[0.1,0.2,0.3]",
         }
         queries = [
@@ -105,7 +115,7 @@ class QueryEmbeddingCacheTest(unittest.TestCase):
 
         original_encode = self.mod.encode_queries
 
-        def fake_encode(_model, texts, batch_size=8, max_length=None):
+        def fake_encode(_model, texts, batch_size=8, max_length=None, model_name=None):
             self.assertEqual(texts, ["missing query"])
             return np.asarray([[0.4, 0.5, 0.6]], dtype=np.float32)
 
@@ -227,7 +237,7 @@ class QueryEmbeddingCacheTest(unittest.TestCase):
 
         original_encode = self.mod.encode_queries
 
-        def fake_encode(_model, texts, batch_size=8, max_length=None):
+        def fake_encode(_model, texts, batch_size=8, max_length=None, model_name=None):
             self.assertEqual(texts, ["genetics"])
             return np.asarray([[0.7, 0.8, 0.9]], dtype=np.float32)
 

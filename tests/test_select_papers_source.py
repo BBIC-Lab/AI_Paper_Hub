@@ -409,6 +409,40 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
         self.assertEqual(capped.get("stats", {}).get("profile_limit_dropped_by_tag"), {"SR": {"deep": 0, "quick": 1}})
         self.assertEqual(capped.get("stats", {}).get("quick_selected"), 1)
 
+    def test_select_by_recommend_mix_targets_two_to_three(self):
+        candidates = [
+            {"id": "core-1", "llm_score": 9.5, "relevance_track": "core", "core_relevance_score": 9.5},
+            {"id": "core-2", "llm_score": 9.2, "relevance_track": "core", "core_relevance_score": 9.2},
+            {"id": "core-3", "llm_score": 9.0, "relevance_track": "core", "core_relevance_score": 9.0},
+            {"id": "insp-1", "llm_score": 9.4, "relevance_track": "inspiration", "inspiration_score": 9.4},
+            {"id": "insp-2", "llm_score": 9.1, "relevance_track": "inspiration", "inspiration_score": 9.1},
+            {"id": "insp-3", "llm_score": 8.9, "relevance_track": "inspiration", "inspiration_score": 8.9},
+        ]
+
+        picked = self.mod.select_by_recommend_mix(candidates, 5, {"core_ratio": 2, "inspiration_ratio": 3})
+        lanes = [item.get("selection_lane") for item in picked]
+
+        self.assertEqual(lanes.count("core"), 2)
+        self.assertEqual(lanes.count("inspiration"), 3)
+
+    def test_select_by_recommend_mix_zero_disables_lane(self):
+        candidates = [
+            {"id": "core-1", "llm_score": 9.9, "relevance_track": "core", "core_relevance_score": 9.9},
+            {"id": "insp-1", "llm_score": 8.8, "relevance_track": "inspiration", "inspiration_score": 8.8},
+            {
+                "id": "bridge-1",
+                "llm_score": 9.0,
+                "relevance_track": "bridge",
+                "core_relevance_score": 9.0,
+                "inspiration_score": 9.0,
+            },
+        ]
+
+        picked = self.mod.select_by_recommend_mix(candidates, 2, {"core_ratio": 0, "inspiration_ratio": 3})
+
+        self.assertEqual({item.get("selection_lane") for item in picked}, {"inspiration"})
+        self.assertNotIn("core-1", [item.get("id") for item in picked])
+
 
 if __name__ == "__main__":
     unittest.main()

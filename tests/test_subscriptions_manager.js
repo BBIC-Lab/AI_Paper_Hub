@@ -24,6 +24,8 @@ const {
   resolveRerankerServiceState,
   buildRerankerSecretsPayload,
   buildRerankerVariablesPayload,
+  normalizeRecommendMix,
+  resolveRecommendMix,
   normalizeResearchDirections,
   resolveResearchDirections,
   normalizePeriodicReports,
@@ -150,6 +152,21 @@ function testNormalizeSubscriptionsDefaultsDailyPaperLimits() {
 
   assert.equal(profile.deep_daily_paper_limit, 10);
   assert.equal(profile.quick_daily_paper_limit, 10);
+}
+
+function testNormalizeSubscriptionsDefaultsRecommendMix() {
+  const normalized = normalizeSubscriptions(buildBaseConfig());
+  const profile = normalized.subscriptions.intent_profiles[0];
+
+  assert.deepEqual(profile.recommend_mix, { core_ratio: 2, inspiration_ratio: 3 });
+  assert.deepEqual(normalizeRecommendMix({ core_ratio: 0, inspiration_ratio: 4 }), {
+    core_ratio: 0,
+    inspiration_ratio: 4,
+  });
+  assert.deepEqual(resolveRecommendMix({ recommend_mix: { core_ratio: 5, inspiration_ratio: 0 } }), {
+    core_ratio: 5,
+    inspiration_ratio: 0,
+  });
 }
 
 function testNormalizeSubscriptionsDefaultsPaperWindows() {
@@ -488,7 +505,7 @@ function testNormalizeResearchDirectionsSplitsAndCaps() {
   assert.equal(normalizeResearchDirections(Array(10).fill(0).map((_, i) => `kw-${i}`)).length, 8);
 }
 
-function testResolveResearchDirectionsFallsBackToKeywords() {
+function testResolveResearchDirectionsFallsBackToIntentQueriesBeforeKeywords() {
   const config = buildBaseConfig();
   config.subscriptions.intent_profiles[0].keywords.push({
     keyword: 'equation discovery',
@@ -496,8 +513,8 @@ function testResolveResearchDirectionsFallsBackToKeywords() {
   });
   const context = resolveResearchDirections(config);
 
-  assert.equal(context.source, 'fallback');
-  assert.deepEqual(context.directions, ['genetics', 'equation discovery']);
+  assert.equal(context.source, 'intent_queries');
+  assert.deepEqual(context.directions, ['latest preprints in genetics']);
 }
 
 function testResolveResearchDirectionsPrefersConfiguredValues() {
@@ -718,6 +735,7 @@ testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
 testNormalizeSubscriptionsMigratesLegacyDailyPaperLimit();
 testNormalizeSubscriptionsKeepsSectionDailyPaperLimits();
 testNormalizeSubscriptionsDefaultsDailyPaperLimits();
+testNormalizeSubscriptionsDefaultsRecommendMix();
 testNormalizeSubscriptionsDefaultsPaperWindows();
 testNormalizeSubscriptionsDefaultsDailyReportToggle();
 testNormalizeDailyReportsPreservesPausedState();
@@ -736,7 +754,7 @@ testSelfHostedInferenceEndpointsSetRunnerVariables();
 testRerankerCustomProfileRequiresEndpointModelAndKey();
 testEmbeddingSettingsUiSourceMatchesContract();
 testNormalizeResearchDirectionsSplitsAndCaps();
-testResolveResearchDirectionsFallsBackToKeywords();
+testResolveResearchDirectionsFallsBackToIntentQueriesBeforeKeywords();
 testResolveResearchDirectionsPrefersConfiguredValues();
 testNormalizeSubscriptionsAddsPeriodicReportDefaults();
 testNormalizePeriodicReportsPreservesUserEdits();

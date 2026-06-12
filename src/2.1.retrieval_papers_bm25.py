@@ -736,6 +736,9 @@ def rank_papers_for_queries_via_supabase(
         "logic_cn": q.get("logic_cn") or "",
         "boolean_expr": q.get("boolean_expr") or "",
         "bm25_mode": "supabase",
+        "query_track": q.get("query_track") or "",
+        "recommend_mix": q.get("recommend_mix") or {},
+        "core_context": q.get("core_context") or "",
         "sim_scores": sim_scores,
       }
     )
@@ -911,6 +914,9 @@ def rank_papers_for_queries(
         "logic_cn": q.get("logic_cn") or "",
         "boolean_expr": "",
         "bm25_mode": query_mode,
+        "query_track": q.get("query_track") or "",
+        "recommend_mix": q.get("recommend_mix") or {},
+        "core_context": q.get("core_context") or "",
         "sim_scores": sim_scores,
       }
     )

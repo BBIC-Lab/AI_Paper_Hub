@@ -9,6 +9,7 @@ from src.subscription_plan import (
     build_pipeline_inputs,
     count_subscription_tags,
     get_profile_daily_paper_limits,
+    get_profile_recommend_mix,
 )
 
 
@@ -47,6 +48,8 @@ class SubscriptionPlanTest(unittest.TestCase):
         self.assertEqual(kw_bm25.get('query_text'), 'A B')
         self.assertEqual(kw_bm25.get('paper_tag'), 'keyword:SR')
         self.assertEqual(kw_bm25.get('paper_sources'), ['arxiv'])
+        self.assertEqual(kw_bm25.get('query_track'), 'inspiration')
+        self.assertEqual(plan['profiles'][0].get('recommend_mix'), {'core_ratio': 2, 'inspiration_ratio': 3})
 
     def test_build_pipeline_inputs_without_profiles(self):
         plan = build_pipeline_inputs({'subscriptions': {'keyword_recall_mode': 'or'}})
@@ -130,6 +133,7 @@ class SubscriptionPlanTest(unittest.TestCase):
         self.assertEqual(len(intent_bm25), 2)
         self.assertEqual(len(intent_emb), 2)
         self.assertEqual(len(intent_context), 3)
+        self.assertTrue(all(q.get('query_track') == 'core' for q in intent_bm25))
 
         bm25_texts = [q.get('query_text') for q in intent_bm25]
         self.assertIn('symbolic regression with reinforcement learning', bm25_texts)
@@ -143,6 +147,26 @@ class SubscriptionPlanTest(unittest.TestCase):
         self.assertIn('symbolic regression methods', context_texts)
         self.assertIn('symbolic regression with reinforcement learning', context_texts)
         self.assertIn('equation discovery for physical systems', context_texts)
+
+    def test_configured_research_directions_enter_core_track(self):
+        cfg = {
+            'reader_profile': {'research_directions': ['neural data representation']},
+            'subscriptions': {
+                'intent_profiles': [
+                    {
+                        'tag': 'RD',
+                        'enabled': True,
+                        'keywords': [{'keyword': 'representation learning', 'query': 'representation learning'}],
+                        'intent_queries': [{'query': 'core intent'}],
+                    }
+                ],
+            },
+        }
+        plan = build_pipeline_inputs(cfg)
+        research_queries = [q for q in plan['embedding_queries'] if q.get('type') == 'research_direction']
+        self.assertEqual(len(research_queries), 1)
+        self.assertEqual(research_queries[0].get('query_track'), 'core')
+        self.assertEqual(research_queries[0].get('query_text'), 'neural data representation')
 
     def test_build_pipeline_inputs_keeps_explicit_paper_sources(self):
         cfg = {
@@ -215,6 +239,46 @@ class SubscriptionPlanTest(unittest.TestCase):
                 'LegacyLimit': {'deep': 8, 'quick': 8},
             },
         )
+
+    def test_profile_recommend_mix_defaults_and_allows_zero(self):
+        cfg = {
+            'subscriptions': {
+                'intent_profiles': [
+                    {
+                        'tag': 'DefaultMix',
+                        'enabled': True,
+                        'keywords': [{'keyword': 'x', 'query': 'x'}],
+                        'intent_queries': [{'query': 'intent x'}],
+                    },
+                    {
+                        'tag': 'InspirationOnly',
+                        'enabled': True,
+                        'recommend_mix': {'core_ratio': 0, 'inspiration_ratio': 3},
+                        'keywords': [{'keyword': 'method', 'query': 'method'}],
+                        'intent_queries': [{'query': 'core intent disabled'}],
+                    },
+                    {
+                        'tag': 'CoreOnly',
+                        'enabled': True,
+                        'recommend_mix': {'core_ratio': 2, 'inspiration_ratio': 0},
+                        'keywords': [{'keyword': 'keyword disabled', 'query': 'keyword disabled'}],
+                        'intent_queries': [{'query': 'core intent'}],
+                    },
+                ],
+            }
+        }
+        plan = build_pipeline_inputs(cfg)
+        mixes = get_profile_recommend_mix(cfg)
+
+        self.assertEqual(mixes['DefaultMix'], {'core_ratio': 2, 'inspiration_ratio': 3})
+        self.assertEqual(mixes['InspirationOnly'], {'core_ratio': 0, 'inspiration_ratio': 3})
+        self.assertEqual(mixes['CoreOnly'], {'core_ratio': 2, 'inspiration_ratio': 0})
+
+        by_tag_type = {(q.get('tag'), q.get('type')) for q in plan['embedding_queries']}
+        self.assertIn(('InspirationOnly', 'keyword'), by_tag_type)
+        self.assertNotIn(('InspirationOnly', 'intent_query'), by_tag_type)
+        self.assertIn(('CoreOnly', 'intent_query'), by_tag_type)
+        self.assertNotIn(('CoreOnly', 'keyword'), by_tag_type)
 
     def test_build_pipeline_inputs_rejects_empty_paper_sources(self):
         cfg = {

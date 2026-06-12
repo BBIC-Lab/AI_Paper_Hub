@@ -45,6 +45,14 @@ def _keyword_text(item: Any) -> str:
     return _norm_text(item.get("keyword") or item.get("text") or item.get("expr") or item.get("query") or "")
 
 
+def _intent_query_text(item: Any) -> str:
+    if isinstance(item, str):
+        return _norm_text(item)
+    if not isinstance(item, dict):
+        return ""
+    return _norm_text(item.get("query") or item.get("text") or item.get("keyword") or item.get("expr") or "")
+
+
 def fallback_research_directions_from_subscriptions(
     config: Dict[str, Any],
     limit: int = MAX_RESEARCH_DIRECTIONS,
@@ -54,20 +62,59 @@ def fallback_research_directions_from_subscriptions(
     if not isinstance(profiles, list):
         return []
 
-    raw: List[str] = []
+    intent_raw: List[str] = []
+    keyword_raw: List[str] = []
     for profile in profiles:
         if not isinstance(profile, dict):
             continue
         if profile.get("enabled") is False or profile.get("paused") is True:
             continue
+        intent_queries = profile.get("intent_queries") or []
+        if isinstance(intent_queries, list):
+            for item in intent_queries:
+                if isinstance(item, dict) and item.get("enabled") is False:
+                    continue
+                text = _intent_query_text(item)
+                if text:
+                    intent_raw.append(text)
         keywords = profile.get("keywords") or []
         if not isinstance(keywords, list):
             continue
         for item in keywords:
+            if isinstance(item, dict) and item.get("enabled") is False:
+                continue
             text = _keyword_text(item)
             if text:
-                raw.append(text)
-    return normalize_research_directions(raw, limit=limit)
+                keyword_raw.append(text)
+    return normalize_research_directions(intent_raw or keyword_raw, limit=limit)
+
+
+def fallback_research_direction_source(config: Dict[str, Any]) -> str:
+    subs = (config or {}).get("subscriptions") or {}
+    profiles = subs.get("intent_profiles") or []
+    if not isinstance(profiles, list):
+        return "empty"
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            continue
+        if profile.get("enabled") is False or profile.get("paused") is True:
+            continue
+        for item in profile.get("intent_queries") or []:
+            if isinstance(item, dict) and item.get("enabled") is False:
+                continue
+            if _intent_query_text(item):
+                return "intent_queries"
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            continue
+        if profile.get("enabled") is False or profile.get("paused") is True:
+            continue
+        for item in profile.get("keywords") or []:
+            if isinstance(item, dict) and item.get("enabled") is False:
+                continue
+            if _keyword_text(item):
+                return "keywords"
+    return "empty"
 
 
 def resolve_research_directions(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -78,7 +125,8 @@ def resolve_research_directions(config: Dict[str, Any]) -> Dict[str, Any]:
     if configured:
         return {"directions": configured, "source": "configured"}
     fallback = fallback_research_directions_from_subscriptions(config or {})
-    return {"directions": fallback, "source": "fallback" if fallback else "empty"}
+    source = fallback_research_direction_source(config or {}) if fallback else "empty"
+    return {"directions": fallback, "source": source}
 
 
 def format_research_directions_for_prompt(context: Dict[str, Any]) -> str:
@@ -86,6 +134,12 @@ def format_research_directions_for_prompt(context: Dict[str, Any]) -> str:
     if not directions:
         return "未配置明确研究方向，也未能从检索关键词中回退。"
     source = str((context or {}).get("source") or "").strip()
-    source_label = "用户手动配置" if source == "configured" else "检索配置关键词回退"
+    source_labels = {
+        "configured": "用户手动配置",
+        "intent_queries": "意图 Query 回退",
+        "keywords": "关键词回退",
+        "fallback": "检索配置回退",
+    }
+    source_label = source_labels.get(source, "检索配置回退")
     body = "\n".join(f"- {item}" for item in directions)
     return f"来源：{source_label}\n研究方向关键词：\n{body}"

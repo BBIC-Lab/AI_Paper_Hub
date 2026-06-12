@@ -8,6 +8,7 @@ window.SubscriptionsSmartQuery = (function () {
   const MAX_KEYWORDS_PER_PROFILE = 6;
   const MAX_INTENT_QUERIES_PER_PROFILE = 4;
   const DEFAULT_DAILY_SECTION_PAPER_LIMIT = 10;
+  const DEFAULT_RECOMMEND_MIX = { core_ratio: 2, inspiration_ratio: 3 };
   let displayListEl = null;
   let createBtn = null;
   let openChatBtn = null;
@@ -76,6 +77,24 @@ window.SubscriptionsSmartQuery = (function () {
       quick: normalizeDailyPaperLimit(p.quick_daily_paper_limit ?? legacy),
     };
   };
+  const normalizeRecommendRatio = (value, fallback) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+  const normalizeRecommendMix = (value) => {
+    const raw = value && typeof value === 'object' ? value : {};
+    const next = {
+      core_ratio: normalizeRecommendRatio(raw.core_ratio, DEFAULT_RECOMMEND_MIX.core_ratio),
+      inspiration_ratio: normalizeRecommendRatio(raw.inspiration_ratio, DEFAULT_RECOMMEND_MIX.inspiration_ratio),
+    };
+    if (next.core_ratio <= 0 && next.inspiration_ratio <= 0) {
+      return { ...DEFAULT_RECOMMEND_MIX };
+    }
+    return next;
+  };
+  const resolveRecommendMix = (profile) => normalizeRecommendMix(
+    profile && typeof profile === 'object' ? profile.recommend_mix : {},
+  );
   const PAPER_SOURCE_ORDER = [
     'arxiv',
     'biorxiv',
@@ -331,7 +350,8 @@ window.SubscriptionsSmartQuery = (function () {
 
   const renderProfileDailyLimitChip = (profile) => {
     const limits = resolveDailyPaperLimits(profile);
-    return `<span class="dpr-entry-source-chip">精读 ${limits.deep} / 速读 ${limits.quick}</span>`;
+    const mix = resolveRecommendMix(profile);
+    return `<span class="dpr-entry-source-chip">精读 ${limits.deep} / 速读 ${limits.quick} / 强${mix.core_ratio}:启${mix.inspiration_ratio}</span>`;
   };
 
   const normalizeProfileKeywords = (profile) => {
@@ -961,7 +981,7 @@ window.SubscriptionsSmartQuery = (function () {
     return candidates;
   };
 
-  const applyCandidateToProfile = (tag, description, paperSources, dailyPaperLimits, candidates) => {
+  const applyCandidateToProfile = (tag, description, paperSources, dailyPaperLimits, recommendMix, candidates) => {
     const selectedKeywords = (candidates.keywords || []).filter((x) => x._selected);
     const selectedIntentQueries = (candidates.intent_queries || []).filter((x) => x._selected);
     if (!selectedKeywords.length && !selectedIntentQueries.length) {
@@ -1002,6 +1022,7 @@ window.SubscriptionsSmartQuery = (function () {
       profile.paper_sources = normalizePaperSources(paperSources, { fallbackToArxiv: false });
       profile.deep_daily_paper_limit = normalizeDailyPaperLimit(dailyPaperLimits && dailyPaperLimits.deep);
       profile.quick_daily_paper_limit = normalizeDailyPaperLimit(dailyPaperLimits && dailyPaperLimits.quick);
+      profile.recommend_mix = normalizeRecommendMix(recommendMix);
       delete profile.daily_paper_limit;
       profile.keywords = kwList;
       const mergedIntentQueries = [];
@@ -1033,7 +1054,7 @@ window.SubscriptionsSmartQuery = (function () {
     return true;
   };
 
-  const replaceProfileFromSelection = (profileId, tag, description, paperSources, dailyPaperLimits, candidates) => {
+  const replaceProfileFromSelection = (profileId, tag, description, paperSources, dailyPaperLimits, recommendMix, candidates) => {
     const profileKey = getProfileKey(profileId);
     if (!profileKey) return false;
 
@@ -1061,6 +1082,7 @@ window.SubscriptionsSmartQuery = (function () {
         paper_sources: normalizePaperSources(paperSources, { fallbackToArxiv: false }),
         deep_daily_paper_limit: normalizeDailyPaperLimit(dailyPaperLimits && dailyPaperLimits.deep),
         quick_daily_paper_limit: normalizeDailyPaperLimit(dailyPaperLimits && dailyPaperLimits.quick),
+        recommend_mix: normalizeRecommendMix(recommendMix),
         daily_paper_limit: undefined,
         keywords:
           selectedKeywords.length > 0
@@ -1657,6 +1679,7 @@ window.SubscriptionsSmartQuery = (function () {
   const openAddModal = (tag, description, candidates) => {
     const normalizedCandidates = parseCandidatesForState(candidates);
     const dailyPaperLimits = resolveDailyPaperLimits(candidates || {});
+    const recommendMix = resolveRecommendMix(candidates || {});
     const suggestedTag = sanitizeAutoTag(
       normalizeText(candidates && candidates.tag) || normalizeText(tag),
     );
@@ -1673,6 +1696,7 @@ window.SubscriptionsSmartQuery = (function () {
       paper_sources: normalizePaperSources(candidates && candidates.paper_sources, { fallbackToAll: true }),
       deep_daily_paper_limit: dailyPaperLimits.deep,
       quick_daily_paper_limit: dailyPaperLimits.quick,
+      recommend_mix: recommendMix,
     };
     modalState.keywords = clampSelectionsByLimit(modalState.keywords, 'keyword');
     modalState.intent_queries = clampSelectionsByLimit(modalState.intent_queries, 'intent');
@@ -1684,6 +1708,7 @@ window.SubscriptionsSmartQuery = (function () {
     const normalizedCandidates = Array.isArray(options.keywords) ? options.keywords : [];
     const normalizedIntentQueries = Array.isArray(options.intent_queries) ? options.intent_queries : [];
     const dailyPaperLimits = resolveDailyPaperLimits(options);
+    const recommendMix = resolveRecommendMix(options);
     modalState = {
       type: 'chat',
       editProfileId: options.editProfileId || '',
@@ -1704,6 +1729,7 @@ window.SubscriptionsSmartQuery = (function () {
       paper_sources: normalizePaperSources(options.paper_sources, { fallbackToAll: true }),
       deep_daily_paper_limit: dailyPaperLimits.deep,
       quick_daily_paper_limit: dailyPaperLimits.quick,
+      recommend_mix: recommendMix,
       pending: false,
       chatStatus: '',
     };
@@ -1800,6 +1826,14 @@ window.SubscriptionsSmartQuery = (function () {
               <span class="dpr-modal-field-label">速读上限</span>
               <input id="dpr-add-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
             </label>
+            <label class="dpr-modal-field dpr-modal-field-compact">
+              <span class="dpr-modal-field-label">强相关配比</span>
+              <input id="dpr-add-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
+            </label>
+            <label class="dpr-modal-field dpr-modal-field-compact">
+              <span class="dpr-modal-field-label">通用启发配比</span>
+              <input id="dpr-add-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
+            </label>
             <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-add">保存查询</button>
           </div>
         </div>
@@ -1828,6 +1862,12 @@ window.SubscriptionsSmartQuery = (function () {
         document.getElementById('dpr-add-quick-daily-paper-limit')?.value || modalState.quick_daily_paper_limit,
       ),
     };
+    const nextRecommendMix = normalizeRecommendMix({
+      core_ratio:
+        document.getElementById('dpr-add-core-ratio')?.value ?? modalState.recommend_mix?.core_ratio,
+      inspiration_ratio:
+        document.getElementById('dpr-add-inspiration-ratio')?.value ?? modalState.recommend_mix?.inspiration_ratio,
+    });
     if (!nextPaperSources.length) {
       setMessage('请至少勾选 1 个论文源。', '#c00');
       return;
@@ -1848,17 +1888,25 @@ window.SubscriptionsSmartQuery = (function () {
           modalState.description,
           nextPaperSources,
           nextDailyPaperLimits,
+          nextRecommendMix,
           {
             ...modalState,
             keywords: selectedKeywords,
             intent_queries: selectedIntentQueries,
           },
         )
-      : applyCandidateToProfile(modalState.tag, modalState.description, nextPaperSources, nextDailyPaperLimits, {
-          ...modalState,
-          keywords: selectedKeywords,
-          intent_queries: selectedIntentQueries,
-        });
+      : applyCandidateToProfile(
+          modalState.tag,
+          modalState.description,
+          nextPaperSources,
+          nextDailyPaperLimits,
+          nextRecommendMix,
+          {
+            ...modalState,
+            keywords: selectedKeywords,
+            intent_queries: selectedIntentQueries,
+          },
+        );
 
     if (!ok) {
       setMessage('请至少选择 1 条关键词和 1 条意图Query。', '#c00');
@@ -2002,6 +2050,14 @@ window.SubscriptionsSmartQuery = (function () {
               <span class="dpr-chat-label-text">速读上限</span>
               <input id="dpr-chat-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
             </label>
+            <label class="dpr-chat-label dpr-chat-inline-limit">
+              <span class="dpr-chat-label-text">强相关配比</span>
+              <input id="dpr-chat-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
+            </label>
+            <label class="dpr-chat-label dpr-chat-inline-limit">
+              <span class="dpr-chat-label-text">通用启发配比</span>
+              <input id="dpr-chat-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
+            </label>
             <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-chat" ${hasCandidates ? '' : 'disabled'}>
               保存查询
             </button>
@@ -2046,6 +2102,12 @@ window.SubscriptionsSmartQuery = (function () {
         document.getElementById('dpr-chat-quick-daily-paper-limit')?.value || modalState.quick_daily_paper_limit,
       ),
     };
+    const recommendMix = normalizeRecommendMix({
+      core_ratio:
+        document.getElementById('dpr-chat-core-ratio')?.value ?? modalState.recommend_mix?.core_ratio,
+      inspiration_ratio:
+        document.getElementById('dpr-chat-inspiration-ratio')?.value ?? modalState.recommend_mix?.inspiration_ratio,
+    });
 
     if (!tag) {
       setMessage('请先填写标签。', '#c00');
@@ -2074,17 +2136,25 @@ window.SubscriptionsSmartQuery = (function () {
             desc,
             paperSources,
             dailyPaperLimits,
+            recommendMix,
             {
               ...modalState,
               keywords: selectedKeywords,
               intent_queries: selectedIntentQueries,
             },
           )
-        : applyCandidateToProfile(profileTag, desc, paperSources, dailyPaperLimits, {
-            ...modalState,
-            keywords: selectedKeywords,
-            intent_queries: selectedIntentQueries,
-          });
+        : applyCandidateToProfile(
+            profileTag,
+            desc,
+            paperSources,
+            dailyPaperLimits,
+            recommendMix,
+            {
+              ...modalState,
+              keywords: selectedKeywords,
+              intent_queries: selectedIntentQueries,
+            },
+          );
       hasSelection = ok;
     }
 
@@ -2211,6 +2281,7 @@ window.SubscriptionsSmartQuery = (function () {
       paper_sources: normalizePaperSources(profile.paper_sources, { fallbackToAll: true }),
       deep_daily_paper_limit: resolveDailyPaperLimits(profile).deep,
       quick_daily_paper_limit: resolveDailyPaperLimits(profile).quick,
+      recommend_mix: resolveRecommendMix(profile),
       keywords: existingKeywords,
       intent_queries: existingIntentQueries,
     });
@@ -2418,6 +2489,27 @@ window.SubscriptionsSmartQuery = (function () {
     ) {
       if (modalState) {
         modalState.quick_daily_paper_limit = normalizeDailyPaperLimit(target.value);
+      }
+      return;
+    }
+    if (
+      target.id === 'dpr-chat-core-ratio' ||
+      target.id === 'dpr-add-core-ratio' ||
+      target.id === 'dpr-chat-inspiration-ratio' ||
+      target.id === 'dpr-add-inspiration-ratio'
+    ) {
+      if (modalState) {
+        modalState.recommend_mix = normalizeRecommendMix({
+          ...(modalState.recommend_mix || {}),
+          core_ratio:
+            target.id === 'dpr-chat-core-ratio' || target.id === 'dpr-add-core-ratio'
+              ? target.value
+              : modalState.recommend_mix?.core_ratio,
+          inspiration_ratio:
+            target.id === 'dpr-chat-inspiration-ratio' || target.id === 'dpr-add-inspiration-ratio'
+              ? target.value
+              : modalState.recommend_mix?.inspiration_ratio,
+        });
       }
       return;
     }

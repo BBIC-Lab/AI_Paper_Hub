@@ -4,7 +4,6 @@ import pathlib
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
 
 
 def _load_module(module_name: str, path: pathlib.Path):
@@ -117,14 +116,13 @@ class RankGlobalPoolTest(unittest.TestCase):
             output_path = pathlib.Path(tmp) / "output.json"
             input_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
-            with patch.object(self.mod.random, "shuffle", side_effect=lambda items: None):
-                self.mod.process_file(
-                    reranker=reranker,
-                    input_path=str(input_path),
-                    output_path=str(output_path),
-                    top_n=None,
-                    rerank_model="fake-model",
-                )
+            self.mod.process_file(
+                reranker=reranker,
+                input_path=str(input_path),
+                output_path=str(output_path),
+                top_n=None,
+                rerank_model="fake-model",
+            )
 
             saved = json.loads(output_path.read_text(encoding="utf-8"))
             queries = saved.get("queries") or []
@@ -132,8 +130,10 @@ class RankGlobalPoolTest(unittest.TestCase):
             self.assertEqual(len(intent_queries), 1)
             ranked = intent_queries[0].get("ranked") or []
             ranked_ids = [item.get("paper_id") for item in ranked]
-            self.assertEqual(ranked_ids, ["p1", "p2"])
-            self.assertEqual(saved.get("global_candidate_ids"), ["p2", "p1", "p3"])
+            self.assertEqual(ranked_ids, ["p3", "p1"])
+            self.assertEqual(saved.get("global_candidate_ids"), ["p1", "p3", "p2"])
+            self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("core"), ["p1", "p3"])
+            self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("inspiration"), ["p2"])
             self.assertEqual(saved.get("global_pool_lane_top_k"), 30)
             self.assertEqual(saved.get("global_pool_limit"), 60)
             self.assertEqual(saved.get("global_pool_guaranteed_per_lane"), 8)
