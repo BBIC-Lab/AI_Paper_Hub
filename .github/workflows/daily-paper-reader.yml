@@ -407,26 +407,26 @@ jobs:
         if: steps.daily_auto.outputs.enabled != 'false'
         run: |
           if [ "${DPR_SKIP_LOCAL_EMBED_DEPS:-false}" = "true" ]; then
-            python - <<'PY'
-            import re
+          python - <<'PY'
+          import re
 
-            # 高级自建远程推理可跳过本地 torch 栈；默认 embedding 仍保留本地 fallback。
-            skip_names = {"sqlite3", "sentence-transformers", "torch", "cuda-toolkit"}
-            skip_prefixes = ("nvidia-",)
-            kept = []
-            skipped = []
-            for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
-                item = line.strip()
-                if not item:
-                    continue
-                package = re.split(r"\s*(?:[<>=!~]=?|;|\[)", item, 1)[0].lower().replace("_", "-")
-                if package in skip_names or package.startswith(skip_prefixes):
-                    skipped.append(item)
-                    continue
-                kept.append(line)
-            open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(kept))
-            print("Skipped local embedding deps:", ", ".join(skipped) or "<none>")
-            PY
+          # 高级自建远程推理可跳过本地 torch 栈；默认 embedding 仍保留本地 fallback。
+          skip_names = {"sqlite3", "sentence-transformers", "torch", "cuda-toolkit"}
+          skip_prefixes = ("nvidia-",)
+          kept = []
+          skipped = []
+          for line in open("requirements.txt", "r", encoding="utf-8").read().splitlines():
+              item = line.strip()
+              if not item:
+                  continue
+              package = re.split(r"\s*(?:[<>=!~]=?|;|\[)", item, 1)[0].lower().replace("_", "-")
+              if package in skip_names or package.startswith(skip_prefixes):
+                  skipped.append(item)
+                  continue
+              kept.append(line)
+          open("/tmp/req.txt", "w", encoding="utf-8").write("\n".join(kept))
+          print("Skipped local embedding deps:", ", ".join(skipped) or "<none>")
+          PY
           else
             cp requirements.txt /tmp/req.txt
           fi
