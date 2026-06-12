@@ -131,7 +131,7 @@ window.SubscriptionsSmartQuery = (function () {
   );
 
   const countSelectedCandidates = (items) =>
-    (Array.isArray(items) ? items : []).filter((item) => item && !item._isDraftSlot && item._selected).length;
+    (Array.isArray(items) ? items : []).filter((item) => item && !item._isDraftSlot && item._selected !== false).length;
 
   const clampSelectionsByLimit = (items, kind) => {
     const limit = getSelectionLimit(kind);
@@ -151,10 +151,10 @@ window.SubscriptionsSmartQuery = (function () {
 
   const validateProfileSelection = (keywords, intentQueries) => {
     const selectedKeywords = (Array.isArray(keywords) ? keywords : []).filter(
-      (item) => item && !item._isDraftSlot && item._selected,
+      (item) => item && !item._isDraftSlot && item._selected !== false,
     );
     const selectedIntentQueries = (Array.isArray(intentQueries) ? intentQueries : []).filter(
-      (item) => item && !item._isDraftSlot && item._selected,
+      (item) => item && !item._isDraftSlot && item._selected !== false,
     );
     if (!selectedKeywords.length) {
       return '请至少保留 1 条关键词。';
@@ -177,7 +177,7 @@ window.SubscriptionsSmartQuery = (function () {
   };
 
   const isCandidateDisabled = (items, item, kind) => {
-    if (!item || item._isDraftSlot || item._selected) return false;
+    if (!item || item._isDraftSlot || item._selected !== false) return false;
     return countSelectedCandidates(items) >= getSelectionLimit(kind);
   };
 
@@ -982,8 +982,8 @@ window.SubscriptionsSmartQuery = (function () {
   };
 
   const applyCandidateToProfile = (tag, description, paperSources, dailyPaperLimits, recommendMix, candidates) => {
-    const selectedKeywords = (candidates.keywords || []).filter((x) => x._selected);
-    const selectedIntentQueries = (candidates.intent_queries || []).filter((x) => x._selected);
+    const selectedKeywords = (candidates.keywords || []).filter((x) => x && x._selected !== false);
+    const selectedIntentQueries = (candidates.intent_queries || []).filter((x) => x && x._selected !== false);
     if (!selectedKeywords.length && !selectedIntentQueries.length) {
       return false;
     }
@@ -1058,8 +1058,8 @@ window.SubscriptionsSmartQuery = (function () {
     const profileKey = getProfileKey(profileId);
     if (!profileKey) return false;
 
-    const selectedKeywords = (candidates.keywords || []).filter((x) => x._selected);
-    const selectedIntentQueries = (candidates.intent_queries || []).filter((x) => x._selected);
+    const selectedKeywords = (candidates.keywords || []).filter((x) => x && x._selected !== false);
+    const selectedIntentQueries = (candidates.intent_queries || []).filter((x) => x && x._selected !== false);
     if (!selectedKeywords.length && !selectedIntentQueries.length) return false;
     const intentQueries = normalizeIntentQueryEntries(selectedIntentQueries);
 
@@ -1122,14 +1122,8 @@ window.SubscriptionsSmartQuery = (function () {
 
   const parseCandidatesForState = (candidates, selected = true) => {
     return {
-      keywords: clampSelectionsByLimit(
-        (candidates.keywords || []).map((x) => ({ ...x, _selected: selected })),
-        'keyword',
-      ),
-      intent_queries: clampSelectionsByLimit(
-        (candidates.intent_queries || []).map((x) => ({ ...x, _selected: selected })),
-        'intent',
-      ),
+      keywords: (candidates.keywords || []).map((x) => ({ ...x, _selected: selected })),
+      intent_queries: (candidates.intent_queries || []).map((x) => ({ ...x, _selected: selected })),
     };
   };
 
@@ -1183,9 +1177,18 @@ window.SubscriptionsSmartQuery = (function () {
     return Array.isArray(getCandidatesByKind(state, kind)) ? getCandidatesByKind(state, kind) : [];
   };
 
+  const setCandidatesByKindForState = (state, kind, list) => {
+    if (!state) return;
+    if (normalizeCandidateKind(kind) === 'intent') {
+      state.intent_queries = Array.isArray(list) ? list : [];
+    } else {
+      state.keywords = Array.isArray(list) ? list : [];
+    }
+  };
+
   const getSelectedItemsForSave = (items) => {
     return (Array.isArray(items) ? items : [])
-      .filter((item) => item && !isDraftSlot(item) && item._selected)
+      .filter((item) => item && !isDraftSlot(item) && item._selected !== false)
       .map((item) => item);
   };
 
@@ -1274,6 +1277,179 @@ window.SubscriptionsSmartQuery = (function () {
       delete item.embedding_cache;
     }
     candidates[index] = item;
+  };
+
+  // 批量编辑列表中“存在即保留”，这里统一清理草稿、去重并控制上限。
+  const normalizeQueryItemsForBatch = (kind, items, options = {}) => {
+    const realKind = normalizeCandidateKind(kind);
+    const limit = options.limit === false ? Number.POSITIVE_INFINITY : getSelectionLimit(realKind);
+    const seen = new Set();
+    const out = [];
+    (Array.isArray(items) ? items : []).forEach((raw) => {
+      if (!raw || isDraftSlot(raw) || out.length >= limit) return;
+      const item = { ...raw, _selected: true };
+      delete item._isDraftSlot;
+      if (realKind === 'intent') {
+        item.query = sanitizeNoYear(item.query || item.text || item.keyword || item.expr || '');
+        if (!item.query) return;
+        item.query_cn = sanitizeNoYear(item.query_cn || item.query_zh || item.zh || item.note || '');
+        item.enabled = item.enabled !== false;
+        item.source = normalizeText(item.source || 'manual');
+      } else {
+        item.keyword = normalizeText(item.keyword || item.text || item.expr || '');
+        if (!item.keyword) return;
+        item.keyword_cn = normalizeText(item.keyword_cn || item.keyword_zh || item.zh || '');
+        item.query = normalizeText(item.query || item.rewrite || item.rewrite_for_embedding || item.text || item.keyword);
+      }
+      const key = normalizeText(realKind === 'intent' ? item.query : item.keyword).toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(item);
+    });
+    return out;
+  };
+
+  const updateQueryItemAt = (kind, index, field, value, state = modalState) => {
+    if (!state) return;
+    const realKind = normalizeCandidateKind(kind);
+    const list = getCandidatesByKindForState(state, realKind).filter((item) => item && !isDraftSlot(item));
+    if (!Number.isFinite(index) || index < 0 || index >= list.length) return;
+    const allowedFields = realKind === 'intent' ? ['query', 'query_cn'] : ['keyword', 'keyword_cn', 'query'];
+    if (!allowedFields.includes(field)) return;
+    const item = { ...list[index] };
+    const prevValue = normalizeText(item[field]);
+    item[field] = normalizeText(value);
+    if (realKind !== 'intent' && field === 'keyword' && !normalizeText(item.query)) {
+      item.query = normalizeText(value);
+    }
+    if (
+      (realKind === 'intent' && field === 'query' && prevValue !== normalizeText(value)) ||
+      (realKind !== 'intent' && (field === 'keyword' || field === 'query') && prevValue !== normalizeText(value))
+    ) {
+      delete item.embedding_cache;
+    }
+    list[index] = item;
+    setCandidatesByKindForState(state, realKind, list);
+  };
+
+  const splitBulkQueryInput = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return [];
+    const lines = raw
+      .split(/\r?\n/)
+      .map((line) => normalizeText(line))
+      .filter(Boolean);
+    const source = lines.length > 1 ? lines : raw.split(/[、，,；;]/).map((line) => normalizeText(line));
+    return source.filter(Boolean);
+  };
+
+  const parseBulkQueryItem = (kind, text) => {
+    const realKind = normalizeCandidateKind(kind);
+    const parts = String(text || '')
+      .split('|')
+      .map((part) => normalizeText(part))
+      .filter((part, idx, arr) => part || idx < arr.length - 1);
+    const primary = normalizeText(parts[0] || text);
+    if (!primary) return null;
+    if (realKind === 'intent') {
+      return {
+        query: primary,
+        query_cn: normalizeText(parts[1] || ''),
+        enabled: true,
+        source: 'manual',
+        _selected: true,
+      };
+    }
+    return {
+      keyword: primary,
+      keyword_cn: normalizeText(parts[1] || ''),
+      query: normalizeText(parts[2] || primary),
+      _selected: true,
+    };
+  };
+
+  const normalizeBulkQueryItems = (kind, value) =>
+    splitBulkQueryInput(value)
+      .map((item) => parseBulkQueryItem(kind, item))
+      .filter(Boolean);
+
+  const addBulkQueryItems = (kind) => {
+    if (!modalState) return false;
+    const realKind = normalizeCandidateKind(kind);
+    const inputId = realKind === 'intent' ? 'dpr-bulk-intent-input' : 'dpr-bulk-keyword-input';
+    const inputEl = document.getElementById(inputId);
+    const incoming = normalizeBulkQueryItems(realKind, inputEl ? inputEl.value : '');
+    if (!incoming.length) {
+      setMessage(`请输入至少 1 条${getKindLabel(realKind)}。`, '#c00');
+      return false;
+    }
+    const list = normalizeQueryItemsForBatch(realKind, getCandidatesByKindForState(modalState, realKind), {
+      limit: false,
+    });
+    const meta = getEditableMeta(realKind);
+    const seen = new Set(
+      list
+        .map((item) => normalizeText(item[meta.primary]).toLowerCase())
+        .filter(Boolean),
+    );
+    const next = list.slice();
+    let added = 0;
+    let skippedByLimit = 0;
+    const limit = getSelectionLimit(realKind);
+    incoming.forEach((item) => {
+      const key = normalizeText(item[meta.primary]).toLowerCase();
+      if (!key || seen.has(key)) return;
+      if (next.length >= limit) {
+        skippedByLimit += 1;
+        return;
+      }
+      seen.add(key);
+      next.push(item);
+      added += 1;
+    });
+    setCandidatesByKindForState(modalState, realKind, next);
+    if (inputEl) inputEl.value = '';
+    renderActiveModal();
+    setMessage(
+      skippedByLimit > 0
+        ? `已保留前 ${limit} 条${getKindLabel(realKind)}，超出的条目未加入。`
+        : added > 0
+        ? `已新增 ${added} 条${getKindLabel(realKind)}，不需要的条目可勾选后批量删除。`
+        : `没有新增${getKindLabel(realKind)}；可能与已有条目重复。`,
+      added > 0 && skippedByLimit === 0 ? '#080' : '#c90',
+    );
+    return added > 0;
+  };
+
+  const deleteSelectedQueryItems = (kind) => {
+    if (!modalState) return false;
+    const realKind = normalizeCandidateKind(kind);
+    const checks = Array.from(
+      modalPanel?.querySelectorAll(`.dpr-query-item-check[data-kind="${realKind}"]:checked`) || [],
+    );
+    if (!checks.length) {
+      setMessage(`请先勾选要删除的${getKindLabel(realKind)}。`, '#c00');
+      return false;
+    }
+    const selected = new Set(
+      checks.map((el) => Number(el.getAttribute('data-index'))).filter((idx) => Number.isFinite(idx)),
+    );
+    const next = getCandidatesByKindForState(modalState, realKind)
+      .filter((item) => item && !isDraftSlot(item))
+      .filter((_item, idx) => !selected.has(idx));
+    setCandidatesByKindForState(modalState, realKind, next);
+    renderActiveModal();
+    setMessage(`已删除 ${checks.length} 条${getKindLabel(realKind)}。`, '#080');
+    return true;
+  };
+
+  const renderActiveModal = () => {
+    if (!modalState) return;
+    if (modalState.type === 'add') {
+      renderAddModal();
+    } else if (modalState.type === 'chat') {
+      renderChatModal();
+    }
   };
 
   const startInlineEditField = (target, state = modalState) => {
@@ -1500,7 +1676,7 @@ window.SubscriptionsSmartQuery = (function () {
       const key = normalizeKey(item, keyField);
       if (!key || seen.has(key)) return false;
       seen.add(key);
-      item._selected = false;
+      item._selected = true;
       return true;
     });
 
@@ -1576,6 +1752,74 @@ window.SubscriptionsSmartQuery = (function () {
       `;
       })
       .join('');
+  };
+
+  const renderQueryBatchSection = (kind, items, options = {}) => {
+    const realKind = normalizeCandidateKind(kind);
+    const list = (Array.isArray(items) ? items : []).filter((item) => item && !isDraftSlot(item));
+    const title = realKind === 'intent' ? '意图 Query' : '关键词';
+    const subtitle = options.subtitle || (realKind === 'intent' ? '用于意图召回与最终打分' : '用于召回');
+    const limit = getSelectionLimit(realKind);
+    const countText = `${list.length}/${limit}`;
+    const countClass = list.length > limit ? ' dpr-query-count-pill--warn' : '';
+    const inputId = realKind === 'intent' ? 'dpr-bulk-intent-input' : 'dpr-bulk-keyword-input';
+    const placeholder = realKind === 'intent'
+      ? '每行 1 条意图 Query；可写成：query | 中文直译'
+      : '每行 1 条关键词；可写成：keyword | 中文直译 | 语义 query';
+    const fields = realKind === 'intent'
+      ? [
+          ['query', '英文意图 Query'],
+          ['query_cn', '中文直译'],
+        ]
+      : [
+          ['keyword', '关键词'],
+          ['keyword_cn', '中文直译'],
+          ['query', '语义 Query'],
+        ];
+    const empty = `
+      <div class="dpr-query-bulk-empty">
+        <strong>暂无${title}</strong>
+        <span>可在上方批量新增，多条请换行或用 、，； 分隔。</span>
+      </div>
+    `;
+    const rows = list.map((item, idx) => `
+      <div class="dpr-query-bulk-item">
+        <input class="dpr-query-item-check" type="checkbox" data-kind="${realKind}" data-index="${idx}" />
+        <span class="dpr-query-bulk-index">${String(idx + 1).padStart(2, '0')}</span>
+        <span class="dpr-query-bulk-fields ${realKind === 'intent' ? 'is-intent' : 'is-keyword'}">
+          ${fields.map(([field, label]) => `
+            <span class="dpr-query-bulk-field">
+              <span>${escapeHtml(label)}</span>
+              <input
+                type="text"
+                value="${escapeHtml(normalizeText(item[field] || ''))}"
+                placeholder="${escapeHtml(label)}"
+                data-query-item-input="1"
+                data-kind="${realKind}"
+                data-index="${idx}"
+                data-field="${escapeHtml(field)}"
+              />
+            </span>
+          `).join('')}
+        </span>
+      </div>
+    `).join('');
+    return `
+      <div class="dpr-query-bulk-section" data-kind="${realKind}">
+        <div class="dpr-query-bulk-head">
+          <div>
+            <div class="dpr-modal-group-title">${escapeHtml(title)} <span class="dpr-query-count-pill${countClass}">${escapeHtml(countText)}</span></div>
+            <p>${escapeHtml(subtitle)}；编辑完成后直接保存，勾选条目可批量删除。</p>
+          </div>
+          <button class="arxiv-tool-btn dpr-research-delete-btn dpr-query-delete-selected-btn" type="button" data-action="bulk-delete-query-item" data-kind="${realKind}">删除选中</button>
+        </div>
+        <div class="dpr-query-bulk-add-row">
+          <textarea id="${inputId}" rows="2" placeholder="${escapeHtml(placeholder)}"></textarea>
+          <button class="arxiv-tool-btn dpr-settings-primary-btn dpr-query-bulk-add-btn" type="button" data-action="bulk-add-query-item" data-kind="${realKind}">批量新增</button>
+        </div>
+        <div class="dpr-query-bulk-list">${rows || empty}</div>
+      </div>
+    `;
   };
 
   const setChatStatus = (text, color) => {
@@ -1688,8 +1932,8 @@ window.SubscriptionsSmartQuery = (function () {
       type: 'add',
       tag: suggestedTag,
       description: suggestedDesc,
-      keywords: ensureDraftSlot(normalizedCandidates.keywords, 'keyword'),
-      intent_queries: ensureDraftSlot((normalizedCandidates.intent_queries || []), 'intent'),
+      keywords: normalizeQueryItemsForBatch('keyword', normalizedCandidates.keywords),
+      intent_queries: normalizeQueryItemsForBatch('intent', normalizedCandidates.intent_queries),
       customKeyword: '',
       customKeywordLogic: '',
       customQuery: '',
@@ -1698,8 +1942,6 @@ window.SubscriptionsSmartQuery = (function () {
       quick_daily_paper_limit: dailyPaperLimits.quick,
       recommend_mix: recommendMix,
     };
-    modalState.keywords = clampSelectionsByLimit(modalState.keywords, 'keyword');
-    modalState.intent_queries = clampSelectionsByLimit(modalState.intent_queries, 'intent');
     renderAddModal();
     openModal();
   };
@@ -1712,16 +1954,16 @@ window.SubscriptionsSmartQuery = (function () {
     modalState = {
       type: 'chat',
       editProfileId: options.editProfileId || '',
-      keywords: ensureDraftSlot(
-        normalizedCandidates.map((item) => ({ ...item, _selected: item._selected !== false })),
+      keywords: normalizeQueryItemsForBatch(
         'keyword',
+        normalizedCandidates.map((item) => ({ ...item, _selected: item._selected !== false })),
       ),
-      intent_queries: ensureDraftSlot(
+      intent_queries: normalizeQueryItemsForBatch(
+        'intent',
         normalizedIntentQueries.map((item) => ({
           ...item,
           _selected: item._selected !== false,
         })),
-        'intent',
       ),
       requestHistory: [],
       inputTag: normalizeText(options.tag || ''),
@@ -1733,32 +1975,16 @@ window.SubscriptionsSmartQuery = (function () {
       pending: false,
       chatStatus: '',
     };
-    modalState.keywords = clampSelectionsByLimit(modalState.keywords, 'keyword');
-    modalState.intent_queries = clampSelectionsByLimit(modalState.intent_queries, 'intent');
     renderChatModal();
     openModal();
   };
 
   const renderAddModal = () => {
     if (!modalPanel || !modalState || modalState.type !== 'add') return;
-    const kwHtml = renderPickCards(modalState.keywords || [], 'keyword');
-    const intentHtml = renderPickCards(modalState.intent_queries || [], 'intent');
-    const hasKeywords = (modalState.keywords || []).length > 0;
-    const hasIntentQueries = (modalState.intent_queries || []).length > 0;
-    const keywordBlock =
-      `<div class="dpr-combo-block">
-        <div class="dpr-modal-group-title">${buildSelectionTitle('keyword', '用于召回')}</div>
-        <div class="dpr-pick-grid">${kwHtml || '<div style="color:#999;">无关键词候选</div>'}</div>
-      </div>`;
-    const intentBlock =
-      `<div class="dpr-combo-block">
-        <div class="dpr-modal-group-title">${buildSelectionTitle('intent', '用于意图召回与最终打分')}</div>
-        <div class="dpr-pick-grid">${intentHtml || '<div style="color:#999;">无意图查询候选</div>'}</div>
-      </div>`;
-    const divider = `<div class="dpr-modal-divider"></div>`;
-    const candidateBlocks = `${hasKeywords ? keywordBlock : ''}${hasKeywords && hasIntentQueries ? divider : ''}${
-      hasIntentQueries ? intentBlock : ''
-    }`;
+    const candidateBlocks = `
+      ${renderQueryBatchSection('keyword', modalState.keywords || [], { subtitle: '用于召回，可批量新增或删除' })}
+      ${renderQueryBatchSection('intent', modalState.intent_queries || [], { subtitle: '用于意图召回与最终打分，可批量新增或删除' })}
+    `;
     const sourceChoices = renderPaperSourceChoices(modalState.paper_sources || []);
 
     modalPanel.innerHTML = `
@@ -1774,7 +2000,7 @@ window.SubscriptionsSmartQuery = (function () {
           <div>
             <div class="dpr-query-step-pill">01</div>
             <h3>从检索想法开始</h3>
-            <p>选择候选关键词和意图 Query，也可以手动补充召回词，让配置更贴近你的研究方向。</p>
+            <p>批量维护关键词和意图 Query，可直接新增、编辑或删除，让配置更贴近你的研究方向。</p>
           </div>
           <div class="dpr-help-examples">
             <div class="dpr-help-example">ex: 强化学习 符号回归</div>
@@ -1788,15 +2014,9 @@ window.SubscriptionsSmartQuery = (function () {
               <div class="dpr-query-step-pill">02</div>
               <h3>候选内容</h3>
             </div>
-            <span>勾选后写入检索配置</span>
+            <span>批量新增、编辑或勾选删除</span>
           </div>
-          <div class="dpr-modal-list dpr-combo-list">${candidateBlocks || '<div class="dpr-cloud-empty"></div>'}</div>
-          <div class="dpr-modal-actions-inline dpr-modal-add-inline dpr-query-custom-row">
-            <input id="dpr-add-kw-text" type="text" placeholder="手动新增关键词（召回词）" value="${escapeHtml(modalState.customKeyword || '')}" />
-            <input id="dpr-add-kw-query" type="text" placeholder="对应语义 Query 改写" value="${escapeHtml(modalState.customQuery || '')}" />
-            <input id="dpr-add-kw-logic" type="text" placeholder="中文直译（可选）" value="${escapeHtml(modalState.customKeywordLogic || '')}" />
-            <button class="arxiv-tool-btn dpr-query-secondary-btn" data-action="add-custom-kw">加入候选</button>
-          </div>
+          <div class="dpr-modal-list dpr-combo-list dpr-query-batch-stack">${candidateBlocks}</div>
         </div>
         <div class="dpr-query-save-strip">
           <div class="dpr-query-card-head">
@@ -1806,35 +2026,39 @@ window.SubscriptionsSmartQuery = (function () {
             </div>
           </div>
           <div class="dpr-modal-actions dpr-modal-add-footer dpr-query-footer-grid">
-            <label class="dpr-modal-field">
-              <span class="dpr-modal-field-label">标签</span>
-              <input id="dpr-add-profile-tag" type="text" value="${escapeHtml(modalState.tag || '')}" placeholder="请填写标签" />
-            </label>
-            <label class="dpr-modal-field">
-              <span class="dpr-modal-field-label">中文描述</span>
-              <input id="dpr-add-profile-desc" type="text" value="${escapeHtml(modalState.description || '')}" placeholder="请填写中文描述" />
-            </label>
-            <div class="dpr-modal-field dpr-modal-field-sources">
-              <span class="dpr-modal-field-label">论文源</span>
-              <div class="dpr-paper-source-row">${sourceChoices}</div>
+            <div class="dpr-query-footer-row dpr-query-footer-main">
+              <label class="dpr-modal-field">
+                <span class="dpr-modal-field-label">标签</span>
+                <input id="dpr-add-profile-tag" type="text" value="${escapeHtml(modalState.tag || '')}" placeholder="请填写标签" />
+              </label>
+              <label class="dpr-modal-field">
+                <span class="dpr-modal-field-label">中文描述</span>
+                <input id="dpr-add-profile-desc" type="text" value="${escapeHtml(modalState.description || '')}" placeholder="请填写中文描述" />
+              </label>
+              <div class="dpr-modal-field dpr-modal-field-sources">
+                <span class="dpr-modal-field-label">论文源</span>
+                <div class="dpr-paper-source-row">${sourceChoices}</div>
+              </div>
             </div>
-            <label class="dpr-modal-field dpr-modal-field-compact">
-              <span class="dpr-modal-field-label">精读上限</span>
-              <input id="dpr-add-deep-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.deep_daily_paper_limit))}" />
-            </label>
-            <label class="dpr-modal-field dpr-modal-field-compact">
-              <span class="dpr-modal-field-label">速读上限</span>
-              <input id="dpr-add-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
-            </label>
-            <label class="dpr-modal-field dpr-modal-field-compact">
-              <span class="dpr-modal-field-label">强相关配比</span>
-              <input id="dpr-add-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
-            </label>
-            <label class="dpr-modal-field dpr-modal-field-compact">
-              <span class="dpr-modal-field-label">通用启发配比</span>
-              <input id="dpr-add-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
-            </label>
-            <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-add">保存查询</button>
+            <div class="dpr-query-footer-row dpr-query-footer-limits">
+              <label class="dpr-modal-field dpr-modal-field-compact">
+                <span class="dpr-modal-field-label">精读上限</span>
+                <input id="dpr-add-deep-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.deep_daily_paper_limit))}" />
+              </label>
+              <label class="dpr-modal-field dpr-modal-field-compact">
+                <span class="dpr-modal-field-label">速读上限</span>
+                <input id="dpr-add-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
+              </label>
+              <label class="dpr-modal-field dpr-modal-field-compact">
+                <span class="dpr-modal-field-label">强相关配比</span>
+                <input id="dpr-add-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
+              </label>
+              <label class="dpr-modal-field dpr-modal-field-compact">
+                <span class="dpr-modal-field-label">通用启发配比</span>
+                <input id="dpr-add-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
+              </label>
+              <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-add">保存查询</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1873,8 +2097,12 @@ window.SubscriptionsSmartQuery = (function () {
       return;
     }
 
-    const selectedKeywords = getSelectedItemsForSave(modalState.keywords || []);
-    const selectedIntentQueries = getSelectedItemsForSave(modalState.intent_queries || []);
+    const selectedKeywords = getSelectedItemsForSave(modalState.keywords || []).filter((item) =>
+      normalizeText(item.keyword || item.text || item.expr || ''),
+    );
+    const selectedIntentQueries = getSelectedItemsForSave(modalState.intent_queries || []).filter((item) =>
+      normalizeText(item.query || item.text || item.keyword || item.expr || ''),
+    );
     const validationError = validateProfileSelection(selectedKeywords, selectedIntentQueries);
     if (validationError) {
       setMessage(validationError, '#c00');
@@ -1909,7 +2137,7 @@ window.SubscriptionsSmartQuery = (function () {
         );
 
     if (!ok) {
-      setMessage('请至少选择 1 条关键词和 1 条意图Query。', '#c00');
+      setMessage('请至少保留 1 条关键词和 1 条意图Query。', '#c00');
       return;
     }
 
@@ -1921,23 +2149,13 @@ window.SubscriptionsSmartQuery = (function () {
   const renderChatModal = () => {
     if (!modalPanel || !modalState || modalState.type !== 'chat') return;
 
-    const kwHtml = renderCloudCards(modalState.keywords || [], 'kw', {
-      textField: 'keyword',
-      descField: 'keyword_cn',
-      defaultDesc: '（待补充中文直译）',
-    });
-    const intentHtml = renderCloudCards(modalState.intent_queries || [], 'intent', {
-      textField: 'query',
-      descField: 'query_cn',
-      descFallbackField: 'note',
-      defaultDesc: '（待补充中文直译）',
-    });
-    const hasKeywordSection = Array.isArray(modalState.keywords) && modalState.keywords.length > 0;
-    const hasIntentSection = Array.isArray(modalState.intent_queries) && modalState.intent_queries.length > 0;
-    const hasKeywords = hasKeywordSection && modalState.keywords.some((item) => !isDraftSlot(item));
-    const hasIntentQueries =
-      hasIntentSection && modalState.intent_queries.some((item) => !isDraftSlot(item));
+    const hasKeywords = hasRealCandidates(modalState.keywords);
+    const hasIntentQueries = hasRealCandidates(modalState.intent_queries);
     const hasCandidates = hasKeywords || hasIntentQueries;
+    const candidateBlocks = `
+      ${renderQueryBatchSection('keyword', modalState.keywords || [], { subtitle: '用于召回，可批量新增或删除' })}
+      ${renderQueryBatchSection('intent', modalState.intent_queries || [], { subtitle: '用于意图召回与最终打分，可批量新增或删除' })}
+    `;
     const sourceChoices = renderPaperSourceChoices(modalState.paper_sources || []);
     const isFirstRound = !(Array.isArray(modalState.requestHistory) && modalState.requestHistory.length);
     const actionLabel = isFirstRound ? '生成候选' : '新增候选';
@@ -1951,29 +2169,6 @@ window.SubscriptionsSmartQuery = (function () {
            <div class="dpr-help-example">ex: 请帮我查找可解释的强化学习驱动符号回归方程发现论文</div>
          </div>`
       : '';
-    const kwSection = hasKeywordSection
-      ? `<div class="dpr-chat-result-block">
-           <div class="dpr-modal-group-title">${buildSelectionTitle('keyword', '用于召回')}</div>
-           <div class="dpr-chat-slot-area ${hasKeywords ? 'has-candidates' : 'draft-only'}">
-             <div class="dpr-chat-slot-scroll">
-               <div class="dpr-cloud-grid dpr-cloud-grid-keywords">${kwHtml}</div>
-             </div>
-           </div>
-         </div>`
-      : '';
-    const intentSection = hasIntentSection
-      ? `<div class="dpr-chat-result-block">
-           <div class="dpr-modal-group-title">${buildSelectionTitle('intent', '用于意图召回与最终打分')}</div>
-           <div class="dpr-chat-slot-area ${hasIntentQueries ? 'has-candidates' : 'draft-only'}">
-             <div class="dpr-chat-slot-scroll">
-               <div class="dpr-cloud-grid dpr-cloud-grid-intent">${intentHtml}</div>
-             </div>
-           </div>
-         </div>`
-      : '';
-    const mixedHtml = `${kwSection}${hasKeywords && hasIntentQueries ? '<div class="dpr-chat-divider"></div>' : ''}${intentSection}`;
-    const emptyBlock = '<div class="dpr-cloud-empty"></div>';
-
     modalPanel.innerHTML = `
       <div class="dpr-modal-shell dpr-query-builder">
         <div class="dpr-modal-head dpr-modal-head-polished">
@@ -2016,11 +2211,11 @@ window.SubscriptionsSmartQuery = (function () {
           <div class="dpr-query-card-head">
             <div>
               <div class="dpr-query-step-pill">02</div>
-              <h3>选择候选</h3>
+              <h3>管理候选</h3>
             </div>
-            <span>可编辑、可追加</span>
+            <span>批量新增、编辑或勾选删除</span>
           </div>
-          <div class="dpr-chat-result-content">${mixedHtml || emptyBlock}</div>
+          <div class="dpr-chat-result-content dpr-query-batch-stack">${candidateBlocks}</div>
         </div>
         <div class="dpr-query-save-strip">
           <div class="dpr-query-card-head">
@@ -2030,37 +2225,41 @@ window.SubscriptionsSmartQuery = (function () {
             </div>
           </div>
           <div class="dpr-modal-actions dpr-modal-add-footer dpr-query-footer-grid">
-            <label class="dpr-chat-label dpr-chat-inline-tag">
-              <span class="dpr-chat-label-text">标签</span>
-              <input id="dpr-chat-tag-input" type="text" placeholder="例如：SR" value="${escapeHtml(modalState.inputTag || '')}" />
-            </label>
-            <label class="dpr-chat-label dpr-chat-inline-desc">
-              <span class="dpr-chat-label-text">中文描述</span>
-              <input id="dpr-chat-required-desc" type="text" placeholder="请填写描述" value="${escapeHtml(modalState.inputDesc || '')}" />
-            </label>
-            <div class="dpr-chat-label dpr-chat-inline-sources">
-              <span class="dpr-chat-label-text">论文源</span>
-              <div class="dpr-paper-source-row">${sourceChoices}</div>
+            <div class="dpr-query-footer-row dpr-query-footer-main">
+              <label class="dpr-chat-label dpr-chat-inline-tag">
+                <span class="dpr-chat-label-text">标签</span>
+                <input id="dpr-chat-tag-input" type="text" placeholder="例如：SR" value="${escapeHtml(modalState.inputTag || '')}" />
+              </label>
+              <label class="dpr-chat-label dpr-chat-inline-desc">
+                <span class="dpr-chat-label-text">中文描述</span>
+                <input id="dpr-chat-required-desc" type="text" placeholder="请填写描述" value="${escapeHtml(modalState.inputDesc || '')}" />
+              </label>
+              <div class="dpr-chat-label dpr-chat-inline-sources">
+                <span class="dpr-chat-label-text">论文源</span>
+                <div class="dpr-paper-source-row">${sourceChoices}</div>
+              </div>
             </div>
-            <label class="dpr-chat-label dpr-chat-inline-limit">
-              <span class="dpr-chat-label-text">精读上限</span>
-              <input id="dpr-chat-deep-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.deep_daily_paper_limit))}" />
-            </label>
-            <label class="dpr-chat-label dpr-chat-inline-limit">
-              <span class="dpr-chat-label-text">速读上限</span>
-              <input id="dpr-chat-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
-            </label>
-            <label class="dpr-chat-label dpr-chat-inline-limit">
-              <span class="dpr-chat-label-text">强相关配比</span>
-              <input id="dpr-chat-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
-            </label>
-            <label class="dpr-chat-label dpr-chat-inline-limit">
-              <span class="dpr-chat-label-text">通用启发配比</span>
-              <input id="dpr-chat-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
-            </label>
-            <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-chat" ${hasCandidates ? '' : 'disabled'}>
-              保存查询
-            </button>
+            <div class="dpr-query-footer-row dpr-query-footer-limits">
+              <label class="dpr-chat-label dpr-chat-inline-limit">
+                <span class="dpr-chat-label-text">精读上限</span>
+                <input id="dpr-chat-deep-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.deep_daily_paper_limit))}" />
+              </label>
+              <label class="dpr-chat-label dpr-chat-inline-limit">
+                <span class="dpr-chat-label-text">速读上限</span>
+                <input id="dpr-chat-quick-daily-paper-limit" type="number" min="1" step="1" value="${escapeHtml(normalizeDailyPaperLimit(modalState.quick_daily_paper_limit))}" />
+              </label>
+              <label class="dpr-chat-label dpr-chat-inline-limit">
+                <span class="dpr-chat-label-text">强相关配比</span>
+                <input id="dpr-chat-core-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).core_ratio)}" />
+              </label>
+              <label class="dpr-chat-label dpr-chat-inline-limit">
+                <span class="dpr-chat-label-text">通用启发配比</span>
+                <input id="dpr-chat-inspiration-ratio" type="number" min="0" step="1" value="${escapeHtml(resolveRecommendMix(modalState).inspiration_ratio)}" />
+              </label>
+              <button class="arxiv-tool-btn dpr-query-save-btn" data-action="apply-chat" ${hasCandidates ? '' : 'disabled'}>
+                保存查询
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2087,8 +2286,12 @@ window.SubscriptionsSmartQuery = (function () {
 
   const applyChatSelection = () => {
     let hasSelection = false;
-    const selectedKeywords = getSelectedItemsForSave(modalState.keywords || []);
-    const selectedIntentQueries = getSelectedItemsForSave(modalState.intent_queries || []);
+    const selectedKeywords = getSelectedItemsForSave(modalState.keywords || []).filter((item) =>
+      normalizeText(item.keyword || item.text || item.expr || ''),
+    );
+    const selectedIntentQueries = getSelectedItemsForSave(modalState.intent_queries || []).filter((item) =>
+      normalizeText(item.query || item.text || item.keyword || item.expr || ''),
+    );
     const hasItems = selectedKeywords.length || selectedIntentQueries.length;
     const validationError = validateProfileSelection(selectedKeywords, selectedIntentQueries);
     const desc = normalizeText(document.getElementById('dpr-chat-required-desc')?.value || '');
@@ -2159,7 +2362,7 @@ window.SubscriptionsSmartQuery = (function () {
     }
 
     if (!hasSelection) {
-      setMessage(hasItems ? '应用失败，请重试。' : '请至少勾选 1 条关键词和 1 条意图Query 后再应用。', '#c00');
+      setMessage(hasItems ? '应用失败，请重试。' : '请至少保留 1 条关键词和 1 条意图Query 后再应用。', '#c00');
       return;
     }
     if (typeof reloadAll === 'function') reloadAll();
@@ -2225,14 +2428,14 @@ window.SubscriptionsSmartQuery = (function () {
         newIntentQueries: nextCandidates.intent_queries.length,
         createdAt: new Date().toISOString(),
       });
-      modalState.keywords = ensureDraftSlot(nextKeywords, 'keyword');
-      modalState.intent_queries = ensureDraftSlot(nextIntentQueries, 'intent');
+      modalState.keywords = normalizeQueryItemsForBatch('keyword', nextKeywords);
+      modalState.intent_queries = normalizeQueryItemsForBatch('intent', nextIntentQueries);
       modalState.chatTag = finalTag;
       modalState.inputTag = finalTag;
       modalState.lastTag = finalTag;
       modalState.lastDesc = finalDesc;
       modalState.requestHistory = history;
-      modalState.chatStatus = `已生成候选（关键词 ${nextCandidates.keywords.length} 条，意图 ${nextCandidates.intent_queries.length} 条）。`;
+      modalState.chatStatus = `已生成候选（关键词 ${nextCandidates.keywords.length} 条，意图 ${nextCandidates.intent_queries.length} 条；当前保留 ${modalState.keywords.length}/${MAX_KEYWORDS_PER_PROFILE}、${modalState.intent_queries.length}/${MAX_INTENT_QUERIES_PER_PROFILE}）。`;
       if (document.getElementById('dpr-chat-desc-input')) {
         document.getElementById('dpr-chat-desc-input').value = '';
       }
@@ -2313,6 +2516,18 @@ window.SubscriptionsSmartQuery = (function () {
         if (modalState && modalState.type === 'add') renderAddModal();
         if (modalState && modalState.type === 'chat') renderChatModal();
       }
+      return;
+    }
+    if (action === 'bulk-add-query-item') {
+      e.preventDefault();
+      e.stopPropagation();
+      addBulkQueryItems(actionEl.getAttribute('data-kind') || '');
+      return;
+    }
+    if (action === 'bulk-delete-query-item') {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteSelectedQueryItems(actionEl.getAttribute('data-kind') || '');
       return;
     }
 
@@ -2511,6 +2726,14 @@ window.SubscriptionsSmartQuery = (function () {
               : modalState.recommend_mix?.inspiration_ratio,
         });
       }
+      return;
+    }
+    if (target.matches('input[data-query-item-input="1"]')) {
+      if (!modalState) return;
+      const kind = target.getAttribute('data-kind') || '';
+      const idx = Number(target.getAttribute('data-index'));
+      const field = target.getAttribute('data-field') || '';
+      updateQueryItemAt(kind, idx, field, target.value, modalState);
       return;
     }
     if (!target.matches('input[data-draft-input="1"]')) return;
