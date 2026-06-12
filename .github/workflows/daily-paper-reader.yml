@@ -285,10 +285,12 @@ jobs:
               fallback = env_text("DPR_EMBED_REMOTE_FALLBACK", default="local").lower()
               if fallback not in {"local", "fail"}:
                   fallback = "local"
-              allow_local_fallback = fallback == "local"
               if profile in {"local", "advanced"}:
                   print(f"Embedding preflight skipped for {profile} profile; runtime will load the local model.")
                   return
+              if profile == "default_remote":
+                  fallback = "local"
+              allow_local_fallback = fallback == "local"
               if profile == "default_remote":
                   endpoint = env_text("DPR_EMBED_DEFAULT_API_URL", default=DEFAULT_EMBED_ENDPOINT)
                   if endpoint.rstrip("/") == DEFAULT_EMBED_ENDPOINT:

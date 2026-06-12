@@ -165,6 +165,9 @@ def load_remote_embedding_settings(
     timeout = _DEFAULT_REMOTE_TIMEOUT_SECONDS
 
   fallback = _env_text(env, "DPR_EMBED_REMOTE_FALLBACK", "local").lower()
+  # 默认预置 embedding 必须可用本地兜底，避免旧 Variable=fail 让公网 TLS 抖动中断日报。
+  if profile == "default_remote":
+    fallback = "local"
   if fallback not in {"local", "fail"}:
     if log:
       log(f"[WARN] Unsupported DPR_EMBED_REMOTE_FALLBACK={fallback}; using local.")

@@ -190,6 +190,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
             "DPR_EMBED_PROVIDER": "openai",
             "DPR_EMBED_ENDPOINT": "https://stale-custom.example.test/v1",
             "DPR_EMBED_API_KEY": "stale-key",
+            "DPR_EMBED_REMOTE_FALLBACK": "fail",
         },
         clear=True,
     )
@@ -201,6 +202,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         self.assertEqual(settings.provider, "legacy")
         self.assertEqual(settings.endpoint, "https://embed.zwwen.online/embed")
         self.assertEqual(settings.api_key, "")
+        self.assertEqual(settings.fallback, "local")
 
     @patch.dict(
         os.environ,

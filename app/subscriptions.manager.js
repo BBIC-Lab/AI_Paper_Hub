@@ -238,6 +238,7 @@ window.SubscriptionsManager = (function () {
       }
       if (profile === 'default_remote' || profile === 'local') {
         variables.DPR_EMBED_MODEL = DEFAULT_EMBEDDING_MODEL;
+        variables.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
       }
       return variables;
     }

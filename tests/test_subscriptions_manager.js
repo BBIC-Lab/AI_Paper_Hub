@@ -281,11 +281,13 @@ function testEmbeddingPresetProfilesDoNotExposeEndpointSecrets() {
     local: {
       DPR_EMBED_PROFILE: 'local',
       DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
+      DPR_EMBED_REMOTE_FALLBACK: 'local',
     },
     default_remote: {
       DPR_EMBED_PROFILE: 'default_remote',
       DPR_EMBED_PROVIDER: 'legacy',
       DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
+      DPR_EMBED_REMOTE_FALLBACK: 'local',
     },
     advanced: {
       DPR_EMBED_PROFILE: 'advanced',
