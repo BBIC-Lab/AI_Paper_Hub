@@ -277,13 +277,26 @@ function testEmbeddingSecretsPayloadForCustomProfile() {
 }
 
 function testEmbeddingPresetProfilesDoNotExposeEndpointSecrets() {
-  for (const profile of ['local', 'default_remote', 'advanced']) {
+  const expectedVariables = {
+    local: {
+      DPR_EMBED_PROFILE: 'local',
+      DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
+    },
+    default_remote: {
+      DPR_EMBED_PROFILE: 'default_remote',
+      DPR_EMBED_PROVIDER: 'legacy',
+      DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
+    },
+    advanced: {
+      DPR_EMBED_PROFILE: 'advanced',
+    },
+  };
+  for (const profile of Object.keys(expectedVariables)) {
     const secrets = buildEmbeddingSecretsPayload({ profile });
     const variables = buildEmbeddingVariablesPayload({ profile });
     assert.deepEqual(secrets, {});
-    assert.deepEqual(variables, { DPR_EMBED_PROFILE: profile });
+    assert.deepEqual(variables, expectedVariables[profile]);
     assert.equal(Object.prototype.hasOwnProperty.call(variables, 'DPR_EMBED_ENDPOINT'), false);
-    assert.equal(Object.prototype.hasOwnProperty.call(variables, 'DPR_EMBED_MODEL'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(secrets, 'MODEL_API_KEY'), false);
   }
 }

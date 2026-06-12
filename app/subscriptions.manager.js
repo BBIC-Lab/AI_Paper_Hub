@@ -24,6 +24,7 @@ window.SubscriptionsManager = (function () {
   const DEFAULT_EMAIL_TIMEZONE = 'Asia/Shanghai';
   const DEFAULT_EMBEDDING_PROFILE = 'default_remote';
   const DEFAULT_EMBEDDING_PROVIDER = 'openai';
+  const DEFAULT_EMBEDDING_MODEL = 'BAAI/bge-small-en-v1.5';
   const DEFAULT_EMBEDDING_TIMEOUT = 60;
   const DEFAULT_EMBEDDING_FALLBACK = 'local';
   const DEFAULT_RERANK_PROVIDER = 'openai';
@@ -232,6 +233,12 @@ window.SubscriptionsManager = (function () {
     const profile = normalizeEmbeddingProfile(safe.profile);
     const variables = { DPR_EMBED_PROFILE: profile };
     if (profile !== 'custom') {
+      if (profile === 'default_remote') {
+        variables.DPR_EMBED_PROVIDER = 'legacy';
+      }
+      if (profile === 'default_remote' || profile === 'local') {
+        variables.DPR_EMBED_MODEL = DEFAULT_EMBEDDING_MODEL;
+      }
       return variables;
     }
     const endpoint = normalizeText(safe.endpoint || safe.apiUrl);

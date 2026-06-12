@@ -113,7 +113,8 @@ def load_remote_embedding_settings(
 ) -> RemoteEmbeddingSettings | None:
   env = os.environ if env is None else env
   raw_profile = _env_text(env, "DPR_EMBED_PROFILE")
-  provider = normalize_remote_embedding_provider(_env_text(env, "DPR_EMBED_PROVIDER", "legacy"))
+  raw_provider = _env_text(env, "DPR_EMBED_PROVIDER")
+  provider = normalize_remote_embedding_provider(raw_provider or "legacy")
   base_url = _env_text_any(env, "DPR_INFERENCE_BASE_URL", "INFERENCE_BASE_URL")
   endpoint_alias = _env_text_any(env, "DPR_EMBED_ENDPOINT", "EMBED_ENDPOINT")
   raw_custom_endpoint = endpoint_alias or _env_text(env, "DPR_EMBED_API_URL")
@@ -121,9 +122,8 @@ def load_remote_embedding_settings(
     raw_custom_endpoint = base_url
   custom_endpoint = _join_base_url(base_url, raw_custom_endpoint)
   profile = normalize_remote_embedding_profile(raw_profile)
-  if (endpoint_alias or (provider == "openai" and base_url)) and profile == "default_remote":
-    profile = "custom"
-  elif not raw_profile and custom_endpoint:
+  # 显式 default_remote 要屏蔽旧 custom 变量，避免前端切回默认后仍命中旧 endpoint。
+  if not raw_profile and custom_endpoint:
     profile = "custom"
 
   if profile == "local":
@@ -135,6 +135,8 @@ def load_remote_embedding_settings(
   if profile == "default_remote":
     endpoint = _env_text(env, "DPR_EMBED_DEFAULT_API_URL", _DEFAULT_REMOTE_PRESET_ENDPOINT)
     api_key = _env_text(env, "DPR_EMBED_DEFAULT_API_KEY")
+    if endpoint.rstrip("/") == _DEFAULT_REMOTE_PRESET_ENDPOINT.rstrip("/"):
+      provider = "legacy"
   elif profile == "custom":
     endpoint = custom_endpoint
     api_key = _env_text_any(env, "DPR_EMBED_API_KEY", "EMBED_API_KEY", "EMBED_KEY")

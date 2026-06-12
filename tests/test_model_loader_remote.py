@@ -163,7 +163,7 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
     @patch.dict(
         os.environ,
         {
-            "DPR_EMBED_PROFILE": "default_remote",
+            "DPR_EMBED_PROFILE": "custom",
             "DPR_EMBED_PROVIDER": "openai",
             "DPR_EMBED_ENDPOINT": "https://vllm.example.test/v1",
             "DPR_EMBED_API_KEY": "env-key",
@@ -182,6 +182,25 @@ class RemoteSentenceTransformerTest(unittest.TestCase):
         model = load_sentence_transformer("BAAI/bge-m3", device="cpu")
         self.assertEqual(model.provider, "openai")
         self.assertEqual(model.endpoint, "https://vllm.example.test/v1/embeddings")
+
+    @patch.dict(
+        os.environ,
+        {
+            "DPR_EMBED_PROFILE": "default_remote",
+            "DPR_EMBED_PROVIDER": "openai",
+            "DPR_EMBED_ENDPOINT": "https://stale-custom.example.test/v1",
+            "DPR_EMBED_API_KEY": "stale-key",
+        },
+        clear=True,
+    )
+    def test_default_remote_profile_ignores_stale_custom_endpoint_alias(self):
+        settings = load_remote_embedding_settings()
+
+        self.assertIsNotNone(settings)
+        self.assertEqual(settings.profile, "default_remote")
+        self.assertEqual(settings.provider, "legacy")
+        self.assertEqual(settings.endpoint, "https://embed.zwwen.online/embed")
+        self.assertEqual(settings.api_key, "")
 
     @patch.dict(
         os.environ,

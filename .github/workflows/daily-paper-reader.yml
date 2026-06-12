@@ -43,15 +43,17 @@ jobs:
       DPR_LLM_FILTER_MODEL: ${{ vars.DPR_LLM_FILTER_MODEL || secrets.DPR_LLM_FILTER_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
       DPR_LLM_SUMMARY_MODEL: ${{ vars.DPR_LLM_SUMMARY_MODEL || secrets.DPR_LLM_SUMMARY_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
       MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
-      DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'false' }}
-      DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'custom' }}
-      DPR_EMBED_PROVIDER: ${{ vars.DPR_EMBED_PROVIDER || 'openai' }}
-      DPR_EMBED_MODEL: ${{ vars.DPR_EMBED_MODEL || 'BAAI/bge-m3' }}
-      DPR_EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
-      EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || 'http://127.0.0.1:8010/v1/embeddings' }}
+      DPR_SKIP_RERANK: ${{ vars.DPR_SKIP_RERANK || 'true' }}
+      DPR_EMBED_PROFILE: ${{ vars.DPR_EMBED_PROFILE || 'default_remote' }}
+      DPR_EMBED_PROVIDER: ${{ vars.DPR_EMBED_PROVIDER || 'legacy' }}
+      DPR_EMBED_MODEL: ${{ vars.DPR_EMBED_MODEL || 'BAAI/bge-small-en-v1.5' }}
+      DPR_EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || '' }}
+      EMBED_ENDPOINT: ${{ vars.DPR_EMBED_ENDPOINT || '' }}
+      DPR_EMBED_DEFAULT_API_URL: ${{ vars.DPR_EMBED_DEFAULT_API_URL || '' }}
+      DPR_EMBED_DEFAULT_API_KEY: ${{ secrets.DPR_EMBED_DEFAULT_API_KEY || '' }}
       DPR_EMBED_API_KEY: ${{ secrets.MODEL_API_KEY }}
       DPR_EMBED_API_TIMEOUT: ${{ vars.DPR_EMBED_API_TIMEOUT || '60' }}
-      DPR_EMBED_REMOTE_FALLBACK: ${{ vars.DPR_EMBED_REMOTE_FALLBACK || 'fail' }}
+      DPR_EMBED_REMOTE_FALLBACK: ${{ vars.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
       # Self-hosted 验收必须保留本地候选池，避免 Supabase 向量 RPC 抖动跳过 embedding。
       DPR_DISABLE_SUPABASE_VECTOR: "true"
       DPR_RERANK_PROVIDER: ${{ vars.DPR_RERANK_PROVIDER || 'openai' }}
@@ -158,46 +160,12 @@ jobs:
             exit 1
           }
 
-          require_loopback_endpoint() {
-            name="$1"
-            url="$2"
-            port="$3"
-            path="$4"
-            if [ -z "$url" ]; then
-              fail "$name is empty; set the repository Variable or keep the workflow default."
-            fi
-            case "$url" in
-              "http://127.0.0.1:${port}${path}") ;;
-              *)
-                fail "$name must be http://127.0.0.1:${port}${path} on the self-hosted runner."
-                ;;
-            esac
-          }
-
-          check_health() {
-            name="$1"
-            url="$2"
-            code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "$url" || true)"
-            if [ "$code" != "200" ]; then
-              fail "$name health check failed at $url with HTTP ${code:-curl-failed}; ensure the local service is running on spark-d326 loopback."
-            fi
-            echo "$name health OK."
-          }
-
-          [ -n "${MODEL_API_KEY:-}" ] || fail "MODEL_API_KEY GitHub Secret is required for Bearer preflight."
           [ -n "${DPR_LLM_API_KEY:-}" ] || fail "DPR_LLM_API_KEY GitHub Secret is required for LLM refine/docs."
           llm_filter_model="${DPR_LLM_FILTER_MODEL:-${DPR_LLM_MODEL:-}}"
           llm_summary_model="${DPR_LLM_SUMMARY_MODEL:-${DPR_LLM_MODEL:-}}"
           [ -n "$llm_filter_model" ] || fail "DPR_LLM_FILTER_MODEL or DPR_LLM_MODEL is required for Step 4 LLM refine."
           [ -n "$llm_summary_model" ] || fail "DPR_LLM_SUMMARY_MODEL or DPR_LLM_MODEL is required for Step 6 docs generation."
           [ -n "${DPR_EMBED_MODEL:-}" ] || fail "DPR_EMBED_MODEL is required."
-          [ -n "${DPR_RERANK_MODEL:-}" ] || fail "DPR_RERANK_MODEL is required."
-          [ "${DPR_SKIP_RERANK:-true}" = "false" ] || fail "DPR_SKIP_RERANK must be false to use the local reranker."
-
-          require_loopback_endpoint "DPR_EMBED_ENDPOINT" "$DPR_EMBED_ENDPOINT" "8010" "/v1/embeddings"
-          require_loopback_endpoint "DPR_RERANK_ENDPOINT" "$DPR_RERANK_ENDPOINT" "8011" "/v1/rerank"
-          check_health "Embedding" "http://127.0.0.1:8010/health"
-          check_health "Reranker" "http://127.0.0.1:8011/health"
 
           python3 - <<'PY'
           import json
@@ -212,15 +180,67 @@ jobs:
               raise SystemExit(1)
 
 
-          def post_json(name: str, url: str, payload: dict, timeout_var: str) -> dict:
+          DEFAULT_EMBED_ENDPOINT = "https://embed.zwwen.online/embed"
+          RERANK_ENABLED_VALUES = {"0", "false", "no", "off"}
+
+
+          def env_text(*names: str, default: str = "") -> str:
+              for name in names:
+                  value = str(os.environ.get(name) or "").strip()
+                  if value:
+                      return value
+              return str(default or "").strip()
+
+
+          def normalize_profile(value: str) -> str:
+              text = str(value or "").strip().lower()
+              if text in {"", "default", "remote", "default_remote"}:
+                  return "default_remote"
+              if text in {"local", "advanced", "custom"}:
+                  return text
+              fail(f"Unsupported DPR_EMBED_PROFILE={value}.")
+
+
+          def normalize_provider(value: str) -> str:
+              text = str(value or "").strip().lower()
+              if text in {"openai", "openai-compatible", "openai_compatible", "vllm"}:
+                  return "openai"
+              if text in {"", "legacy", "custom"}:
+                  return "legacy"
+              fail(f"Unsupported embedding provider={value}.")
+
+
+          def normalize_embedding_endpoint(endpoint: str, provider: str) -> str:
+              text = str(endpoint or "").strip().rstrip("/")
+              if not text:
+                  fail("Embedding endpoint is empty.")
+              if provider == "openai":
+                  if text.endswith("/v1/embeddings"):
+                      return text
+                  if text.endswith("/v1"):
+                      return f"{text}/embeddings"
+                  return text
+              if text.endswith("/embed"):
+                  return text
+              return f"{text}/embed"
+
+
+          def should_skip_rerank() -> bool:
+              value = env_text("DPR_SKIP_RERANK", default="true").lower()
+              return value not in RERANK_ENABLED_VALUES
+
+
+          def post_json(name: str, url: str, payload: dict, timeout_var: str, api_key: str = "") -> dict:
               body = json.dumps(payload).encode("utf-8")
+              headers = {
+                  "Content-Type": "application/json",
+              }
+              if api_key:
+                  headers["Authorization"] = f"Bearer {api_key}"
               request = urllib.request.Request(
                   url,
                   data=body,
-                  headers={
-                      "Content-Type": "application/json",
-                      "Authorization": f"Bearer {os.environ['MODEL_API_KEY']}",
-                  },
+                  headers=headers,
                   method="POST",
               )
               try:
@@ -242,39 +262,82 @@ jobs:
                   fail(f"{name} preflight returned non-JSON response: {exc.__class__.__name__}.")
 
 
-          embed = post_json(
-              "Embedding",
-              os.environ["DPR_EMBED_ENDPOINT"],
-              {"model": os.environ["DPR_EMBED_MODEL"], "input": ["preflight"]},
-              "DPR_EMBED_API_TIMEOUT",
-          )
-          data = embed.get("data")
-          if not isinstance(data, list) or not data:
-              fail("Embedding preflight response missing non-empty data list.")
-          embedding = data[0].get("embedding") if isinstance(data[0], dict) else None
-          if not isinstance(embedding, list) or not embedding:
-              fail("Embedding preflight response missing embedding vector.")
-          print("Embedding model interface OK.")
+          def preflight_embedding() -> None:
+              profile = normalize_profile(env_text("DPR_EMBED_PROFILE", default="default_remote"))
+              provider = normalize_provider(env_text("DPR_EMBED_PROVIDER", default="legacy"))
+              model = env_text("DPR_EMBED_MODEL", default="BAAI/bge-small-en-v1.5")
+              if profile in {"local", "advanced"}:
+                  print(f"Embedding preflight skipped for {profile} profile; runtime will load the local model.")
+                  return
+              if profile == "default_remote":
+                  endpoint = env_text("DPR_EMBED_DEFAULT_API_URL", default=DEFAULT_EMBED_ENDPOINT)
+                  if endpoint.rstrip("/") == DEFAULT_EMBED_ENDPOINT:
+                      provider = "legacy"
+                  api_key = env_text("DPR_EMBED_DEFAULT_API_KEY")
+              else:
+                  endpoint = env_text("DPR_EMBED_ENDPOINT", "EMBED_ENDPOINT", "DPR_EMBED_API_URL")
+                  api_key = env_text("DPR_EMBED_API_KEY", "MODEL_API_KEY", "EMBED_API_KEY", "EMBED_KEY")
+                  if not api_key:
+                      fail("MODEL_API_KEY or DPR_EMBED_API_KEY is required for custom embedding preflight.")
+              url = normalize_embedding_endpoint(endpoint, provider)
+              payload = (
+                  {"model": model, "input": ["preflight"]}
+                  if provider == "openai"
+                  else {"texts": ["preflight"]}
+              )
+              embed = post_json("Embedding", url, payload, "DPR_EMBED_API_TIMEOUT", api_key)
+              vectors = None
+              data = embed.get("data") if isinstance(embed, dict) else None
+              if isinstance(data, list) and data:
+                  first = data[0]
+                  vectors = [first.get("embedding")] if isinstance(first, dict) else None
+              if vectors is None and isinstance(embed, dict):
+                  vectors = embed.get("embeddings")
+              if not isinstance(vectors, list) or not vectors or not isinstance(vectors[0], list) or not vectors[0]:
+                  fail("Embedding preflight response missing embedding vector.")
+              print(f"Embedding model interface OK ({profile}/{provider}).")
 
-          rerank = post_json(
-              "Reranker",
-              os.environ["DPR_RERANK_ENDPOINT"],
-              {
-                  "model": os.environ["DPR_RERANK_MODEL"],
-                  "query": "preflight",
-                  "documents": ["first candidate", "second candidate"],
-                  "top_n": 1,
-              },
-              "DPR_RERANK_API_TIMEOUT",
-          )
-          results = rerank.get("results")
-          if results is None and isinstance(rerank.get("output"), dict):
-              results = rerank["output"].get("results")
-          if results is None:
-              results = rerank.get("data")
-          if not isinstance(results, list):
-              fail("Reranker preflight response missing results/data list.")
-          print("Reranker model interface OK.")
+
+          def preflight_reranker() -> None:
+              if should_skip_rerank():
+                  print("Reranker preflight skipped because DPR_SKIP_RERANK is not false; Step 3 will use RRF fallback.")
+                  return
+              provider = env_text("DPR_RERANK_PROVIDER", default="openai").lower()
+              if provider not in {"openai", "openai-compatible", "openai_compatible", "vllm"}:
+                  fail("DPR_RERANK_PROVIDER must be openai-compatible when DPR_SKIP_RERANK=false.")
+              endpoint = env_text("DPR_RERANK_ENDPOINT", "RERANK_ENDPOINT")
+              model = env_text("DPR_RERANK_MODEL")
+              api_key = env_text("DPR_RERANK_API_KEY", "MODEL_API_KEY", "RERANK_API_KEY")
+              if not endpoint:
+                  fail("DPR_RERANK_ENDPOINT is required when DPR_SKIP_RERANK=false.")
+              if not model:
+                  fail("DPR_RERANK_MODEL is required when DPR_SKIP_RERANK=false.")
+              if not api_key:
+                  fail("MODEL_API_KEY or DPR_RERANK_API_KEY is required when DPR_SKIP_RERANK=false.")
+              rerank = post_json(
+                  "Reranker",
+                  endpoint,
+                  {
+                      "model": model,
+                      "query": "preflight",
+                      "documents": ["first candidate", "second candidate"],
+                      "top_n": 1,
+                  },
+                  "DPR_RERANK_API_TIMEOUT",
+                  api_key,
+              )
+              results = rerank.get("results")
+              if results is None and isinstance(rerank.get("output"), dict):
+                  results = rerank["output"].get("results")
+              if results is None:
+                  results = rerank.get("data")
+              if not isinstance(results, list):
+                  fail("Reranker preflight response missing results/data list.")
+              print("Reranker model interface OK.")
+
+
+          preflight_embedding()
+          preflight_reranker()
           PY
 
       - name: Setup Python
