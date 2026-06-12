@@ -273,6 +273,8 @@ function testEmbeddingSecretsPayloadForCustomProfile() {
     DPR_EMBED_MODEL: 'BAAI/bge-m3',
     DPR_EMBED_API_TIMEOUT: '60',
     DPR_EMBED_REMOTE_FALLBACK: 'local',
+    DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+    DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
   });
 }
 
@@ -282,15 +284,21 @@ function testEmbeddingPresetProfilesDoNotExposeEndpointSecrets() {
       DPR_EMBED_PROFILE: 'local',
       DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
       DPR_EMBED_REMOTE_FALLBACK: 'local',
+      DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+      DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
     },
     default_remote: {
       DPR_EMBED_PROFILE: 'default_remote',
       DPR_EMBED_PROVIDER: 'legacy',
       DPR_EMBED_MODEL: 'BAAI/bge-small-en-v1.5',
       DPR_EMBED_REMOTE_FALLBACK: 'local',
+      DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+      DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
     },
     advanced: {
       DPR_EMBED_PROFILE: 'advanced',
+      DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+      DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
     },
   };
   for (const profile of Object.keys(expectedVariables)) {
@@ -341,15 +349,46 @@ function testRerankerSecretsPayloadForEnabledAndDisabled() {
     DPR_RERANK_ENDPOINT: 'https://rerank.example.test/v1/rerank',
     DPR_RERANK_MODEL: 'Qwen/Qwen3-Reranker-0.6B',
     DPR_RERANK_API_TIMEOUT: '60',
+    DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+    DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
   });
 
   assert.deepEqual(buildRerankerSecretsPayload({ enabled: false }), {});
   assert.deepEqual(buildRerankerVariablesPayload({ enabled: false }), {
     DPR_SKIP_RERANK: 'true',
     DPR_RERANK_PROVIDER: 'disabled',
+    DPR_RUNNER_LABELS: '["ubuntu-latest"]',
+    DPR_SKIP_LOCAL_EMBED_DEPS: 'false',
   });
   assert.equal(resolveRerankerServiceState({}).enabled, false);
   assert.equal(resolveRerankerServiceState({ rerankerService: { enabled: true, hasCredentials: true } }).hasCredentials, true);
+}
+
+function testSelfHostedInferenceEndpointsSetRunnerVariables() {
+  const embeddingVariables = buildEmbeddingVariablesPayload({
+    profile: 'custom',
+    provider: 'openai',
+    endpoint: 'http://127.0.0.1:8010/v1/embeddings',
+    model: 'BAAI/bge-small-en-v1.5',
+  });
+  assert.equal(embeddingVariables.DPR_RUNNER_LABELS, '["self-hosted","linux","dpr-local-inference"]');
+  assert.equal(embeddingVariables.DPR_SKIP_LOCAL_EMBED_DEPS, 'true');
+
+  const rerankerVariables = buildRerankerVariablesPayload({
+    enabled: true,
+    endpoint: 'http://127.0.0.1:8011/v1/rerank',
+    model: 'Qwen/Qwen3-Reranker-0.6B',
+  });
+  assert.equal(rerankerVariables.DPR_RUNNER_LABELS, '["self-hosted","linux","dpr-local-inference"]');
+  assert.equal(rerankerVariables.DPR_SKIP_LOCAL_EMBED_DEPS, 'false');
+
+  const disabledWithSelfHostedEmbedding = buildRerankerVariablesPayload({
+    enabled: false,
+    keepSelfHostedRunner: true,
+    keepSkipLocalEmbedDeps: true,
+  });
+  assert.equal(disabledWithSelfHostedEmbedding.DPR_RUNNER_LABELS, '["self-hosted","linux","dpr-local-inference"]');
+  assert.equal(disabledWithSelfHostedEmbedding.DPR_SKIP_LOCAL_EMBED_DEPS, 'true');
 }
 
 function testRerankerCustomProfileRequiresEndpointModelAndKey() {
@@ -693,6 +732,7 @@ testEmbeddingSecretsPayloadForCustomProfile();
 testEmbeddingPresetProfilesDoNotExposeEndpointSecrets();
 testEmbeddingCustomProfileRequiresUrlAndKey();
 testRerankerSecretsPayloadForEnabledAndDisabled();
+testSelfHostedInferenceEndpointsSetRunnerVariables();
 testRerankerCustomProfileRequiresEndpointModelAndKey();
 testEmbeddingSettingsUiSourceMatchesContract();
 testNormalizeResearchDirectionsSplitsAndCaps();

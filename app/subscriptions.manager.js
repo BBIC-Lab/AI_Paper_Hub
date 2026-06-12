@@ -27,6 +27,8 @@ window.SubscriptionsManager = (function () {
   const DEFAULT_EMBEDDING_MODEL = 'BAAI/bge-small-en-v1.5';
   const DEFAULT_EMBEDDING_TIMEOUT = 60;
   const DEFAULT_EMBEDDING_FALLBACK = 'local';
+  const DEFAULT_RUNNER_LABELS = '["ubuntu-latest"]';
+  const SELF_HOSTED_RUNNER_LABELS = '["self-hosted","linux","dpr-local-inference"]';
   const DEFAULT_RERANK_PROVIDER = 'openai';
   const DEFAULT_RERANK_TIMEOUT = 60;
   const DEFAULT_PERIODIC_REPORTS = {
@@ -182,6 +184,20 @@ window.SubscriptionsManager = (function () {
     normalizeText(value) === 'UTC' ? 'UTC' : DEFAULT_EMAIL_TIMEZONE
   );
   const isHttpUrl = (value) => /^https?:\/\//i.test(normalizeText(value));
+  const isSelfHostedInferenceEndpoint = (value) => {
+    try {
+      const url = new URL(normalizeText(value));
+      const host = String(url.hostname || '').toLowerCase();
+      return ['127.0.0.1', 'localhost', '::1'].includes(host);
+    } catch (e) {
+      return false;
+    }
+  };
+  const applyRunnerVariables = (variables, useSelfHosted, skipLocalEmbedDeps) => {
+    variables.DPR_RUNNER_LABELS = useSelfHosted ? SELF_HOSTED_RUNNER_LABELS : DEFAULT_RUNNER_LABELS;
+    variables.DPR_SKIP_LOCAL_EMBED_DEPS = useSelfHosted && skipLocalEmbedDeps ? 'true' : 'false';
+    return variables;
+  };
   const normalizeEmbeddingProfile = (value) => {
     const text = normalizeText(value).toLowerCase();
     return ['local', 'default_remote', 'advanced', 'custom'].includes(text)
@@ -214,6 +230,7 @@ window.SubscriptionsManager = (function () {
       timeout: normalizeEmbeddingTimeout(embedding.timeout || DEFAULT_EMBEDDING_TIMEOUT),
       fallback: normalizeEmbeddingFallback(embedding.fallback || DEFAULT_EMBEDDING_FALLBACK),
       hasCustomCredentials: !!embedding.hasCustomCredentials,
+      selfHosted: !!embedding.selfHosted,
     };
   };
   const buildEmbeddingSecretsPayload = (settings) => {
@@ -232,6 +249,7 @@ window.SubscriptionsManager = (function () {
     const safe = isPlainObject(settings) ? settings : {};
     const profile = normalizeEmbeddingProfile(safe.profile);
     const variables = { DPR_EMBED_PROFILE: profile };
+    const keepSelfHostedRunner = safe.keepSelfHostedRunner === true;
     if (profile !== 'custom') {
       if (profile === 'default_remote') {
         variables.DPR_EMBED_PROVIDER = 'legacy';
@@ -240,6 +258,7 @@ window.SubscriptionsManager = (function () {
         variables.DPR_EMBED_MODEL = DEFAULT_EMBEDDING_MODEL;
         variables.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
       }
+      applyRunnerVariables(variables, keepSelfHostedRunner, safe.keepSkipLocalEmbedDeps === true);
       return variables;
     }
     const endpoint = normalizeText(safe.endpoint || safe.apiUrl);
@@ -255,6 +274,12 @@ window.SubscriptionsManager = (function () {
     variables.DPR_EMBED_MODEL = model;
     variables.DPR_EMBED_API_TIMEOUT = String(DEFAULT_EMBEDDING_TIMEOUT);
     variables.DPR_EMBED_REMOTE_FALLBACK = DEFAULT_EMBEDDING_FALLBACK;
+    const selfHostedEndpoint = isSelfHostedInferenceEndpoint(endpoint);
+    applyRunnerVariables(
+      variables,
+      selfHostedEndpoint || keepSelfHostedRunner,
+      selfHostedEndpoint || safe.keepSkipLocalEmbedDeps === true,
+    );
     return variables;
   };
   const normalizeRerankerProvider = (value) => {
@@ -283,6 +308,7 @@ window.SubscriptionsManager = (function () {
       provider: normalizeRerankerProvider(reranker.provider || (enabled ? DEFAULT_RERANK_PROVIDER : 'disabled')),
       timeout: normalizeEmbeddingTimeout(reranker.timeout || DEFAULT_RERANK_TIMEOUT),
       hasCredentials: !!reranker.hasCredentials,
+      selfHosted: !!reranker.selfHosted,
     };
   };
   const buildRerankerSecretsPayload = (settings) => {
@@ -307,10 +333,10 @@ window.SubscriptionsManager = (function () {
       : safe.mode;
     const enabled = normalizeRerankerEnabled(enabledValue);
     if (!enabled) {
-      return {
+      return applyRunnerVariables({
         DPR_SKIP_RERANK: 'true',
         DPR_RERANK_PROVIDER: 'disabled',
-      };
+      }, safe.keepSelfHostedRunner === true, safe.keepSkipLocalEmbedDeps === true);
     }
     const endpoint = normalizeText(safe.endpoint);
     const model = normalizeText(safe.model);
@@ -320,13 +346,14 @@ window.SubscriptionsManager = (function () {
     if (!model) {
       throw new Error('请填写 reranker 模型名称。');
     }
-    return {
+    const selfHostedEndpoint = isSelfHostedInferenceEndpoint(endpoint);
+    return applyRunnerVariables({
       DPR_SKIP_RERANK: 'false',
       DPR_RERANK_PROVIDER: normalizeRerankerProvider(safe.provider || DEFAULT_RERANK_PROVIDER),
       DPR_RERANK_ENDPOINT: endpoint,
       DPR_RERANK_MODEL: model,
       DPR_RERANK_API_TIMEOUT: String(DEFAULT_RERANK_TIMEOUT),
-    };
+    }, selfHostedEndpoint || safe.keepSelfHostedRunner === true, safe.keepSkipLocalEmbedDeps === true);
   };
   const buildEmailWorkflowCron = (timeValue, timezoneValue) => {
     const timeText = normalizeDailyPushTime(timeValue);
@@ -1483,7 +1510,12 @@ window.SubscriptionsManager = (function () {
     try {
       draft = collectEmbeddingSettingsDraft();
       secrets = buildEmbeddingSecretsPayload(draft);
-      variables = buildEmbeddingVariablesPayload(draft);
+      const rerankerState = resolveRerankerServiceState();
+      variables = buildEmbeddingVariablesPayload({
+        ...draft,
+        keepSelfHostedRunner: rerankerState.selfHosted,
+        keepSkipLocalEmbedDeps: false,
+      });
     } catch (e) {
       setEmbeddingMessage(e.message || 'Embedding 配置不完整。', '#c00');
       return;
@@ -1510,6 +1542,8 @@ window.SubscriptionsManager = (function () {
         timeout: DEFAULT_EMBEDDING_TIMEOUT,
         fallback: DEFAULT_EMBEDDING_FALLBACK,
         hasCustomCredentials: normalizeEmbeddingProfile(draft.profile) === 'custom',
+        selfHosted: normalizeEmbeddingProfile(draft.profile) === 'custom'
+          && isSelfHostedInferenceEndpoint(draft.endpoint),
       };
       window.decoded_secret_private = secret;
       const apiKeyInput = document.getElementById('dpr-embedding-api-key-input');
@@ -1603,7 +1637,12 @@ window.SubscriptionsManager = (function () {
     try {
       draft = collectRerankerSettingsDraft();
       secrets = buildRerankerSecretsPayload(draft);
-      variables = buildRerankerVariablesPayload(draft);
+      const embeddingState = resolveEmbeddingServiceState();
+      variables = buildRerankerVariablesPayload({
+        ...draft,
+        keepSelfHostedRunner: embeddingState.selfHosted,
+        keepSkipLocalEmbedDeps: embeddingState.selfHosted,
+      });
     } catch (e) {
       setRerankerMessage(e.message || 'Reranker 配置不完整。', '#c00');
       return;
@@ -1630,6 +1669,7 @@ window.SubscriptionsManager = (function () {
         provider: enabled ? DEFAULT_RERANK_PROVIDER : 'disabled',
         timeout: DEFAULT_RERANK_TIMEOUT,
         hasCredentials: enabled,
+        selfHosted: enabled && isSelfHostedInferenceEndpoint(draft.endpoint),
       };
       secret.rerankerLLM = {
         enabled,
@@ -2481,7 +2521,7 @@ window.SubscriptionsManager = (function () {
                         </label>
                       </div>
                       <div id="dpr-embedding-custom-panel" class="dpr-embedding-custom-panel" hidden>
-                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets，不会写入仓库文件、config.yaml 或 docs/config.yaml。</p>
+                        <p class="dpr-embedding-safe-note">自定义 endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets。填写 127.0.0.1 / localhost endpoint 时会自动切到 self-hosted runner。</p>
                         <div class="dpr-settings-form-grid">
                           <label class="chat-quick-run-row" for="dpr-embedding-provider-select"><span>接口协议</span><select id="dpr-embedding-provider-select" disabled><option value="openai" selected>OpenAI-compatible /v1/embeddings</option><option value="legacy">Legacy /embed</option></select></label>
                           <label class="chat-quick-run-row" for="dpr-embedding-endpoint-input"><span>Endpoint</span><input id="dpr-embedding-endpoint-input" type="text" autocomplete="off" disabled placeholder="http://127.0.0.1:8010/v1/embeddings" /></label>
@@ -2513,7 +2553,7 @@ window.SubscriptionsManager = (function () {
                         </label>
                       </div>
                       <div id="dpr-reranker-custom-panel" class="dpr-embedding-custom-panel dpr-reranker-custom-panel" hidden>
-                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets，保存后旧密钥不会回显。</p>
+                        <p class="dpr-embedding-safe-note">Reranker endpoint、模型名写入 GitHub Variables；API Key 只会加密写入 GitHub Secrets。填写 127.0.0.1 / localhost endpoint 时会自动切到 self-hosted runner。</p>
                         <div class="dpr-settings-form-grid">
                           <label class="chat-quick-run-row" for="dpr-reranker-endpoint-input"><span>Endpoint</span><input id="dpr-reranker-endpoint-input" type="text" autocomplete="off" disabled placeholder="http://127.0.0.1:8011/v1/rerank" /></label>
                           <label class="chat-quick-run-row" for="dpr-reranker-model-input"><span>模型名称</span><input id="dpr-reranker-model-input" type="text" autocomplete="off" disabled placeholder="Qwen/Qwen3-Reranker-0.6B" /></label>
