@@ -178,6 +178,11 @@ def _normalize_query_tag(raw_tag: str, query_text: str, idx: int) -> str:
 def _collect_profile_composite_clauses(profile: Dict[str, Any]) -> List[str]:
     clauses: List[str] = []
 
+    for item in profile.get("research_directions") or []:
+        text = _norm_text(item)
+        if text:
+            clauses.append(text)
+
     for item in profile.get("keywords") or []:
         if isinstance(item, dict) and not _as_bool(item.get("enabled"), True):
             continue
@@ -283,16 +288,27 @@ def build_user_requirements(
             text,
             len(requirements) + 1,
         )
+        req_track = normalize_relevance_track(item.get("query_track"), TRACK_CORE)
+        core_context = _norm_text(item.get("core_context"))
+        if req_track == TRACK_INSPIRATION and core_context:
+            description_en = (
+                f"Find reusable methods, tools, or analysis ideas related to: {text}. "
+                f"Score high only if there is a concrete transfer path to the user's research context: {core_context}"
+            )
+        elif req_track == TRACK_CORE:
+            description_en = f"Find papers directly relevant to the user's configured research direction or intent: {text}"
+        else:
+            description_en = f"Find papers relevant to this user requirement: {text}"
         requirements.append(
             {
                 "id": f"req-{len(requirements) + 1}",
                 "query": text,
                 "tag": tag,
                 "kind": "direct",
-                "query_track": normalize_relevance_track(item.get("query_track"), TRACK_CORE),
+                "query_track": req_track,
                 "recommend_mix": normalize_recommend_mix(item.get("recommend_mix")),
-                "core_context": _norm_text(item.get("core_context")),
-                "description_en": f"Find papers relevant to this user requirement: {text}",
+                "core_context": core_context,
+                "description_en": description_en,
             }
         )
 
@@ -322,16 +338,27 @@ def build_user_requirements(
                 text,
                 len(requirements) + 1,
             )
+            req_track = normalize_relevance_track(q.get("query_track"), TRACK_CORE)
+            core_context = _norm_text(q.get("core_context"))
+            if req_track == TRACK_INSPIRATION and core_context:
+                description_en = (
+                    f"Find reusable methods, tools, or analysis ideas related to: {text}. "
+                    f"Score high only if there is a concrete transfer path to the user's research context: {core_context}"
+                )
+            elif req_track == TRACK_CORE:
+                description_en = f"Find papers directly relevant to the user's configured research direction or intent: {text}"
+            else:
+                description_en = f"Find papers relevant to this user requirement: {text}"
             requirements.append(
                 {
                     "id": f"req-{len(requirements) + 1}",
                     "query": text,
                     "tag": tag,
                     "kind": "fallback",
-                    "query_track": normalize_relevance_track(q.get("query_track"), TRACK_CORE),
+                    "query_track": req_track,
                     "recommend_mix": normalize_recommend_mix(q.get("recommend_mix")),
-                    "core_context": _norm_text(q.get("core_context")),
-                    "description_en": f"Find papers relevant to this user requirement: {text}",
+                    "core_context": core_context,
+                    "description_en": description_en,
                 }
             )
     return requirements
@@ -447,21 +474,24 @@ def call_filter(
         "- inspiration: the paper may be a generally useful method/tool/idea that can inspire the user's research; it does not need to belong to the core domain.\n"
         "- bridge: the paper is both strongly related to the core direction and methodologically inspiring.\n\n"
         "SCORING RUBRIC:\n"
-        "9-10: Directly excellent for an enabled track\n"
-        "8-9: Strong semantic/method match for an enabled track\n"
-        "6-8: Transferable method or bridge likely useful for the requirement\n"
-        "3-4: Tangential (same broad discipline, weak link)\n"
+        "9-10: Directly excellent for an enabled track, with explicit evidence for the chosen lane\n"
+        "8-9: Strong core match, or a general method with a concrete reusable mechanism and transfer path\n"
+        "6-7: Potentially useful but transfer path is plausible rather than concrete\n"
+        "3-5: Tangential, broad keyword overlap, or generic method without a clear adaptation route\n"
         "0-2: Noise (irrelevant)\n\n"
         "GUARDRAILS:\n"
         "1) Beware of Polysemy: If a keyword is ambiguous, only match the sense that aligns with the user's intent.\n"
         "2) Reject Literal Matching: Do NOT score high just because the same word appears.\n"
         "3) Reward Conceptual Equivalence: If wording differs but goals/methods are equivalent, score as high relevance.\n"
-        "4) Reward Enabling Methods: If a paper provides a generally applicable method/tool that can inspire or support the research direction, give a high inspiration_score when warranted.\n"
-        "5) Be strict only when mismatch is substantive (different task objective, incompatible setting, or no reusable method).\n"
-        "6) Some requirements may be profile-level composite requirements built from multiple keywords. "
+        "4) Reward Direct Core Evidence: If a paper studies data, mechanisms, measurements, behavior, or representations named by the configured research directions, give a high core_relevance_score even if it is not an AI-method paper.\n"
+        "5) Reward Enabling Methods only when specific: A general method can receive high inspiration_score, but 8-10 requires a concrete reusable mechanism/tool/analysis path and an explainable transfer route to the configured directions.\n"
+        "6) Penalize vague inspiration: If the link is only a popular method name, broad field overlap, or generic transfer-learning language, keep inspiration_score in the 5-7 range unless the paper gives a concrete adaptation path.\n"
+        "7) Be strict only when mismatch is substantive (different task objective, incompatible setting, or no reusable method).\n"
+        "8) Some requirements may be profile-level composite requirements built from multiple keywords. "
         "Use them when a paper is clearly central to the overall theme but does not fit a narrower requirement cleanly.\n"
-        "7) Do not cap general-method papers merely because they are outside the core domain; judge inspiration value independently.\n"
-        "8) If a track is not enabled, set its corresponding score to 0 and do not choose it as relevance_track.\n\n"
+        "9) Do not cap general-method papers merely because they are outside the core domain; judge inspiration value independently by transfer specificity.\n"
+        "10) Use bridge when both core_relevance_score and inspiration_score are >= 8; such papers are especially valuable because they satisfy both lanes.\n"
+        "11) If a track is not enabled, set its corresponding score to 0 and do not choose it as relevance_track.\n\n"
         "Papers:\n"
         f"{json.dumps(docs, ensure_ascii=False)}\n\n"
         "Output JSON format example:\n"
@@ -477,7 +507,7 @@ def call_filter(
         "Use semantic interpretation, not only lexical overlap, to decide relevance and score tier. "
         "Set core_relevance_score and inspiration_score independently on a 0-10 scale. "
         "Set score to the highest valid enabled-track score. "
-        "Set relevance_track to core, inspiration, or bridge; use bridge only when both core_relevance_score and inspiration_score are high. "
+        "Set relevance_track to core, inspiration, or bridge; use bridge only when both core_relevance_score and inspiration_score are at least 8. "
         "Evidence must be provided in both languages: "
         "evidence_en (English) and evidence_cn (Chinese). "
         "They should be short phrases linking the paper to the matched requirement; "

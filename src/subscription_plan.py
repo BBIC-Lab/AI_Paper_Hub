@@ -299,9 +299,10 @@ def _normalize_keyword_entry(item: Any) -> Dict[str, Any]:
   keyword = _norm_text(item.get("keyword") or item.get("text") or item.get("expr") or "")
   if not keyword:
     return {}
-  query = _normalize_query_item(item)
-  if not query:
-    query = keyword
+  stored_query = _normalize_query_item(item)
+  # 前端不再暴露 keyword 的语义 Query，避免历史隐藏 query 串位继续影响召回。
+  query = keyword
+  can_reuse_cache = not stored_query or stored_query == keyword
 
   return {
     "keyword": keyword,
@@ -310,7 +311,7 @@ def _normalize_keyword_entry(item: Any) -> Dict[str, Any]:
     "enabled": _as_bool(item.get("enabled"), True),
     "source": _norm_text(item.get("source") or "manual"),
     "note": _norm_text(item.get("note") or ""),
-    "embedding_cache": copy.deepcopy(item.get("embedding_cache")) if isinstance(item.get("embedding_cache"), dict) else None,
+    "embedding_cache": copy.deepcopy(item.get("embedding_cache")) if can_reuse_cache and isinstance(item.get("embedding_cache"), dict) else None,
     "_cache_ref": copy.deepcopy(item.get("_cache_ref")) if isinstance(item.get("_cache_ref"), dict) else None,
   }
 

@@ -144,7 +144,7 @@ class SubscriptionPlanTest(unittest.TestCase):
         self.assertIn('equation discovery for physical systems', emb_texts)
 
         context_texts = [q.get('query') for q in intent_context]
-        self.assertIn('symbolic regression methods', context_texts)
+        self.assertIn('Symbolic Regression', context_texts)
         self.assertIn('symbolic regression with reinforcement learning', context_texts)
         self.assertIn('equation discovery for physical systems', context_texts)
 

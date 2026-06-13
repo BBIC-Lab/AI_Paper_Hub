@@ -73,6 +73,7 @@ TRACK_LABELS = {
     TRACK_INSPIRATION: "通用启发",
     TRACK_BRIDGE: "桥接方法",
 }
+BRIDGE_SELECTION_BONUS = 0.5
 
 
 def log(message: str) -> None:
@@ -608,7 +609,7 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         elif relevance_track == TRACK_BRIDGE:
             core_selection = core_score + 2.0 * rerank_core
             inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
-            selection_score = max(core_selection, inspiration_selection)
+            selection_score = max(core_selection, inspiration_selection) + BRIDGE_SELECTION_BONUS
             selection_lane = TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION
         else:
             selection_score = core_score + 2.0 * rerank_core
@@ -772,9 +773,13 @@ def ensure_selection_fields(item: Dict[str, Any]) -> Dict[str, Any]:
     elif track == TRACK_BRIDGE:
         core_selection = core_score + 2.0 * rerank_core
         inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
-        selection_score = max(core_selection, inspiration_selection)
+        selection_score = max(core_selection, inspiration_selection) + BRIDGE_SELECTION_BONUS
         lane = copied.get("selection_lane")
-        lane = lane if lane in {TRACK_CORE, TRACK_INSPIRATION} else (TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION)
+        lane = (
+            lane
+            if lane in {TRACK_CORE, TRACK_INSPIRATION}
+            else (TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION)
+        )
     else:
         selection_score = core_score + 2.0 * rerank_core
         lane = TRACK_CORE
@@ -782,7 +787,11 @@ def ensure_selection_fields(item: Dict[str, Any]) -> Dict[str, Any]:
     copied["inspiration_score"] = inspiration_score
     copied["relevance_track"] = track
     copied["relevance_track_label"] = TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])
-    copied["selection_score"] = parse_score(copied.get("selection_score") or selection_score)
+    existing_selection_score = parse_score(copied.get("selection_score"))
+    if track == TRACK_BRIDGE:
+        copied["selection_score"] = max(existing_selection_score, selection_score)
+    else:
+        copied["selection_score"] = parse_score(copied.get("selection_score") or selection_score)
     copied["selection_lane"] = lane
     tags = normalize_tags(copied.get("llm_tags"))
     track_tag = f"paper:{TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])}"
@@ -872,9 +881,22 @@ def select_by_recommend_mix(
         return (item_lane or track) == lane
 
     def lane_score(item: Dict[str, Any], lane: str) -> float:
+        bonus = (
+            BRIDGE_SELECTION_BONUS
+            if normalize_relevance_track(item.get("relevance_track"), TRACK_CORE) == TRACK_BRIDGE
+            else 0.0
+        )
         if lane == TRACK_INSPIRATION:
-            return parse_score(item.get("inspiration_score")) + 2.0 * parse_score(item.get("rerank_inspiration_score"))
-        return parse_score(item.get("core_relevance_score")) + 2.0 * parse_score(item.get("rerank_core_score"))
+            return (
+                parse_score(item.get("inspiration_score"))
+                + 2.0 * parse_score(item.get("rerank_inspiration_score"))
+                + bonus
+            )
+        return (
+            parse_score(item.get("core_relevance_score"))
+            + 2.0 * parse_score(item.get("rerank_core_score"))
+            + bonus
+        )
 
     def pick_for_lane(lane: str, need: int, allow_bridge: bool) -> None:
         if need <= 0:
@@ -899,7 +921,7 @@ def select_by_recommend_mix(
                 selected_keys.add(key)
 
     for lane in (TRACK_CORE, TRACK_INSPIRATION):
-        pick_for_lane(lane, quotas.get(lane, 0), allow_bridge=False)
+        pick_for_lane(lane, quotas.get(lane, 0), allow_bridge=True)
 
     lane_order = [lane for lane in (TRACK_CORE, TRACK_INSPIRATION) if lane in enabled]
     while len(selected) < target:

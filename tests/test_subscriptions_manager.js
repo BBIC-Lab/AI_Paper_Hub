@@ -158,6 +158,7 @@ function testNormalizeSubscriptionsDefaultsRecommendMix() {
   const normalized = normalizeSubscriptions(buildBaseConfig());
   const profile = normalized.subscriptions.intent_profiles[0];
 
+  assert.equal(profile.keywords[0].query, 'genetics');
   assert.deepEqual(profile.recommend_mix, { core_ratio: 2, inspiration_ratio: 3 });
   assert.deepEqual(normalizeRecommendMix({ core_ratio: 0, inspiration_ratio: 4 }), {
     core_ratio: 0,

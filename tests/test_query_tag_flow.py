@@ -102,8 +102,8 @@ class QueryTagFlowTest(unittest.TestCase):
         composite = [item for item in reqs if item.get("kind") == "composite"]
         self.assertEqual(len(composite), 1)
         self.assertEqual(composite[0]["tag"], "query:sci:composite")
-        self.assertIn("llm based model discovery", composite[0]["query"].lower())
-        self.assertIn("scientific equation discovery", composite[0]["query"].lower())
+        self.assertIn("model discovery", composite[0]["query"].lower())
+        self.assertIn("equation discovery", composite[0]["query"].lower())
         self.assertIn("embodied actions", composite[0]["query"].lower())
 
     def test_build_scored_papers_fallback_match_tag(self):

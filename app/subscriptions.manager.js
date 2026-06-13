@@ -133,8 +133,7 @@ window.SubscriptionsManager = (function () {
     '  "description": "optional Chinese description (for user convenience)",',
     '  "keywords": [',
     '    {',
-      '      "keyword": "short keyword phrase for BM25 recall",',
-      '      "query": "semantic rewrite for this keyword",',
+      '      "keyword": "short keyword phrase for BM25/vector recall",',
       '      "keyword_cn": "中文直译（可选）",',
     '    },',
     '  ],',
@@ -150,13 +149,13 @@ window.SubscriptionsManager = (function () {
     '  ],',
     '}',
     'Requirements:',
-    '1) keywords: output 5-12 objects; each item must include keyword and query, keyword_cn optional.',
-    '2) keywords are used for recall and should be atomic phrases (prefer 1-3 core words).',
-    '3) Avoid coupling core terms (e.g., "symbolic regression", "reinforcement learning", "genetic programming", "Transformer") with extra qualifiers into one keyword. Keep core terms atomic in keyword and use query for full intent.',
+    '1) keywords: output 5-12 objects; each item must include keyword, keyword_cn optional.',
+    '2) keywords are used directly for BM25/vector recall and should be atomic phrases (prefer 1-3 core words).',
+    '3) Avoid coupling core terms (e.g., "symbolic regression", "reinforcement learning", "genetic programming", "Transformer") with extra qualifiers into one keyword.',
     '4) Suggested example:',
-    '   {"keyword":"symbolic regression","query":"deep symbolic regression methods","keyword_cn":"符号回归","query_cn":"符号回归深度方法"},',
-    '   {"keyword":"reinforcement learning","query":"policy gradient symbolic regression","keyword_cn":"强化学习","query_cn":"策略梯度在符号回归中的应用"},',
-    '   {"keyword":"MCTS","query":"MCTS for symbolic regression"}',
+    '   {"keyword":"symbolic regression","keyword_cn":"符号回归"},',
+    '   {"keyword":"reinforcement learning","keyword_cn":"强化学习"},',
+    '   {"keyword":"MCTS"}',
     '5) intent_queries: output 1-4 actionable intent queries. Each item should include query and optional query_cn.',
     '6) Do not output extra fields like must_have / optional / exclude / rewrite_for_embedding / must_have.',
     '7) Return pure JSON only, no explanations.',
@@ -165,6 +164,14 @@ window.SubscriptionsManager = (function () {
 
 
   const normalizeText = (v) => String(v || '').trim();
+  const cloneCacheIfQueryMatches = (item, queryText) => {
+    if (!item || typeof item !== 'object' || !item.embedding_cache || typeof item.embedding_cache !== 'object') {
+      return undefined;
+    }
+    const storedQuery = normalizeText(item.query || item.rewrite || item.rewrite_for_embedding || item.text || '');
+    if (storedQuery && storedQuery !== normalizeText(queryText)) return undefined;
+    return cloneDeep(item.embedding_cache);
+  };
   const normalizeSourceKey = (v) => normalizeText(v).toLowerCase();
   const escapeHtml = (str) => String(str || '')
     .replace(/&/g, '&amp;')
@@ -732,24 +739,13 @@ window.SubscriptionsManager = (function () {
 
     const keyword = normalizeText(item.keyword || item.expr || item.text || '');
     if (!keyword) return null;
-    const query = normalizeText(
-      item.query ||
-        item.rewrite ||
-        item.rewrite_for_embedding ||
-        item.text ||
-        item.keyword ||
-        '',
-    );
     const keywordCn = normalizeText(item.keyword_cn || item.keyword_zh || item.zh || '');
 
     return {
       keyword,
       keyword_cn: keywordCn,
-      query: query || keyword,
-      embedding_cache:
-        item.embedding_cache && typeof item.embedding_cache === 'object'
-          ? cloneDeep(item.embedding_cache)
-          : undefined,
+      query: keyword,
+      embedding_cache: cloneCacheIfQueryMatches(item, keyword),
     };
   };
 

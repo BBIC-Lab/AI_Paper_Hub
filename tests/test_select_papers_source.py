@@ -425,6 +425,29 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
         self.assertEqual(lanes.count("core"), 2)
         self.assertEqual(lanes.count("inspiration"), 3)
 
+    def test_select_by_recommend_mix_lets_bridge_compete(self):
+        candidates = [
+            {"id": "core-1", "llm_score": 9.6, "relevance_track": "core", "core_relevance_score": 9.6},
+            {"id": "core-2", "llm_score": 9.2, "relevance_track": "core", "core_relevance_score": 9.2},
+            {"id": "insp-1", "llm_score": 9.7, "relevance_track": "inspiration", "inspiration_score": 9.7},
+            {"id": "insp-2", "llm_score": 9.4, "relevance_track": "inspiration", "inspiration_score": 9.4},
+            {"id": "insp-3", "llm_score": 9.1, "relevance_track": "inspiration", "inspiration_score": 9.1},
+            {
+                "id": "bridge-1",
+                "llm_score": 8.0,
+                "relevance_track": "bridge",
+                "core_relevance_score": 8.0,
+                "inspiration_score": 8.0,
+                "rerank_inspiration_score": 0.8,
+            },
+        ]
+
+        picked = self.mod.select_by_recommend_mix(candidates, 5, {"core_ratio": 2, "inspiration_ratio": 3})
+        picked_by_id = {item.get("id"): item for item in picked}
+
+        self.assertIn("bridge-1", picked_by_id)
+        self.assertEqual(picked_by_id["bridge-1"].get("selection_lane"), "inspiration")
+
     def test_select_by_recommend_mix_zero_disables_lane(self):
         candidates = [
             {"id": "core-1", "llm_score": 9.9, "relevance_track": "core", "core_relevance_score": 9.9},

@@ -3443,14 +3443,14 @@ def main() -> None:
 
     def _paper_score(p: dict) -> float:
         try:
-            return float(p.get("llm_score", 0) or 0)
+            return float(p.get("selection_score", p.get("llm_score", 0)) or 0)
         except Exception:
             return 0.0
 
     def _paper_id(p: dict) -> str:
         return str(p.get("id") or p.get("paper_id") or "").strip()
 
-    # 侧边栏展示按分数降序（同分按 id 稳定排序），避免“高分被埋在下面”
+    # 展示顺序优先使用最终选择分，避免高价值桥接论文被 llm_score 埋到后面。
     deep_list = sorted(deep_list, key=lambda p: (-_paper_score(p), _paper_id(p)))
     quick_list = sorted(quick_list, key=lambda p: (-_paper_score(p), _paper_id(p)))
 

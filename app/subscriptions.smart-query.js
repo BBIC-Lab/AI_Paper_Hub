@@ -35,8 +35,7 @@ window.SubscriptionsSmartQuery = (function () {
     '  "description": "optional Chinese description (for user convenience)",',
     '  "keywords": [',
     '    {',
-    '      "keyword": "short keyword phrase for BM25 recall",',
-    '      "query": "semantic rewrite for this keyword",',
+    '      "keyword": "short keyword phrase for BM25/vector recall",',
     '      "keyword_cn": "中文直译（可选）",',
     '    }',
     '  ],',
@@ -52,8 +51,8 @@ window.SubscriptionsSmartQuery = (function () {
     '  ],',
     '}',
     'Requirements:',
-    '1) keywords: output 5-12 objects; each item must include keyword and query, keyword_cn optional.',
-    '2) keywords are used for recall and should be atomic phrases (prefer 1-3 core words).',
+    '1) keywords: output 5-12 objects; each item must include keyword, keyword_cn optional.',
+    '2) keywords are used directly for BM25/vector recall and should be atomic phrases (prefer 1-3 core words).',
     '3) Keep keywords atomic and avoid packing multiple concepts into one phrase.',
     '4) Do not include concrete example topics in the prompt.',
     '5) intent_queries: output 1-4 actionable intent queries. Each item should include query and optional query_cn.',
@@ -65,6 +64,14 @@ window.SubscriptionsSmartQuery = (function () {
   ].join('\n');
 
   const normalizeText = (v) => String(v || '').trim();
+  const cloneCacheIfQueryMatches = (item, queryText) => {
+    if (!item || typeof item !== 'object' || !item.embedding_cache || typeof item.embedding_cache !== 'object') {
+      return undefined;
+    }
+    const storedQuery = normalizeText(item.query || item.rewrite || item.rewrite_for_embedding || item.text || '');
+    if (storedQuery && storedQuery !== normalizeText(queryText)) return undefined;
+    return deepClone(item.embedding_cache);
+  };
   const normalizeDailyPaperLimit = (value) => {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_DAILY_SECTION_PAPER_LIMIT;
@@ -374,23 +381,12 @@ window.SubscriptionsSmartQuery = (function () {
         if (!item || typeof item !== 'object') return null;
         const keyword = normalizeText(item.keyword || item.text || item.expr || '');
         if (!keyword) return null;
-        const query = normalizeText(
-          item.query ||
-            item.rewrite ||
-            item.rewrite_for_embedding ||
-            item.text ||
-            item.keyword ||
-            '',
-        );
         const keywordCn = normalizeText(item.keyword_cn || item.keyword_zh || item.zh || '');
         return {
           keyword,
           keyword_cn: keywordCn,
-          query: query || keyword,
-          embedding_cache:
-            item.embedding_cache && typeof item.embedding_cache === 'object'
-              ? deepClone(item.embedding_cache)
-              : undefined,
+          query: keyword,
+          embedding_cache: cloneCacheIfQueryMatches(item, keyword),
         };
       })
       .filter(Boolean);
@@ -724,13 +720,10 @@ window.SubscriptionsSmartQuery = (function () {
             ? ''
             : normalizeText(item.keyword_cn || item.keyword_zh || item.zh || ''),
         );
-        const query = normalizeText(
-          typeof item === 'string' ? keyword : normalizeText(item.query || item.rewrite || keyword),
-        );
         return {
           keyword,
           keyword_cn: keywordCn,
-          query: query || keyword,
+          query: keyword,
         };
       })
       .filter(Boolean);
@@ -774,6 +767,7 @@ window.SubscriptionsSmartQuery = (function () {
           return {
             ...k,
             keyword: prefixPlain,
+            query: prefixPlain,
           };
         }
         return k;
@@ -802,7 +796,7 @@ window.SubscriptionsSmartQuery = (function () {
 
   const buildPromptFromTemplate = (tag, desc, template) => {
     const retrievalContext =
-      'For each item in keywords, use keyword (atomic recall token) and query (semantic rewrite). keyword is used for BM25 OR recall, query is used for embedding/ranker/LLM. '
+      'For each item in keywords, use keyword as the atomic recall token for both BM25 and vector recall. '
       + 'intent_queries are intent-matching recall candidates and also participate in final LLM re-ranking.';
     return template
       .replace(/\{\{TAG\}\}/g, tag)
@@ -1010,11 +1004,8 @@ window.SubscriptionsSmartQuery = (function () {
         kwList.push({
           keyword,
           keyword_cn: normalizeText(item.keyword_cn || item.keyword_zh || item.zh || ''),
-          query: normalizeText(item.query || item.text || keyword),
-          embedding_cache:
-            item.embedding_cache && typeof item.embedding_cache === 'object'
-              ? deepClone(item.embedding_cache)
-              : undefined,
+          query: keyword,
+          embedding_cache: cloneCacheIfQueryMatches(item, keyword),
         });
       });
 
@@ -1090,11 +1081,11 @@ window.SubscriptionsSmartQuery = (function () {
                 .map((item, idx) => ({
                   keyword: normalizeText(item.keyword || item.text || item.expr || ''),
                   keyword_cn: normalizeText(item.keyword_cn || item.keyword_zh || item.zh || ''),
-                  query: normalizeText(item.query || item.text || item.keyword || ''),
-                  embedding_cache:
-                    item.embedding_cache && typeof item.embedding_cache === 'object'
-                      ? deepClone(item.embedding_cache)
-                      : undefined,
+                  query: normalizeText(item.keyword || item.text || item.expr || ''),
+                  embedding_cache: cloneCacheIfQueryMatches(
+                    item,
+                    normalizeText(item.keyword || item.text || item.expr || ''),
+                  ),
                 }))
                 .filter((x) => x.keyword)
             : normalizeProfileKeywords(existedProfile),
@@ -1207,7 +1198,7 @@ window.SubscriptionsSmartQuery = (function () {
       _selected: true,
       _isDraftSlot: false,
     };
-    if (kind !== 'intent' && !normalizeText(item.query)) {
+    if (kind !== 'intent') {
       item.query = primaryValue;
     }
     return item;
@@ -1270,10 +1261,13 @@ window.SubscriptionsSmartQuery = (function () {
     if (!item) return;
     const prevValue = normalizeText(item[field]);
     item[field] = normalizeText(value);
-    if (realKind !== 'intent' && field === meta.primary && !normalizeText(item.query)) {
+    if (realKind !== 'intent' && field === meta.primary) {
       item.query = normalizeText(value);
     }
-    if (realKind === 'intent' && field === meta.primary && prevValue !== normalizeText(value)) {
+    if (
+      (realKind === 'intent' && field === meta.primary && prevValue !== normalizeText(value)) ||
+      (realKind !== 'intent' && field === meta.primary && prevValue !== normalizeText(value))
+    ) {
       delete item.embedding_cache;
     }
     candidates[index] = item;
@@ -1299,7 +1293,11 @@ window.SubscriptionsSmartQuery = (function () {
         item.keyword = normalizeText(item.keyword || item.text || item.expr || '');
         if (!item.keyword) return;
         item.keyword_cn = normalizeText(item.keyword_cn || item.keyword_zh || item.zh || '');
-        item.query = normalizeText(item.query || item.rewrite || item.rewrite_for_embedding || item.text || item.keyword);
+        const previousQuery = normalizeText(item.query || item.rewrite || item.rewrite_for_embedding || item.text || '');
+        item.query = item.keyword;
+        if (previousQuery && previousQuery !== item.keyword) {
+          delete item.embedding_cache;
+        }
       }
       const key = normalizeText(realKind === 'intent' ? item.query : item.keyword).toLowerCase();
       if (!key || seen.has(key)) return;
@@ -1314,17 +1312,17 @@ window.SubscriptionsSmartQuery = (function () {
     const realKind = normalizeCandidateKind(kind);
     const list = getCandidatesByKindForState(state, realKind).filter((item) => item && !isDraftSlot(item));
     if (!Number.isFinite(index) || index < 0 || index >= list.length) return;
-    const allowedFields = realKind === 'intent' ? ['query', 'query_cn'] : ['keyword', 'keyword_cn', 'query'];
+    const allowedFields = realKind === 'intent' ? ['query', 'query_cn'] : ['keyword', 'keyword_cn'];
     if (!allowedFields.includes(field)) return;
     const item = { ...list[index] };
     const prevValue = normalizeText(item[field]);
     item[field] = normalizeText(value);
-    if (realKind !== 'intent' && field === 'keyword' && !normalizeText(item.query)) {
+    if (realKind !== 'intent' && field === 'keyword') {
       item.query = normalizeText(value);
     }
     if (
       (realKind === 'intent' && field === 'query' && prevValue !== normalizeText(value)) ||
-      (realKind !== 'intent' && (field === 'keyword' || field === 'query') && prevValue !== normalizeText(value))
+      (realKind !== 'intent' && field === 'keyword' && prevValue !== normalizeText(value))
     ) {
       delete item.embedding_cache;
     }
@@ -1363,7 +1361,7 @@ window.SubscriptionsSmartQuery = (function () {
     return {
       keyword: primary,
       keyword_cn: normalizeText(parts[1] || ''),
-      query: normalizeText(parts[2] || primary),
+      query: primary,
       _selected: true,
     };
   };
@@ -1687,12 +1685,9 @@ window.SubscriptionsSmartQuery = (function () {
     const rawKeywords = normalizeKeywordEntries(profile && profile.keywords);
     const keywords = rawKeywords.map((k) => ({
       keyword: normalizeText(k.keyword || ''),
-      query: normalizeText(k.query || k.keyword || ''),
+      query: normalizeText(k.keyword || ''),
       keyword_cn: normalizeText(k.keyword_cn || ''),
-      embedding_cache:
-        k.embedding_cache && typeof k.embedding_cache === 'object'
-          ? deepClone(k.embedding_cache)
-          : undefined,
+      embedding_cache: cloneCacheIfQueryMatches(k, k.keyword),
     }));
 
     const keywordState = parseCandidatesForState({ keywords }, false);
@@ -2567,7 +2562,6 @@ window.SubscriptionsSmartQuery = (function () {
       }
       if (action === 'add-custom-kw') {
         const kwText = normalizeText(document.getElementById('dpr-add-kw-text')?.value || '');
-        const query = normalizeText(document.getElementById('dpr-add-kw-query')?.value || '');
         const logic = normalizeText(document.getElementById('dpr-add-kw-logic')?.value || '');
         if (!kwText) {
           setMessage('请输入要新增的关键词。', '#c00');
@@ -2587,7 +2581,7 @@ window.SubscriptionsSmartQuery = (function () {
         modalState.keywords.push({
           keyword: kwText,
           keyword_cn: logic,
-          query: query || kwText,
+          query: kwText,
           _selected: true,
         });
         modalState.customKeyword = '';

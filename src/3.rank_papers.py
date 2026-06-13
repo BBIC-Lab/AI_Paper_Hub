@@ -240,11 +240,12 @@ def build_track_rerank_query_text(query: Dict[str, Any]) -> str:
   core_context = str(query.get("core_context") or "").strip()
   if not core_context:
     return q_text
-  # 通用启发通路：给 reranker 当前研究上下文，但不要求论文属于核心领域。
+  # 通用启发通路：锚定“可迁移机制”，避免泛化到任意热门方法论文。
   return (
-    f"Find generally useful methods or ideas that may inspire these research directions: "
-    f"{core_context}. Candidate method/query: {q_text}. "
-    "Do not require the paper itself to be in the core domain."
+    f"Reusable method/query: {q_text}. "
+    f"User research context for possible transfer: {core_context}. "
+    "Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route "
+    "that can plausibly transfer to the research context."
   )
 
 
