@@ -1,0 +1,182 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-004.webp",
+      "caption": "Table 2: Disentanglement scores over n = 5 seeds. InfoMEC cells show (InfoM InfoE InfoC); bold marks the best per column using the CI-overlap criterion. Aggregated is the mean across all datasets.",
+      "page": 7,
+      "index": 4,
+      "width": 820,
+      "height": 274
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-015.webp",
+      "caption": "Figure 1: Average performance of each model, as measured by PSNR, under varying levels of Gaussian noise intensity. The gap between HRR and VQ-VAE is small across most datasets, and both models perform considerably better than the other baselines. Shaded regions represent a 95% confidence interval.",
+      "page": 8,
+      "index": 15,
+      "width": 736,
+      "height": 235
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-022.webp",
+      "caption": "Figure 2: Each row is a visualization of how reconstruction quality degrades as noise intensity increases for each model. For each model, the seed with the highest InfoM score was used for evaluation. The HRR model and VQ-VAE maintain their semantic content the best. Signal power is estimated over the entire validation set.",
+      "page": 9,
+      "index": 22,
+      "width": 656,
+      "height": 345
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-008.webp",
+      "caption": "Figure 3: Latent component swaps performance for highest performing model relative to InfoM score. The slot 0 column represents taking the first latent unit from x2, using it for the first latent unit for x1, and decoding the result. Slot 1 does the same, but for the second latent unit, and so on. Each slot is replaced with its original value after visualization, so we expect each decoded result to manipulate either one, or no, aspects of the image.",
+      "page": 10,
+      "index": 8,
+      "width": 658,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-007.webp",
+      "caption": "Figure 4: Latent interpolation swaps components progressively until the representation is fully transformed into that of the second image. We see that in the interpolation, the HRR-based model does not introduce any extraneous generative factors that were not present in the original two images. For instance, no decoded results for the HRR introduce a light blue wall, as the QLAE and β-VAE do.",
+      "page": 10,
+      "index": 7,
+      "width": 740,
+      "height": 296
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-013.webp",
+      "caption": "Figure 5: Mean and variance over training iterations, for both the codebook vectors and the latent representations. Most statistics converge on stable values as training progresses.",
+      "page": 18,
+      "index": 13,
+      "width": 731,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-014.webp",
+      "caption": "Figure 6: Codebook usage over training iterations, measured by perplexity. We can see that the model learns to utilize the codebook vectors, with the harder datasets having higher codebook usage.",
+      "page": 18,
+      "index": 14,
+      "width": 643,
+      "height": 357
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-019.webp",
+      "caption": "Table 3: Architecture and shared training hyperparameters for the CNN autoencoder. dz denotes the latent dimension and C the number of image channels. All convolutional layers omit bias terms.",
+      "page": 32,
+      "index": 19,
+      "width": 644,
+      "height": 460
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-018.webp",
+      "caption": "Table 4: Optimizer hyperparameters used for all runs",
+      "page": 32,
+      "index": 18,
+      "width": 789,
+      "height": 368
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-010.webp",
+      "caption": "Table 5: Model hyperparameters for the proposed HRR autoencoder. Used for all experiments",
+      "page": 33,
+      "index": 10,
+      "width": 434,
+      "height": 323
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-012.webp",
+      "caption": "Figure 7: InfoM performance over different combinations of codebook size and latent dimension",
+      "page": 35,
+      "index": 12,
+      "width": 816,
+      "height": 186
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-011.webp",
+      "caption": "Figure 8: InfoE performance over different combinations of codebook size and latent dimension",
+      "page": 35,
+      "index": 11,
+      "width": 818,
+      "height": 186
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-017.webp",
+      "caption": "Figure 9: InfoC performance over different combinations of codebook size and latent dimension",
+      "page": 36,
+      "index": 17,
+      "width": 818,
+      "height": 186
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-006.webp",
+      "caption": "Figure 10: Each row is a visualization of how reconstruction quality degrades as noise intensity increases for each model. For each model, the seed with the highest InfoM score was used for evaluation.",
+      "page": 39,
+      "index": 6,
+      "width": 821,
+      "height": 431
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-005.webp",
+      "caption": "Figure 11: Each row is a visualization of how reconstruction quality degrades as noise intensity increases for each model. For each model, the seed with the highest InfoM score was used for evaluation.",
+      "page": 39,
+      "index": 5,
+      "width": 821,
+      "height": 431
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-016.webp",
+      "caption": "Figure 12: Each row is a visualization of how reconstruction quality degrades as noise intensity increases for each model. For each model, the seed with the highest InfoM score was used for evaluation.",
+      "page": 40,
+      "index": 16,
+      "width": 821,
+      "height": 431
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-021.webp",
+      "caption": "Figure 13: Latent component swaps performance for highest performing model relative to InfoM score. The slot 0 column represents taking the first latent unit from x2, using it for the first latent unit for x1, and decoding the result. Slot 1 does the same, but for the second latent unit, and so on. Each slot is replaced with its original value after visualization, so we expect each decoded result to manipulate either one, or no, aspects of the image.",
+      "page": 41,
+      "index": 21,
+      "width": 822,
+      "height": 250
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-020.webp",
+      "caption": "Figure 14: Latent component swaps performance for highest performing model relative to InfoM score. The slot 0 column represents taking the first latent unit from x2, using it for the first latent unit for x1, and decoding the result. Slot 1 does the same, but for the second latent unit, and so on. Each slot is replaced with its original value after visualization, so we expect each decoded result to manipulate either one, or no, aspects of the image.",
+      "page": 41,
+      "index": 20,
+      "width": 822,
+      "height": 330
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-009.webp",
+      "caption": "Figure 15: Latent component swaps performance for highest performing model relative to InfoM score. The slot 0 column represents taking the first latent unit from x2, using it for the first latent unit for x1, and decoding the result. Slot 1 does the same, but for the second latent unit, and so on. Each slot is replaced with its original value after visualization, so we expect each decoded result to manipulate either one, or no, aspects of the image.",
+      "page": 42,
+      "index": 9,
+      "width": 822,
+      "height": 330
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-002.webp",
+      "caption": "Figure 16: Latent interpolation swaps components progressively until the representation is fully transformed into that of the second image.",
+      "page": 43,
+      "index": 2,
+      "width": 822,
+      "height": 236
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-003.webp",
+      "caption": "Figure 17: Latent interpolation swaps components progressively until the representation is fully transformed into that of the second image.",
+      "page": 43,
+      "index": 3,
+      "width": 822,
+      "height": 304
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09725v1/fig-001.webp",
+      "caption": "Figure 18: Latent interpolation swaps components progressively until the representation is fully transformed into that of the second image.",
+      "page": 43,
+      "index": 1,
+      "width": 822,
+      "height": 305
+    }
+  ]
+}

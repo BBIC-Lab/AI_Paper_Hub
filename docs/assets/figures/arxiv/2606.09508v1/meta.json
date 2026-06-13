@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-006.webp",
+      "caption": "Figure 3: Framework Overview.",
+      "page": 5,
+      "index": 6,
+      "width": 846,
+      "height": 296
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-001.webp",
+      "caption": "Table 1: Results on LongBench. CPrefill stands for CritiPretill. Results in bold refers to the best results while underlined results refers to the second best.",
+      "page": 6,
+      "index": 1,
+      "width": 946,
+      "height": 421
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-002.webp",
+      "caption": "Figure 4: End-to-end latency test under different context lengths on Llama 3.1-8B-Instruct. Lower latency and higher acceleration ratio are better.",
+      "page": 7,
+      "index": 2,
+      "width": 429,
+      "height": 281
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-003.webp",
+      "caption": "Figure 5: Parameter Sensitivity Experiment on Segment and Block Size.",
+      "page": 8,
+      "index": 3,
+      "width": 872,
+      "height": 216
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-005.webp",
+      "caption": "Table 3: LongBench results on openPangu-Embedded-1B and openPangu-Embedded-7B-v1.1.",
+      "page": 9,
+      "index": 5,
+      "width": 823,
+      "height": 215
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09508v1/fig-004.webp",
+      "caption": "Table 4: LoCoMo results on openPangu-Embedded-1B and openPangu-Embedded-7B.",
+      "page": 9,
+      "index": 4,
+      "width": 839,
+      "height": 215
+    }
+  ]
+}

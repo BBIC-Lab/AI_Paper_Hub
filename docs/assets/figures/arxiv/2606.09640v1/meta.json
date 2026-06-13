@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09640v1/fig-004.webp",
+      "caption": "Fig. 1. Time-varying state coupling in an aerial manipulator system. Three panels from left side show the instantaneous state coupling matrices at three representative time instants t1, t2, and t3. The coupling matrix is computed using the Pearson correlation coefficient between state trajectories. Rightmost panel shows the negligible coupling fraction, defined as ηij = 1 T ∑T k=1 1 (|ρij(tk)| < ϵ), where 1(·) is the indicator function and ϵ is a small threshold (here ϵ = 0.08). This metric quantifies how frequently a pair of states remains weakly coupled over time. The results reveal three key properties: (i) significant off-diagonal structure confirms strong coupling between platform and manipulator dynamics, (ii) coupling patterns vary over time due to changing configurations and dynamic interactions, and (iii) a subset of state pairs remains consistently negligible, indicating potential sparsity that can be exploited for structured modeling and control.",
+      "page": 2,
+      "index": 4,
+      "width": 1064,
+      "height": 216
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09640v1/fig-003.webp",
+      "caption": "TABLE II MODEL AND TRAINING CONFIGURATION (SHARED ACROSS PLATFORMS)",
+      "page": 6,
+      "index": 3,
+      "width": 429,
+      "height": 475
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09640v1/fig-002.webp",
+      "caption": "Fig. 3. Normalized model prediction error across robotic platforms. Lower is better. RP1–RP5 denote the mobile robot, manipulator, quadrotor, mobile manipulator, and aerial manipulator, respectively.",
+      "page": 7,
+      "index": 2,
+      "width": 516,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09640v1/fig-001.webp",
+      "caption": "Fig. 4. Normalized trajectory tracking error across robotic platforms. Lower is better. RP1–RP5 denote the mobile robot, manipulator, quadrotor, mobile manipulator, and aerial manipulator, respectively.",
+      "page": 7,
+      "index": 1,
+      "width": 502,
+      "height": 314
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09640v1/fig-005.webp",
+      "caption": "Fig. 5. Ablation study on the aerial manipulator illustrating the role of sparsity and adaptation. Left: Prediction error versus sparsity threshold λ, showing a trade-off between dense and overly sparse representations. Middle: Prediction error versus training data for different sparsity levels, highlighting improved data efficiency under moderate sparsity. Top-right: Tracking error along the z-axis under a payload drop disturbance, where sparse models exhibit faster and smoother recovery. Bottom-right: Evolution of the active latent dimension |St| during the same event, showing increased mode activation during transient dynamics followed by a return to nominal levels.",
+      "page": 8,
+      "index": 5,
+      "width": 1064,
+      "height": 408
+    }
+  ]
+}

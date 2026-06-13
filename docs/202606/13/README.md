@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-13</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-13 19:24 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -14,11 +14,10 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日聚焦神经反馈闭环与连续学习稳定性，共精读5篇、速览10篇。</p>
-<p>核心发现：单次神经自我调节成功与否取决于特征选择，而连续学习中动态等距能有效保留可塑性。</p>
-<p>建议读者重点关注特征工程在脑机接口中的关键作用，并留意基于扩散模型的图结构发现这一新兴方向。</p>
+      <p>今日从15篇前沿论文中精选5篇深度解读，聚焦神经调控与持续学习的底层机制。</p>
+<p>最具启发的发现是：单次神经反馈训练成功与否高度依赖所选的信号特征，而动态等距策略能让持续学习模型长期维持可塑性，避免僵化。</p>
+<p>建议对脑机接口或终身学习感兴趣的读者，重点关注特征个性化选择与网络动力学稳定性的设计思路。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/13/README">打开完整日报</a>
   </div>
   <section class="dpr-daily-paper-section is-deep">
     <h2>精读区</h2>
@@ -162,3 +161,6 @@
 </article></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>

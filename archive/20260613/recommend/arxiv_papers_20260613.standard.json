@@ -1,0 +1,829 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-13T11:20:25.389301+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 6,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 22,
+    "quick_skim_target": 11,
+    "quick_selected": 10,
+    "recommend_mix": {
+      "core_ratio": 2,
+      "inspiration_ratio": 3
+    },
+    "deep_selected_before_profile_limit": 6,
+    "quick_selected_before_profile_limit": 11,
+    "profile_daily_limits": {
+      "NDAI": {
+        "deep": 5,
+        "quick": 10
+      }
+    },
+    "profile_recommend_mix": {
+      "NDAI": {
+        "core_ratio": 2,
+        "inspiration_ratio": 3
+      }
+    },
+    "profile_limit_dropped_by_tag": {
+      "NDAI": {
+        "deep": 1,
+        "quick": 1
+      }
+    },
+    "profile_limit_dropped": 2
+  },
+  "deep_dive": [
+    {
+      "id": "biorxiv-10-64898-2026-01-07-698228-v2",
+      "source": "biorxiv",
+      "title": "Successful single-session neural self-regulation through neurofeedback varies between features",
+      "abstract": "Neurofeedback (NFB) and Brain-Computer Interface (BCI) research seldom present within-session individual learning dynamics. This is even though a large proportion of NFB and BCI users cannot learn the neural self-regulation required to control the feedback. Understanding the time course and learning dynamics between subjects will enable us to design more effective NFB and BCI protocols that promote the learning of neural self-regulation. In this study, we aimed to analyze individual learning trajectories of self-regulation of four different cortical rhythms, in terms of both frequency and spatial selectivity. Twenty healthy subjects performed four sessions of NFB training, each session with feedback reflecting a different cortical rhythm as measured with an electroencephalogram. We specifically tested frontal midline (fm) Theta, occipital Alpha, unilateral centrotemporal sensorimotor rhythms (SMR), and central Beta. We show that all subjects were able to self-regulate at least two of these features, however, with varied specificity in the spatial and frequency domains. Unexpectedly, we show that none of the subjects succeeded in regulating fm Theta. Using a clustering approach, we identified two different learning dynamics among the learners across features: a linear increase/decrease and a non-linear plateau-like trajectory. This is the first NFB study employing an intra-subject cross-over experimental design, enabling the direct comparison of neural self-regulation between multiple features. Our results provide important insights into the \"non-learner\" problem, showing that it is not a feature-universal personal trait. We further show feature-specific spatial and frequency selectivity of neural self-regulation, providing important considerations for future NFB protocols.",
+      "authors": [
+        "Syrjänen, E.",
+        "Silva, J.",
+        "Astrand, E."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-06-10T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.01.07.698228v2.full.pdf",
+      "tags": [
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9858927382511289,
+      "rerank_score": 0.9858927382511289,
+      "rerank_best_query": "representation learning for neural activity",
+      "rerank_track": "core",
+      "rerank_rank": 33,
+      "llm_score": 9.0,
+      "core_relevance_score": 9.0,
+      "inspiration_score": 6.0,
+      "relevance_track": "core",
+      "relevance_track_label": "强相关",
+      "selection_score": 10.971785476502259,
+      "selection_lane": "core",
+      "track_evidence_en": "Directly about BCI and neural decoding",
+      "track_evidence_cn": "直接关于BCI和神经解码",
+      "llm_evidence_en": "Analyzes within-session learning dynamics of neural self-regulation in BCI",
+      "llm_evidence_cn": "分析BCI中神经自我调节的 session 内学习动态",
+      "llm_evidence": "分析BCI中神经自我调节的 session 内学习动态",
+      "canonical_evidence": "分析BCI中神经自我调节的 session 内学习动态",
+      "llm_tldr_en": "Shows successful single-session neurofeedback varies by feature, informing BCI protocol design",
+      "llm_tldr_cn": "表明单次神经反馈的成功因特征而异，为BCI方案设计提供信息",
+      "llm_tldr": "表明单次神经反馈的成功因特征而异，为BCI方案设计提供信息",
+      "llm_tags": [
+        "query:ndai",
+        "paper:强相关"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "Brain-computer interface",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11432v1",
+      "source": "arxiv",
+      "title": "Additive Noise, Shift Recovery, and Signed Signals in the Cumulative Distribution Transform",
+      "abstract": "The cumulative distribution transform (CDT) is a quantile-based transport representation that exactly linearizes one-dimensional translations of positive densities. We study how this structure behaves under additive perturbations and how it can be exploited for shift recovery. Under a local nondegeneracy condition, we derive a first-order expansion showing that additive noise in physical space induces a nonlocal perturbation in CDT space through the primitive of the noise, weighted by the reciprocal density. This yields an explicit description of transform-domain sensitivity and shows, in particular, that perturbations are amplified in low-density regions. When the physical-space perturbation is modeled as a centered Gaussian random field, the induced first-order CDT perturbation is again Gaussian, with an explicit covariance kernel.   We then use this structure to study recovery in CDT coordinates. In the known-template setting, the transport shift is obtained by projection onto the constant mode, giving an explicit estimator together with exactness in the noiseless case and a stability bound under perturbations. In the unknown-template setting, multiple observations permit joint recovery of the shifts and a common template up to the natural constant-mode gauge, leading to a simple de-shift--and--average procedure. We also consider a signed-signal analogue based on the signed cumulative distribution transform (SCDT), where shifts are estimated numerically by feature matching and unknown templates are recovered by alternating alignment and averaging. Numerical experiments validate the perturbation analysis and illustrate effective recovery for both density-valued and signed signals.",
+      "authors": [
+        "Harbir Antil",
+        "Ratna Khatri",
+        "Aryan Saxena"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP",
+        "cs.IT",
+        "math.PR"
+      ],
+      "published": "2026-06-09T20:36:29+00:00",
+      "link": "https://arxiv.org/pdf/2606.11432v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9391487576706731,
+      "rerank_score": 0.9391487576706731,
+      "rerank_best_query": "Brain-computer interface",
+      "rerank_track": "core",
+      "rerank_rank": 72,
+      "llm_score": 9.0,
+      "core_relevance_score": 7.0,
+      "inspiration_score": 9.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 9.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Concrete signal processing method for shift recovery and noise handling, directly transferable to neural time-series alignment and drift correction in BCI",
+      "track_evidence_cn": "具体的信号处理方法用于移位恢复和噪声处理，可直接迁移到BCI中的神经时间序列对齐和漂移校正",
+      "llm_evidence_en": "Cumulative distribution transform for shift recovery and noise handling in signals",
+      "llm_evidence_cn": "累积分布变换用于信号移位恢复和噪声处理",
+      "llm_evidence": "累积分布变换用于信号移位恢复和噪声处理",
+      "canonical_evidence": "累积分布变换用于信号移位恢复和噪声处理",
+      "llm_tldr_en": "CDT provides a robust representation for 1D signals, applicable to neural time-series alignment and drift correction.",
+      "llm_tldr_cn": "CDT为一维信号提供稳健表示，适用于神经时间序列对齐和漂移校正。",
+      "llm_tldr": "CDT为一维信号提供稳健表示，适用于神经时间序列对齐和漂移校正。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "neural time-series modeling",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09762v1",
+      "source": "arxiv",
+      "title": "Preserving Plasticity in Continual Learning via Dynamical Isometry",
+      "abstract": "Continual training of deep neural networks under non-stationarity often leads to a progressive loss of plasticity, eventually limiting further learning. We relate plasticity to the empirical Neural Tangent Kernel, and identify dynamical isometry (the condition that layer-wise Jacobian singular values remain close to one) as a key mechanism for preserving plasticity in continual learning. We revisit a class of networks that are almost-everywhere isometric while remaining universal Lipschitz function approximators, demonstrating that near-dynamical isometry is compatible with expressive nonlinear representations. For general architectures, we propose an efficient isometry-promoting regularization scheme and identify a novel mechanism by which it can reactivate dormant ReLU units. Building on this, we introduce AdamO, an Adam-style adaptive optimizer that decouples isometry regularization from gradient updates, analogous to AdamW. We further reinterpret prior plasticity-preserving approaches through the lens of dynamical isometry, showing that they target only a partial measure of isometry. Across supervised and reinforcement-learning continual-learning benchmarks designed to induce plasticity loss, our methods consistently match or outperform existing approaches.",
+      "authors": [
+        "Andries Rosseau",
+        "Robert Müller",
+        "Ann Nowé"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T17:24:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.09762v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9769800247266581,
+      "rerank_score": 0.9769800247266581,
+      "rerank_best_query": "transfer learning for brain computer interfaces",
+      "rerank_track": "core",
+      "rerank_rank": 42,
+      "llm_score": 8.0,
+      "core_relevance_score": 8.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "bridge",
+      "relevance_track_label": "桥接方法",
+      "selection_score": 10.453960049453316,
+      "selection_lane": "core",
+      "track_evidence_en": "Method directly applicable to BCI online adaptation and representation drift",
+      "track_evidence_cn": "方法直接适用于BCI在线适应和表征漂移",
+      "llm_evidence_en": "Dynamical isometry preserves plasticity for continual learning",
+      "llm_evidence_cn": "动态等距保持持续学习中的可塑性",
+      "llm_evidence": "动态等距保持持续学习中的可塑性",
+      "canonical_evidence": "动态等距保持持续学习中的可塑性",
+      "llm_tldr_en": "Identifies dynamical isometry as key to preserving plasticity in continual learning, enabling online adaptation",
+      "llm_tldr_cn": "发现动态等距是保持持续学习可塑性的关键，支持在线适应",
+      "llm_tldr": "发现动态等距是保持持续学习可塑性的关键，支持在线适应",
+      "llm_tags": [
+        "query:ndai",
+        "paper:桥接方法"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "online adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09640v1",
+      "source": "arxiv",
+      "title": "Physics-Aware Sparse Learning and Selective Online Adaptation for Euler-Lagrange Robot Dynamics",
+      "abstract": "Accurate dynamics models are essential for model-based robotic control, yet nominal Euler--Lagrange models often become inaccurate in the presence of payload variation, unmodeled coupling, friction, aerodynamic effects, and changing operating conditions. Most learning-based correction methods improve prediction accuracy by introducing a single additive residual, but do not preserve the internal mechanical structure of Euler--Lagrange systems. This leads to models that do not preserve symmetry, positive-definiteness, or the coupling between inertia and velocity-dependent terms, which can result in physically inconsistent predictions and reduced reliability when embedded in model-based controllers. We propose a structure-preserving residual learning framework that decomposes model mismatch into an inertia correction, the corresponding induced Coriolis term, and a generalized-force residual. The mechanical component is learned under physical constraints, while the disturbance-sensitive component is represented through a sparse history-dependent latent interaction model and adapted online using Bayesian linear regression. This separation preserves key mechanical structure while restricting adaptation to the part of the dynamics most affected by changing conditions. Experiments across multiple robotic platforms, including mobile, aerial, and manipulator systems, show that the proposed method improves dynamics prediction and trajectory tracking under coupled and time-varying dynamics. These results highlight the value of combining structured residual modeling, compact latent interaction selection, and selective online adaptation for real-world model-based control.",
+      "authors": [
+        "Rishabh Dev Yadav",
+        "Samaksh Ujjawal",
+        "Sihao Sun",
+        "Spandan Roy",
+        "Wei Pan"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-08T15:36:00+00:00",
+      "link": "https://arxiv.org/pdf/2606.09640v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.6117464609583638,
+      "rerank_score": 0.6117464609583638,
+      "rerank_best_query": "Reusable method/query: time series modeling. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 75,
+      "llm_score": 8.0,
+      "core_relevance_score": 7.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 9.223492921916728,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "online adaptation method with concrete transfer path to neural decoding drift compensation",
+      "track_evidence_cn": "在线适应方法具有向神经解码漂移补偿的具体迁移路径",
+      "llm_evidence_en": "selective online adaptation for robot dynamics directly relevant to online adaptation in BCI",
+      "llm_evidence_cn": "机器人动力学的选择性在线适应直接相关BCI在线适应",
+      "llm_evidence": "机器人动力学的选择性在线适应直接相关BCI在线适应",
+      "canonical_evidence": "机器人动力学的选择性在线适应直接相关BCI在线适应",
+      "llm_tldr_en": "Structure-preserving learning with selective online adaptation for Euler-Lagrange dynamics",
+      "llm_tldr_cn": "保留结构的稀疏学习与选择性在线适应用于欧拉-拉格朗日动力学",
+      "llm_tldr": "保留结构的稀疏学习与选择性在线适应用于欧拉-拉格朗日动力学",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "online adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11363v1",
+      "source": "arxiv",
+      "title": "NSVQ: Mitigating Codebook Collapse by Stabilizing Encoder Drift in Vector Quantization",
+      "abstract": "Vector quantization is central to modern generative modeling pipelines, but large-codebook VQ models often suffer from codebook collapse. We identify encoder drift as a key driver of this failure: as the encoder moves the latent distribution, sparsely updated code vectors can lag behind, lose assignments, and increase quantization error, creating a feedback loop through the straight-through estimator. We propose NSVQ, a non-stationary-aware VQ training strategy that combines a dense non-stationary embedding loss, codebook replacement, and stage-wise encoder freezing. NSVQ first helps the codebook track encoder drift during early training, then freezes the encoder to consolidate the codebook under a fixed latent geometry, and finally reintroduces adversarial refinement. Experiments on ImageNet-1k show that NSVQ improves reconstruction quality while maintaining full codebook utilization. On ImageNet-1k at 128$\\times$128 with 65,536 codes, NSVQ reduces rFID from 2.39 to 2.10 compared with SimVQ, while both methods maintain 100\\% utilization. Additional latent diffusion experiments show that NSVQ also improves downstream ImageNet generation FID.",
+      "authors": [
+        "Hao Lu",
+        "Yongxin Guo",
+        "Onur Koyun",
+        "Zhengjie Zhu",
+        "Abbas Alili",
+        "Metin N. Gurcan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-09T18:43:29+00:00",
+      "link": "https://arxiv.org/pdf/2606.11363v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9958987095058089,
+      "rerank_score": 0.9958987095058089,
+      "rerank_best_query": "representation drift",
+      "rerank_track": "core",
+      "rerank_rank": 22,
+      "llm_score": 8.0,
+      "core_relevance_score": 5.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "concrete method to stabilize latent representations against drift",
+      "track_evidence_cn": "稳定潜在表示对抗漂移的具体方法",
+      "llm_evidence_en": "stabilizing encoder drift in vector quantization",
+      "llm_evidence_cn": "稳定向量量化中的编码器漂移",
+      "llm_evidence": "稳定向量量化中的编码器漂移",
+      "canonical_evidence": "稳定向量量化中的编码器漂移",
+      "llm_tldr_en": "Proposes NSVQ to mitigate codebook collapse by addressing encoder drift",
+      "llm_tldr_cn": "提出NSVQ通过处理编码器漂移缓解码本崩溃",
+      "llm_tldr": "提出NSVQ通过处理编码器漂移缓解码本崩溃",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation drift",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.09667v1",
+      "source": "arxiv",
+      "title": "Cross-Modal Masking for Robust Silent Speech Synthesis Using sEMG and Lipreading",
+      "abstract": "Speech restoration through silent speech interfaces (SSIs) has emerged as a promising assistive technology for individuals with impaired or absent laryngeal voice production. Among non-invasive SSI modalities, surface electromyography (sEMG) and video-based lipreading provide complementary articulatory information, yet their integration for continuous speech synthesis remains underexplored. Moreover, existing multimodal approaches rarely address robustness to modality degradation or temporary sensor failure, limiting their applicability in realistic scenarios. In this work, we propose a masked multimodal speech synthesis framework that jointly leverages sEMG and lipreading signals through modality masking during training. Under multispeaker settings, the proposed approach reduces word error rate by up to 14 absolute percentage points compared to the strongest unimodal baseline. Experimental results not only show that masking strategies are critical for these performance gains and robustness under low-bitrate conditions, but also that they generalize better than degradation-specific data augmentations in the presence of modality absence conditions. Phone-level analyses further reveal complementary contributions across modalities, with particularly strong benefits for vowels and for specific consonant groups. Overall, these findings demonstrate the effectiveness and robustness of masked multimodal integration for silent speech synthesis, although adaptation to laryngectomized speakers remains an open research challenge.",
+      "authors": [
+        "Eder del Blanco",
+        "David Gimeno-Gómez",
+        "Eva Navas",
+        "Carlos-D. Martínez-Hinarejos",
+        "Inma Hernáez"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.CL",
+        "cs.SD"
+      ],
+      "published": "2026-06-08T15:50:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.09667v1",
+      "tags": [
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9620986717825001,
+      "rerank_score": 0.9620986717825001,
+      "rerank_best_query": "representation learning for neural activity",
+      "rerank_track": "core",
+      "rerank_rank": 53,
+      "llm_score": 7.0,
+      "core_relevance_score": 7.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "core",
+      "relevance_track_label": "强相关",
+      "selection_score": 8.924197343565,
+      "selection_lane": "core",
+      "track_evidence_en": "Directly addresses speech BCI modality and robust multimodal fusion",
+      "track_evidence_cn": "直接解决言语BCI模态和鲁棒多模态融合",
+      "llm_evidence_en": "silent speech synthesis from sEMG and lipreading, relevant to speech BCI",
+      "llm_evidence_cn": "基于表面肌电和唇读的无声语音合成，与言语BCI相关",
+      "llm_evidence": "基于表面肌电和唇读的无声语音合成，与言语BCI相关",
+      "canonical_evidence": "基于表面肌电和唇读的无声语音合成，与言语BCI相关",
+      "llm_tldr_en": "Cross-modal masking improves robustness of silent speech synthesis from sEMG and video",
+      "llm_tldr_cn": "跨模态掩码提升了基于表面肌电和视频的无声语音合成的鲁棒性",
+      "llm_tldr": "跨模态掩码提升了基于表面肌电和视频的无声语音合成的鲁棒性",
+      "llm_tags": [
+        "query:ndai",
+        "paper:强相关"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "handwriting/speech BCI",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11831v1",
+      "source": "arxiv",
+      "title": "From Uniform to Learned Graph Priors: Diffusion for Structure Discovery",
+      "abstract": "Neural relational inference (NRI) methods discover interaction graphs from trajectories through variational reasoning on discrete potential edges. However, these methods typically rely on oversimplified, factorized graph priors. Such priors, typically nearing uniform distributions, treat edges as independent entities. This systemic misalignment does not match the real-world systems and yields diffuse and indecisive edge posteriors limiting the reliability of structural discovery. To address this, we propose \\textit{Diff-prior}, a diffusion-parameterized adaptive prior used to calibrate latent graph distribution rather than generate graphs. Our core insight is to reframe prior integration as a learnable denoising-style calibration that organizes scattered, uncertain edge posteriors into a more reliable overall structure which can be trained by the diffusion model. Diff-prior learns an adaptive structure prior that performs structured calibration on the edge posteriors during inference, guiding it towards a distribution closer to the underlying structure. The diff-prior operates before structural sampling and acts as a denoising calibrator directly on the encoder edge distribution, which provides a generic training paradigm over structured variables. Experiments on standard benchmarks validated our framework, and the results indicate that Diff-prior improves the performance of structure inference and generates more decisive edge posteriors across multiple NRI-family architectures. The code is available on https://github.com/Hardy158118/Diffprior.",
+      "authors": [
+        "Qi Shao",
+        "Hao Guo",
+        "Jiawen Chen",
+        "Duxin Chen",
+        "Wenwu Yu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-10T09:14:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.11831v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9939883621092982,
+      "rerank_score": 0.9939883621092982,
+      "rerank_best_query": "representation learning for neural activity",
+      "rerank_track": "core",
+      "rerank_rank": 26,
+      "rerank_inspiration_score": 0.9634450561976653,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.92689011239533,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "reusable time series modeling method for neural connectivity",
+      "track_evidence_cn": "可重用的时间序列建模方法用于神经连接",
+      "llm_evidence_en": "diffusion-based adaptive prior for time series structure discovery",
+      "llm_evidence_cn": "基于扩散的自适应先验用于时间序列结构发现",
+      "llm_evidence": "基于扩散的自适应先验用于时间序列结构发现",
+      "canonical_evidence": "基于扩散的自适应先验用于时间序列结构发现",
+      "llm_tldr_en": "Diff-prior uses diffusion to learn graph priors from trajectories.",
+      "llm_tldr_cn": "Diff-prior利用扩散从轨迹学习图先验。",
+      "llm_tldr": "Diff-prior利用扩散从轨迹学习图先验。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11962v1",
+      "source": "arxiv",
+      "title": "Composite likelihood inference of fractional Gaussian processes with sequentially optimal subset selection",
+      "abstract": "The composite likelihood method reduces the computational cost of parameter estimation in time series by considering several subsets of observations instead of all observations at once. The asymptotic properties of this method are related to the Godambe information, an extension of the Fisher information that accounts for the dependence between subsets of observations. We aim to apply this method to linear Gaussian models, in particular fractional Brownian motion and fractional Gaussian noise. We derive theoretical expressions for their Fisher information and their Godambe information and deduce a subset selection design that sequentially maximizes the Godambe information. The size of the subsets then allows us to control the trade-off between estimation accuracy and computational cost. Through simulations, we compare this method with the method of moments and maximum likelihood estimation, and we apply it to real data, namely volatility series of a stock index and a wind speed time series.",
+      "authors": [
+        "Mathis Fourreau",
+        "Matthieu Garcin"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME",
+        "q-fin.ST",
+        "stat.CO"
+      ],
+      "published": "2026-06-10T11:41:54+00:00",
+      "link": "https://arxiv.org/pdf/2606.11962v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.8883145531764085,
+      "rerank_score": 0.8883145531764085,
+      "rerank_best_query": "Reusable method/query: sequence decoding. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 34,
+      "llm_score": 7.0,
+      "core_relevance_score": 2.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.776629106352818,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "method transferable to neural time series modeling",
+      "track_evidence_cn": "方法可迁移至神经时间序列建模",
+      "llm_evidence_en": "composite likelihood for time series with optimal subset selection",
+      "llm_evidence_cn": "时间序列复合似然与最优子集选择",
+      "llm_evidence": "时间序列复合似然与最优子集选择",
+      "canonical_evidence": "时间序列复合似然与最优子集选择",
+      "llm_tldr_en": "Proposes composite likelihood inference for fractional Gaussian processes to reduce computational cost via optimal subset selection.",
+      "llm_tldr_cn": "提出分数高斯过程的复合似然推断，通过最优子集选择降低计算成本。",
+      "llm_tldr": "提出分数高斯过程的复合似然推断，通过最优子集选择降低计算成本。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09355v1",
+      "source": "arxiv",
+      "title": "MosaicIMU: Composing Carrier Experts for Generalizable Neural Inertial Odometry",
+      "abstract": "Robust inertial odometry is essential for various carriers when external sensing is unreliable. Learning-based methods reduce integration drift by capturing local motion priors, but these methods often remain tied to a particular carrier, limiting generalization across heterogeneous platforms. We present MosaicIMU, a carrier-conditioned Mixture-of-Experts (MoE) pretraining-and-adaptation framework for generalizable neural inertial odometry. MosaicIMU uses a prototype-based router to compose carrier-specific expert features, decodes local velocity and uncertainty constraints, and integrates them with a history-aware EKF. For unseen domain adaptation, it freezes the pretrained base model and learns a new lightweight expert residual branch. For edge-deployment, it further reuses the router to select informative online samples for efficient incremental updates. Experiments show that MosaicIMU consistently outperforms learning-based baselines, reducing average ATE and RTE-10s by 40% and 34%, respectively. These results highlight that MosaicIMU provides a scalable pretraining-to-deployment paradigm for generalizable and adaptive neural inertial odometry.",
+      "authors": [
+        "Junye Zou",
+        "Huiyi Yan",
+        "Xinning Xu",
+        "Xiaolei Li",
+        "Pengkun Zhou",
+        "Jinhui Zhang",
+        "Ziyang Meng"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-08T11:29:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.09355v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9437410751625815,
+      "rerank_score": 0.9437410751625815,
+      "rerank_best_query": "transfer learning for brain computer interfaces",
+      "rerank_track": "core",
+      "rerank_rank": 60,
+      "rerank_inspiration_score": 0.8061167755338402,
+      "llm_score": 7.0,
+      "core_relevance_score": 2.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.61223355106768,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "transferable MoE adaptation method",
+      "track_evidence_cn": "可迁移的MoE自适应方法",
+      "llm_evidence_en": "MosaicIMU uses pretraining and adaptation framework transferable to BCI domain adaptation",
+      "llm_evidence_cn": "MosaicIMU使用预训练与自适应框架可迁移至BCI领域自适应",
+      "llm_evidence": "MosaicIMU使用预训练与自适应框架可迁移至BCI领域自适应",
+      "canonical_evidence": "MosaicIMU使用预训练与自适应框架可迁移至BCI领域自适应",
+      "llm_tldr_en": "Presents MosaicIMU, a carrier-conditioned MoE pretraining-and-adaptation framework for inertial odometry.",
+      "llm_tldr_cn": "提出MosaicIMU，一种载体条件化的MoE预训练与自适应框架用于惯性里程计。",
+      "llm_tldr": "提出MosaicIMU，一种载体条件化的MoE预训练与自适应框架用于惯性里程计。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "transfer learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10212v1",
+      "source": "arxiv",
+      "title": "Intrinsic Footpoint-invariant Riemannian Cross-covariance",
+      "abstract": "Covariance estimation yields a fundamental second-order statistic underlying representation learning, dimension reduction, and dependence modeling. While covariance has been well understood in Euclidean spaces, it is ill-defined for random objects residing on nonlinear Riemannian manifolds, which increasingly arise in modern machine learning applications involving shapes, symmetric positive definite (SPD) matrices, etc. This paper introduces an intrinsic Riemannian cross-covariance for manifold-valued random objects. Our approach defines covariance and correlation by transporting local variations to a common tangent space via parallel transport, yielding a second-order descriptor that is independent of arbitrary coordinate choices. We establish that the proposed covariance inherits desirable properties of its Euclidean counterparts and characterize its asymptotic behavior. Numerical studies on spheres and SPD manifolds, together with real-data experiments on heart valve shapes in Kendall's shape space, demonstrate the effectiveness of our estimators and verify the stated properties. Our results position the Riemannian covariance as a fundamental tool for second-order learning and analysis in non-Euclidean representation spaces.",
+      "authors": [
+        "Carlos Soto",
+        "Cheng Wang",
+        "Zipan Huang",
+        "Xiaoyu Chen"
+      ],
+      "primary_category": "math.ST",
+      "categories": [
+        "math.ST",
+        "stat.ML"
+      ],
+      "published": "2026-06-08T22:05:16+00:00",
+      "link": "https://arxiv.org/pdf/2606.10212v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.7543407992154763,
+      "rerank_score": 0.7543407992154763,
+      "rerank_best_query": "Reusable method/query: time series modeling. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 58,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.508681598430952,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "manifold representation learning can be applied to neural activity analysis",
+      "track_evidence_cn": "流形表征学习可应用于神经活动分析",
+      "llm_evidence_en": "intrinsic Riemannian cross-covariance for representation learning on manifolds",
+      "llm_evidence_cn": "用于流形上表征学习的内在黎曼互协方差",
+      "llm_evidence": "用于流形上表征学习的内在黎曼互协方差",
+      "canonical_evidence": "用于流形上表征学习的内在黎曼互协方差",
+      "llm_tldr_en": "A novel covariance estimator for manifold-valued data that is invariant to coordinate choices.",
+      "llm_tldr_cn": "一种对流形值数据的新型协方差估计器，具有坐标不变性",
+      "llm_tldr": "一种对流形值数据的新型协方差估计器，具有坐标不变性",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10829v1",
+      "source": "arxiv",
+      "title": "Attention-Discounted Adaptive Sampler for Masked Diffusion Language Models",
+      "abstract": "Masked diffusion language models can reduce inference steps by revealing multiple tokens per denoising iteration, but this parallelism is fragile: positions that are individually confident may be unsafe to commit together when their predictions are coupled. Existing training-free samplers such as Top-\\(k\\), Fast-dLLM, and EB-Sampler mainly control how many tokens to reveal, while often ranking candidates by token-wise scores that ignore interactions within the selected set. We propose ADAS, a training-free reranking rule for parallel masked diffusion decoding. ADAS leaves the base sampler's stopping rule unchanged and modifies only subset construction: it greedily discounts a candidate when it attends strongly to already selected positions whose predictions remain uncertain. Unlike graph-constrained methods that turn attention into hard compatibility constraints, ADAS keeps attention continuous and uses it as a soft marginal penalty. Across LLaDA-8B-Base and Dream-7B-Base on GSM8K, MATH500, HumanEval, and MBPP, plugging ADAS into Top-\\(k\\), Fast-dLLM, and EB-Sampler improves low-NFE performance at matched denoiser evaluations by \\(9.11\\) and \\(10.46\\) percentage points on average, respectively, with \\(3.1\\%\\) per-forward runtime overhead. These results show that soft attention-discounted reranking is a simple and modular way to improve quality in highly parallel decoding for masked diffusion language models.",
+      "authors": [
+        "Yusuf Sahin",
+        "Ahmed Rockey Saikia",
+        "Volkan Cevher",
+        "Paolo Favaro"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-09T13:17:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.10829v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9295215905230723,
+      "rerank_score": 0.9295215905230723,
+      "rerank_best_query": "transfer learning for brain computer interfaces",
+      "rerank_track": "core",
+      "rerank_rank": 69,
+      "rerank_inspiration_score": 0.7209419984367423,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.441883996873484,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "attention-based subset construction method reusable for sequence decoding",
+      "track_evidence_cn": "基于注意力的子集构建方法可复用于序列解码",
+      "llm_evidence_en": "attention-discounted sampling for parallel decoding",
+      "llm_evidence_cn": "注意力折扣的并行解码采样",
+      "llm_evidence": "注意力折扣的并行解码采样",
+      "canonical_evidence": "注意力折扣的并行解码采样",
+      "llm_tldr_en": "Proposes ADAS, a training-free reranking rule using attention to avoid unsafe joint token commitments in masked diffusion language models.",
+      "llm_tldr_cn": "提出ADAS，一种无需训练的重新排名规则，利用注意力避免在掩码扩散语言模型中同时提交不安全的令牌。",
+      "llm_tldr": "提出ADAS，一种无需训练的重新排名规则，利用注意力避免在掩码扩散语言模型中同时提交不安全的令牌。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09725v1",
+      "source": "arxiv",
+      "title": "Disentanglement with Holographic Reduced Representations",
+      "abstract": "Disentanglement, the separation of factors of variation in data using neural networks, remains a long-standing challenge in machine learning. Prior work has addressed this problem with variational autoencoders and generative adversarial networks that incorporate ideas from variational inference and information-theoretic constraints. In contrast to methods that rely on continuous representations, we propose a design that treats disentangled representations as symbolic structures, motivated by the compositional relationships among the concepts that make up samples from a distribution. However, learning discrete symbolic structures with neural networks while maintaining differentiability is difficult and often requires complex architectures. To address this, we introduce an unsupervised learning algorithm that uses holographic reduced representations (HRR) for neural disentanglement. We show that the HRR unbinding operation provides an inductive bias for separating factors and yields competitive results against baselines, as measured by latent traversals and disentanglement metrics. We complement these empirical findings with an information-theoretic analysis of the HRR unbinding channel. We prove that unbinding induces approximately independent symbol-value pairs and derive a per-slot capacity bound that quantifies how many distinct symbolic concepts can be reliably encoded, giving a quantitative account of the inductive bias toward disentanglement. The resulting representations differ from standard autoencoder-based models, in that their latent units are vectors that are summed together, rather than scalar dimensions of a low-dimensional latent vector. We show that this HRR representation is more robust to noise than other disentangled representations and maintains reconstruction quality across a range of SNRs.",
+      "authors": [
+        "Jhonny J. Velasquez Olivera",
+        "Christo K. Thomas",
+        "Walid Saad"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-08T16:48:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.09725v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.6486346722982635,
+      "rerank_score": 0.6486346722982635,
+      "rerank_best_query": "Reusable method/query: domain adaptation. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 61,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.297269344596527,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "novel disentanglement method transferable to neural representation learning",
+      "track_evidence_cn": "新颖的解耦方法可迁移至神经表示学习",
+      "llm_evidence_en": "disentangled representation learning method with symbolic structures",
+      "llm_evidence_cn": "使用符号结构的解耦表示学习方法",
+      "llm_evidence": "使用符号结构的解耦表示学习方法",
+      "canonical_evidence": "使用符号结构的解耦表示学习方法",
+      "llm_tldr_en": "Holographic Reduced Representations enable disentanglement via symbolic structures",
+      "llm_tldr_cn": "全息约简表示通过符号结构实现解耦",
+      "llm_tldr": "全息约简表示通过符号结构实现解耦",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11553v1",
+      "source": "arxiv",
+      "title": "APEX: A Network-Native Time-Series Foundation Model for Forecasting and Anomaly Detection for Wireless Edge Operations",
+      "abstract": "Generic time-series foundation models transfer poorly to wireless network telemetry whose signals are bursty, zero-inflated, and coupled across protocol layers. We present APEX, a network-native, decoder-only transformer for forecasting enterprise AP telemetry, and evaluate it on DHCP degradation as a representative network task. APEX is pre-trained on 10-channel multivariate telemetry from ~4,500 production wireless networks (~100K AP time series, 34 metrics per AP), and is available as APEX-Large (269M, cloud) and APEX-Edge (10.5M, edge). On a 192-step (4-day) DHCP degradation benchmark, APEX-Large reduces MAE by 18% over the strongest foundation-model baseline (Toto) and 38% over SARIMA, with anomaly-detection F1 = 0.93, while APEX-Edge enables sub-second, privacy-preserving inference on AP-class edge hardware. These results suggest network-native pre-training is a practical foundation for proactive wireless operations.",
+      "authors": [
+        "Swadhin Pradhan",
+        "Niloo Bahadori",
+        "Peiman Amini"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-10T01:23:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.11553v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.6186870354555521,
+      "rerank_score": 0.6186870354555521,
+      "rerank_best_query": "Reusable method/query: time series modeling. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 72,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.237374070911104,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "transferable time-series method",
+      "track_evidence_cn": "可迁移的时间序列方法",
+      "llm_evidence_en": "decoder-only transformer for multivariate time series forecasting",
+      "llm_evidence_cn": "用于多变量时间序列预测的解码器变换器",
+      "llm_evidence": "用于多变量时间序列预测的解码器变换器",
+      "canonical_evidence": "用于多变量时间序列预测的解码器变换器",
+      "llm_tldr_en": "APEX is a time-series foundation model using a decoder-only transformer for wireless network telemetry.",
+      "llm_tldr_cn": "APEX是一种使用纯解码器变换器进行无线网络遥测时间序列预测的基础模型。",
+      "llm_tldr": "APEX是一种使用纯解码器变换器进行无线网络遥测时间序列预测的基础模型。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11660v1",
+      "source": "arxiv",
+      "title": "Bergson: An Open Source Library for Data Attribution",
+      "abstract": "Data attribution is a promising field in interpretability that aims to explain model behavior through the influence of its training data, with applications including debugging undesirable model behavior and training dataset curation. However, significant engineering effort is required to perform it at scale, and many cutting edge techniques lack open-source tooling and support. Bergson is an open source library that aims to enable faster progress in the field by providing a host of techniques that scale to very large language models and pre-training datasets. The library natively supports on-disk gradient stores and multi-node distributed training, and provides quality of life tools for researchers. Finally, we introduce the first open-source implementations of three leading data attribution methods: MAGIC, SOURCE, and TrackStar. The library is available at https://github.com/EleutherAI/bergson .",
+      "authors": [
+        "Lucia Quirke",
+        "Louis Jaburi",
+        "David Johnston",
+        "William Z. Li",
+        "Gonçalo Paulo",
+        "Guillaume Martres",
+        "Girish Gupta",
+        "Stella Biderman",
+        "Nora Belrose"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-10T04:56:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.11660v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9213424199212199,
+      "rerank_score": 0.9213424199212199,
+      "rerank_best_query": "handwriting/speech BCI",
+      "rerank_track": "core",
+      "rerank_rank": 74,
+      "rerank_inspiration_score": 0.6103407353402317,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.220681470680464,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Concrete tool to trace predictions to training data in BCI models",
+      "track_evidence_cn": "在BCI模型中将预测追溯至训练数据的具体工具",
+      "llm_evidence_en": "open-source library for data attribution, useful for interpreting neural decoders",
+      "llm_evidence_cn": "开源数据归因库，可用于解释神经解码器",
+      "llm_evidence": "开源数据归因库，可用于解释神经解码器",
+      "canonical_evidence": "开源数据归因库，可用于解释神经解码器",
+      "llm_tldr_en": "Bergson provides scalable data attribution techniques for large models",
+      "llm_tldr_cn": "Bergson为大型模型提供可扩展的数据归因技术",
+      "llm_tldr": "Bergson为大型模型提供可扩展的数据归因技术",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09508v1",
+      "source": "arxiv",
+      "title": "From Rigid to Dynamic: Entropy-Guided Adaptive Inference for Long-Context LLMs",
+      "abstract": "Existing sparse attention and KV cache compression methods for long-context LLM inference typically apply fixed sparsity patterns or uniform budgets across all attention heads, overlooking the substantial variation in attention behavior among heads and contexts. We observe two distinct entropy patterns among attention heads: Rigid Heads, whose entropy stays near zero across input segments, and Dynamic Heads, whose entropy fluctuates significantly. Crucially, the distribution of these types is context-dependent and cannot be predetermined offline. We therefore propose EntropyInfer, a training-free framework that uses attention entropy to adaptively allocate compute at the granularity of individual heads and segments during prefilling. For decoding, we introduce a latent KV cache compression scheme that leverages generated output tokens, rather than prefill tokens alone, to identify and retain the most critical cache entries. Extensive experiments on Llama, Qwen and openPangu model series show that EntropyInfer consistently outperforms baselines including SnapKV, AdaKV, and CritiPrefill, achieving up to 2.39$\\times$ end-to-end speedup beyond 100k tokens with minimal quality degradation compared to full attention. The code is released in https://github.com/SHA-4096/EntropyInfer.",
+      "authors": [
+        "Zhanchao Xu",
+        "Haoyang Li",
+        "Qingfa Xiao",
+        "Fei Teng",
+        "Chen Jason Zhang",
+        "Lei Chen",
+        "Qing Li"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-08T14:02:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.09508v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9956161069199667,
+      "rerank_score": 0.9956161069199667,
+      "rerank_best_query": "Reusable method/query: transfer learning. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 11,
+      "llm_score": 6.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 6.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.991232213839933,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "attention mechanism with adaptive allocation can inspire BCI decoding models",
+      "track_evidence_cn": "注意机制自适应分配可启发BCI解码模型",
+      "llm_evidence_en": "entropy-guided adaptive inference for attention heads",
+      "llm_evidence_cn": "基于熵的注意力自适应推理",
+      "llm_evidence": "基于熵的注意力自适应推理",
+      "canonical_evidence": "基于熵的注意力自适应推理",
+      "llm_tldr_en": "Proposes EntropyInfer for dynamic compute allocation based on attention entropy patterns.",
+      "llm_tldr_cn": "提出基于注意力熵的动态计算分配方法。",
+      "llm_tldr": "提出基于注意力熵的动态计算分配方法。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "attention mechanisms",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch"
+    }
+  ]
+}

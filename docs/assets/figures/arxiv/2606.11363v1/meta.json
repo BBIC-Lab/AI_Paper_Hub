@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-008.webp",
+      "caption": "Figure 1: Overview of NSVQ. Stage 1 prevents early collapse using the non-stationary embedding loss and codebook replacement while the encoder is still drifting. The intermediate warm-up stage freezes the encoder and disables adversarial training, allowing the quantizer and decoder to adapt to a fixed latent geometry without VQGAN instability. Stage 2 re-enables adversarial training for perceptual refinement while keeping the encoder frozen.",
+      "page": 4,
+      "index": 8,
+      "width": 826,
+      "height": 462
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-003.webp",
+      "caption": "Table 1: Reconstruction performance on ImageNet-1k at 128× 128 resolution. All models encode images into 16× 16 tokens. Codebook utilization is calculated as the fraction of codebook entries activated at least once on ImageNet validation. †FSQ uses a finite scalar quantization codebook with 64,000 effective codes rather than exactly 65,536 vector codes.",
+      "page": 7,
+      "index": 3,
+      "width": 830,
+      "height": 218
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-009.webp",
+      "caption": "Figure 2: Encoder-drift stress test. We vary the encoder learning-rate multiplier to intervene on encoder drift. Top row: without NS loss and replacement, increasing encoder drift leads to high assignment churn, codebook collapse, and catastrophic rFID degradation. Bottom row: with NS loss and replacement, encoder drift and assignment churn still increase, but codebook utilization and rFID remain stable. This indicates that NSVQ does not simply suppress encoder movement; instead, it helps the codebook track the drifting latent distribution and prevents the drift–collapse feedback loop from developing.",
+      "page": 9,
+      "index": 9,
+      "width": 829,
+      "height": 335
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-007.webp",
+      "caption": "Figure 3: Controlled evidence that encoder drift and codebook collapse remain coupled under favorable initialization. A continuous autoencoder is first trained to convergence, and the codebook is initialized by k-means on the converged latent features before STE-based VQ training begins. Despite this favorable initialization, the RMS encoder drift DRMS",
+      "page": 14,
+      "index": 7,
+      "width": 598,
+      "height": 349
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-002.webp",
+      "caption": "Figure 4: Sensitivity analysis of NSVQ hyperparameters.",
+      "page": 21,
+      "index": 2,
+      "width": 622,
+      "height": 248
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-004.webp",
+      "caption": "Figure 5: Detailed training dynamics on CelebA 128× 128, including codebook utilization, commitment loss, and perceptual loss. Encoder freezing begins at step 45,350 in this run, marking the transition from Stage 1 to the frozen-encoder warm-up stage.",
+      "page": 22,
+      "index": 4,
+      "width": 826,
+      "height": 235
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-005.webp",
+      "caption": "Figure 6: Training dynamics of generator and discriminator losses. The adversarial objective is disabled during the frozen-encoder warm-up stage and re-enabled in Stage 2.",
+      "page": 22,
+      "index": 5,
+      "width": 598,
+      "height": 248
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-006.webp",
+      "caption": "Figure 7: Detailed encoder drift across the proposed training phases. Drift is high during Stage 1, drops to approximately zero after the transition to the frozen-encoder warm-up stage, and remains near zero during Stage 2.",
+      "page": 22,
+      "index": 6,
+      "width": 598,
+      "height": 345
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11363v1/fig-001.webp",
+      "caption": "Figure 8: Qualitative reconstruction comparison. From left to right: ground truth, NSVQ (our method), SimVQ, and vanilla VQ. Across all three examples, NSVQ produces reconstructions with sharper boundaries, fewer local artifacts, and better structural fidelity than vanilla VQ, while also providing modest visual improvements over SimVQ in fine details and object consistency.",
+      "page": 25,
+      "index": 1,
+      "width": 706,
+      "height": 498
+    }
+  ]
+}

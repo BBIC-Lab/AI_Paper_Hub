@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.09667v1/fig-001.webp",
+      "caption": "Fig. 1. Illustrative overview of the proposed multimodal speech synthesis framework. Top: Masked multimodal fusion training enables the model to integrate lipreading and sEMG cues effectively. Bottom: Once trained, the model is fine-tuned and evaluated under simulated signal degradations (e.g., reduced video frame rate), demonstrating that the multimodal model maintains stronger robustness in real-world use cases.",
+      "page": 1,
+      "index": 1,
+      "width": 529,
+      "height": 321
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09667v1/fig-005.webp",
+      "caption": "Fig. 2. Overall schema of the masked multimodal speech synthesizer. The proposed framework jointly processes lip video frames (blue squares) and sEMG signals (green squares) using modality-specific encoders. For each 1-second chunk, temporal adaptive masking (orange squares) is applied independently to both modalities before feature extraction through convolutional-based frontends. The resulting embeddings are further encoded by separate 6-layer Branchformers to capture richer contextual dependencies, and subsequently fused via element-wise addition. The model is then optimized in a multi-task manner by feeding the multimodal representations into two task-specific projection heads for phone prediction (top red brach) and spectrogram estimation (bottom red branch).",
+      "page": 4,
+      "index": 5,
+      "width": 1076,
+      "height": 529
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09667v1/fig-004.webp",
+      "caption": "TABLE III PERFORMANCE ACROSS MODALITIES AND ABLATION SETTINGS ON THE RESSINT TEST PARTITION FOR LARYNGEAL SUBJECTS.",
+      "page": 8,
+      "index": 4,
+      "width": 524,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09667v1/fig-002.webp",
+      "caption": "Fig. 6. Per-subject performance across modalities on the ReSSInt test partition for laryngectomized subjects, showing inter-speaker variability.",
+      "page": 10,
+      "index": 2,
+      "width": 439,
+      "height": 299
+    },
+    {
+      "url": "assets/figures/arxiv/2606.09667v1/fig-003.webp",
+      "caption": "Fig. 7. Comparison of average speech rates across speakers indicating the average speech rate in syllables per second (syll/s). The shaded area highlights the speech-rate range observed for laryngectomized subjects.",
+      "page": 10,
+      "index": 3,
+      "width": 473,
+      "height": 261
+    }
+  ]
+}

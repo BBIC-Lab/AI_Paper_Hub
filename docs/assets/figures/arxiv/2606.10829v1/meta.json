@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-002.webp",
+      "caption": "Figure 2: Effect of attention-discounted selection on Dream-7B-Base. Rows correspond to entropybounded decoding, Fast-dLLM, fixed Top-k, and comparison against KLASS and DAPD; columns correspond to GSM8K, HumanEval, MATH500, and MBPP. The same pattern observed for LLaDA8B-Base persists: attention-discounted selection is most beneficial when many tokens are revealed in parallel, where the original samplers degrade sharply.",
+      "page": 7,
+      "index": 2,
+      "width": 816,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-005.webp",
+      "caption": "Figure 3: Effect of attention-discounted selection on LLaDA-8B-Base. Rows correspond to entropybounded decoding, Fast-dLLM, fixed Top-k, and comparison against KLASS and DAPD; columns correspond to GSM8K, HumanEval, MATH500, and MBPP. Across stopping rules and datasets, attention-discounted selection preserves substantially higher accuracy in the highly parallel regime, while matching the original samplers more closely when the number of parallel tokens is small.",
+      "page": 8,
+      "index": 5,
+      "width": 812,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-001.webp",
+      "caption": "Figure 4: Illustration of the toy data-generation process. The construction yields a masked sequence containing masked-token pairs with known dependency structure.",
+      "page": 15,
+      "index": 1,
+      "width": 814,
+      "height": 448
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-009.webp",
+      "caption": "Table 10: Results on Dream-7B-Base with EB stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 16,
+      "index": 9,
+      "width": 722,
+      "height": 490
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-008.webp",
+      "caption": "Table 11: Results on LLaDA-8B-Base with EB stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 16,
+      "index": 8,
+      "width": 722,
+      "height": 489
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-007.webp",
+      "caption": "Table 12: Results on Dream-7B-Base with Fast-dLLM stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 17,
+      "index": 7,
+      "width": 706,
+      "height": 440
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-006.webp",
+      "caption": "Table 13: Results on LLaDA-8B-Base with Fast-dLLM stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 17,
+      "index": 6,
+      "width": 706,
+      "height": 490
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-004.webp",
+      "caption": "Table 14: Results on Dream-7B-Base with Top-k stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 18,
+      "index": 4,
+      "width": 790,
+      "height": 334
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10829v1/fig-003.webp",
+      "caption": "Table 15: Results on LLaDA-8B-Base with Top-k stopping rule. Each cell reports score on the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy; for HumanEval and MBPP, score is Pass@1.",
+      "page": 18,
+      "index": 3,
+      "width": 790,
+      "height": 334
+    }
+  ]
+}

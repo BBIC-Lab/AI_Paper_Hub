@@ -1,0 +1,110 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-010.webp",
+      "caption": "Figure 4: An illustration of a dataset (n = 100) on S2 and its dependent dataset, together with the respective Fréchet mean and the joint Fréchet mean (midpoint of two Fréchet mean).",
+      "page": 24,
+      "index": 10,
+      "width": 582,
+      "height": 584
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-001.webp",
+      "caption": "Figure 5: Comparison of Riemannian correlation (Ours), A&P correlation, and the CCA estimator. The set {Yi} is transported along the geodesic α with α(0) = ν̃ and α(1) = (0,−1, 0). The x-axis denotes the position of Fréchet mean of {Yi} along α. Parameters: τ = π/6, η = π/4, σϵ = 0.15, MC = 200.",
+      "page": 25,
+      "index": 1,
+      "width": 664,
+      "height": 401
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-002.webp",
+      "caption": "Figure 6: Comparison of Riemannian correlation, A&P correlation and CCA estimator. Solid line correspond to samples sharing the same Fréchet mean while dotted line represents results from data {Yi} transported to (0,−1, 0). Parameters: τ = π/6, η = π/4, with noise level σϵ = 0.15.",
+      "page": 25,
+      "index": 2,
+      "width": 664,
+      "height": 401
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-003.webp",
+      "caption": "Figure 7: Comparison of Riemannian correlation (Ours), A&P correlation, and the CCA estimator. Parameter is set as τ = π/6. Left: The set {Yi} is transported to α(1/2), with α(0) = ν̃ and α(1) = (0,−1, 0). The x-axis shows rotation angle with the vertical dashed line indicating π/2. The noise level is σϵ = 0.15. Right: Two independent sets with {Yi} transported along the geodesic connecting its Fréchet mean and (0,-1,0). The x-axis denoted the position of Fréchet mean of {Yi} along α.",
+      "page": 26,
+      "index": 3,
+      "width": 814,
+      "height": 247
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-009.webp",
+      "caption": "Figure 8: Convergence of Correlation Estimates on SPD Manifold. Left: Comparison of A&P, Ours, and CCA methods with increasing sample size. Solid lines: original dataset (non-transport); dashed lines: parallel-transported dataset. Our method produces nearly identical estimates for nontransport and transport scenarios, consistent with isometric invariance. Log-log regression suggests√ n-convergence (slope −0.49± 0.03). Right: Detailed A&P vs Ours comparison. Shaded regions show 95% confidence intervals. Parameters: d = 3, τ = 0.5, σϵ = 0.15, MC varies by n.",
+      "page": 27,
+      "index": 9,
+      "width": 814,
+      "height": 409
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-007.webp",
+      "caption": "Figure 9: Geodesic Evaluation on SPD Manifold. Left: Original dataset (non-transport). Right: Parallel-transported dataset (transport). Our method produces nearly constant estimates (SE ≈ 0.008) across all evaluation points, consistent with footpoint invariance (Theorem 3.6). The A&P method exhibits substantial variation (SE ≈ 0.15) with an inverted U-shaped pattern. Shaded regions show 95% confidence intervals (mean ± 2 SE). Parameters: n = 100, d = 3, τ = 0.5, σϵ = 0.15, MC = 200.",
+      "page": 28,
+      "index": 7,
+      "width": 814,
+      "height": 409
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-008.webp",
+      "caption": "Figure 10: Comprehensive Comparison on SPD Manifold. Top Row: Original dataset (non-transport). Bottom Row: Parallel-transported dataset (transport). Columns: Correlation, covariance, and variance estimates versus sample size. Our method closely matches Fréchet variance, while A&P yields inflated variance (ratio = 1.23± 0.05 at n = 100), associated with deflated correlation. Our method produces nearly identical estimates for non-transport/transport scenarios, consistent with isometric invariance. Shaded regions indicate 95% confidence intervals (mean ± 2 SE). Parameters: n ∈ {10, 20, . . . , 100}, d = 3, τ = 0.5, σϵ = 0.15, MC = 200 per n.",
+      "page": 28,
+      "index": 8,
+      "width": 748,
+      "height": 318
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-006.webp",
+      "caption": "Figure 11: Geodesic Simulation and Transport Effects on SPD Manifold. Left: Isometric invariance test: correlation estimates remain stable (SE ≈ 0.008) when dataset Y is physically transported along a geodesic. Right: Footpoint invariance test (Theorem 3.6): correlation estimates remain nearly constant (SE ≈ 0.008) when evaluated at different points p along the geodesic. The A&P estimator varies substantially (SE ≈ 0.15), depending on the evaluation point. Parameters: n = 100, d = 3, τ = 0.5, σϵ = 0.15, MC = 50.",
+      "page": 29,
+      "index": 6,
+      "width": 814,
+      "height": 408
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-005.webp",
+      "caption": "Figure 12: Angle Effect and Independence on SPD Manifold. Left: Correlation decreases monotonically with rotation angle η, following cos(η) pattern (mean absolute error ≈ 0.04). Right: Independent datasets yield correlation = 0.002± 0.008, consistent with expected behavior for independent data. Parameters: n = 100, d = 3, τ = 0.5, σϵ = 0.15, MC = 60.",
+      "page": 29,
+      "index": 5,
+      "width": 814,
+      "height": 408
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-004.webp",
+      "caption": "Figure 13: Effect of Mean Separation on Estimator Performance. Left: Correlation estimates versus geodesic distance d(µX , µY ). A&P exhibits monotonic bias, while Ours remains stable (0.798± 0.012, with no significant trend). Middle: Covariance estimates. Right: Difference (A&P - Ours) highlighting systematic divergence. At d = 2.0, A&P underestimates by 0.23± 0.05. Intrinsic correlation fixed at ρ = 0.8. Parameters: n = 100, d = 5, τX = τY = 0.5, MC = 50 per distance.",
+      "page": 30,
+      "index": 4,
+      "width": 798,
+      "height": 224
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-012.webp",
+      "caption": "Figure 14: Illustrative examples of inner and outer ventricular walls from the four groups. Top: raw landmarks extracted from cardiac MRI. Bottom: preprocessed shapes in preshape space.",
+      "page": 31,
+      "index": 12,
+      "width": 790,
+      "height": 404
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-011.webp",
+      "caption": "Figure 15: Footpoint invariance on connectome data. Our method (orange) is constant; A&P (blue) varies with the footpoint.",
+      "page": 31,
+      "index": 11,
+      "width": 790,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2606.10212v1/fig-013.webp",
+      "caption": "Figure 16: Bootstrap 95% CI for Riemannian correlation. Sign reversal between groups is significant (p = 0.032, two-sample permutation test).",
+      "page": 31,
+      "index": 13,
+      "width": 540,
+      "height": 310
+    }
+  ]
+}
