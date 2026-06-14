@@ -60,7 +60,6 @@ CARRYOVER_DAYS = 7
 CARRYOVER_RATIO = 0.5
 SOURCE_FRESH_FETCH = "fresh_fetch"
 SOURCE_CARRYOVER_CACHE = "carryover_cache"
-PRIORITY_DEEP_SCORE = 9.0
 CARRYOVER_MIN_SCORE = 8.0
 CARRYOVER_UNTAGGED = "untagged"
 ARXIV_VERSIONED_ID_RE = re.compile(r"^(\d{4}\.\d{4,5})(?:v(\d+))?$", re.IGNORECASE)
@@ -1028,9 +1027,8 @@ def apply_profile_daily_limits(
             for item in quick_items
             if key in item_profile_limit_keys(item, profile_limits)
         ]
-        mix = lookup_profile_mix(profile_recommend_mix, tag, key)
-        picked_deep = select_by_recommend_mix(deep_for_tag, deep_limit, mix)
-        picked_quick = select_by_recommend_mix(quick_for_tag, quick_limit, mix)
+        picked_deep = sort_by_score(deep_for_tag)[:deep_limit]
+        picked_quick = sort_by_score(quick_for_tag)[:quick_limit]
         allowed_deep_ids = {
             item_paper_id(item)
             for item in picked_deep
@@ -1416,75 +1414,41 @@ def process_mode(
             profile_recommend_mix=profile_recommend_mix,
         )
 
-    deep_candidates = [p for p in candidates if float(p.get("llm_score", 0)) >= 8.0]
-    deep_candidates = sort_by_score(deep_candidates)
-
-    priority_deep_candidates = [
-        p
-        for p in deep_candidates
-        if float(p.get("llm_score", 0)) >= PRIORITY_DEEP_SCORE
-    ]
-    regular_deep_candidates = [
-        p
-        for p in deep_candidates
-        if float(p.get("llm_score", 0)) < PRIORITY_DEEP_SCORE
-    ]
-
     cap = None
     recommend_mix = aggregate_recommend_mix(profile_recommend_mix)
-    deep_selected: List[Dict[str, Any]] = []
+    ranked_candidates = sort_by_score(candidates)
+    deep_selected: List[Dict[str, Any]]
+    remaining_after_deep: List[Dict[str, Any]]
     if cfg.get("deep_unlimited"):
-        deep_selected = sort_by_score(priority_deep_candidates + regular_deep_candidates)
+        deep_selected = list(ranked_candidates)
+        remaining_after_deep = []
     else:
         deep_base = int(cfg.get("deep_base") or 0)
-        cap = deep_base + tag_count
-
-        need = max(cap - len(priority_deep_candidates), 0)
-        if need == 0 or not regular_deep_candidates:
-            deep_selected = priority_deep_candidates
-        elif len(priority_deep_candidates) >= cap:
-            deep_selected = priority_deep_candidates
-        else:
-            strategy = str(cfg.get("deep_strategy") or "round_robin")
-            if strategy == "score":
-                extra_selected = regular_deep_candidates[:need]
-            else:
-                extra_selected = select_by_recommend_mix(regular_deep_candidates, need, recommend_mix)
-            deep_selected = priority_deep_candidates + extra_selected
-
-    selected_keys = {paper_dedup_key(p) for p in deep_selected if paper_dedup_key(p)}
-    deep_overflow = [p for p in deep_candidates if paper_dedup_key(p) not in selected_keys]
-
-    quick_candidates = [
-        p
-        for p in candidates
-        if paper_dedup_key(p) not in selected_keys and 6.0 <= float(p.get("llm_score", 0)) < 8.0
-    ]
-    if deep_overflow:
-        quick_map = {paper_dedup_key(p): p for p in quick_candidates}
-        for item in deep_overflow:
-            key = paper_dedup_key(item)
-            if key not in quick_map:
-                quick_candidates.append(item)
+        cap = max(deep_base + tag_count, 0)
+        deep_selected = ranked_candidates[:cap]
+        selected_keys = {paper_dedup_key(p) for p in deep_selected if paper_dedup_key(p)}
+        # 统一排序后再切分，避免精读/速读各自按 lane、track 或 source 重新筛选。
+        remaining_after_deep = [
+            p
+            for p in ranked_candidates
+            if paper_dedup_key(p) not in selected_keys
+        ]
 
     quick_base = int(cfg.get("quick_base") or 0)
-    quick_target = quick_base + tag_count
-    quick_strategy = str(cfg.get("quick_strategy") or "uniform")
-    if quick_strategy == "legacy":
-        quick_selected = select_quick_skim(quick_candidates, quick_target, quick_strategy)
-    else:
-        quick_selected = select_by_recommend_mix(quick_candidates, quick_target, recommend_mix)
+    quick_target = max(quick_base + tag_count, 0)
+    quick_selected = remaining_after_deep[:quick_target]
 
     stats = {
         "mode": mode,
         "tag_count": tag_count,
-        "deep_divecandidates": len(deep_candidates),
+        "deep_divecandidates": len(ranked_candidates),
         "deep_cap": cap,
         "deep_selected": len(deep_selected),
-        "quick_candidates": len(quick_candidates),
+        "quick_candidates": len(remaining_after_deep),
         "quick_skim_target": quick_target,
         "quick_selected": len(quick_selected),
         "recommend_mix": recommend_mix,
+        "selection_strategy": "unified_rank_slice",
     }
 
     result = {

@@ -262,7 +262,7 @@ class SelectPapersSourceTagTest(unittest.TestCase):
         self.assertEqual(seen, {"arxiv:2605.11710"})
 
 
-class SelectPapersDeepPriorityModeTest(unittest.TestCase):
+class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         root = pathlib.Path(__file__).resolve().parents[1]
@@ -271,26 +271,31 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
             sys.path.insert(0, str(src_dir))
         cls.mod = _load_module("select_mod", src_dir / "5.select_papers.py")
 
-    def test_process_mode_keeps_all_nine_plus_even_if_over_cap(self):
+    def test_process_mode_splits_unified_rank_into_deep_then_quick(self):
         candidates = [
-            {"id": "p-1", "llm_score": 9.6},
-            {"id": "p-2", "llm_score": 9.3},
-            {"id": "p-3", "llm_score": 9.1},
-            {"id": "p-4", "llm_score": 8.9},
-            {"id": "p-5", "llm_score": 8.8},
+            {"id": "core-top", "llm_score": 9.8, "relevance_track": "core", "source": "biorxiv"},
+            {"id": "insp-second", "llm_score": 9.7, "relevance_track": "inspiration", "source": "arxiv"},
+            {"id": "carry-third", "llm_score": 9.6, "relevance_track": "core", "selection_source": "carryover_cache"},
+            {"id": "core-fourth", "llm_score": 9.5, "relevance_track": "core", "source": "medrxiv"},
+            {"id": "insp-fifth", "llm_score": 9.4, "relevance_track": "inspiration", "source": "arxiv"},
         ]
         result = self.mod.process_mode(
             candidates=candidates,
-            tag_count=1,
+            tag_count=0,
             mode="standard",
-            cfg={"deep_base": 1, "deep_unlimited": False, "deep_strategy": "round_robin"},
+            cfg={"deep_base": 2, "quick_base": 3, "deep_unlimited": False, "deep_strategy": "round_robin"},
             carryover_ratio=0.5,
+            profile_recommend_mix={"SR": {"core_ratio": 0, "inspiration_ratio": 3}},
         )
-        self.assertEqual(result.get("stats", {}).get("deep_selected"), 3)
         deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
-        self.assertEqual(deep_ids, ["p-1", "p-2", "p-3"])
+        quick_ids = [item.get("id") for item in result.get("quick_skim", [])]
+        all_ids = deep_ids + quick_ids
+        self.assertEqual(deep_ids, ["core-top", "insp-second"])
+        self.assertEqual(quick_ids, ["carry-third", "core-fourth", "insp-fifth"])
+        self.assertEqual(len(all_ids), len(set(all_ids)))
+        self.assertEqual(result.get("stats", {}).get("selection_strategy"), "unified_rank_slice")
 
-    def test_process_mode_nine_plus_full_then_fill_to_cap_with_regular(self):
+    def test_process_mode_deep_takes_top_cap_by_unified_rank(self):
         candidates = [
             {"id": "p-1", "llm_score": 9.8},
             {"id": "p-2", "llm_score": 8.9},
@@ -305,11 +310,10 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
             carryover_ratio=0.5,
         )
         self.assertEqual(result.get("stats", {}).get("deep_selected"), 3)
-        deep_ids = {item.get("id") for item in result.get("deep_dive", [])}
-        self.assertIn("p-1", deep_ids)
-        self.assertTrue("p-2" in deep_ids or "p-3" in deep_ids)
+        deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
+        self.assertEqual(deep_ids, ["p-1", "p-2", "p-3"])
 
-    def test_process_mode_nine_plus_only_keeps_original_when_none(self):
+    def test_process_mode_deep_can_include_lower_scores_when_cap_allows(self):
         candidates = [
             {"id": "p-1", "llm_score": 8.9},
             {"id": "p-2", "llm_score": 8.6},
@@ -323,7 +327,7 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
             cfg={"deep_base": 3, "deep_unlimited": False, "deep_strategy": "score"},
             carryover_ratio=0.5,
         )
-        self.assertEqual(result.get("stats", {}).get("deep_selected"), 3)
+        self.assertEqual(result.get("stats", {}).get("deep_selected"), 4)
         deep_scores = [float(item.get("llm_score", 0)) for item in result.get("deep_dive", [])]
         self.assertEqual(deep_scores, sorted(deep_scores, reverse=True))
 
@@ -408,6 +412,27 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
         self.assertEqual([item.get("id") for item in capped.get("quick_skim", [])], ["child-high"])
         self.assertEqual(capped.get("stats", {}).get("profile_limit_dropped_by_tag"), {"SR": {"deep": 0, "quick": 1}})
         self.assertEqual(capped.get("stats", {}).get("quick_selected"), 1)
+
+    def test_profile_daily_limit_uses_score_not_recommend_mix_lane(self):
+        result = {
+            "stats": {
+                "deep_selected": 2,
+                "quick_selected": 0,
+            },
+            "deep_dive": [
+                {"id": "insp-high", "llm_score": 9.5, "relevance_track": "inspiration", "matched_query_tag": "query:SR"},
+                {"id": "core-low", "llm_score": 8.1, "relevance_track": "core", "matched_query_tag": "query:SR"},
+            ],
+            "quick_skim": [],
+        }
+
+        capped = self.mod.apply_profile_daily_limits(
+            result,
+            {"SR": {"deep": 1, "quick": 10}},
+            {"SR": {"core_ratio": 1, "inspiration_ratio": 0}},
+        )
+
+        self.assertEqual([item.get("id") for item in capped.get("deep_dive", [])], ["insp-high"])
 
     def test_select_by_recommend_mix_targets_two_to_three(self):
         candidates = [
