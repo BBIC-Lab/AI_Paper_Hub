@@ -562,7 +562,8 @@ jobs:
           if [ -z "$FETCH_DAYS" ]; then
             FETCH_DAYS="5"
           fi
-          ARGS=()
+          # 日报运行必须刷新论文源，避免 Supabase 模式自动跳过 Step 1 后只召回旧候选。
+          ARGS=(--no-skip-fetch)
           if [ "$RUN_ENRICH" = "true" ]; then
             ARGS+=(--run-enrich)
           fi
