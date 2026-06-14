@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-14</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-14 20:51 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -13,7 +13,6 @@
       <span>今日简报（AI）</span>
       <p>今日无新推荐，系统未产出可展示论文。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/14/README">打开完整日报</a>
   </div>
   <div class="dpr-daily-empty-state">
     <strong>本次触发没有产出可推荐论文。</strong>
@@ -28,3 +27,6 @@
     <div class="dpr-daily-paper-grid"><div class="dpr-daily-empty-note">本次无速读推荐。</div></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>
