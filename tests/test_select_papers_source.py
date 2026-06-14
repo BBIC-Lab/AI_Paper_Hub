@@ -434,11 +434,12 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
             {"id": "insp-3", "llm_score": 9.1, "relevance_track": "inspiration", "inspiration_score": 9.1},
             {
                 "id": "bridge-1",
-                "llm_score": 8.0,
+                "llm_score": 8.7,
                 "relevance_track": "bridge",
-                "core_relevance_score": 8.0,
-                "inspiration_score": 8.0,
+                "core_relevance_score": 8.7,
+                "inspiration_score": 8.7,
                 "rerank_inspiration_score": 0.8,
+                "rerank_inspiration_rank": 1,
             },
         ]
 
@@ -447,6 +448,28 @@ class SelectPapersDeepPriorityModeTest(unittest.TestCase):
 
         self.assertIn("bridge-1", picked_by_id)
         self.assertEqual(picked_by_id["bridge-1"].get("selection_lane"), "inspiration")
+
+    def test_select_by_recommend_mix_does_not_let_tail_rerank_override_llm(self):
+        candidates = [
+            {
+                "id": "strong",
+                "llm_score": 8.0,
+                "relevance_track": "core",
+                "core_relevance_score": 8.0,
+            },
+            {
+                "id": "tail-rerank",
+                "llm_score": 7.0,
+                "relevance_track": "core",
+                "core_relevance_score": 7.0,
+                "rerank_core_score": 1.0,
+                "rerank_core_rank": 60,
+            },
+        ]
+
+        picked = self.mod.select_by_recommend_mix(candidates, 1, {"core_ratio": 1, "inspiration_ratio": 0})
+
+        self.assertEqual([item.get("id") for item in picked], ["strong"])
 
     def test_select_by_recommend_mix_zero_disables_lane(self):
         candidates = [

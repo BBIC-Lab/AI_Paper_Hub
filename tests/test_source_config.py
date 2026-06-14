@@ -131,6 +131,61 @@ class SourceConfigMigrationTest(unittest.TestCase):
         self.assertEqual(backend["papers_table"], "biorxiv_papers")
         self.assertEqual(backend["vector_rpc_exact"], "match_biorxiv_papers_exact")
 
+    def test_resolve_source_backends_supports_env_arxiv_shadow_override(self):
+        cfg = {
+            "source_backends": {
+                "arxiv": {
+                    "url": "https://shared.supabase.co",
+                    "anon_key": "shared-key",
+                    "schema": "public",
+                    "papers_table": "arxiv_papers",
+                    "use_vector_rpc": True,
+                    "vector_rpc_exact": "match_arxiv_papers_exact",
+                    "use_bm25_rpc": True,
+                    "bm25_rpc": "match_arxiv_papers_bm25",
+                }
+            }
+        }
+        with patch.dict(
+            "os.environ",
+            {
+                "DPR_ARXIV_PAPERS_TABLE": "arxiv_papers_bge_m3",
+                "DPR_ARXIV_VECTOR_RPC_EXACT": "match_arxiv_papers_bge_m3_exact",
+                "DPR_ARXIV_BM25_RPC": "match_arxiv_papers_bge_m3_bm25",
+            },
+            clear=True,
+        ):
+            backend = get_source_backend(cfg, "arxiv")
+        self.assertEqual(backend["url"], "https://shared.supabase.co")
+        self.assertEqual(backend["papers_table"], "arxiv_papers_bge_m3")
+        self.assertEqual(backend["vector_rpc_exact"], "match_arxiv_papers_bge_m3_exact")
+        self.assertEqual(backend["bm25_rpc"], "match_arxiv_papers_bge_m3_bm25")
+
+    def test_resolve_source_backends_merges_arxiv_env_with_legacy_supabase(self):
+        cfg = {
+            "supabase": {
+                "enabled": True,
+                "url": "https://legacy.supabase.co",
+                "anon_key": "legacy-key",
+                "papers_table": "arxiv_papers",
+                "use_vector_rpc": True,
+                "use_bm25_rpc": True,
+            }
+        }
+        with patch.dict(
+            "os.environ",
+            {
+                "DPR_ARXIV_PAPERS_TABLE": "arxiv_papers_bge_m3",
+                "DPR_ARXIV_VECTOR_RPC_EXACT": "match_arxiv_papers_bge_m3_exact",
+            },
+            clear=True,
+        ):
+            backend = get_source_backend(cfg, "arxiv")
+        self.assertEqual(backend["url"], "https://legacy.supabase.co")
+        self.assertEqual(backend["anon_key"], "legacy-key")
+        self.assertEqual(backend["papers_table"], "arxiv_papers_bge_m3")
+        self.assertEqual(backend["vector_rpc_exact"], "match_arxiv_papers_bge_m3_exact")
+
     def test_resolve_source_backends_supports_env_medrxiv_backend(self):
         cfg = {
             "supabase_shared": {

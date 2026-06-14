@@ -1,0 +1,141 @@
+name: daily-paper-reader-bge-m3-ab
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: "DPR_RUN_DATE（留空则用北京时间今天；可填 YYYYMMDD 或 YYYYMMDD-YYYYMMDD）"
+        required: false
+        default: ""
+      fetch_days:
+        description: "仅用于记录/对齐窗口；实际窗口仍由 config 与 run_date 决定"
+        required: false
+        default: "5"
+      profile_tag:
+        description: "仅运行指定词条 tag；留空表示全量"
+        required: false
+        default: ""
+      run_rerank:
+        description: "是否调用 reranker；默认 false 使用 RRF fallback"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-paper-reader-bge-m3-ab
+  cancel-in-progress: false
+
+jobs:
+  ab:
+    if: github.repository == 'BBIC-Lab/AI_Paper_Hub'
+    runs-on: ${{ fromJSON(vars.DPR_RUNNER_LABELS || '["ubuntu-latest"]') }}
+    timeout-minutes: 120
+    env:
+      DPR_LLM_PROVIDER: ${{ vars.DPR_LLM_PROVIDER || secrets.DPR_LLM_PROVIDER || 'openai' }}
+      DPR_LLM_API_KEY: ${{ secrets.DPR_LLM_API_KEY }}
+      DPR_LLM_BASE_URL: ${{ vars.DPR_LLM_BASE_URL || secrets.DPR_LLM_BASE_URL }}
+      DPR_LLM_MODEL: ${{ vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_REWRITE_MODEL: ${{ vars.DPR_LLM_REWRITE_MODEL || secrets.DPR_LLM_REWRITE_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_FILTER_MODEL: ${{ vars.DPR_LLM_FILTER_MODEL || secrets.DPR_LLM_FILTER_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      DPR_LLM_SUMMARY_MODEL: ${{ vars.DPR_LLM_SUMMARY_MODEL || secrets.DPR_LLM_SUMMARY_MODEL || vars.DPR_LLM_MODEL || secrets.DPR_LLM_MODEL }}
+      MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+      DPR_EMBED_PROFILE: local
+      DPR_EMBED_PROVIDER: local
+      DPR_EMBED_MODEL: BAAI/bge-m3
+      DPR_DISABLE_SUPABASE_VECTOR: "false"
+      DPR_ENABLE_MULTI_SOURCE_RPC: "false"
+      DPR_ARXIV_PAPERS_TABLE: arxiv_papers_bge_m3
+      DPR_ARXIV_VECTOR_RPC_EXACT: match_arxiv_papers_bge_m3_exact
+      DPR_ARXIV_BM25_RPC: match_arxiv_papers_bge_m3_bm25
+      DPR_ENABLE_BIORXIV_BACKEND: "false"
+      DPR_BIORXIV_ENABLED: "false"
+      DPR_SKIP_RERANK: ${{ github.event.inputs.run_rerank == 'true' && 'false' || 'true' }}
+      DPR_RERANK_PROVIDER: ${{ vars.DPR_RERANK_PROVIDER || 'openai' }}
+      DPR_RERANK_MODEL: ${{ vars.DPR_RERANK_MODEL || 'Qwen/Qwen3-Reranker-0.6B' }}
+      DPR_RERANK_ENDPOINT: ${{ vars.DPR_RERANK_ENDPOINT || 'http://127.0.0.1:8011/v1/rerank' }}
+      RERANK_ENDPOINT: ${{ vars.DPR_RERANK_ENDPOINT || 'http://127.0.0.1:8011/v1/rerank' }}
+      DPR_RERANK_API_KEY: ${{ secrets.MODEL_API_KEY }}
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python deps
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/uv
+            ~/.cache/torch
+            ~/.cache/huggingface
+          key: ${{ runner.os }}-dpr-bge-m3-ab-${{ hashFiles('requirements.txt') }}
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-120}" uv pip install --system -r requirements.txt
+
+      - name: Resolve run date
+        run: |
+          set -euo pipefail
+          RUN_DATE="${{ github.event.inputs.run_date }}"
+          if [ -z "$RUN_DATE" ]; then
+            RUN_DATE="$(TZ=Asia/Shanghai date +%Y%m%d)"
+          fi
+          echo "DPR_RUN_DATE=$RUN_DATE" >> "$GITHUB_ENV"
+          if [ -n "${{ github.event.inputs.profile_tag }}" ]; then
+            echo "DPR_FILTER_PROFILE_TAG=${{ github.event.inputs.profile_tag }}" >> "$GITHUB_ENV"
+          fi
+          echo "run_date=$RUN_DATE"
+          echo "fetch_days=${{ github.event.inputs.fetch_days }}"
+
+      - name: Run bge-m3 retrieval AB stages
+        env:
+          HF_HOME: ${{ github.workspace }}/hf_cache
+          HUGGINGFACE_HUB_CACHE: ${{ github.workspace }}/hf_cache
+          HF_HUB_DISABLE_SYMLINKS: "1"
+        run: |
+          set -euo pipefail
+          python src/2.1.retrieval_papers_bm25.py
+          python src/2.2.retrieval_papers_embedding.py --model "${DPR_EMBED_MODEL}" --device "${DPR_EMBED_DEVICE:-cpu}" --batch-size 8
+          python src/2.3.retrieval_papers_rrf.py
+          if [ "${DPR_SKIP_RERANK}" = "false" ]; then
+            python src/3.rank_papers.py
+          else
+          python - <<'PY'
+          import os
+          from src import main
+          from src.core import paths
+
+          root = os.getcwd()
+          token = os.environ["DPR_RUN_DATE"]
+          artifact_paths = paths.run_artifact_paths(root, token, "standard")
+          ok = main.prepare_rerank_fallback(str(artifact_paths.rrf), str(artifact_paths.rerank))
+          raise SystemExit(0 if ok else 1)
+          PY
+          fi
+          python src/4.llm_refine_papers.py
+          python src/5.select_papers.py
+
+      - name: Upload AB artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bge-m3-ab-${{ env.DPR_RUN_DATE }}
+          if-no-files-found: warn
+          path: |
+            archive/${{ env.DPR_RUN_DATE }}/filtered/
+            archive/${{ env.DPR_RUN_DATE }}/rank/
+            archive/${{ env.DPR_RUN_DATE }}/recommend/

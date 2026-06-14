@@ -483,6 +483,7 @@ def update_paper_rerank_metadata(
   if not isinstance(paper, dict):
     return
   track_key = "rerank_core_score" if track == TRACK_CORE else "rerank_inspiration_score"
+  rank_key = "rerank_core_rank" if track == TRACK_CORE else "rerank_inspiration_rank"
   old_track_score = paper.get(track_key)
   try:
     old_track_value = float(old_track_score)
@@ -490,6 +491,7 @@ def update_paper_rerank_metadata(
     old_track_value = -1.0
   if score > old_track_value:
     paper[track_key] = float(score)
+    paper[rank_key] = int(rank)
 
   try:
     old_best = float(paper.get("rerank_score"))
@@ -601,7 +603,11 @@ def process_file(
   for q_idx, q in enumerate(queries, start=1):
     q_text = build_track_rerank_query_text(q)
     track = normalize_query_track(q)
-    top_ids = list(candidate_ids_by_track.get(track) or [])
+    # Rerank must stay query-local. Reusing the whole track pool for every
+    # broad query lets unrelated papers win a normalized score by chance.
+    top_ids = _unique_keep_order(get_top_ids(q))
+    if not top_ids:
+      top_ids = list(candidate_ids_by_track.get(track) or [])
     if not q_text or not top_ids:
       continue
 

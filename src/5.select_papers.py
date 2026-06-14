@@ -74,6 +74,14 @@ TRACK_LABELS = {
     TRACK_BRIDGE: "桥接方法",
 }
 BRIDGE_SELECTION_BONUS = 0.5
+try:
+    RERANK_SELECTION_WEIGHT = max(float(os.getenv("DPR_RERANK_SELECTION_WEIGHT") or "0.6"), 0.0)
+except Exception:
+    RERANK_SELECTION_WEIGHT = 0.6
+try:
+    RERANK_SELECTION_RANK_WINDOW = max(int(os.getenv("DPR_RERANK_SELECTION_RANK_WINDOW") or "30"), 1)
+except Exception:
+    RERANK_SELECTION_RANK_WINDOW = 30
 
 
 def log(message: str) -> None:
@@ -468,6 +476,44 @@ def parse_score(value: Any) -> float:
         return 0.0
 
 
+def parse_rank(value: Any) -> int:
+    try:
+        rank = int(value)
+    except Exception:
+        return 0
+    return rank if rank > 0 else 0
+
+
+def rerank_score_for_track(item: Dict[str, Any], track: str) -> float:
+    track = normalize_relevance_track(track, "")
+    score_key = "rerank_core_score" if track == TRACK_CORE else "rerank_inspiration_score"
+    score = parse_score(item.get(score_key))
+    if score <= 0 and normalize_relevance_track(item.get("rerank_track"), "") == track:
+        score = parse_score(item.get("rerank_score"))
+    return max(score, 0.0)
+
+
+def rerank_rank_for_track(item: Dict[str, Any], track: str) -> int:
+    track = normalize_relevance_track(track, "")
+    rank_key = "rerank_core_rank" if track == TRACK_CORE else "rerank_inspiration_rank"
+    rank = parse_rank(item.get(rank_key))
+    if rank <= 0 and normalize_relevance_track(item.get("rerank_track"), "") == track:
+        rank = parse_rank(item.get("rerank_rank"))
+    return rank
+
+
+def rerank_selection_bonus(item: Dict[str, Any], track: str) -> float:
+    score = rerank_score_for_track(item, track)
+    if score <= 0:
+        return 0.0
+    rank = rerank_rank_for_track(item, track)
+    if rank <= 0:
+        return 0.0
+    window = max(int(RERANK_SELECTION_RANK_WINDOW or 1), 1)
+    rank_factor = max(0.0, (window - rank + 1) / window)
+    return float(RERANK_SELECTION_WEIGHT) * score * rank_factor
+
+
 def normalize_recommend_mix(value: Any) -> Dict[str, int]:
     raw = value if isinstance(value, dict) else {}
     try:
@@ -596,23 +642,16 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         else:
             core_score = score
 
-        rerank_core = parse_score(paper.get("rerank_core_score"))
-        rerank_inspiration = parse_score(paper.get("rerank_inspiration_score"))
-        if not rerank_core and normalize_relevance_track(paper.get("rerank_track"), "") == TRACK_CORE:
-            rerank_core = parse_score(paper.get("rerank_score"))
-        if not rerank_inspiration and normalize_relevance_track(paper.get("rerank_track"), "") == TRACK_INSPIRATION:
-            rerank_inspiration = parse_score(paper.get("rerank_score"))
-
         if relevance_track == TRACK_INSPIRATION:
-            selection_score = inspiration_score + 2.0 * rerank_inspiration
+            selection_score = inspiration_score + rerank_selection_bonus(paper, TRACK_INSPIRATION)
             selection_lane = TRACK_INSPIRATION
         elif relevance_track == TRACK_BRIDGE:
-            core_selection = core_score + 2.0 * rerank_core
-            inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
+            core_selection = core_score + rerank_selection_bonus(paper, TRACK_CORE)
+            inspiration_selection = inspiration_score + rerank_selection_bonus(paper, TRACK_INSPIRATION)
             selection_score = max(core_selection, inspiration_selection) + BRIDGE_SELECTION_BONUS
             selection_lane = TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION
         else:
-            selection_score = core_score + 2.0 * rerank_core
+            selection_score = core_score + rerank_selection_bonus(paper, TRACK_CORE)
             selection_lane = TRACK_CORE
 
         paper["llm_score"] = score
@@ -765,14 +804,12 @@ def ensure_selection_fields(item: Dict[str, Any]) -> Dict[str, Any]:
             inspiration_score = llm_score
         else:
             core_score = llm_score
-    rerank_core = parse_score(copied.get("rerank_core_score"))
-    rerank_inspiration = parse_score(copied.get("rerank_inspiration_score"))
     if track == TRACK_INSPIRATION:
-        selection_score = inspiration_score + 2.0 * rerank_inspiration
+        selection_score = inspiration_score + rerank_selection_bonus(copied, TRACK_INSPIRATION)
         lane = TRACK_INSPIRATION
     elif track == TRACK_BRIDGE:
-        core_selection = core_score + 2.0 * rerank_core
-        inspiration_selection = inspiration_score + 2.0 * rerank_inspiration
+        core_selection = core_score + rerank_selection_bonus(copied, TRACK_CORE)
+        inspiration_selection = inspiration_score + rerank_selection_bonus(copied, TRACK_INSPIRATION)
         selection_score = max(core_selection, inspiration_selection) + BRIDGE_SELECTION_BONUS
         lane = copied.get("selection_lane")
         lane = (
@@ -781,17 +818,13 @@ def ensure_selection_fields(item: Dict[str, Any]) -> Dict[str, Any]:
             else (TRACK_CORE if core_selection >= inspiration_selection else TRACK_INSPIRATION)
         )
     else:
-        selection_score = core_score + 2.0 * rerank_core
+        selection_score = core_score + rerank_selection_bonus(copied, TRACK_CORE)
         lane = TRACK_CORE
     copied["core_relevance_score"] = core_score
     copied["inspiration_score"] = inspiration_score
     copied["relevance_track"] = track
     copied["relevance_track_label"] = TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])
-    existing_selection_score = parse_score(copied.get("selection_score"))
-    if track == TRACK_BRIDGE:
-        copied["selection_score"] = max(existing_selection_score, selection_score)
-    else:
-        copied["selection_score"] = parse_score(copied.get("selection_score") or selection_score)
+    copied["selection_score"] = float(selection_score)
     copied["selection_lane"] = lane
     tags = normalize_tags(copied.get("llm_tags"))
     track_tag = f"paper:{TRACK_LABELS.get(track, TRACK_LABELS[TRACK_CORE])}"
@@ -889,12 +922,12 @@ def select_by_recommend_mix(
         if lane == TRACK_INSPIRATION:
             return (
                 parse_score(item.get("inspiration_score"))
-                + 2.0 * parse_score(item.get("rerank_inspiration_score"))
+                + rerank_selection_bonus(item, TRACK_INSPIRATION)
                 + bonus
             )
         return (
             parse_score(item.get("core_relevance_score"))
-            + 2.0 * parse_score(item.get("rerank_core_score"))
+            + rerank_selection_bonus(item, TRACK_CORE)
             + bonus
         )
 

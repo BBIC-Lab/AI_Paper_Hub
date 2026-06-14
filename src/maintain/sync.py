@@ -21,7 +21,6 @@ SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
-from model_loader import load_sentence_transformer
 try:
     from source_config import get_source_backend
 except Exception:  # pragma: no cover
@@ -156,15 +155,23 @@ def resolve_default_raw_path(date_str: str, backend_key: str) -> str:
     return os.path.join(ROOT_DIR, "archive", date_str, "raw", f"{prefix}_{date_str}.json")
 
 
-def build_embedding_text(row: Dict[str, Any]) -> str:
+def _truncate_embedding_text(text: str, max_chars: int) -> str:
+    safe_max = max(int(max_chars or 0), 0)
+    if safe_max <= 0 or len(text) <= safe_max:
+        return text
+    # 避免远程 embedding 服务因超长摘要超过 max_model_len 直接 400。
+    return text[:safe_max].rstrip()
+
+
+def build_embedding_text(row: Dict[str, Any], max_chars: int = 0) -> str:
     title = _norm(row.get("title"))
     abstract = _norm(row.get("abstract"))
     if title and abstract:
-        return f"passage: Title: {title}\n\nAbstract: {abstract}"
+        return _truncate_embedding_text(f"passage: Title: {title}\n\nAbstract: {abstract}", max_chars)
     if title:
-        return f"passage: Title: {title}"
+        return _truncate_embedding_text(f"passage: Title: {title}", max_chars)
     if abstract:
-        return f"passage: Abstract: {abstract}"
+        return _truncate_embedding_text(f"passage: Abstract: {abstract}", max_chars)
     return ""
 
 
@@ -206,6 +213,8 @@ def _load_embedding_model(
     max_length: int,
     allow_remote: bool,
 ):
+    from model_loader import load_sentence_transformer
+
     use_devices = devices or ["cpu"]
     single_device = use_devices[0]
     if len(use_devices) == 1:
@@ -234,6 +243,7 @@ def iter_embedded_row_chunks(
     encode_batch_size: int,
     stream_chunk_size: int,
     max_length: int,
+    text_max_chars: int = 0,
     allow_remote: bool,
 ) -> Iterator[Tuple[List[Dict[str, Any]], int]]:
     total_rows = len(rows or [])
@@ -243,10 +253,12 @@ def iter_embedded_row_chunks(
     use_devices = devices or ["cpu"]
     safe_encode_batch = max(int(encode_batch_size or 1), 1)
     safe_chunk_size = max(int(stream_chunk_size or safe_encode_batch), safe_encode_batch)
+    safe_text_max_chars = max(int(text_max_chars or 0), 0)
     total_chunks = (total_rows + safe_chunk_size - 1) // safe_chunk_size
     log(
         f"[Embedding] 开始流式编码：total={total_rows}, "
-        f"stream_chunk={safe_chunk_size}, encode_batch={safe_encode_batch}, devices={use_devices}"
+        f"stream_chunk={safe_chunk_size}, encode_batch={safe_encode_batch}, "
+        f"text_max_chars={safe_text_max_chars or '<none>'}, devices={use_devices}"
     )
 
     model = _load_embedding_model(
@@ -263,7 +275,7 @@ def iter_embedded_row_chunks(
             chunk_from = chunk_index * safe_chunk_size
             chunk_to = min((chunk_index + 1) * safe_chunk_size, total_rows)
             rows_chunk = rows[chunk_from:chunk_to]
-            texts_chunk = [build_embedding_text(row) for row in rows_chunk]
+            texts_chunk = [build_embedding_text(row, max_chars=safe_text_max_chars) for row in rows_chunk]
             log(
                 f"[Embedding] 编码分片 {chunk_index + 1}/{total_chunks} "
                 f"（{chunk_from + 1}-{chunk_to}/{total_rows}，device={use_devices[0]}）"
@@ -300,7 +312,7 @@ def iter_embedded_row_chunks(
             chunk_from = chunk_index * safe_chunk_size
             chunk_to = min((chunk_index + 1) * safe_chunk_size, total_rows)
             rows_chunk = rows[chunk_from:chunk_to]
-            texts_chunk = [build_embedding_text(row) for row in rows_chunk]
+            texts_chunk = [build_embedding_text(row, max_chars=safe_text_max_chars) for row in rows_chunk]
             log(
                 f"[Embedding] 多设备分片 {chunk_index + 1}/{total_chunks} "
                 f"（{chunk_from + 1}-{chunk_to}/{total_rows}，devices={use_devices}）"
@@ -339,6 +351,7 @@ def attach_embeddings(
     devices: List[str],
     batch_size: int,
     max_length: int,
+    text_max_chars: int = 0,
     allow_remote: bool = True,
 ) -> int:
     dim = 0
@@ -349,6 +362,7 @@ def attach_embeddings(
         encode_batch_size=batch_size,
         stream_chunk_size=batch_size,
         max_length=max_length,
+        text_max_chars=text_max_chars,
         allow_remote=allow_remote,
     ):
         dim = chunk_dim
@@ -402,6 +416,9 @@ def normalize_paper(x: Dict[str, Any]) -> Dict[str, Any] | None:
         return None
     return {
         "id": pid,
+        "source_paper_id": _norm(x.get("source_paper_id")) or None,
+        "doi": _norm(x.get("doi")) or None,
+        "version": _norm(x.get("version")) or None,
         "title": _norm(x.get("title")),
         "abstract": _norm(x.get("abstract")),
         "authors": x.get("authors") if isinstance(x.get("authors"), list) else [],
@@ -569,6 +586,7 @@ def stream_embed_and_upsert(
     embed_batch_size: int,
     embed_chunk_size: int,
     embed_max_length: int,
+    embed_text_max_chars: int,
     embed_local_only: bool,
     upload_workers: int,
     max_pending_upload_chunks: int,
@@ -586,7 +604,8 @@ def stream_embed_and_upsert(
     dim = 0
     log(
         f"[Pipeline] 启动流式 embedding+上传：total={total_rows}, "
-        f"upload_workers={worker_count}, pending_limit={pending_limit}"
+        f"upload_workers={worker_count}, pending_limit={pending_limit}, "
+        f"text_max_chars={max(int(embed_text_max_chars or 0), 0) or '<none>'}"
     )
     with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="supabase-upload") as executor:
         for rows_chunk, chunk_dim in iter_embedded_row_chunks(
@@ -596,6 +615,7 @@ def stream_embed_and_upsert(
             encode_batch_size=embed_batch_size,
             stream_chunk_size=embed_chunk_size,
             max_length=embed_max_length,
+            text_max_chars=max(int(embed_text_max_chars or 0), 0),
             allow_remote=not embed_local_only,
         ):
             dim = chunk_dim
@@ -645,6 +665,7 @@ def main() -> None:
     parser.add_argument("--embed-batch-size", type=int, default=8)
     parser.add_argument("--embed-chunk-size", type=int, default=512)
     parser.add_argument("--embed-max-length", type=int, default=0)
+    parser.add_argument("--embed-text-max-chars", type=int, default=int(os.getenv("DPR_EMBED_TEXT_MAX_CHARS", "0") or 0))
     parser.add_argument("--embed-local-only", action="store_true")
     parser.add_argument("--reserve-upload-cpus", type=int, default=2)
     parser.add_argument("--upload-workers", type=int, default=2)
@@ -699,6 +720,7 @@ def main() -> None:
                 f"[Embedding] 配置：model={model_name}, embed_device={args.embed_device}, "
                 f"embed_devices={args.embed_devices or '<auto>'}, batch={args.embed_batch_size}, "
                 f"chunk={args.embed_chunk_size}, max_length={args.embed_max_length}, "
+                f"text_max_chars={max(int(args.embed_text_max_chars or 0), 0) or '<none>'}, "
                 f"local_only={bool(args.embed_local_only)}, stream_upsert={bool(args.stream_upsert)}"
             )
             log("[Embedding] 开始执行文本向量编码阶段")
@@ -716,6 +738,7 @@ def main() -> None:
                     embed_batch_size=max(int(args.embed_batch_size or 1), 1),
                     embed_chunk_size=max(int(args.embed_chunk_size or 1), 1),
                     embed_max_length=int(args.embed_max_length or 0),
+                    embed_text_max_chars=max(int(args.embed_text_max_chars or 0), 0),
                     embed_local_only=bool(args.embed_local_only),
                     upload_workers=max(int(args.upload_workers or 1), 1),
                     max_pending_upload_chunks=max(int(args.max_pending_upload_chunks or 1), 1),
@@ -731,6 +754,7 @@ def main() -> None:
                     devices=embed_devices,
                     batch_size=int(args.embed_batch_size or 8),
                     max_length=int(args.embed_max_length or 0),
+                    text_max_chars=max(int(args.embed_text_max_chars or 0), 0),
                     allow_remote=not bool(args.embed_local_only),
                 )
             log(

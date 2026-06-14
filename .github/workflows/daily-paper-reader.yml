@@ -55,8 +55,8 @@ jobs:
       DPR_EMBED_API_TIMEOUT: ${{ vars.DPR_EMBED_API_TIMEOUT || '60' }}
       DPR_EMBED_REMOTE_FALLBACK: ${{ vars.DPR_EMBED_REMOTE_FALLBACK || 'local' }}
       DPR_SKIP_LOCAL_EMBED_DEPS: ${{ vars.DPR_SKIP_LOCAL_EMBED_DEPS || 'false' }}
-      # 默认远程 embedding 也保留本地候选池，避免 Supabase 向量 RPC 抖动跳过 embedding。
-      DPR_DISABLE_SUPABASE_VECTOR: "true"
+      # 默认保留 Supabase/远端向量召回作为质量基线；需要压测本地 embedding 时再显式设为 true。
+      DPR_DISABLE_SUPABASE_VECTOR: ${{ vars.DPR_DISABLE_SUPABASE_VECTOR || 'false' }}
       DPR_RERANK_PROVIDER: ${{ vars.DPR_RERANK_PROVIDER || 'openai' }}
       DPR_RERANK_MODEL: ${{ vars.DPR_RERANK_MODEL || 'Qwen/Qwen3-Reranker-0.6B' }}
       DPR_RERANK_ENDPOINT: ${{ vars.DPR_RERANK_ENDPOINT || 'http://127.0.0.1:8011/v1/rerank' }}

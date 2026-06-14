@@ -131,6 +131,9 @@ class RankGlobalPoolTest(unittest.TestCase):
             ranked = intent_queries[0].get("ranked") or []
             ranked_ids = [item.get("paper_id") for item in ranked]
             self.assertEqual(ranked_ids, ["p3", "p1"])
+            self.assertEqual(len(reranker.last_documents), 2)
+            papers_by_id = {item.get("id"): item for item in saved.get("papers") or []}
+            self.assertEqual(papers_by_id["p3"].get("rerank_core_rank"), 1)
             self.assertEqual(saved.get("global_candidate_ids"), ["p1", "p3", "p2"])
             self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("core"), ["p1", "p3"])
             self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("inspiration"), ["p2"])

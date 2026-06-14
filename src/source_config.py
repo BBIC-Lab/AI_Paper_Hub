@@ -63,8 +63,71 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value in ("1", "true", "yes", "on")
 
 
+def _env_present(name: str) -> bool:
+    return name in os.environ and _norm(os.getenv(name)) != ""
+
+
+def _set_env_text(backend: Dict[str, Any], field: str, env_name: str) -> None:
+    value = _norm(os.getenv(env_name))
+    if value:
+        backend[field] = value
+
+
+def _set_env_bool(backend: Dict[str, Any], field: str, env_name: str, default: bool = False) -> None:
+    if _env_present(env_name):
+        backend[field] = _env_bool(env_name, default)
+
+
+def _build_arxiv_env_backend_override() -> Dict[str, Any] | None:
+    override_env_names = (
+        "DPR_ARXIV_ENABLED",
+        "DPR_ARXIV_PAPERS_TABLE",
+        "DPR_ARXIV_USE_VECTOR_RPC",
+        "DPR_ARXIV_VECTOR_RPC",
+        "DPR_ARXIV_VECTOR_RPC_EXACT",
+        "DPR_ARXIV_USE_BM25_RPC",
+        "DPR_ARXIV_BM25_RPC",
+        "DPR_ARXIV_URL",
+        "DPR_ARXIV_ANON_KEY",
+        "DPR_ARXIV_SCHEMA",
+    )
+    explicit_enable = _env_bool("DPR_ENABLE_ARXIV_BACKEND", False)
+    if not explicit_enable and not any(_env_present(name) for name in override_env_names):
+        return None
+
+    backend: Dict[str, Any] = {}
+    # DPR_ENABLE_ARXIV_BACKEND=1 可在没有 config source_backends 时显式启用默认 arXiv 后端。
+    if explicit_enable:
+        backend.update(
+            {
+                "enabled": _env_bool("DPR_ARXIV_ENABLED", True),
+                "papers_table": "arxiv_papers",
+                "use_vector_rpc": True,
+                "vector_rpc": "match_arxiv_papers_exact",
+                "vector_rpc_exact": "match_arxiv_papers_exact",
+                "use_bm25_rpc": True,
+                "bm25_rpc": "match_arxiv_papers_bm25",
+            }
+        )
+    _set_env_bool(backend, "enabled", "DPR_ARXIV_ENABLED", True)
+    _set_env_text(backend, "papers_table", "DPR_ARXIV_PAPERS_TABLE")
+    _set_env_bool(backend, "use_vector_rpc", "DPR_ARXIV_USE_VECTOR_RPC", True)
+    _set_env_text(backend, "vector_rpc", "DPR_ARXIV_VECTOR_RPC")
+    _set_env_text(backend, "vector_rpc_exact", "DPR_ARXIV_VECTOR_RPC_EXACT")
+    _set_env_bool(backend, "use_bm25_rpc", "DPR_ARXIV_USE_BM25_RPC", True)
+    _set_env_text(backend, "bm25_rpc", "DPR_ARXIV_BM25_RPC")
+    _set_env_text(backend, "url", "DPR_ARXIV_URL")
+    _set_env_text(backend, "anon_key", "DPR_ARXIV_ANON_KEY")
+    _set_env_text(backend, "schema", "DPR_ARXIV_SCHEMA")
+    return backend
+
+
 def build_env_source_backend_overrides() -> Dict[str, Dict[str, Any]]:
     out: Dict[str, Dict[str, Any]] = {}
+
+    arxiv_backend = _build_arxiv_env_backend_override()
+    if arxiv_backend is not None:
+        out[ARXIV_SOURCE_KEY] = arxiv_backend
 
     if _env_bool("DPR_ENABLE_BIORXIV_BACKEND", False):
         backend: Dict[str, Any] = {
@@ -260,12 +323,11 @@ def _normalize_backend_entry(
 
 def _normalize_legacy_supabase_entry(raw: Dict[str, Any]) -> Dict[str, Any]:
     entry = _normalize_backend_entry(raw, default_papers_table=_norm(raw.get("papers_table") or "arxiv_papers") or "arxiv_papers")
-    if not entry.get("vector_rpc"):
-        entry["vector_rpc"] = _norm(raw.get("vector_rpc_exact") or raw.get("vector_rpc") or "match_arxiv_papers_exact")
-    if not entry.get("vector_rpc_exact"):
-        entry["vector_rpc_exact"] = entry["vector_rpc"] or "match_arxiv_papers_exact"
-    if not entry.get("bm25_rpc"):
-        entry["bm25_rpc"] = _norm(raw.get("bm25_rpc") or "match_arxiv_papers_bm25")
+    if not _norm(raw.get("vector_rpc_exact") or raw.get("vector_rpc")):
+        entry["vector_rpc"] = "match_arxiv_papers_exact"
+        entry["vector_rpc_exact"] = "match_arxiv_papers_exact"
+    if not _norm(raw.get("bm25_rpc")):
+        entry["bm25_rpc"] = "match_arxiv_papers_bm25"
     if not entry.get("sync_table"):
         entry["sync_table"] = _norm(raw.get("sync_table") or "arxiv_sync_status")
     if not entry.get("sync_success_value"):
@@ -292,6 +354,10 @@ def resolve_source_backends(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]
                 shared=shared,
             )
 
+    legacy_supabase = cfg.get("supabase")
+    if ARXIV_SOURCE_KEY not in backends and isinstance(legacy_supabase, dict):
+        backends[ARXIV_SOURCE_KEY] = _normalize_legacy_supabase_entry(legacy_supabase)
+
     env_backends = build_env_source_backend_overrides()
     for source_key, override in env_backends.items():
         existing = backends.get(source_key) or {}
@@ -301,10 +367,6 @@ def resolve_source_backends(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]
             default_papers_table="papers",
             shared=shared,
         )
-
-    legacy_supabase = cfg.get("supabase")
-    if ARXIV_SOURCE_KEY not in backends and isinstance(legacy_supabase, dict):
-        backends[ARXIV_SOURCE_KEY] = _normalize_legacy_supabase_entry(legacy_supabase)
 
     return backends
 
