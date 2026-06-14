@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-001.webp",
+      "caption": "Figure 1: Addressing the one-size-fits-all limitation in GCD. (a) Traditional methods employ the UDM to conflate temporal regimes, leading to spurious and entangled causal graphs. (b) CausalMoE performs pattern-specific routing to heterogeneous experts, enabling regime-aware causal modeling.",
+      "page": 2,
+      "index": 1,
+      "width": 506,
+      "height": 286
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-004.webp",
+      "caption": "Figure 2: The overall framework of CausalMoE. The architecture unfolds in three modules: (1) Multimodal Patch Encoding transforms time series into aligned temporal, textual, and visual tokens; (2) Patch-Specific Pattern Routing dynamically identifies latent regimes and routes patches to specialized experts; and (3) Mixture of Heterogeneous Experts integrates domainspecific representations via a Causality-Aware Self-Attention mechanism to infer the Granger causal graph.",
+      "page": 3,
+      "index": 4,
+      "width": 1056,
+      "height": 544
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-002.webp",
+      "caption": "Table 1: Overall performance (mean±std.) on synthetic VAR and Lorenz-96 datasets for Granger causal discovery.",
+      "page": 7,
+      "index": 2,
+      "width": 1048,
+      "height": 503
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-003.webp",
+      "caption": "Figure 5: AUROC performance on the fMRI NetSim benchmark across 28 simulated brain connectivity settings.",
+      "page": 7,
+      "index": 3,
+      "width": 1056,
+      "height": 292
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-007.webp",
+      "caption": "Table 2: AUROC for the sub-datasets in DREAM-3 and in DREAM-4.",
+      "page": 8,
+      "index": 7,
+      "width": 502,
+      "height": 385
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-005.webp",
+      "caption": "Figure 6: AUROC performance vs. training data ratio (%) across four benchmarks. CausalMoE (purple line) exhibits strong few-shot inference capabilities, matching the performance of baselines trained on full data with only a fraction of observations.",
+      "page": 8,
+      "index": 5,
+      "width": 1056,
+      "height": 248
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-006.webp",
+      "caption": "Figure 7: Ablation analysis of CausalMoE. (a) Effects of core modules on Lorenz-96. (b) Contributions of heterogeneous experts on DREAM-4.",
+      "page": 8,
+      "index": 6,
+      "width": 506,
+      "height": 402
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13024v1/fig-008.webp",
+      "caption": "Figure 8: Efficiency–accuracy trade-off of CausalMoE across foundation-model backbones of varying scale, evaluated against parameter count (a, b) and training cost (c, d) on Lorenz-96 and DREAM-4 with the Pareto frontier traced as a dashed curve.",
+      "page": 9,
+      "index": 8,
+      "width": 1056,
+      "height": 267
+    }
+  ]
+}

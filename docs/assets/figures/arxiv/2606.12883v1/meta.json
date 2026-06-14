@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-005.webp",
+      "caption": "Figure 1: Hyperparameter analysis of Llama 3-1B on the Tulu 3 dataset. (a) Evaluation loss as a function of the learning rate η across different ranks r and scaling factors α. Gray lines denote linear fits of the minimum loss for each (r, α). Increasing α lowers the optimal loss and shifts η∗ downward. (b) Scaling paths defined in Eq. (2) relative to the baseline (ηFFT = 2× 10−5, α0 = 16), where ηFFT denotes the optimal FFT learning rate. Varying α reaches lower-loss regimes that are inaccessible via η-tuning alone. (c) Optimal scaling factor α∗ as a function of rank r, evaluated at ηFFT. The observed sublinear trend and large magnitude of α challenge conventional scaling heuristics.",
+      "page": 3,
+      "index": 5,
+      "width": 812,
+      "height": 239
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-009.webp",
+      "caption": "Figure 2: The asymmetric optimization dynamics of α-scaling versus η-scaling from a base configuration of rank r = 16, α0 = 1, and η0 = 10−4. We compare increasing η (warm colors) versus increasing α (cool colors). (a) η-scaling leads to early saturation and instability, while α-scaling enables smooth acceleration and deeper fitting. (b) Increasing η amplifies the pronounced stochasticity of structural drift, whereas α-scaling does not further amplify these fluctuations, maintaining the smoother optimization profile seen in (a). (c) α-scaling consistently maintains a higher Signal-to-Drift ratio, preserving update purity and accelerating convergence.",
+      "page": 4,
+      "index": 9,
+      "width": 813,
+      "height": 243
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-001.webp",
+      "caption": "Table 1: Comparison on the GLUE benchmark. Experiments are conducted using the DeBERTa-v3base-184M model with a base learning rate of 1× 10−4 and a rank of 8. Asterisk (∗) denotes optimal results from a 0.1×–10× sweep over η or α. Best and second-best values are bold and underlined.",
+      "page": 6,
+      "index": 1,
+      "width": 827,
+      "height": 245
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-004.webp",
+      "caption": "Table 2: Comparison on NLG tasks using Llama 2-7B tuned with a base learning rate of 2× 10−5.",
+      "page": 7,
+      "index": 4,
+      "width": 827,
+      "height": 381
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-007.webp",
+      "caption": "Table 3: Comparison on the MMEB benchmark via post-tuning Qwen 2-VL (r = 16, base η = 2× 10−5). “VLM2VEC” denotes officially released results. IND and OOD indicate in- and out-ofdistribution splits, respectively, with scores reported to one decimal place per the VLM2Vec protocol. Bold and underlined values denote the best and second-best results within each model group.",
+      "page": 8,
+      "index": 7,
+      "width": 828,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-008.webp",
+      "caption": "Figure 3: Qualitative comparison of image customization on Flux.1-12B with a base learning rate of 1× 10−4 and a rank of 8. LoRA-α consistently achieves higher fidelity to reference objects.",
+      "page": 8,
+      "index": 8,
+      "width": 810,
+      "height": 507
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-012.webp",
+      "caption": "Table 5: Comparison of Pass@1 accuracy on reasoning benchmarks after GRPO learning. We train DeepSeek-R1-Distill-Qwen with a base learning rate of 1× 10−6 and a fixed LoRA rank of 64.",
+      "page": 9,
+      "index": 12,
+      "width": 838,
+      "height": 244
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-003.webp",
+      "caption": "Figure 4: Hyperparameter analysis of Llama 3-8B on the Tulu 3 dataset. (a) Evaluation loss as a function of the learning rate η across different ranks r and scaling factors α. Gray lines denote linear fits of the minimum loss for each (r, α). Increasing α lowers the optimal loss and shifts η∗ downward. (b) Scaling paths defined in Eq. (2) relative to the baseline (ηFFT = 1× 10−5, α0 = 16), where η0 denotes the optimal FFT learning rate. Varying α reaches lower-loss regimes that are inaccessible via η-tuning alone. (c) Optimal scaling factor α∗ as a function of rank r, evaluated at η0. The observed sublinear trend and large magnitude of α challenge conventional scaling heuristics.",
+      "page": 15,
+      "index": 3,
+      "width": 812,
+      "height": 239
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-013.webp",
+      "caption": "Figure 5: Optimization dynamics and α sensitivity for Llama 3-8B on the Tulu 3 dataset over training steps. (a) Training loss and (b) Evaluation loss curves for various combinations of rank r, scaling factor α, and learning rate η, compared alongside FFT. Properly scaled configurations (e.g., larger α with standard η) tightly approximate the FFT trajectory. (c) Sensitivity analysis of the scaling factor α, illustrating how increasing α smoothly accelerates convergence.",
+      "page": 16,
+      "index": 13,
+      "width": 812,
+      "height": 222
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-014.webp",
+      "caption": "Figure 6: Hyperparameter analysis of Llama 3-1B on the OpenThoughts dataset with ηFFT = 1×10−5 and α0 = 16. (a) Scaling paths comparing α-scaling and η-scaling. Consistent with the main findings, increasing α enables the model to reach deeper loss minima that are inaccessible via η-tuning alone. (b) Optimal scaling factor α∗ as a function of rank r. The fitted sublinear relationship confirms the scaling law established in the main text, demonstrating its robustness across different datasets.",
+      "page": 16,
+      "index": 14,
+      "width": 605,
+      "height": 255
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-010.webp",
+      "caption": "Figure 7: Hyperparameter analysis of Llama 3-8B on the OpenThoughts dataset with ηFFT = 1×10−5 and α0 = 16. (a) Scaling paths comparing α-scaling and η-scaling. Consistent with the main findings, increasing α enables the model to reach deeper loss minima that are inaccessible via η-tuning alone. (b) Optimal scaling factor α∗ as a function of rank r. The fitted sublinear relationship confirms the scaling law established in the main text, demonstrating its robustness across different datasets.",
+      "page": 17,
+      "index": 10,
+      "width": 605,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-006.webp",
+      "caption": "Figure 8: Spectral analysis of Hessian matrices. (a) Comparison between the full-parameter Hessian Hℓ and LoRA’s signal Hessian HSignal, illustrating the compression of total curvature energy. (b) The predicted sum of eigenvalues from our Signal-Drift framework closely matches the empirical values across various ranks, validating our theoretical derivation. (c) The exact LoRA Hessian HLoRA is inherently indefinite due to the structural drift HDrift. Increasing α triggers spectral purification, where the spectrum converges toward the positive semi-definite HSignal. (d) Empirical verification of asymmetric scaling: the signal curvature magnitude grows as Θ(α2) while drift noise grows only as Θ(α). Consequently, as α increases, λmax[HLoRA] perfectly aligns with λmax[HSignal].",
+      "page": 18,
+      "index": 6,
+      "width": 817,
+      "height": 188
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-002.webp",
+      "caption": "Table 8: Comparison on NLG tasks using Llama 2-7B. Performance is reported as mean ± std over three independent runs. Bold and underlined values denote the best and second-best results within each experimental group.",
+      "page": 25,
+      "index": 2,
+      "width": 827,
+      "height": 300
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12883v1/fig-011.webp",
+      "caption": "Table 10: Detailed Hyperparameter Search Results on NLG tasks (Llama2-7B). The table includes a grid search over learning rate (η) and scaling factor (α). The average is computed across the 5 tasks.",
+      "page": 27,
+      "index": 11,
+      "width": 827,
+      "height": 665
+    }
+  ]
+}

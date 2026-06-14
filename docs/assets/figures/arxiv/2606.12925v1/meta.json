@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-008.webp",
+      "caption": "Figure 2. Overview of our Bayesian Conditional Priors (BCP) Estimation for zero-shot multi-label CLIP. For each test image xt, frozen CLIP encoders score class prompts to produce zero-shot logits and the posterior P (c | xt). We select an anchor label a with the highest confidence and apply a closed-form logit correction using online conditional priors P (ci = 1 | ca = 1), yielding P (c | xt, ca = 1) and injecting pairwise label dependencies without updating CLIP. The conditional priors are updated online from past predictions via running marginals P t(ci) and co-occurrences P t(ci, cj), enabling continual adaptation to the target test distribution with negligible overhead.",
+      "page": 4,
+      "index": 8,
+      "width": 954,
+      "height": 502
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-002.webp",
+      "caption": "Table 1. Comparison with CLIP and SOTAs on adapting multi-label instances with different architectures.",
+      "page": 7,
+      "index": 2,
+      "width": 1008,
+      "height": 596
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-003.webp",
+      "caption": "Table 2. Impact of anchor correctness on mAP across datasets. Results are reported on the subset of (Pmax > µ). “Hit” denotes that the predicted anchor is in the ground-truth labels, while “Miss” denotes otherwise. The last two rows summarize the composition of the subset.",
+      "page": 7,
+      "index": 3,
+      "width": 994,
+      "height": 190
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-004.webp",
+      "caption": "Figure 3. Case Study of Anchor-Miss Samples from PASCALVOC and MSCOCO.",
+      "page": 7,
+      "index": 4,
+      "width": 1017,
+      "height": 215
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-007.webp",
+      "caption": "Table 5. Performance under head, medium, and tail label splits.",
+      "page": 8,
+      "index": 7,
+      "width": 385,
+      "height": 373
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-006.webp",
+      "caption": "Table 8. Comparison with CLIP and SOTAs on adapting multi-label instances with different architectures.",
+      "page": 13,
+      "index": 6,
+      "width": 1017,
+      "height": 452
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-005.webp",
+      "caption": "Table 9. Impact of anchor correctness on performance (mAP) across architecture.",
+      "page": 14,
+      "index": 5,
+      "width": 994,
+      "height": 510
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-001.webp",
+      "caption": "Table 11. Performance comparison for the last 50% samples.",
+      "page": 15,
+      "index": 1,
+      "width": 898,
+      "height": 244
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12925v1/fig-009.webp",
+      "caption": "Figure 5. Prior visualization on five benchmarks.",
+      "page": 17,
+      "index": 9,
+      "width": 1011,
+      "height": 1285
+    }
+  ]
+}

@@ -3,20 +3,20 @@
     <div class="dpr-daily-kicker">Daily Research Brief</div>
     <h3>最新日报</h3>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
-      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-15 00:20 北京时间</strong></div>
+      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-15 04:54 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
       <div class="dpr-daily-stat"><span>总数</span><strong>15</strong></div>
       <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>5 / 10</strong></div>
       <div class="dpr-daily-stat dpr-daily-topic-stat"><span>今日主题</span><div class="dpr-daily-topic-cloud"><span class="dpr-daily-topic-pill dpr-daily-topic-query">ndai<em>15</em></span>
-<span class="dpr-daily-topic-pill dpr-daily-topic-paper">通用启发<em>13</em></span>
-<span class="dpr-daily-topic-pill dpr-daily-topic-paper">强相关<em>1</em></span>
-<span class="dpr-daily-topic-pill dpr-daily-topic-paper">桥接方法<em>1</em></span></div></div>
+<span class="dpr-daily-topic-pill dpr-daily-topic-paper">通用启发<em>11</em></span>
+<span class="dpr-daily-topic-pill dpr-daily-topic-paper">强相关<em>2</em></span>
+<span class="dpr-daily-topic-pill dpr-daily-topic-paper">桥接方法<em>2</em></span></div></div>
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日精读空间掩码回归等2篇高影响力论文，速读跨传感器3D感知、象棋表征学习等3篇前沿研究，总共筛选15篇。</p>
-<p>最值得关注：电生理记录的局部/分布式可预测性可通过空间掩码回归有效剥离，而无高斯假设的符号世界模型实现了近乎无限时间一致性的可识别因果表征。</p>
-<p>建议读者延伸阅读空间掩码回归在神经信号解码中的应用，并关注不用高斯性也能做因果发现的建模新思路。</p>
+      <p>今日精读生命边缘多分形信号揭示心脑反相关，以及 PCA 增强的自适应 NVAR 东海高分辨率海温预测模型，并速览 LoRA 优化缩放因子等前沿研究。</p>
+<p>最值得关注：临终生理信号揭开心脑分离的量化特征，LoRA 缩放因子暗藏大幅提效潜力。</p>
+<p>建议进一步追踪心脑耦合的临界现象，或在模型微调中重新审视缩放因子的设计策略。</p>
     </div>
     <a class="dpr-daily-detail-link" href="#/202606/15/README">打开完整日报</a>
   </div>
@@ -25,19 +25,19 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11415v1-spatially-masked-regression-reveals-local-and-distributed-predictability-in-electrophysiological-recordings">Spatially Masked Regression Reveals Local and Distributed Predictability in Electrophysiological Recordings</a>
-    <div class="dpr-daily-paper-title-zh">空间掩蔽回归揭示电生理记录中的局部和分布可预测性</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12600v1-multifractal-human-signals-at-the-edge-of-life-reveal-a-heart-brain-anti-correlation">Multifractal human signals at the edge of life reveal a heart-brain anti-correlation</a>
+    <div class="dpr-daily-paper-title-zh">生命边缘的多重分形人体信号揭示心脑反相关</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">桥接方法</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>神经时间序列的空间掩码回归方法</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用多重分形分析处理EEG时间序列</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">02</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12471v1-identifiability-without-gaussianity-symbolic-world-models-and-near-infinite-temporal-consistency">Identifiability Without Gaussianity: Symbolic World Models and Near-Infinite Temporal Consistency</a>
-    <div class="dpr-daily-paper-title-zh">无需高斯性的可识别性：符号世界模型与近似无限的时间一致性</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>符号世界模型用于表示学习的可辨识性和时间一致性</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12141v1-pca-enhanced-adaptive-nvar-framework-for-high-resolution-sea-surface-temperature-forecasting-in-the-east-sea">PCA-Enhanced Adaptive NVAR Framework for High-Resolution Sea Surface Temperature Forecasting in the East Sea</a>
+    <div class="dpr-daily-paper-title-zh">基于PCA增强的自适应NVAR框架用于东海高分辨率海面温度预报</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>自适应储层计算用于时间序列预测</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
@@ -45,26 +45,26 @@
   <div class="dpr-daily-paper-main">
     <a class="dpr-daily-paper-title" href="#/202606/15/2606.13236v1-decoding-insect-song-a-multitask-semisupervised-orthoptera-bioacoustic-classifier">Decoding Insect Song: A Multitask Semisupervised Orthoptera Bioacoustic Classifier</a>
     <div class="dpr-daily-paper-title-zh">解码昆虫鸣声：一种多任务半监督直翅目生物声学分类器</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>多任务半监督框架结合知识蒸馏进行领域自适应</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于生物声学序列解码的半监督多任务框架</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">04</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12182v1-how-low-can-you-go-active-learning-for-sparse-model-discovery-in-the-ultra-low-data-limit">How Low Can You Go? Active Learning for Sparse Model Discovery in the Ultra-Low-Data Limit</a>
-    <div class="dpr-daily-paper-title-zh">你能低至几何？超低数据极限下的主动学习稀疏模型发现</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>极低数据量下动力学发现的主动学习方法</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12690v1-ewam-an-enhanced-world-action-model-for-closed-loop-online-adaptation-in-embodied-intelligence">EWAM: An Enhanced World Action Model for Closed-Loop Online Adaptation in Embodied Intelligence</a>
+    <div class="dpr-daily-paper-title-zh">EWAM：一种用于具身智能闭环在线自适应的增强世界行动模型</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">桥接方法</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>闭环在线自适应，使用神经经验记忆层</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">05</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12386v1-atlas-active-theory-learning-for-automated-science">ATLAS: Active Theory Learning for Automated Science</a>
-    <div class="dpr-daily-paper-title-zh">ATLAS：面向自动化科学的主动理论学习</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>主动学习框架设计实验以发现可解释的行为模型</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11768v1-hierarchical-excitatory-processes-for-modelling-event-time-data-in-the-presence-of-exogenous-stimuli">Hierarchical excitatory processes for modelling event-time data in the presence of exogenous stimuli</a>
+    <div class="dpr-daily-paper-title-zh">存在外源刺激时事件时间数据的层次兴奋过程建模</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>带刺激的事件时间数据层次点过程模型</div>
   </div>
 </article></div>
   </section>
@@ -73,91 +73,91 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11573v1-understanding-cross-sensor-feature-variations-for-generalizable-3d-perception">Understanding Cross-Sensor Feature Variations for Generalizable 3D Perception</a>
-    <div class="dpr-daily-paper-title-zh">理解跨传感器特征变化以实现可泛化的三维感知</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12883v1-the-hidden-power-of-scaling-factor-in-lora-optimization">The Hidden Power of Scaling Factor in LoRA Optimization</a>
+    <div class="dpr-daily-paper-title-zh">LoRA优化中缩放因子的隐藏力量</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>跨传感器特征变化建模用于3D感知中的域适应</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>LoRA缩放因子优化可应用于脑机接口的参数高效微调</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">02</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11860v1-repair-predictive-self-supervised-representation-learning-in-chess">RePAIR: Predictive Self-Supervised Representation Learning in Chess</a>
-    <div class="dpr-daily-paper-title-zh">RePAIR：国际象棋中的预测式自监督表示学习</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>序列数据的自监督表征学习</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12917v1-where-computation-lives-inside-tabpfn-causal-localisation-of-attention-head-function">Where Computation Lives Inside TabPFN: Causal Localisation of Attention Head Function</a>
+    <div class="dpr-daily-paper-title-zh">TabPFN内部计算所在之处：注意力头功能的因果定位</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>注意力头功能特化的因果分析</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">03</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12364v1-on-subquadratic-architectures-from-applications-to-principles">On Subquadratic Architectures: From Applications to Principles</a>
-    <div class="dpr-daily-paper-title-zh">关于次二次架构：从应用到原理</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>次二次架构用于时间序列基础模型</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12925v1-multi-label-test-time-adaptation-with-bayesian-conditional-priors">Multi-Label Test-Time Adaptation with Bayesian Conditional Priors</a>
+    <div class="dpr-daily-paper-title-zh">基于贝叶斯条件先验的多标签测试时适应</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>测试时适应分布偏移</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">04</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12690v1-ewam-an-enhanced-world-action-model-for-closed-loop-online-adaptation-in-embodied-intelligence">EWAM: An Enhanced World Action Model for Closed-Loop Online Adaptation in Embodied Intelligence</a>
-    <div class="dpr-daily-paper-title-zh">EWAM：一种用于具身智能闭环在线自适应的增强世界行动模型</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>闭环在线适应架构，零样本任务协议</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12497v1-vla-on-recurrent-memory-for-partially-observable-manipulation-in-vla-models">$μ$VLA: On Recurrent Memory for Partially Observable Manipulation in VLA Models</a>
+    <div class="dpr-daily-paper-title-zh">$μ$VLA：VLA模型中部分可观测操纵的循环记忆研究</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>时间序列中部分可观测性的循环记忆</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">05</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.13340v1-emg-based-adaptation-of-anisotropic-virtual-fixtures-for-robot-assisted-surgical-resection-and-dissection">EMG-Based Adaptation of Anisotropic Virtual Fixtures for Robot-Assisted Surgical Resection and Dissection</a>
-    <div class="dpr-daily-paper-title-zh">基于肌电信号的自适应各向异性虚拟夹具在机器人辅助手术切除与剥离中的应用</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于肌电信号的手术虚拟夹具实时自适应，直接相关于脑机接口中的在线自适应</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11889v1-task-aligned-stability-analysis-of-vision-language-models-for-autonomous-driving-hazard-detection">Task-Aligned Stability Analysis of Vision-Language Models for Autonomous Driving Hazard Detection</a>
+    <div class="dpr-daily-paper-title-zh">面向自动驾驶危险检测的视觉-语言模型任务对齐稳定性分析</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>研究VLM中的表示漂移与决策漂移</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">06</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12497v1-vla-on-recurrent-memory-for-partially-observable-manipulation-in-vla-models">$μ$VLA: On Recurrent Memory for Partially Observable Manipulation in VLA Models</a>
-    <div class="dpr-daily-paper-title-zh">$μ$VLA：VLA模型中部分可观测操纵的循环记忆研究</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.13024v1-causalmoe-a-billion-scale-multimodal-foundation-model-for-granger-causal-discovery-with-pattern-routed-heterogeneous-experts">CausalMoE: A Billion-Scale Multimodal Foundation Model for Granger Causal Discovery with Pattern-Routed Heterogeneous Experts</a>
+    <div class="dpr-daily-paper-title-zh">CausalMoE：基于模式路由异构专家的十亿级多模态格兰杰因果发现基础模型</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>部分可观测设置下序列解码的循环记忆</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>时间序列因果发现的模式路由混合专家模型</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">07</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12559v1-feature-preserving-latent-enkf-for-data-assimilation-of-flows-with-shocks">Feature-preserving Latent-EnKF for Data Assimilation of Flows with Shocks</a>
-    <div class="dpr-daily-paper-title-zh">用于含激波流动数据同化的保特征隐式集合卡尔曼滤波</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11982v1-paws-preference-learning-with-advantage-weighted-segments">PAWS: Preference Learning with Advantage-Weighted Segments</a>
+    <div class="dpr-daily-paper-title-zh">PAWS: 基于优势加权片段的偏好学习</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>潜在EnKF用于顺序数据同化</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于片段的偏好学习使用优势函数</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">08</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12141v1-pca-enhanced-adaptive-nvar-framework-for-high-resolution-sea-surface-temperature-forecasting-in-the-east-sea">PCA-Enhanced Adaptive NVAR Framework for High-Resolution Sea Surface Temperature Forecasting in the East Sea</a>
-    <div class="dpr-daily-paper-title-zh">基于PCA增强的自适应NVAR框架用于东海高分辨率海面温度预报</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12471v1-identifiability-without-gaussianity-symbolic-world-models-and-near-infinite-temporal-consistency">Identifiability Without Gaussianity: Symbolic World Models and Near-Infinite Temporal Consistency</a>
+    <div class="dpr-daily-paper-title-zh">无需高斯性的可识别性：符号世界模型与近似无限的时间一致性</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>自适应NVAR时间序列预测框架，可迁移至神经解码</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>符号架构实现潜在动力学的可识别性</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">09</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12836v1-interpretable-model-free-inference-of-parametric-variation-across-time-series-data-through-large-scale-feature-extraction">Interpretable model-free inference of parametric variation across time-series data through large-scale feature extraction</a>
-    <div class="dpr-daily-paper-title-zh">通过大规模特征提取对时间序列数据中的参数变化进行可解释的无模型推断</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12044v1-schedules-and-prioritization-a-behavioral-foundation-for-multi-armed-bandits-and-stopping-problems">Schedules and Prioritization: A Behavioral Foundation for Multi-Armed Bandits and Stopping Problems</a>
+    <div class="dpr-daily-paper-title-zh">调度与优先级：多臂赌博机与停止问题的行为基础</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>大规模时间序列特征提取用于参数变异推断</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>在线自适应赌博机框架</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">10</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/15/2606.12499v1-action-effect-memory-pretraining-for-robot-manipulation">Action-Effect Memory Pretraining for Robot Manipulation</a>
-    <div class="dpr-daily-paper-title-zh">面向机器人操作的动作-效应记忆预训练</div>
+    <a class="dpr-daily-paper-title" href="#/202606/15/2606.11642v1-3-key-input-exploring-the-theoretical-minimum-keys-for-text-entry">3-Key-Input: Exploring the Theoretical Minimum Keys for Text Entry</a>
+    <div class="dpr-daily-paper-title-zh">3键输入：探索文本输入的理论最少按键数</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过掩码建模进行时间表示学习</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>语言模型用于文本输入的序列解码；可迁移至脑机接口神经解码</div>
   </div>
 </article></div>
   </section>

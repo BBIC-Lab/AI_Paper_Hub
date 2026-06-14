@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11642v1/fig-001.webp",
+      "caption": "Fig. 1. System overview: N-key inputs are mapped to letter groups, a trie enumerates candidates with diversity pruning, and sentence-level decoding (GPT-2 beam / GPT-4o selection) chooses the output.",
+      "page": 3,
+      "index": 1,
+      "width": 1054,
+      "height": 291
+    }
+  ]
+}

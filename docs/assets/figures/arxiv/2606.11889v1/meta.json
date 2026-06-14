@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-002.webp",
+      "caption": "Figure 2. Family-wise comparison of H prompt stability and N prompt stability, for severity α = 5. Values close to 1 indicate that the leading prompt is largely invariant to the corruption operator.",
+      "page": 3,
+      "index": 2,
+      "width": 492,
+      "height": 244
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-003.webp",
+      "caption": "Figure 3. Severity trends differ across corruption families. Similar monotonicity does not imply similar safety impact.",
+      "page": 3,
+      "index": 3,
+      "width": 396,
+      "height": 643
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-005.webp",
+      "caption": "Table 1. Family-wise coupling between embedding drift and decision drift, with 95% confidence intervals on Spearman (ρ) and Pearson (r) correlation coefficients. FPR and FNR denote negative-to-positive and positive-to-negative hazard verdict flips, respectively. H and N stability measure the proportion of images whose leading prompt is unchanged under corruption.",
+      "page": 4,
+      "index": 5,
+      "width": 995,
+      "height": 225
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-006.webp",
+      "caption": "Figure 4. Embedding drift vs. margin drift across corruption families. Points are colored by corruption family in (a) and by severity level in (b)–(d).",
+      "page": 5,
+      "index": 6,
+      "width": 1017,
+      "height": 725
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-001.webp",
+      "caption": "Figure 5. Top 4 most safe (top row) and hazardous (bottom row) images in the dataset, based on hazard score Λ.",
+      "page": 7,
+      "index": 1,
+      "width": 1017,
+      "height": 383
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11889v1/fig-004.webp",
+      "caption": "Figure 6. Visualizations of image corruptions on randomly-selected road images. Hazard level Λ, embedding drift ∆, and margin drift DΛ are overlaid on each image.",
+      "page": 8,
+      "index": 4,
+      "width": 1037,
+      "height": 1327
+    }
+  ]
+}

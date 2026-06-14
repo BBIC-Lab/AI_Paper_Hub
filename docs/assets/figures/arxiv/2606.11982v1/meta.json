@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-001.webp",
+      "caption": "Table 1. Meta-World: Task success (%) ± 2SE. Best results for n = 50 and n = 500 are highlighted with orange and teal, respectively. The last two rows report the average performance across tasks and the relative improvement (%) over Behavior Cloning (BC).",
+      "page": 6,
+      "index": 1,
+      "width": 1013,
+      "height": 463
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-005.webp",
+      "caption": "Figure 3. Ablations on the (a)-(b) Number of Effective Samples and the (c) Segment Length. (a)-(b) Effect of Number of Effective Samples for (a) 500 Preferences and for (b) 50 Preferences aggregated over the Peg Insert Side, Sweep Into, and Drawer Open tasks, each with 5 seeds. The results suggest that for a high number of available data points (a), a smaller number of effective samples leads to improved results, allowing the policy to deviate more from the data distribution’s support. For smaller number of preferences (b), staying close to the data distribution with a higher relative number of effective samples is beneficial. (c) Increasing segment length amplifies the distribution shift when using single-timestep advantages for policy optimization, leading to worse performance. This problem is absent when using segment-based advantages for the policy update. Experiments are done on 5 seeds, and the same number of state-action pairs is used for all segment lengths.",
+      "page": 8,
+      "index": 5,
+      "width": 994,
+      "height": 266
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-010.webp",
+      "caption": "Table 7. Performance results for individual tasks with 50 preferences. Values represent success rates (%) ± 2SE. Best results are highlighted with bold.",
+      "page": 16,
+      "index": 10,
+      "width": 779,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-011.webp",
+      "caption": "Table 8. Performance results for individual tasks with 500 preferences. Values represent success rates (%) ± 2SE. Best results are highlighted with bold.",
+      "page": 16,
+      "index": 11,
+      "width": 779,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-008.webp",
+      "caption": "Table 11. Dataset quality for the different Meta-World tasks.",
+      "page": 17,
+      "index": 8,
+      "width": 841,
+      "height": 386
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-004.webp",
+      "caption": "Figure 4. Meta-World manipulation tasks used in our experiments. Each panel shows an initial configuration (a–j).",
+      "page": 18,
+      "index": 4,
+      "width": 1017,
+      "height": 460
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-003.webp",
+      "caption": "Table 12. Dataset quality for the different locomotion tasks.",
+      "page": 18,
+      "index": 3,
+      "width": 621,
+      "height": 210
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-006.webp",
+      "caption": "Figure 5. Locomotion tasks.",
+      "page": 19,
+      "index": 6,
+      "width": 1017,
+      "height": 255
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-007.webp",
+      "caption": "Table 13. Hyperparameters for the baselines.",
+      "page": 19,
+      "index": 7,
+      "width": 641,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-009.webp",
+      "caption": "Table 14. Hyperparameters for PAWS.",
+      "page": 20,
+      "index": 9,
+      "width": 763,
+      "height": 531
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11982v1/fig-002.webp",
+      "caption": "Figure 6. GUI for collecting preference labels from humans, shown here for the Button Press task. The labeler sees two robot execution videos side by side, with Play, Pause, and Stop controls for each, and selects which option is better. The header shows progress through the 50 pairs for the current task. The Door Open task uses the same layout with different videos.",
+      "page": 21,
+      "index": 2,
+      "width": 1017,
+      "height": 609
+    }
+  ]
+}
