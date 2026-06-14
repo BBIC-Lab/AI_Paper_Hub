@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-15</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-15 00:20 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -14,11 +14,10 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日精读空间掩码回归等2篇高影响力论文，速读跨传感器3D感知、象棋表征学习等3篇前沿研究，总共筛选15篇。</p>
-<p>最值得关注：电生理记录的局部/分布式可预测性可通过空间掩码回归有效剥离，而无高斯假设的符号世界模型实现了近乎无限时间一致性的可识别因果表征。</p>
-<p>建议读者延伸阅读空间掩码回归在神经信号解码中的应用，并关注不用高斯性也能做因果发现的建模新思路。</p>
+      <p>今日精读聚焦脑电信号的空间可预测性建模与利用非高斯性构建近乎无限一致的符号世界模型，速读还覆盖了跨传感器3D感知、国际象棋自监督表示学习与次二次方架构原理。</p>
+<p>最值得看的突破是用空间掩码回归厘清脑电记录的局部与分布式可预测成分，以及在不依赖高斯假设下实现长期时序一致性的可识别世界模型。</p>
+<p>普通读者可优先跟进这两篇，它们为解码大脑信号和建立稳定可解释的智能体世界观提供了新锚点。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/15/README">打开完整日报</a>
   </div>
   <section class="dpr-daily-paper-section is-deep">
     <h2>精读区</h2>
@@ -162,3 +161,6 @@
 </article></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>

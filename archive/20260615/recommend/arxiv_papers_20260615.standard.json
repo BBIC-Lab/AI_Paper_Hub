@@ -1,0 +1,870 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-14T16:12:50.516403+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 309,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 303,
+    "quick_skim_target": 11,
+    "quick_selected": 10,
+    "recommend_mix": {
+      "core_ratio": 2,
+      "inspiration_ratio": 3
+    },
+    "selection_strategy": "unified_rank_slice",
+    "deep_selected_before_profile_limit": 6,
+    "quick_selected_before_profile_limit": 11,
+    "profile_daily_limits": {
+      "NDAI": {
+        "deep": 5,
+        "quick": 10
+      }
+    },
+    "profile_recommend_mix": {
+      "NDAI": {
+        "core_ratio": 2,
+        "inspiration_ratio": 3
+      }
+    },
+    "profile_limit_dropped_by_tag": {
+      "NDAI": {
+        "deep": 1,
+        "quick": 1
+      }
+    },
+    "profile_limit_dropped": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2606.11415v1",
+      "source": "arxiv",
+      "title": "Spatially Masked Regression Reveals Local and Distributed Predictability in Electrophysiological Recordings",
+      "abstract": "Neural recordings are often interpreted as local measurements, yet the signal at any one sensor can also reflect structured activity distributed across the broader network. This raises a basic question: to what extent does an electrode's signal reflect local versus distributed information in the underlying system? More specifically, how much of an electrode's activity is carried by its immediate neighborhood, and how much is embedded more broadly across the array? We address this with a Spatially Masked Regression (SMR) framework that reconstructs each electrode's timeseries from the remaining electrodes while excluding a configurable neighborhood around the target. By progressively increasing this mask, spatial locality becomes an experimental control for quantifying how much predictive information survives after nearby channels are withheld. We apply SMR to intracranial EEG with heterogeneous electrode coverage and to scalp EEG with standardized montages over sensorimotor cortex. Using distance correlation between original and reconstructed signals, we find strong within-subject reconstruction in both modalities, substantial residual predictability even when local neighbors are excluded, and markedly stronger cross-subject transfer in EEG than in iEEG. Masking shows that nearby electrodes contribute strongly to reconstruction but do not account for all of it, indicating that individual channels reflect both local redundancy and broader distributed structure. Surrogates that preserve selected marginal or spectral properties while disrupting phase structure or temporal ordering substantially reduce performance, supporting the conclusion that SMR depends on structured temporal and cross-channel organization rather than on marginal statistics alone. These results position SMR as an interpretable framework for quantifying the balance between local and distributed information in recordings.",
+      "authors": [
+        "Maryam Ostadsharif Memar",
+        "Nima Dehghani"
+      ],
+      "primary_category": "q-bio.NC",
+      "categories": [
+        "q-bio.NC",
+        "cs.LG",
+        "physics.data-an",
+        "q-bio.QM"
+      ],
+      "published": "2026-06-09T20:05:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.11415v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.5445705403167475,
+      "rerank_core_rank": 50,
+      "rerank_score": 0.5445705403167475,
+      "rerank_best_query": "neural decoding",
+      "rerank_track": "core",
+      "rerank_rank": 50,
+      "llm_score": 9.0,
+      "core_relevance_score": 9.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "bridge",
+      "relevance_track_label": "桥接方法",
+      "selection_score": 9.5,
+      "selection_lane": "core",
+      "track_evidence_en": "SMR framework can be reused for neural decoding and time-series analysis",
+      "track_evidence_cn": "SMR框架可重用于神经解码和时间序列分析",
+      "llm_evidence_en": "Spatially Masked Regression for neural time-series",
+      "llm_evidence_cn": "神经时间序列的空间掩码回归方法",
+      "llm_evidence": "神经时间序列的空间掩码回归方法",
+      "canonical_evidence": "神经时间序列的空间掩码回归方法",
+      "llm_tldr_en": "Proposes SMR to decompose neural recordings into local and distributed predictability.",
+      "llm_tldr_cn": "提出SMR分解神经记录为局部和分布式可预测性",
+      "llm_tldr": "提出SMR分解神经记录为局部和分布式可预测性",
+      "llm_tags": [
+        "query:ndai",
+        "paper:桥接方法"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "neural time-series modeling",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12471v1",
+      "source": "arxiv",
+      "title": "Identifiability Without Gaussianity: Symbolic World Models and Near-Infinite Temporal Consistency",
+      "abstract": "Klindt, LeCun, and Balestriero (arXiv:2605.26379) proved that Joint-Embedding Predictive Architectures (JEPAs) achieve linear identifiability, the linear recovery of the world's true latent variables, if and only if the world's latent dynamics follow a Gaussian, stationary process. This Gaussian boundary implies a fundamental limit on temporal consistency: for any non-Gaussian physical system, the representation error of a statistical World Model grows monotonically with time. We prove that this limit is an artifact of the statistical alignment mechanism, not a property of World Models in general. We introduce the Physics-Grounded Symbolic Architecture (PGSA) and prove three results: (1) a PGSA achieves exact linear identifiability for all physical regimes, regardless of the latent distribution; (2) the per-step error of a PGSA is bounded by numerical precision alone; and (3) as a direct consequence, a PGSA maintains temporal consistency for an unbounded number of transitions, a property we term near-infinite temporal consistency. We further prove that statistical World Models cannot achieve this property for any non-Gaussian system, regardless of model capacity or the volume of training data. The algebraic cores of four of the theorems are formalized in Lean 4 with Mathlib4 v4.31.0 (zero sorry placeholders); the Klindt et al. converse is taken as an external premise. The contrast establishes that symbolic grounding in the causal generator of the world's dynamics is the sufficient condition and, in non-Gaussian regimes, the only condition for near-infinite temporal consistency.",
+      "authors": [
+        "Seth Dobrin",
+        "Łukasz Chmiel"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.CL",
+        "cs.ET",
+        "cs.LG"
+      ],
+      "published": "2026-06-09T23:00:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.12471v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9767604082196114,
+      "rerank_inspiration_rank": 21,
+      "rerank_score": 0.9767604082196114,
+      "rerank_best_query": "Reusable method/query: time series modeling. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 21,
+      "rerank_core_score": 0.9610853318447613,
+      "rerank_core_rank": 25,
+      "llm_score": 8.0,
+      "core_relevance_score": 5.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.195352081643922,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "PGSA method can be adapted to neural decoding for robust latent state recovery from non-Gaussian neural dynamics",
+      "track_evidence_cn": "PGSA方法可适应神经解码，从非高斯神经动力学中稳健恢复潜在状态",
+      "llm_evidence_en": "Symbolic world models for identifiability and temporal consistency in representation learning",
+      "llm_evidence_cn": "符号世界模型用于表示学习的可辨识性和时间一致性",
+      "llm_evidence": "符号世界模型用于表示学习的可辨识性和时间一致性",
+      "canonical_evidence": "符号世界模型用于表示学习的可辨识性和时间一致性",
+      "llm_tldr_en": "Proves symbolic architecture overcomes Gaussian limit for temporal consistency, enabling exact latent variable recovery",
+      "llm_tldr_cn": "证明符号架构克服高斯限制实现时间一致性，精确恢复潜变量",
+      "llm_tldr": "证明符号架构克服高斯限制实现时间一致性，精确恢复潜变量",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13236v1",
+      "source": "arxiv",
+      "title": "Decoding Insect Song: A Multitask Semisupervised Orthoptera Bioacoustic Classifier",
+      "abstract": "Passive acoustic monitoring holds great promise for ecological inference, yet existing automated tools are typically narrowly trained and non-transferable. We address these limitations with PULSE, a semi-supervised, multi-task framework for Orthoptera bioacoustics, combining weakly-supervised species classification, self-supervised learning on unlabelled field audio, and knowledge distillation from a general-purpose bioacoustic model. Our domain-adapted specialist model outperforms a state-of-the-art general model across all metrics (macro F1: 0.21 vs. 0.07; AUC: 0.74 vs. 0.45; AP: 0.32 vs. 0.19), with active learning further raising F1 to 0.34 and AUC to 0.84. Beyond classification, the learned embeddings encode ecologically meaningful structure, exposed through an interactive visualisation tool for ecological discovery.",
+      "authors": [
+        "Olga Isupova",
+        "Danil Kuzin",
+        "Ella Browning",
+        "Tom Mills",
+        "Steven Reece"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.SD",
+        "stat.AP"
+      ],
+      "published": "2026-06-11T11:51:49+00:00",
+      "link": "https://arxiv.org/pdf/2606.13236v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9753424530363737,
+      "rerank_core_rank": 19,
+      "rerank_score": 0.9753424530363737,
+      "rerank_best_query": "decoding neural signals into language or actions",
+      "rerank_track": "core",
+      "rerank_rank": 19,
+      "rerank_inspiration_score": 0.9726317160440454,
+      "rerank_inspiration_rank": 22,
+      "llm_score": 8.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.175073708887929,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "concrete transfer: semi-supervised learning and domain adaptation for neural decoding",
+      "track_evidence_cn": "具体迁移：半监督学习和领域自适应用于神经解码",
+      "llm_evidence_en": "multitask semi-supervised framework with knowledge distillation for domain adaptation",
+      "llm_evidence_cn": "多任务半监督框架结合知识蒸馏进行领域自适应",
+      "llm_evidence": "多任务半监督框架结合知识蒸馏进行领域自适应",
+      "canonical_evidence": "多任务半监督框架结合知识蒸馏进行领域自适应",
+      "llm_tldr_en": "Presents a semi-supervised multitask framework for decoding insect songs with transferable domain adaptation methods.",
+      "llm_tldr_cn": "提出一个半监督多任务框架解码昆虫鸣声，包含可迁移的领域自适应方法。",
+      "llm_tldr": "提出一个半监督多任务框架解码昆虫鸣声，包含可迁移的领域自适应方法。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "domain adaptation",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12182v1",
+      "source": "arxiv",
+      "title": "How Low Can You Go? Active Learning for Sparse Model Discovery in the Ultra-Low-Data Limit",
+      "abstract": "Identifying the governing equations of complex dynamical systems remains a fundamental challenge across science and engineering. While early approaches relied on empirical data and heuristics, modern data-driven methods offer greater flexibility and fewer assumptions. However, data acquisition in real-world settings is often expensive. This work addresses this challenge by introducing an active learning strategy for dynamics discovery in the ultra-low data limit. Rather than sampling randomly, our method iteratively prioritizes regions that are most informative for model identification. This approach builds on Sparse Identification of Nonlinear Dynamics (SINDy), and utilizes an ensemble extension, E-SINDy, to estimate epistemic uncertainty and guide the sampling for both ordinary and partial differential equations (ODEs/PDEs). For ODEs, an exhaustive analysis is conducted on the Lorenz system across varying data budgets and noise levels. For PDEs, two systems with contrasting dynamical characteristics are examined: the Burgers' equation, where a sharp shock front creates a distinction between informative and uninformative regions, and the Kuramoto-Sivashinsky equation, which presents a more spatially complex sampling landscape. Across all scenarios, the proposed method accurately identifies the governing dynamics with significantly fewer data samples than random sampling.",
+      "authors": [
+        "Ana Larrañaga",
+        "Urban Fasel",
+        "Steven L. Brunton"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.DS",
+        "math.OC"
+      ],
+      "published": "2026-06-10T15:06:59+00:00",
+      "link": "https://arxiv.org/pdf/2606.12182v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9681569122208216,
+      "rerank_inspiration_rank": 24,
+      "rerank_score": 0.9681569122208216,
+      "rerank_best_query": "Reusable method/query: domain adaptation. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 24,
+      "llm_score": 8.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.135541967710916,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Concrete reusable method: active learning and ensemble SINDy for model discovery in ultra-low data regimes.",
+      "track_evidence_cn": "具体可复用方法：主动学习与集成SINDy在极低数据量下的模型发现。",
+      "llm_evidence_en": "active learning for sparse dynamics discovery in dynamical systems",
+      "llm_evidence_cn": "极低数据量下动力学发现的主动学习方法",
+      "llm_evidence": "极低数据量下动力学发现的主动学习方法",
+      "canonical_evidence": "极低数据量下动力学发现的主动学习方法",
+      "llm_tldr_en": "Uses active learning with E-SINDy to identify governing equations from very few samples, transferable to neural time-series modeling.",
+      "llm_tldr_cn": "使用主动学习与E-SINDy从极少样本识别动力学方程，可迁移至神经时间序列建模。",
+      "llm_tldr": "使用主动学习与E-SINDy从极少样本识别动力学方程，可迁移至神经时间序列建模。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12386v1",
+      "source": "arxiv",
+      "title": "ATLAS: Active Theory Learning for Automated Science",
+      "abstract": "Advancing scientific understanding through mechanistic modeling requires posing the right experimental questions to yield maximally informative data. To automate this pursuit within cognitive science, we introduce ATLAS (Active Theory Learning for Automated Science), an active learning framework for the data-driven discovery of interpretable behavioral models. ATLAS iterates between generating mechanistic hypotheses--instantiated as a diverse ensemble of sparse neural networks (Disentangled RNNs)--and designing experiments that optimally distinguish between them. We test this approach on the problem of recovering reinforcement learning agents from their behavior in bandit tasks. ATLAS designs varied sequences of qualitatively novel experiments with temporal structure tailored to underlying agent characteristics. The models trained on these experiments are evaluated against a comprehensive set of metrics for mechanistic modeling that capture behavioral, structural, and computational similarity. ATLAS achieves a 5-10x improvement in sample efficiency across all metrics compared to random experimentation, and its performance is further validated against expert-designed experiments derived from literature. These in silico results showcase ATLAS's potential to accelerate human-interpretable insights in cognitive science and other domains where scientific inquiry relies on discovering mechanistic models.",
+      "authors": [
+        "Noémi Éltető",
+        "Nathaniel D. Daw",
+        "Kimberly L. Stachenfeld",
+        "Kevin J. Miller"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-10T17:52:03+00:00",
+      "link": "https://arxiv.org/pdf/2606.12386v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9729274136148075,
+      "rerank_core_rank": 20,
+      "rerank_score": 0.9729274136148075,
+      "rerank_best_query": "decoding neural signals into language or actions",
+      "rerank_track": "core",
+      "rerank_rank": 20,
+      "rerank_inspiration_score": 0.9002702365062563,
+      "rerank_inspiration_rank": 25,
+      "llm_score": 8.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.108032428380751,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "concrete transfer: active experiment design for online adaptation in BCI",
+      "track_evidence_cn": "具体迁移：主动实验设计用于脑机接口的在线自适应",
+      "llm_evidence_en": "active learning framework for designing experiments to uncover interpretable behavioral models",
+      "llm_evidence_cn": "主动学习框架设计实验以发现可解释的行为模型",
+      "llm_evidence": "主动学习框架设计实验以发现可解释的行为模型",
+      "canonical_evidence": "主动学习框架设计实验以发现可解释的行为模型",
+      "llm_tldr_en": "Active learning method for designing experiments that could adapt neural decoders to online drift.",
+      "llm_tldr_cn": "主动学习方法设计实验，可适应神经解码器的在线漂移。",
+      "llm_tldr": "主动学习方法设计实验，可适应神经解码器的在线漂移。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "online adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.11573v1",
+      "source": "arxiv",
+      "title": "Understanding Cross-Sensor Feature Variations for Generalizable 3D Perception",
+      "abstract": "Radar-camera BEV perception often suffers from degraded performance when evaluated across datasets, as changes in driving scenes, sensor configurations, and environmental conditions can alter both the input observations and the internal fused representations. This work studies this issue from the perspective of source-domain variation modeling, aiming to improve the robustness of BEV-based 3D detectors without relying on target-domain samples. We introduce a framework that characterizes visual scene variations in the frequency domain and uses them to synthesize diverse source-domain views. By comparing the resulting fused BEV representations, the framework further captures how image-level variations influence multi-modal BEV features. These variation patterns are then used to regularize the detector, encouraging the learned fusion space to remain stable under latent scene changes. The proposed method is applied only during training and leaves the inference pipeline unchanged. Experiments on cross-dataset radar-camera 3D detection between View-of-Delft and TJ4DRadSet demonstrate consistent improvements over multiple BEV fusion backbones, and the gains remain effective when a small amount of target-domain data is available.",
+      "authors": [
+        "Xin Qiu",
+        "Wenjie Liu",
+        "Fuyuan Ai",
+        "YuChen Tan",
+        "Zhiwei Xu",
+        "Chunyi Song"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-10T01:57:24+00:00",
+      "link": "https://arxiv.org/pdf/2606.11573v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9161916914278735,
+      "rerank_inspiration_rank": 32,
+      "rerank_score": 0.9161916914278735,
+      "rerank_best_query": "Reusable method/query: domain adaptation. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 32,
+      "llm_score": 8.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Concrete reusable method: frequency-domain variation modeling for source-domain synthesis in domain adaptation.",
+      "track_evidence_cn": "具体可复用方法：频域变化建模用于域适应中的源域合成。",
+      "llm_evidence_en": "cross-sensor feature variation modeling for domain adaptation in 3D perception",
+      "llm_evidence_cn": "跨传感器特征变化建模用于3D感知中的域适应",
+      "llm_evidence": "跨传感器特征变化建模用于3D感知中的域适应",
+      "canonical_evidence": "跨传感器特征变化建模用于3D感知中的域适应",
+      "llm_tldr_en": "Models cross-sensor feature variations in frequency domain to improve domain adaptation for BEV perception, transferable to cross-session neural adaptation.",
+      "llm_tldr_cn": "在频域中建模跨传感器特征变化以改进BEV感知的域适应，可迁移至跨会话神经适配。",
+      "llm_tldr": "在频域中建模跨传感器特征变化以改进BEV感知的域适应，可迁移至跨会话神经适配。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "domain adaptation",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.11860v1",
+      "source": "arxiv",
+      "title": "RePAIR: Predictive Self-Supervised Representation Learning in Chess",
+      "abstract": "In this paper, we introduce Representation Prediction via Autoencoding using Iterative Refinement (RePAIR) - a novel self-supervised representation learning architecture that synthesizes Masked Autoencoders (MAE), Joint Embedding Predictive Architectures (JEPA), and Bidirectional Encoder Representations from Transformers (BERT). We demonstrate how it can be used to encode objects in sequential data like consecutive chess positions into compact yet meaningful representations. The basic principle of the architecture is to mask large portions of a sequence of latent states, similar to BERT and MAE. Then, we apply a lightweight Predictor to the latent representations that repairs gaps in the sequence in a lower-dimensional embedding space akin to JEPA. Our experiments in the domain of chess show that the Encoder refines the board representations such that meaningful chess concepts emerge clustered in the latent space. Furthermore, reconstructions of the masked board states show that the model is able to reason about the piece movements without relying on costly reinforcement learning methods. Lastly, we find that the resulting representation space allows for quick and intuitive dissections of chess games by observing the game path trajectories in this semantically rich space.",
+      "authors": [
+        "Christoph Koller",
+        "Johannes Fürnkranz",
+        "Timo Bertram"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-10T09:36:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.11860v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.6771027131203423,
+      "rerank_core_rank": 39,
+      "rerank_score": 0.6771027131203423,
+      "rerank_best_query": "representation drift",
+      "rerank_track": "core",
+      "rerank_rank": 39,
+      "rerank_inspiration_score": 0.19919018344320175,
+      "rerank_inspiration_rank": 56,
+      "llm_score": 8.0,
+      "core_relevance_score": 1.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "The predictive self-supervised approach for sequence representation can be applied to neural time-series modeling.",
+      "track_evidence_cn": "这种预测性自监督序列表征方法可应用于神经时间序列建模。",
+      "llm_evidence_en": "self-supervised representation learning for sequential data",
+      "llm_evidence_cn": "序列数据的自监督表征学习",
+      "llm_evidence": "序列数据的自监督表征学习",
+      "canonical_evidence": "序列数据的自监督表征学习",
+      "llm_tldr_en": "Introduces RePAIR, combining MAE, JEPA, and BERT for self-supervised representation learning on sequential chess positions.",
+      "llm_tldr_cn": "提出RePAIR，结合MAE、JEPA和BERT对国际象棋序列进行自监督表征学习。",
+      "llm_tldr": "提出RePAIR，结合MAE、JEPA和BERT对国际象棋序列进行自监督表征学习。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "representation learning",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12364v1",
+      "source": "arxiv",
+      "title": "On Subquadratic Architectures: From Applications to Principles",
+      "abstract": "Transformers dominate modern sequence modeling, but their quadratic attention incurs substantial computational cost. Subquadratic architectures offer a scalable alternative. However, it remains unclear which designs yield the most effective sequence models. We compare three leading approaches: xLSTM, Mamba-2, and Gated DeltaNet. We evaluate these models on tasks with complex dependencies: (1) code-model pre-training, (2) distillation of code models from large language models, and (3) pre-training of time-series foundation models. Across these settings, xLSTM delivers the strongest overall performance. To explain xLSTM's advantage, we present a unified formulation and analyze the underlying architectural mechanisms, focusing on state tracking and memory dynamics. Our results show that xLSTM enables more flexible and stable memory correction via its gating scheme. We corroborate these findings on controlled synthetic length-generalization tasks. Overall, our findings indicate that xLSTM's gains on complex tasks stem from robust state tracking and accumulation.",
+      "authors": [
+        "Anamaria-Roberta Hartl",
+        "Levente Zólyomi",
+        "David Stap",
+        "Pieter-Jan Hoedt",
+        "Niklas Schmidinger",
+        "Lukas Hauzenberger",
+        "Sebastian Böck",
+        "Günter Klambauer",
+        "Sepp Hochreiter"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-10T17:33:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.12364v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.6445320331813329,
+      "rerank_core_rank": 50,
+      "rerank_score": 0.6445320331813329,
+      "rerank_best_query": "sequence modeling for neural data",
+      "rerank_track": "core",
+      "rerank_rank": 50,
+      "rerank_inspiration_score": 0.28692964866583237,
+      "rerank_inspiration_rank": 56,
+      "llm_score": 8.0,
+      "core_relevance_score": 3.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "concrete reusable mechanism for time-series modeling",
+      "track_evidence_cn": "时间序列建模的具体可重用机制",
+      "llm_evidence_en": "subquadratic architectures for time-series foundation models",
+      "llm_evidence_cn": "次二次架构用于时间序列基础模型",
+      "llm_evidence": "次二次架构用于时间序列基础模型",
+      "canonical_evidence": "次二次架构用于时间序列基础模型",
+      "llm_tldr_en": "Compares subquadratic sequence models, excels at time-series pre-training.",
+      "llm_tldr_cn": "比较次二次序列模型，在时间序列预训练中表现优异。",
+      "llm_tldr": "比较次二次序列模型，在时间序列预训练中表现优异。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12690v1",
+      "source": "arxiv",
+      "title": "EWAM: An Enhanced World Action Model for Closed-Loop Online Adaptation in Embodied Intelligence",
+      "abstract": "In this paper, we propose the Enhanced World Action Model (EWAM), a closed-loop online adaptation architecture built upon a pretrained and fully frozen Cosmos3 backbone network. Evaluated entirely under a zero-shot task protocol, EWAM is centrally focused on reducing the amount of additional deployment data required to adapt to new task layouts. Notably, no extra task-specific demonstration sets were introduced in any of the evaluations, and no fine-tuning was performed on the backbone network. Its performance gains stem entirely from an inference-time co-reasoning mechanism composed of four inserted lightweight neural layers: the Neural Experience Memory Layer located in the intermediate layers of the Diffusion Transformer (DiT) provides task-relevant execution context; the Neural Anomaly Detection Layer after the state prediction head monitors the divergence between predicted and actual states in real time; the Neural Policy Routing Layer dynamically selects direct execution, conservative replanning, or rollback recovery based on the anomaly severity; and the Neural Action Correction Layer refines the generated action chunks using execution diagnostics. Unlike naive feature fusion, the memory, anomaly detection, and correction modules are deeply integrated into the Cosmos3 forward path in a differentiable manner, with only the final routing decision being a discrete supervised one.",
+      "authors": [
+        "Xin Zhou",
+        "Cong Miao"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-10T21:24:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.12690v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.902282513274095,
+      "rerank_core_rank": 36,
+      "rerank_score": 0.902282513274095,
+      "rerank_best_query": "decoding neural signals into language or actions",
+      "rerank_track": "core",
+      "rerank_rank": 36,
+      "rerank_inspiration_score": 0.7690028816587157,
+      "rerank_inspiration_rank": 43,
+      "llm_score": 8.0,
+      "core_relevance_score": 7.0,
+      "inspiration_score": 8.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 8.0,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "concrete transfer path: online adaptation mechanism applicable to BCI adaptation",
+      "track_evidence_cn": "具体迁移路径：在线适应机制可应用于脑机接口适应",
+      "llm_evidence_en": "closed-loop online adaptation architecture with zero-shot task protocol",
+      "llm_evidence_cn": "闭环在线适应架构，零样本任务协议",
+      "llm_evidence": "闭环在线适应架构，零样本任务协议",
+      "canonical_evidence": "闭环在线适应架构，零样本任务协议",
+      "llm_tldr_en": "EWAM achieves online adaptation via inference-time co-reasoning layers without fine-tuning",
+      "llm_tldr_cn": "EWAM通过推理时共推理层实现在线适应，无需微调",
+      "llm_tldr": "EWAM通过推理时共推理层实现在线适应，无需微调",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "online adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.13340v1",
+      "source": "arxiv",
+      "title": "EMG-Based Adaptation of Anisotropic Virtual Fixtures for Robot-Assisted Surgical Resection and Dissection",
+      "abstract": "In this paper, we address the development of an adaptive assistance system for robot-assisted laparoscopic surgery, specifically for delicate tasks such as Resection and Dissection. Even if Virtual Fixtures offer significant advantages for guiding a surgeon's movements, conventional Virtual Fixtures are often defined by fixed geometries, lacking the flexibility to adapt to the surgical workflow or the surgeon's immediate intent. To address these limitations, we propose a novel framework for an adaptive and anisotropic virtual fixture. In addition, we introduce an intuitive control interface that modulates the fixture's geometry in real-time based on the surgeon's intent, inferred from EMG signals. This approach allows the surgeon to dynamically expand or disengage the constraint by contracting their forearm muscles, enabling seamless transitions between precise guided motion and free repositioning of the tool. Experimental results from a pilot user study, based on a standardized surgical training task, demonstrate the effectiveness of the proposed method. The system showed significant improvements in task accuracy and movement consistency, alongside a reduction in perceived cognitive load, effort, and frustration.",
+      "authors": [
+        "Dario Onfiani",
+        "Michael Dyck",
+        "Luigi Biagiotti",
+        "Julian Klodmann"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-11T13:29:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.13340v1",
+      "tags": [
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.6091876243599178,
+      "rerank_core_rank": 39,
+      "rerank_score": 0.6091876243599178,
+      "rerank_best_query": "online adaptation",
+      "rerank_track": "core",
+      "rerank_rank": 39,
+      "llm_score": 8.0,
+      "core_relevance_score": 8.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "core",
+      "relevance_track_label": "强相关",
+      "selection_score": 8.0,
+      "selection_lane": "core",
+      "track_evidence_en": "core match: online adaptation using EMG signals for control",
+      "track_evidence_cn": "核心匹配：使用肌电信号进行控制的在线自适应",
+      "llm_evidence_en": "EMG-based real-time adaptation of virtual fixtures for surgery, directly relevant to online adaptation in BCI",
+      "llm_evidence_cn": "基于肌电信号的手术虚拟夹具实时自适应，直接相关于脑机接口中的在线自适应",
+      "llm_evidence": "基于肌电信号的手术虚拟夹具实时自适应，直接相关于脑机接口中的在线自适应",
+      "canonical_evidence": "基于肌电信号的手术虚拟夹具实时自适应，直接相关于脑机接口中的在线自适应",
+      "llm_tldr_en": "Proposes an EMG-driven adaptive virtual fixture framework for surgical assistance, demonstrating online adaptation from neural signals",
+      "llm_tldr_cn": "提出了一种肌电驱动的自适应虚拟夹具框架用于手术辅助，展示了从神经信号进行在线自适应",
+      "llm_tldr": "提出了一种肌电驱动的自适应虚拟夹具框架用于手术辅助，展示了从神经信号进行在线自适应",
+      "llm_tags": [
+        "query:ndai",
+        "paper:强相关"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "online adaptation",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12497v1",
+      "source": "arxiv",
+      "title": "$μ$VLA: On Recurrent Memory for Partially Observable Manipulation in VLA Models",
+      "abstract": "Vision-language-action (VLA) models predict chunks of future actions from the current observation, an assumption that fails under partial observability, where decisions depend on information no longer visible. Existing memory-augmented VLAs simultaneously introduce recurrence, retrieval, compression modules, auxiliary objectives, hierarchical memory, or task-specific architectural changes, so the contribution of recurrence itself remains entangled with surrounding machinery. We present a controlled isolation study of recurrence in a strong pretrained VLA backbone. Our formulation augments the transformer with a small set of learnable memory tokens carried across timesteps and updated through self-attention, trained end to end with truncated backpropagation through time, with no auxiliary losses and no architectural changes. We instantiate this as $μ$VLA, a family of OpenVLA-OFT variants parameterized by memory width m, TBPTT length K, and the memory update rule (cross-step gradients or a detached EMA), so that recurrence is the only varying factor. On MIKASA-Robo, $μ$VLA improves average success rate on five training tasks from 0.42 to 0.84 at the strongest setting and reaches 0.23 on held-out tasks with the same memory structure versus 0.07 for the memoryless baseline. On tasks requiring different memory structure, performance remains near baseline. On LIBERO, the strongest recurrent variant achieves 96.2% average success, indicating no regression under full observability. We interpret these results as a calibration of the capability envelope of minimal in-backbone recurrence, identifying the regime in which it is sufficient and the regime where additional memory structure is required. Demos and videos can be found in https://avanturist322.github.io/mu-vla/.",
+      "authors": [
+        "Egor Cherepanov",
+        "Nikita Kachaev",
+        "Daniil Zelezetsky",
+        "Aydar Bulatov",
+        "Artem Pshenitsyn",
+        "Yuri Kuratov",
+        "Alexey Skrynnik",
+        "Aleksandr I. Panov",
+        "Alexey K. Kovalev"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.RO"
+      ],
+      "published": "2026-06-10T13:26:40+00:00",
+      "link": "https://arxiv.org/pdf/2606.12497v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9995359288321238,
+      "rerank_core_rank": 4,
+      "rerank_score": 0.9995359288321238,
+      "rerank_best_query": "representation learning for neural activity",
+      "rerank_track": "core",
+      "rerank_rank": 4,
+      "rerank_inspiration_score": 0.998870116973411,
+      "rerank_inspiration_rank": 6,
+      "llm_score": 7.0,
+      "core_relevance_score": 4.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.499435058486705,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "recurrent memory tokens can be adapted for neural time-series decoding",
+      "track_evidence_cn": "循环记忆token可适配用于神经时间序列解码",
+      "llm_evidence_en": "recurrent memory for sequence decoding in partially observable settings",
+      "llm_evidence_cn": "部分可观测设置下序列解码的循环记忆",
+      "llm_evidence": "部分可观测设置下序列解码的循环记忆",
+      "canonical_evidence": "部分可观测设置下序列解码的循环记忆",
+      "llm_tldr_en": "Isolates recurrence contribution in VLA models using learnable memory tokens for action chunk prediction",
+      "llm_tldr_cn": "在VLA模型中隔离循环贡献，使用可学习记忆token预测动作块",
+      "llm_tldr": "在VLA模型中隔离循环贡献，使用可学习记忆token预测动作块",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "sequence decoding",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12559v1",
+      "source": "arxiv",
+      "title": "Feature-preserving Latent-EnKF for Data Assimilation of Flows with Shocks",
+      "abstract": "The ensemble Kalman filter (EnKF) is widely adopted for sequential data assimilation, but fails for solutions with discontinuities, such as shocks in compressible flows. Uncertainty in shock location induces multimodal ensemble statistics that violate the Gaussian assumptions underlying the EnKF, producing large-scale spurious oscillations in the analysis state. We introduce a feature-preserving latent-EnKF that performs the ensemble update in a learned low-dimensional latent space, where shock and flow features admit a smooth manifold representation, thereby preserving sharp features during EnKF analysis. The updated latent state is mapped back to physical state through a shared decoder for all ensemble members. The algorithm eliminates the member-specific ordered training and positivity flooring used in prior approaches. Numerical experiments on a Sod shock tube and Mach 2 shock interaction with a 2D cylinder, using sparse and noisy observations, show accurate feature recovery of shocks and contact discontinuities without spurious oscillations.",
+      "authors": [
+        "Hemanth Chandravamsi",
+        "Hangchuan Hu",
+        "Ponkrshnan Thiagarajan",
+        "Tamer A. Zaki"
+      ],
+      "primary_category": "physics.comp-ph",
+      "categories": [
+        "physics.comp-ph",
+        "cs.LG",
+        "math.NA",
+        "physics.flu-dyn"
+      ],
+      "published": "2026-06-10T18:09:16+00:00",
+      "link": "https://arxiv.org/pdf/2606.12559v1",
+      "tags": [
+        "keyword:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9850076949032582,
+      "rerank_inspiration_rank": 12,
+      "rerank_score": 0.9850076949032582,
+      "rerank_best_query": "Reusable method/query: representation learning. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 12,
+      "llm_score": 7.0,
+      "core_relevance_score": 0.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.3743029240632385,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "latent space sequential method adaptable to neural time-series modeling",
+      "track_evidence_cn": "潜在空间顺序方法可适应神经时序建模",
+      "llm_evidence_en": "latent EnKF for sequential data assimilation",
+      "llm_evidence_cn": "潜在EnKF用于顺序数据同化",
+      "llm_evidence": "潜在EnKF用于顺序数据同化",
+      "canonical_evidence": "潜在EnKF用于顺序数据同化",
+      "llm_tldr_en": "Feature-preserving latent space EnKF for data assimilation with shocks",
+      "llm_tldr_cn": "保特征的潜在空间EnKF用于含激波的数据同化",
+      "llm_tldr": "保特征的潜在空间EnKF用于含激波的数据同化",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12141v1",
+      "source": "arxiv",
+      "title": "PCA-Enhanced Adaptive NVAR Framework for High-Resolution Sea Surface Temperature Forecasting in the East Sea",
+      "abstract": "Accurate forecasting of sea surface temperature (SST) in regional seas such as the East Sea is crucial for monitoring marine ecosystems, assessing climate risks, managing fisheries, and conducting naval operations. Traditional numerical ocean models provide reliable predictions but are computationally expensive and often unsuitable for real-time forecasting. Many deep learning methods also struggle with high-dimensional spatiotemporal ocean data and experience error accumulation over longer forecasting periods. This study builds on our previously proposed Adaptive Next-Generation Reservoir Computing (Adaptive NVAR) framework, initially introduced and tested on synthetic dynamical systems, and extends it to ocean forecasting. We present a reduced-order forecasting framework that combines Singular Value Decomposition (SVD) with Adaptive NVAR to predict SST dynamics in the East Sea. SST fields are compressed into a low-dimensional representation using SVD, which extracts dominant modes of ocean variability. Adaptive NVAR models the temporal evolution of these latent states, and the predicted states are reconstructed into SST forecasts. We evaluate the framework using regional ocean datasets and compare it with the standard NG-RC/NVAR. Results show that Adaptive NVAR consistently achieves lower forecasting errors across multiple prediction horizons. In addition, SVD reduces computational complexity, resulting in a fast and scalable framework suitable for real-time ocean forecasting.",
+      "authors": [
+        "Sherkhon Azimov",
+        "Susana López-Moreno",
+        "Eric Dolores-Cuenca",
+        "JinYong Choi",
+        "Sangil Kim"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-10T14:34:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.12141v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.9913301110450761,
+      "rerank_inspiration_rank": 13,
+      "rerank_score": 0.997276737057198,
+      "rerank_best_query": "online adaptation",
+      "rerank_track": "core",
+      "rerank_rank": 4,
+      "rerank_core_score": 0.997276737057198,
+      "rerank_core_rank": 4,
+      "llm_score": 7.0,
+      "core_relevance_score": 2.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.356878839976227,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Reservoir computing method for time series, applicable to neural decoding",
+      "track_evidence_cn": "储层计算方法用于时间序列，可应用于神经解码",
+      "llm_evidence_en": "Adaptive NVAR framework for time series forecasting, transferable to neural decoding",
+      "llm_evidence_cn": "自适应NVAR时间序列预测框架，可迁移至神经解码",
+      "llm_evidence": "自适应NVAR时间序列预测框架，可迁移至神经解码",
+      "canonical_evidence": "自适应NVAR时间序列预测框架，可迁移至神经解码",
+      "llm_tldr_en": "Adaptive reservoir computing method for sea surface temperature forecasting, could be adapted for neural time-series modeling.",
+      "llm_tldr_cn": "自适应储层计算方法用于海面温度预测，可适用于神经时间序列建模。",
+      "llm_tldr": "自适应储层计算方法用于海面温度预测，可适用于神经时间序列建模。",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12836v1",
+      "source": "arxiv",
+      "title": "Interpretable model-free inference of parametric variation across time-series data through large-scale feature extraction",
+      "abstract": "Here we address the problem of estimating the dimensionality and nature of parametric variation in an unknown generative process directly from time-series data, without specifying or fitting a model. In particular we suppose that inter-instance variation in collections of time series is caused by parametric variation in the generating model. We hypothesize that, given a sufficiently large library of time-series features, low-dimensional parametric variation will manifest as low-dimensional structure in feature space, enabling interpretable estimators of the underlying degrees of freedom to be constructed. We test our hypothesis using a library of over 7000 diverse and interpretable time-series statistics and thirteen simulated systems with known parametric variation, spanning linear stochastic processes, nonlinear oscillators, and chaotic dynamics. Our unsupervised, data-driven approach often reconstructs the underlying parametric variation across this extensive range of simulated dynamical systems while also yielding interpretable estimators for each underlying dimension. Applied to the movement dynamics of 1143 fruit flies, we use this method to extract biologically meaningful components corresponding to sex and circadian rhythmicity. Our results pave the way for much-needed data-driven methods to bridge the gap between interpretable theoretical understanding of dynamics and the large and complex datasets that characterize modern scientific problems.",
+      "authors": [
+        "Ben D. Fulcher",
+        "Carl H. Lubba",
+        "Giorgio F. Gilestro",
+        "Simon R. Schultz",
+        "Nick S. Jones"
+      ],
+      "primary_category": "physics.data-an",
+      "categories": [
+        "physics.data-an",
+        "q-bio.QM",
+        "stat.ME"
+      ],
+      "published": "2026-06-11T03:03:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.12836v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_inspiration_score": 0.978660167138559,
+      "rerank_inspiration_rank": 20,
+      "rerank_score": 0.978660167138559,
+      "rerank_best_query": "Reusable method/query: time series modeling. User research context for possible transfer: Brain-computer interface; neural decoding; online adaptation; neural time-series modeling; representation drift; handwriting/speech BCI. Rank high only when the paper offers a concrete mechanism, model, tool, or analysis route that can plausibly transfer to the research context.",
+      "rerank_track": "inspiration",
+      "rerank_rank": 20,
+      "rerank_core_score": 0.976371798979516,
+      "rerank_core_rank": 19,
+      "llm_score": 7.0,
+      "core_relevance_score": 5.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.215305236770483,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "Feature library approach transferable to neural time-series analysis for detecting latent state changes",
+      "track_evidence_cn": "特征库方法可迁移到神经时间序列分析，用于检测潜在状态变化",
+      "llm_evidence_en": "Large-scale time-series feature extraction for parametric variation inference",
+      "llm_evidence_cn": "大规模时间序列特征提取用于参数变异推断",
+      "llm_evidence": "大规模时间序列特征提取用于参数变异推断",
+      "canonical_evidence": "大规模时间序列特征提取用于参数变异推断",
+      "llm_tldr_en": "Proposes interpretable feature-based method to infer parametric variation from time series without model fitting",
+      "llm_tldr_cn": "提出无需模型拟合的可解释特征方法从时间序列推断参数变异",
+      "llm_tldr": "提出无需模型拟合的可解释特征方法从时间序列推断参数变异",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "time series modeling",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.12499v1",
+      "source": "arxiv",
+      "title": "Action-Effect Memory Pretraining for Robot Manipulation",
+      "abstract": "We present AEM, an Action-Effect Memory pretraining framework for robot manipulation that learns compact temporal representations from vision-action history. Unlike prior robot representation pretraining methods that mainly focus on single-frame visual encoding, AEM targets the temporal nature of manipulation, where the current observation alone is often insufficient under partial observability. AEM models manipulation as an action-driven interaction process by interleaving visual and action features and applying masked modeling to recover missing content from incomplete histories, thereby learning action-conditioned state evolution. The Mamba-encoded output of the final vision token is used as a compact history representation, serving as the global context for decoding and downstream control. This design preserves a single-vector temporal bottleneck while keeping inference efficient. We evaluate AEM with Diffusion Policy and Flow Policy. AEM consistently improves manipulation performance in both simulation and real-world settings, outperforming baselines across clean scenes, cluttered and random scenes, and non-Markovian tasks. Ablation studies further show that history-aware pretraining surpasses single-frame pretraining and direct frame stacking, while reducing inference latency and computational cost.",
+      "authors": [
+        "Yijing Zhou",
+        "Qiwei Liang",
+        "Sitong Zhuang",
+        "Jiaxi Li",
+        "Xianpeng Wang",
+        "Boyang Cai",
+        "Yunyang Mo",
+        "Renjing Xu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-10T13:58:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.12499v1",
+      "tags": [
+        "keyword:NDAI",
+        "query:NDAI"
+      ],
+      "rerank_core_score": 0.9749393918718218,
+      "rerank_core_rank": 18,
+      "rerank_score": 0.9749393918718218,
+      "rerank_best_query": "neural decoding",
+      "rerank_track": "core",
+      "rerank_rank": 18,
+      "rerank_inspiration_score": 0.9441097624986301,
+      "rerank_inspiration_rank": 22,
+      "llm_score": 7.0,
+      "core_relevance_score": 1.0,
+      "inspiration_score": 7.0,
+      "relevance_track": "inspiration",
+      "relevance_track_label": "通用启发",
+      "selection_score": 7.169939757249753,
+      "selection_lane": "inspiration",
+      "track_evidence_en": "masked modeling on time series can transfer to neural time-series modeling",
+      "track_evidence_cn": "时间序列上的掩码建模可迁移到神经时间序列建模",
+      "llm_evidence_en": "temporal representation learning for time series via masked modeling",
+      "llm_evidence_cn": "通过掩码建模进行时间表示学习",
+      "llm_evidence": "通过掩码建模进行时间表示学习",
+      "canonical_evidence": "通过掩码建模进行时间表示学习",
+      "llm_tldr_en": "AEM learns compact temporal representations from vision-action history using masked modeling",
+      "llm_tldr_cn": "AEM通过掩码建模从视觉-动作历史学习紧凑时间表示",
+      "llm_tldr": "AEM通过掩码建模从视觉-动作历史学习紧凑时间表示",
+      "llm_tags": [
+        "query:ndai",
+        "paper:通用启发"
+      ],
+      "matched_query_tag": "query:ndai",
+      "matched_query_text": "neural time-series modeling",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ]
+}

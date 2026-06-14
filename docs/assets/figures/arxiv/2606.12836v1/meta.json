@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12836v1/fig-001.webp",
+      "caption": "FIG. 6. The estimated dimensionality d̂ across all systems generated from varying a single free parameter (‘1D’), two free parameters (‘2D’), and three free parameters (‘3D’). Probability distributions of d̂ are shown for all datasets generated from variation of a single parameter, m = 1 (green), two independent parameters, m = 2 (pink), and three independent parameters, m = 3 (purple). The mode of each distribution matches the true dimensionality of the underlying parameter space, m, but there is substantial variation.",
+      "page": 10,
+      "index": 1,
+      "width": 466,
+      "height": 270
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12836v1/fig-004.webp",
+      "caption": "FIG. 8. Our data-driven method constructs a meaningful low-dimensional embedding space for a movement speed dataset of 1143 flies, organizing the flies by activity level and circadian rhythmicity. A The inferred datadriven embedding (ξ1, ξ2) of the time-series dataset X , where 12 h time-series segments have been annotated to selected time series. B Raster plot of all time series ordered by the first inferred dimension, ξ1, revealing a clear variation in activity profiles of flies along this dimension. White color corresponds to high velocity, dark color corresponds to low velocity. To be of equal length, each time series was cut to include the first 18 h. C Raster plot of all time series ordered by the first inferred dimension ξ2, revealing a visible variation of circadian rhythmicity of activity along this dimension.",
+      "page": 12,
+      "index": 4,
+      "width": 1037,
+      "height": 541
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12836v1/fig-003.webp",
+      "caption": "FIG. 9. Dependence of parameter reconstruction performance on methodological parameters. Each panel shows the difference in unexplained variance of parameter reconstruction χ between a methodological component of our method relative to an alternative choice. We tested the following settings: A Extracting components from the raw 5000 samples of each time series (instead of the extracted hctsa time-series feature space); B Using a 100-bin Fourier power spectrum coefficient-based representation of each time series (instead of hctsa); C Using the 22-feature subset, catch22, instead of the full hctsa feature set; D Using linear PCA for dimensionality reduction (instead of the nonlinear Isomap); and E Using principal components computed from a generic set of time series (‘generic PCs’) instead of computing them individually on each specific time-series dataset (‘own PCs’).",
+      "page": 13,
+      "index": 3,
+      "width": 454,
+      "height": 790
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12836v1/fig-002.webp",
+      "caption": "FIG. 10. Dependence of our feature-based dimension reduction method’s performance on (randomly selected) subsets of features, and with the number of time series included in the dataset. A Unexplained variance of parameter reconstruction χ using a given number of randomly sampled subset of hctsa features. The line shows the mean across 10 repetitions of random sampling; shading indicates the standard deviation. B Difference between extracted principal component dimensions obtained with a full dataset (labeled PCfull) versus those obtained using a random subset of time series from the dataset (labeled PCred).",
+      "page": 14,
+      "index": 2,
+      "width": 472,
+      "height": 616
+    }
+  ]
+}

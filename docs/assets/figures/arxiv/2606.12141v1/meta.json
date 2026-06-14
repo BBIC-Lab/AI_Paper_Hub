@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-009.webp",
+      "caption": "Figure 1: Schematic representation of the Next-Generation Reservoir Computing (or standard NVAR) framework showing deterministic delay embedding and polynomial feature generation.",
+      "page": 4,
+      "index": 9,
+      "width": 683,
+      "height": 291
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-001.webp",
+      "caption": "Figure 2: Schematic representation of the Adaptive NVAR framework showcasing the learnable MLP nonlinear mapping and the unified skip-connection optimization architecture.",
+      "page": 6,
+      "index": 1,
+      "width": 683,
+      "height": 331
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-002.webp",
+      "caption": "Figure 3: Sample SST snapshot from the Copernicus Marine GLORYS12V1 reanalysis dataset used in this study",
+      "page": 6,
+      "index": 2,
+      "width": 391,
+      "height": 548
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-004.webp",
+      "caption": "Figure 4: Explained variance spectrum of the PCA decomposition computed from the SST training dataset. The cumulative explained variance exceeds 99% within the first 10 principal components.",
+      "page": 7,
+      "index": 4,
+      "width": 587,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-005.webp",
+      "caption": "Figure 5: Temporal evolution of the leading principal component (PC1) obtained from the PCA decomposition.",
+      "page": 7,
+      "index": 5,
+      "width": 879,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-008.webp",
+      "caption": "Table 1: Explained variance ratios of the leading PCA modes computed from the SST training dataset.",
+      "page": 8,
+      "index": 8,
+      "width": 752,
+      "height": 335
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-011.webp",
+      "caption": "Table 2: Hyperparameter search ranges used in the TPE optimization method.",
+      "page": 9,
+      "index": 11,
+      "width": 519,
+      "height": 317
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-010.webp",
+      "caption": "Table 3: Optimal hyperparameter configurations and optimization time obtained using TPE optimization.",
+      "page": 9,
+      "index": 10,
+      "width": 667,
+      "height": 317
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-006.webp",
+      "caption": "Table 4: Horizon-wise reconstructed SST forecast errors for standard NVAR and Adaptive NVAR models on the test dataset. Best results for each metric are indicated with bold letters.",
+      "page": 10,
+      "index": 6,
+      "width": 754,
+      "height": 200
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-007.webp",
+      "caption": "Figure 6: Comparison between the true SST field, the SST field reconstructed by the standard NVAR model, and the corresponding absolute prediction error over the forecasting horizon.",
+      "page": 10,
+      "index": 7,
+      "width": 781,
+      "height": 562
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12141v1/fig-003.webp",
+      "caption": "Figure 7: Comparison between the true SST field, the SST field reconstructed by the proposed Adaptive NVAR model, and the corresponding absolute prediction error over the forecasting horizon.",
+      "page": 11,
+      "index": 3,
+      "width": 781,
+      "height": 559
+    }
+  ]
+}

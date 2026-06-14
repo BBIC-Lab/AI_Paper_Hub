@@ -1,0 +1,166 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-005.webp",
+      "caption": "Figure 2: TBPTT training of µVLA. The pretrained VLA is unrolled over a window of K steps. Memory tokens are initialized from M init at t0 and recurrently passed between successive steps. Gradients flow through the unrolled pathway and are detached at the window boundary.",
+      "page": 2,
+      "index": 5,
+      "width": 829,
+      "height": 283
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-010.webp",
+      "caption": "Figure 3: Attention mask with the memory-action guard. Memory tokens attend only to observations, proprioception, language, and previous memory state, but cannot read action tokens. This prevents the recurrent state from trivially copying demonstrated actions and encourages encoding of task-relevant observations instead.",
+      "page": 3,
+      "index": 10,
+      "width": 500,
+      "height": 298
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-006.webp",
+      "caption": "Table 2: Performance comparison on LIBERO [40]. Success rates (%) are reported for the four LIBERO suites and their average. ∗ denotes memory-augmented VLA models.",
+      "page": 7,
+      "index": 6,
+      "width": 432,
+      "height": 281
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-014.webp",
+      "caption": "Table 4: Per-step attention mask used by µVLA. Rows are queries, columns are keys; a 1 entry means the query group attends to the key group. The context-to-action block (top-right 5×2) is zero, so memory tokens, like the rest of the input context, never see the action region. This is the only departure from the OpenVLA-OFT attention pattern.",
+      "page": 19,
+      "index": 14,
+      "width": 664,
+      "height": 192
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-003.webp",
+      "caption": "Table 5: Training hyperparameters for µVLA.",
+      "page": 21,
+      "index": 3,
+      "width": 564,
+      "height": 423
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-008.webp",
+      "caption": "Table 7: Training-time cost across all reported runs. Forward latency is the mean per training step, peak memory is the per-GPU maximum during training, and total training time is wall-clock time on 8×H100 80 GB. The main recurrent cost is controlled by the TBPTT length K; EMA has a cost profile close to K=1.",
+      "page": 22,
+      "index": 8,
+      "width": 830,
+      "height": 352
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-012.webp",
+      "caption": "Figure 8: Generalization probes on RememberColor5. (a) Both task phases fixed to N ∈ {3, 5, 10, 20, 50, 100} steps; training covers N ∈ {1, . . . , 5} per phase. (b) 1–5 in-distribution colors replaced with the OOD palette {Pink, Orange, Purple, Brown, White}. K=2 dominates in-distribution and remains most robust to color swap, but degrades fastest with phase length; K=8 is flat-but-low; EMA collapses with phase length.",
+      "page": 23,
+      "index": 12,
+      "width": 826,
+      "height": 217
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-018.webp",
+      "caption": "Figure 9: Memory dynamics on RememberColor5 (K=2, m=64). Companion to Figure 4. The cue-window plateau at t=5–9 appears in the per-token L2 norms and heatmap as a sub-band of memory tokens with elevated norm, while the cosine peaks mark phase transitions in the episode.",
+      "page": 24,
+      "index": 18,
+      "width": 820,
+      "height": 636
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-001.webp",
+      "caption": "Figure 10: Memory dynamics on TakeItBack (K=2, m=64). The cosine trace shows a two-event write pattern: the canonical t=1 spike (∆cos≈0.18) and a second spike at t≈18 when the policy switches to the return phase. The mean L2 norm rises from ≈ 40 to ≈ 75, with a sharp jump aligned with the same phase transition.",
+      "page": 25,
+      "index": 1,
+      "width": 820,
+      "height": 607
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-002.webp",
+      "caption": "Figure 11: Memory dynamics on ShellGamePush (K=2, m=64). A single early writing window: a large t=1 cosine spike (∆cos≈0.27) followed by a small secondary bump at t=4 (≈ 0.16) and a quiet ≈ 0.10 plateau thereafter. This is consistent with the cue being captured in the first frames and then carried largely unchanged through the push.",
+      "page": 26,
+      "index": 2,
+      "width": 820,
+      "height": 665
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-017.webp",
+      "caption": "Figure 12: Memory dynamics on InterceptMedium (K=2, m=64). Continuous re-grounding rather than a one-shot write: the t=1 spike (∆cos≈0.12) is followed by a sustained mid-episode plateau at ≈ 0.06–0.08. The mean L2 norm shows a pronounced bump at t=15–18 (≈ 75 vs. ≈ 45 baseline) aligned with the catch event.",
+      "page": 27,
+      "index": 17,
+      "width": 820,
+      "height": 602
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-013.webp",
+      "caption": "Figure 13: Memory dynamics on RememberShapeAndColor3x3 (K=2, m=64). Two-phase write: a t=1 spike (∆cos≈ 0.28) for initial encoding, then a secondary bump at t=5–7 (≈ 0.13) when the cue is fully revealed and committed. After t≈10 the cosine settles to ≈ 0.05 and the L2 norm plateaus at ≈ 60.",
+      "page": 28,
+      "index": 13,
+      "width": 820,
+      "height": 658
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-007.webp",
+      "caption": "Figure 14: Attention rollouts on RememberColor5 (K=2, m=64). Per-step attention rollout over the 32 backbone layers, mean over heads, normalised per step. Row (a) is the raw episode (top and wrist cameras stacked). Rows (b)–(d) overlay the rolled-out attention from three query groups onto the same frames: the first action token, the memory tokens, and the vision tokens themselves. The action query tracks the gripper and the candidate object, the memory query latches onto the lamp patch in the cue frames and then diffuses, and the vision baseline highlights object-shaped clusters throughout. Companion to the cue-window write event in Figure 4.",
+      "page": 29,
+      "index": 7,
+      "width": 814,
+      "height": 511
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-004.webp",
+      "caption": "Figure 15: Attention rollouts on RememberShapeAndColor3x3 (K=2, m=64). The cue panel is a 3× 3 shape-by-colour grid that is fully revealed early and then masked. The memory→vision row places its peaks on the grid cells while they are visible and broadens once the panel is occluded, matching the two-phase write event in Figure 13. The action→vision row tracks the gripper approaching the matching object on the table. The vision→vision baseline lights up generic object-shaped clusters at every step and is not cue-specific.",
+      "page": 30,
+      "index": 4,
+      "width": 814,
+      "height": 589
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-019.webp",
+      "caption": "Figure 16: Attention rollouts on ShellGamePush (K=2, m=64). The episode has a single-write cue dynamic: the ball is visible only in the first frames before the cup occludes it, and the cosine trace in Figure 11 shows the corresponding t=1 spike. The memory→vision row places its peak on the cup that hides the ball in those frames, then carries a flat low-magnitude pattern as the cup is pushed. The action→vision row tracks the cup being pushed by the gripper. The vision→vision baseline remains object-anchored throughout.",
+      "page": 31,
+      "index": 19,
+      "width": 814,
+      "height": 618
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-020.webp",
+      "caption": "Figure 17: Attention rollouts on TakeItBack (K=2, m=64). The task has two phases (move out, return), and the cosine trace in Figure 10 shows two write events of comparable magnitude at t=1 and at the phase transition near t≈18. The memory→vision row flares in both windows: it locks onto the start position in the early frames and re-engages with the held object when the policy switches to the return phase. The action→vision row tracks the object being carried by the gripper across both phases. The vision→vision baseline is object-anchored without phase selectivity.",
+      "page": 31,
+      "index": 20,
+      "width": 814,
+      "height": 383
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-016.webp",
+      "caption": "Figure 18: Attention rollouts on InterceptMedium (K=2, m=64). The task requires continuous re-grounding rather than a one-shot write, and the cosine trace in Figure 12 accordingly shows a sustained mid-episode plateau and an L2-norm bump at the catch event. The memory→vision row tracks the moving object across the table at every step, with its highest weight near the catch. The action→vision row stays on the gripper and the projected interception point. The vision→vision baseline is again object-anchored but does not concentrate on the trajectory.",
+      "page": 32,
+      "index": 16,
+      "width": 814,
+      "height": 364
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-015.webp",
+      "caption": "Figure 19: Memory intervention on the five MIKASA-Robo training tasks. The noise bar is below the baseline in every cell with a non-trivial baseline, confirming that the recurrent channel is functionally read at inference. freeze_first retains part of the SR on cue-recall tasks where the cue is localised in the first frames (RC5, TakeItBack with K=2), and collapses on dynamics-grounded tasks (InterceptMedium). Companion to Figure 5 in the main text.",
+      "page": 32,
+      "index": 15,
+      "width": 826,
+      "height": 652
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-011.webp",
+      "caption": "Figure 20: Chunk-length sweep on the five MIKASA-Robo training tasks. For each carrier (K=8, EMA, K=2) we report SR at chunk lengths {1, 2, 4, 8, 16} with the memory channel active (solid) and zeroed at inference (dashed). chunk=1 is the receding-horizon regime used at training. The with-memory minus no-memory gap is largest at chunk=1 on cue-recall tasks (RC5, RemSAC3x3, TakeItBack), while long-chunk inference partially bypasses the recurrent channel.",
+      "page": 33,
+      "index": 11,
+      "width": 826,
+      "height": 650
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12497v1/fig-009.webp",
+      "caption": "Table 9: Full MIKASA-Robo task list, task descriptions, and language instructions used in this paper. Tasks in bold are the five used for multi-task training; the remaining environments are held out and used as a transfer probe. Horizons are the maximum episode lengths. Task descriptions follow the MIKASA-Robo-VLA documentation (https://mikasarobo.github.io/).",
+      "page": 34,
+      "index": 9,
+      "width": 830,
+      "height": 737
+    }
+  ]
+}

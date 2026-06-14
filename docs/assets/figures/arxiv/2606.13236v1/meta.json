@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-003.webp",
+      "caption": "Figure 1. PULSE framework architecture with three tasks.",
+      "page": 2,
+      "index": 3,
+      "width": 492,
+      "height": 304
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-006.webp",
+      "caption": "Figure 2. Embedding visualisation tool for ecological analysis.",
+      "page": 3,
+      "index": 6,
+      "width": 492,
+      "height": 266
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-009.webp",
+      "caption": "Figure 4. Saliency maps of single species recordings picturing all 4 dominant classes.",
+      "page": 4,
+      "index": 9,
+      "width": 1002,
+      "height": 214
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-004.webp",
+      "caption": "Table 3. List of target Orthoptera species",
+      "page": 7,
+      "index": 4,
+      "width": 483,
+      "height": 441
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-011.webp",
+      "caption": "Table 6. PULSE with background classes results on held out test data.",
+      "page": 9,
+      "index": 11,
+      "width": 1019,
+      "height": 247
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-005.webp",
+      "caption": "Figure 6. Embedding visualisation of labelled train data. The three left-hand plots are coloured by presence of the three most prevalent species; the right-most plot shows the less common species.",
+      "page": 10,
+      "index": 5,
+      "width": 1017,
+      "height": 350
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-002.webp",
+      "caption": "Figure 7. Embeddings coloured by the number of species present in each embedding. Manually drawn ellipses indicate visually identified clusters, with line style and colour denoting the predominant species combination within each cluster, as determined from the ground truth annotations.",
+      "page": 11,
+      "index": 2,
+      "width": 511,
+      "height": 398
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-001.webp",
+      "caption": "Figure 8. Embeddings coloured by recording site (left), with ellipses highlighting visible site clusters, linked to a plot coloured by species (right), illustrating how some site clusters correspond to particular species combinations or song characteristics.",
+      "page": 11,
+      "index": 1,
+      "width": 763,
+      "height": 367
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-010.webp",
+      "caption": "Figure 9. Roeseliana roeselii embeddings with a random selection of points linked to their spectrograms, illustrating the variation in song features across the embedding space.",
+      "page": 12,
+      "index": 10,
+      "width": 763,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-008.webp",
+      "caption": "Figure 10. Embeddings with Time of Day for all annotations (left) and the spread of embeddings with Pseudochorthippus parallelus (right). The selected spectrograms show three from the mid-morning and three from around dawn with the approximate chirp rate added to each plot. Note the left hand two plots show the preceding 1-second as the selected clip only catches the end of the song.",
+      "page": 13,
+      "index": 8,
+      "width": 763,
+      "height": 419
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13236v1/fig-007.webp",
+      "caption": "Figure 11. Single species embeddings with a focus on spectrograms where the embeddings with a single species of either Roeseliana roeselii (green) or Pseudochorthippus parallelus (purple) are placed in a similar area. The AudioMoth tonal band can be seen between 15-25 kHz in all the spectrograms.",
+      "page": 13,
+      "index": 7,
+      "width": 763,
+      "height": 338
+    }
+  ]
+}

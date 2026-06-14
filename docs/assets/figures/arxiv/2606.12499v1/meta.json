@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12499v1/fig-001.webp",
+      "caption": "Fig. 1. (a) Conventional visuomotor policies encode only the current visual observation and feed the resulting feature into the policy. (b) Our historyaware policy instead pretrains a compact history representation from visionaction interaction history by reusing the encoded final vision token, which is injected into the policy as temporal context. This design provides dense temporal information without introducing a dedicated memory token.",
+      "page": 1,
+      "index": 1,
+      "width": 500,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12499v1/fig-002.webp",
+      "caption": "Fig. 6. As training progresses, the single final token decodes increasingly accurate visual and action information.",
+      "page": 6,
+      "index": 2,
+      "width": 529,
+      "height": 273
+    }
+  ]
+}

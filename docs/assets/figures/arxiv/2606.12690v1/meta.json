@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-004.webp",
+      "caption": "Table 1: Capability-level comparison with the requested baselines.",
+      "page": 3,
+      "index": 4,
+      "width": 977,
+      "height": 475
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-001.webp",
+      "caption": "Figure 1: Overall architecture of EWAM built upon Cosmos3-Nano--Policy-DROID. Four neural layers are inserted: Neural Experience Memory Layer at DiT intermediate layers, Neural Anomaly Detection Layer after state prediction, Neural Policy Routing Layer after anomaly detection, and Neural Action Correction Layer after action output.",
+      "page": 6,
+      "index": 1,
+      "width": 860,
+      "height": 766
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-003.webp",
+      "caption": "Figure 2: Closed-loop online learning pipeline of EWAM. The system routes successful high-quality trajectories into memory and lightweight updates, while anomalies trigger rollback and conservative replanning.",
+      "page": 10,
+      "index": 3,
+      "width": 844,
+      "height": 777
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-006.webp",
+      "caption": "Figure 3: Experience filtering and memory-admission logic. The quality gate admits safe, efficient, and task-complete samples into memory and online learning, while rejected samples remain available only for diagnostics.",
+      "page": 13,
+      "index": 6,
+      "width": 802,
+      "height": 742
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-002.webp",
+      "caption": "Table 4: Inference latency analysis. Values show mean ± std over 100 trials. Baseline = Cosmos3-Nano-Policy-DROID policy path without EWAM layers.",
+      "page": 15,
+      "index": 2,
+      "width": 883,
+      "height": 369
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-008.webp",
+      "caption": "Table 6: Ablation results on BananaInBowlTask. Values are measured under the same RoboLab protocol as the main results; all variants preserve 100% task success, so time and path expose the main quality differences.",
+      "page": 17,
+      "index": 8,
+      "width": 977,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-005.webp",
+      "caption": "Figure 4: Quantitative ablation results on BananaInBowlTask with error bars showing 95% CI. The full EWAM model achieves the lowest task time and shortest path length among all compared variants. Error bars represent standard error over 5 seeds × 25 trials.",
+      "page": 18,
+      "index": 5,
+      "width": 882,
+      "height": 392
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-007.webp",
+      "caption": "Figure 5: Qualitative comparison of typical failure modes between Cosmos3-Nano--Policy-DROID and EWAM. EWAM improves collision avoidance, empty-grasp recovery, and force-sensitive execution through early detection, rollback, and conservative replanning.",
+      "page": 19,
+      "index": 7,
+      "width": 882,
+      "height": 552
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12690v1/fig-009.webp",
+      "caption": "Table 8: Multi-task generalization results with 95% CI over 5 seeds × 25 trials per task. The three-task subset contains 375 evaluations per model.",
+      "page": 20,
+      "index": 9,
+      "width": 977,
+      "height": 448
+    }
+  ]
+}

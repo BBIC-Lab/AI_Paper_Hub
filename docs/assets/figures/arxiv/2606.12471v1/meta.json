@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-005.webp",
+      "caption": "Figure 1: The Gaussian Assumption Fails for Physical World Models: a Direct Comparison. Each row shows a physical system’s true latent distribution (World z), the nonlinearly mixed observation (Data x = g(z)), and the representation recovered by a LeJEPA-style model (f(x)). Top row (Gaussian): the guarantee of Klindt et al. [1] holds: the recovered representation is a linear rotation of the true latents, and T ∗ JEPA = ∞. Remaining rows (Quantum H.O., Phase Transition, Turbulent Flow): all are non-Gaussian physical systems. In every case the LeJEPA representation fails to recover the true structure (modes merge, phase boundaries collapse, heavy tails shrink to the mean), and T ∗ JEPA < 1 step. This is the empirical motivation for the formal results of this paper.",
+      "page": 2,
+      "index": 5,
+      "width": 752,
+      "height": 1165
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-002.webp",
+      "caption": "Figure 3: Linear identifiability degrades with non-Gaussianity, measured on the population-optimal representation. (a) On a controlled generalized-normal family, the R2 of the best linear readout of the latent from its optimal isotropic-Gaussian representation is exactly 1 at the Gaussian (excess kurtosis 0) and decreases as the distribution departs Gaussian in either direction. (b) The seven physical systems on the same measurement, placed by their non-Gaussianity from Table 1: the non-chaotic systems are the more non-Gaussian and least identifiable (R2 ≈ 0.90), while the chaotic systems are nearer Gaussian (R2 ≈ 0.99) and are bounded by their Lyapunov time rather than by identifiability. The representation is computed in closed form (per-coordinate Gaussianizing transport), so no encoder is trained and the values are an upper bound on any trained Gaussian-prior encoder.",
+      "page": 6,
+      "index": 2,
+      "width": 1064,
+      "height": 433
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-001.webp",
+      "caption": "Figure 4: PGSA temporal consistency horizon T ∗ PGSA. Bar height is the horizon in simulation steps (log scale); the equivalent real-world time is labelled above each bar. For the five non-chaotic systems the horizon is the machine-precision bound δ/µ ≈ 4.5 × 1013 steps (identical bars); the wall-clock times differ only because each system is integrated at a different step size. For the two chaotic systems the horizon is set by the Lyapunov time, ln(δ/µ)/λ ≈ 31 Lyapunov times, orders of magnitude shorter.",
+      "page": 6,
+      "index": 1,
+      "width": 516,
+      "height": 283
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-006.webp",
+      "caption": "Figure 5: Cross-paradigm temporal-consistency horizon on four engineering systems. For each system the PGSA horizon is the machine-precision bound δ/µ ≈ 4.5 × 1013 steps, exact and system-independent for these nonchaotic systems, while the pixel, latent, and transformer horizons are illustrative values derived from each system’s non-Gaussianity (Pearson kurtosis κ, Gaussian = 3; equivalently the excess kurtosis κ − 3 of Table 1) rather than measured on a trained encoder. The ordering follows Theorem 5: the near-Gaussian solenoid (κ = 2.92) gives the longest comparable horizons and the high-kurtosis cantilever (κ = 6.56) the shortest, and the PGSA horizon lies between roughly five and eleven orders of magnitude above every comparable. The physics of all four systems was solved on the QantmOrchstrtr solver stack (CalculiX, Elmer) from Gmsh meshes, reproducing the closed-form fields within finite-element tolerance (Table 2); the comparable horizons are quantified on trained models in follow-on work.",
+      "page": 7,
+      "index": 6,
+      "width": 1064,
+      "height": 590
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-007.webp",
+      "caption": "Figure 6: Approximate identifiability as the Atom Registry grows. Residual error M = supz ∥Wunknown(z)∥2 decreases monotonically as new atoms are added, without retraining. Statistical models require full retraining to incorporate new physical knowledge.",
+      "page": 8,
+      "index": 7,
+      "width": 516,
+      "height": 371
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-004.webp",
+      "caption": "Table 1: Measured non-Gaussianity and PGSA temporal horizon across seven physical systems (δ = 0.01; µ ≈ 2.2× 10−16). Non-Gaussianity is the mean absolute excess kurtosis of the state distribution (Gaussian = 0); it is nonzero for every system, so by Klindt et al. Theorem 5.2 the optimal statistical representation carries a nonzero bias κ(p) and the statistical horizon T ∗ stat = δ/κ(p) (Theorem 4) is finite. We do not report a single κ(p) value, because κ(p) is a property of a trained encoder rather than of the data. The PGSA horizon is the machine-precision bound δ/µ for the five non-chaotic systems and the Lyapunov horizon ln(δ/µ)/λ ≈ 31 Lyapunov times for the two chaotic systems. The small positive λ of the integrable systems (Billiards, Orbital) is finite-time phase drift, not exponential divergence; their true exponent is zero and they fall below the 0.1 chaos threshold. Values are measured from deterministic RK45 integrations (rtol = 10−10, atol = 10−12).",
+      "page": 11,
+      "index": 4,
+      "width": 660,
+      "height": 208
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-003.webp",
+      "caption": "Table 3: Measured linear identifiability of the seven systems from the closed-form optimal isotropic-Gaussian representation, an upper bound on any trained Gaussian-prior encoder. Non-Gaussianity is the mean absolute excess kurtosis (Table 1); the residual is the root-mean-square of the best linear readout in standardized state units.",
+      "page": 11,
+      "index": 3,
+      "width": 627,
+      "height": 209
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12471v1/fig-008.webp",
+      "caption": "Figure 7: Extended Data Figure: system variance of the statistical horizon. A single statistical prior has no fixed temporal validity; the latent-space horizon varies by orders of magnitude across systems (Figure 4), whereas the symbolic horizon is set by machine precision alone.",
+      "page": 12,
+      "index": 8,
+      "width": 516,
+      "height": 373
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-007.webp",
+      "caption": "Fig. 1. Overview of VBS2M. The framework includes image spectral scene mining, propagation to BEV shift, BEV regularization, and the final 3D detection task. It mines spectral scene prototypes from source-domain images, models how visual shifts propagate into fused BEV features, and regularizes BEV representations to improve cross-dataset radar-camera BEV detection.",
+      "page": 4,
+      "index": 7,
+      "width": 1072,
+      "height": 550
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-001.webp",
+      "caption": "TABLE III CROSS-DATASET GENERALIZATION RESULTS OF RCBEVDET IN TERMS OF MAP (%). ORACLE DENOTES TRAINING AND EVALUATION ON THE SAME TARGET DATASET AND SERVES AS THE UPPER-BOUND REFERENCE.",
+      "page": 6,
+      "index": 1,
+      "width": 1070,
+      "height": 211
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-002.webp",
+      "caption": "TABLE I CROSS-DATASET GENERALIZATION RESULTS OF BEVFUSION IN TERMS OF MAP (%). ORACLE DENOTES TRAINING AND EVALUATION ON THE SAME TARGET DATASET AND SERVES AS THE UPPER-BOUND REFERENCE.",
+      "page": 6,
+      "index": 2,
+      "width": 1070,
+      "height": 212
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-003.webp",
+      "caption": "TABLE II CROSS-DATASET GENERALIZATION RESULTS OF RACFORMER IN TERMS OF MAP (%). ORACLE DENOTES TRAINING AND EVALUATION ON THE SAME TARGET DATASET AND SERVES AS THE UPPER-BOUND REFERENCE.",
+      "page": 6,
+      "index": 3,
+      "width": 1070,
+      "height": 213
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-004.webp",
+      "caption": "TABLE IV FEW-SHOT TARGET-DOMAIN GENERALIZATION ON VOD → TJ4DRADSET IN TERMS OF AP/MAP (%). THE MODEL IS TRAINED ON THE FULL VOD SOURCE DATASET AND ADDITIONALLY USES DIFFERENT PROPORTIONS OF LABELED TJ4DRADSET TARGET-DOMAIN TRAINING DATA.",
+      "page": 7,
+      "index": 4,
+      "width": 1066,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-005.webp",
+      "caption": "TABLE V FEW-SHOT TARGET-DOMAIN GENERALIZATION ON TJ4DRADSET → VOD IN TERMS OF AP/MAP (%). THE MODEL IS TRAINED ON THE FULL TJ4DRADSET SOURCE DATASET AND ADDITIONALLY USES DIFFERENT PROPORTIONS OF LABELED VOD TARGET-DOMAIN TRAINING DATA.",
+      "page": 7,
+      "index": 5,
+      "width": 1066,
+      "height": 187
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-006.webp",
+      "caption": "Fig. 3. Sensitivity analysis of VBS2M. (a) Sensitivity to the image spectral prototype number K. (b) Sensitivity to the BEV scene shift prototype number L. (c) Sensitivity to the image spectral modulation strength λI . (d) Sensitivity to the BEV regularization strength λB .",
+      "page": 8,
+      "index": 6,
+      "width": 511,
+      "height": 331
+    },
+    {
+      "url": "assets/figures/arxiv/2606.11573v1/fig-008.webp",
+      "caption": "Fig. 5. Visualization of learned spectral scene prototypes. Each prototype is shown as a frequency modulation mask, with low-frequency components at the center and high-frequency components in the outer regions.",
+      "page": 9,
+      "index": 8,
+      "width": 516,
+      "height": 248
+    }
+  ]
+}

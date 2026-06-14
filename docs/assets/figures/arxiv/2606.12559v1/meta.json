@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-006.webp",
+      "caption": "Figure 1: (a) Linear walk between two density field snapshots extracted at t = 0.1 and 0.6 of configuration-6 2-D Riemann problem [20]. Intermediate states are generated using the weighted blending operation s(α) = (1−α)sA +αsB , where sn denotes either the physical state ρi(x, y) or the latent state zi. The top row shows intermediate states obtained by blending ρi in physical space, which produces multiple shock structures. The bottom row shows states obtained through linear blending of latent codes associated with member A and B using an auto-decoder trained on three snapshots. The continuous evolution of discontinuous features illustrate that linear blending in latent space preserves coherent flow structures and yields smooth transport of discontinuities when mapped back to physical space. (b) Coordinate-conditioned auto-decoder adopted in the present Latent-EnKF [19], which defines the latent representation used to generate intermediate states shown in the second row of panel (a).",
+      "page": 2,
+      "index": 6,
+      "width": 908,
+      "height": 602
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-002.webp",
+      "caption": "Figure 2: Sod shock tube at the first DA cycle, t = 0.025, with p, ρ, u in the three rows. Left: forecast ensemble. Middle: analysis from the standard EnKF in physical space. Right: analysis from the feature-space Latent-EnKF. The physical-space update produces oscillations near the shock, contact, and rarefaction, whereas the feature-space update contracts the ensemble onto the truth while preserving the sharp features.",
+      "page": 4,
+      "index": 2,
+      "width": 939,
+      "height": 393
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-003.webp",
+      "caption": "Figure 3: Space-time evolution of the Sod shock tube under Latent-EnKF assimilation. Rows correspond to p, ρ, u. Left: analytical solution. Middle: forecast trajectory initialized from the decoded post-analysis latent mean Dθ(z̄ a,k,x) at each DA cycle and advanced between observation times using the numerical solver. Right: absolute error relative to the truth",
+      "page": 4,
+      "index": 3,
+      "width": 941,
+      "height": 391
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-001.webp",
+      "caption": "Figure 4: Per-cycle RMSE (red squares) and ensemble spread (blue circles) for p, ρ, u on the Sod test, evaluated at the forecast (open markers) and after the analysis (filled markers). Both metrics drop sharply at the first DA cycle and remain low thereafter.",
+      "page": 4,
+      "index": 1,
+      "width": 916,
+      "height": 203
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-007.webp",
+      "caption": "Figure 5: Shock-cylinder interaction under feature-space Latent-EnKF. Columns show the initial state, forecast, and analyses over successive DA cycles. Row 1: truth, with density ρ (top half) and instantaneous |∇ρ| (bottom half). Row 2: observations dk + ηi, given by noisy, time-integrated |∇ρ| on a 32 × 32 sensor grid. Row 3: farthest ensemble member from the mean at various stages of DA, illustrating ensemble spread. Row 4: Comparison between the ensemble mean obtained by decoding the mean latent code (top half) and the ensemble mean computed directly in the physical space (bottom half).",
+      "page": 5,
+      "index": 7,
+      "width": 983,
+      "height": 633
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-004.webp",
+      "caption": "Figure 6: -time (t = 2.5) assimilated flow field for the cylinder case. Top row: decoded ensemble-mean primitive fields p, ρ, u, and v. Bottom row: absolute error relative to the truth, normalized by the maximum of each corresponding field, with a common color scale for direct comparison. Errors are localized near the bow shock, slip lines, and wake. The corresponding RMSE values are RMSE(p)≈0.054., RMSE(ρ)≈0.037, RMSE(u)≈0.012, and RMSE(v)≈0.014.",
+      "page": 6,
+      "index": 4,
+      "width": 883,
+      "height": 374
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12559v1/fig-005.webp",
+      "caption": "Figure 7: RMSE and ensemble spread across DA cycles for the cylinder case with a 10% biased prior. Results are shown for p, ρ, and velocity magnitude |υ|. Open markers denote forecast values, while filled markers denote post-analysis values. Both RMSE and spread decrease monotonically over five DA cycles, with the analysis spread closely following the RMSE.",
+      "page": 6,
+      "index": 5,
+      "width": 915,
+      "height": 195
+    }
+  ]
+}
