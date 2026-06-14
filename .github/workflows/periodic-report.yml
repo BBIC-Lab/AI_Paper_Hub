@@ -214,11 +214,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           branch="${GITHUB_REF_NAME:-main}"
 
-          shopt -s nullglob
           paths=(docs/reports docs/_sidebar.md)
-          for d in archive/*/recommend; do
-            paths+=("$d")
-          done
 
           git add "${paths[@]}"
           if git diff --cached --quiet; then
