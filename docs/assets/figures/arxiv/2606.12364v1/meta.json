@@ -1,0 +1,134 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-006.webp",
+      "caption": "Figure 1: Tasks with complex dependencies. Code (a) carries dependencies in formal structure: syntax trees, call graphs, variable bindings. Time series (b) carries them in partially observed dynamics: trajectories of complex systems (here, a Lorenz attractor) whose future depends on unobserved states over history. Both are representative of complex dependencies where modeling requires tracking many interacting states across long contexts.",
+      "page": 2,
+      "index": 6,
+      "width": 998,
+      "height": 233
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-009.webp",
+      "caption": "Figure 2: HumanEval pass@k after code-focused pre-training. Results for 400M-parameter hybrid language models trained under the matched pre-training recipe on two data configurations: Nemotron-CC-Code-v1 for 20B tokens, Nemotron-CC-Code-v1 for 100B tokens. For 100B tokens, the gap between the different subquadratic backbones shrinks.",
+      "page": 4,
+      "index": 9,
+      "width": 787,
+      "height": 282
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-001.webp",
+      "caption": "Figure 3: GIFT-Eval performance of TSFM over five parameter scales. MASE and CRPS scores (lower is better) for matched training recipe. xLSTM architectures provide the best scores, with the gap narrowing as the parameter scale grows.",
+      "page": 6,
+      "index": 1,
+      "width": 741,
+      "height": 264
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-013.webp",
+      "caption": "Figure 4: Length generalization on accumulation and state-tracking. Two representative tasks (Majority counting on the left, parity on the right) on which contemporary subquadratic designs diverge. Models are trained at length 128 (dotted line) and evaluated at 128, 512, and 2048; the break on the x-axis marks the 4× jump from 512 to 2048. xLSTM[1 :1] is the only configuration that length-generalizes on both tasks: it achieves the highest counting accuracy at every length and solves parity perfectly throughout. Gated DeltaNet with the negative-eigenvalue parameterization of Grazzi et al. (2025) solves parity in-distribution but drops to 0.47 at length 2048; Mamba-2 never solves either.",
+      "page": 9,
+      "index": 13,
+      "width": 789,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-012.webp",
+      "caption": "Table 2: Notation used in this paper.",
+      "page": 17,
+      "index": 12,
+      "width": 825,
+      "height": 1390
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-011.webp",
+      "caption": "Table 3: HumanEval pass@k (k ∈ {2, 8, 16, 64}, %) for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 for 20B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 19,
+      "index": 11,
+      "width": 685,
+      "height": 202
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-010.webp",
+      "caption": "Table 4: HumanEval pass@k (k ∈ {2, 8, 16, 64}, %) for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 for 100B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 19,
+      "index": 10,
+      "width": 685,
+      "height": 203
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-015.webp",
+      "caption": "Table 5: HumanEval pass@k (k ∈ {2, 8, 16, 64}, %) for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 + FineWeb-Edu for 20B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 20,
+      "index": 15,
+      "width": 685,
+      "height": 202
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-016.webp",
+      "caption": "Table 6: Reasoning and commonsense benchmark results for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 for 20B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 20,
+      "index": 16,
+      "width": 1004,
+      "height": 206
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-014.webp",
+      "caption": "Table 7: Reasoning and commonsense benchmark results for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 for 100B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 20,
+      "index": 14,
+      "width": 1004,
+      "height": 207
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-004.webp",
+      "caption": "Table 8: Reasoning and commonsense benchmark results for 400M-parameter inter-layer hybrid variants pretrained on Nemotron-CC-Code-v1 + FineWeb-Edu for 20B tokens. Higher is better; the best result per column is shown in bold.",
+      "page": 21,
+      "index": 4,
+      "width": 1004,
+      "height": 206
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-005.webp",
+      "caption": "Table 9: Full pass@k spread on HumanEval and HumanEval+ for the code distilled students. Higher is better; the best student result per column is shown in bold.",
+      "page": 21,
+      "index": 5,
+      "width": 985,
+      "height": 263
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-008.webp",
+      "caption": "Table 14: Hyperparameters for Language Model Pretraining at 400M scale.",
+      "page": 23,
+      "index": 8,
+      "width": 519,
+      "height": 594
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-007.webp",
+      "caption": "Table 15: Evaluation setup details for language model pre-training.",
+      "page": 23,
+      "index": 7,
+      "width": 538,
+      "height": 317
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-003.webp",
+      "caption": "Table 17: Shared Training Parameters for Time Series Foundation Models across scale",
+      "page": 26,
+      "index": 3,
+      "width": 437,
+      "height": 423
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12364v1/fig-002.webp",
+      "caption": "Table 18: Training hyperparameters for synthetic task experiments.",
+      "page": 26,
+      "index": 2,
+      "width": 529,
+      "height": 480
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-006.webp",
+      "caption": "Fig. 1: Numerical feature with a linear change of mean. We show a scatter plot of a sample of it (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 4,
+      "index": 6,
+      "width": 488,
+      "height": 602
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-007.webp",
+      "caption": "Fig. 2: Numerical feature with an abrupt change of mean. We show a scatter plot of a sample of it (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 4,
+      "index": 7,
+      "width": 488,
+      "height": 600
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-009.webp",
+      "caption": "Fig. 3: Numerical feature with a linear change of variance. We show a scatter plot of a sample of it (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 5,
+      "index": 9,
+      "width": 488,
+      "height": 620
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-008.webp",
+      "caption": "Fig. 4: Numerical feature with an abrupt change of variance. We show a scatter plot of a sample of it (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 5,
+      "index": 8,
+      "width": 488,
+      "height": 620
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-001.webp",
+      "caption": "Fig. 5: Categorical feature with a change in the relative frequency of classes. We show a line plot of their relative frequency each week (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 6,
+      "index": 1,
+      "width": 488,
+      "height": 593
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-002.webp",
+      "caption": "Fig. 6: Categorical feature with a change in the domain. We show a line plot of the relative frequency of its classes each week (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 6,
+      "index": 2,
+      "width": 488,
+      "height": 593
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-004.webp",
+      "caption": "Fig. 7: Numerical feature with erratic behaviour. We show a scatter plot of a sample of it (top) and a box plot of its ranking by each method over 20 runs (bottom).",
+      "page": 7,
+      "index": 4,
+      "width": 488,
+      "height": 639
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-003.webp",
+      "caption": "Fig. 8: Rankings of injected features for multivariate change detection experiment.",
+      "page": 7,
+      "index": 3,
+      "width": 488,
+      "height": 639
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12643v1/fig-005.webp",
+      "caption": "Fig. 9: Scalability test on number of features (top) and instances (bottom) for each method. Notice the logarithmic scale on both axis.",
+      "page": 8,
+      "index": 5,
+      "width": 488,
+      "height": 645
+    }
+  ]
+}

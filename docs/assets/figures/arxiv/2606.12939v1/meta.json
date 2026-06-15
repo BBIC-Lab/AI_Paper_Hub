@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-005.webp",
+      "caption": "Fig. 1. Overview of the MAMVI framework. Masked multi-views are generated from patchified point clouds and processed through a single model. A consensus target is formed to guide unified loss aggregation and adaptive learning rate (ALR) modulation. We update only the normalization layers (NL) via a single backward pass, ensuring high inference efficiency.",
+      "page": 4,
+      "index": 5,
+      "width": 725,
+      "height": 410
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-003.webp",
+      "caption": "Table 1. Top-1 classification accuracy (%) for all corruption types in the ModelNet40C dataset.",
+      "page": 8,
+      "index": 3,
+      "width": 712,
+      "height": 339
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-004.webp",
+      "caption": "Table 2. Top-1 classification accuracy (%) for all corruption types in the ShapeNet-C dataset.",
+      "page": 8,
+      "index": 4,
+      "width": 712,
+      "height": 340
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-007.webp",
+      "caption": "Table 3. Top-1 classification accuracy (%) for all corruption types in the ScanObjectNN-C dataset.",
+      "page": 9,
+      "index": 7,
+      "width": 712,
+      "height": 339
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-001.webp",
+      "caption": "Fig. 2. Analysis of masking strategies on ScanObjectNN-C. (a) Classification accuracy across varying constant masking ratios. (b) Comparison of different sampling strategies, where MAMVI yields the best performance.",
+      "page": 10,
+      "index": 1,
+      "width": 725,
+      "height": 297
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-006.webp",
+      "caption": "Fig. 5. Sensitivity analysis of individual Adaptive Learning Rate (ALR) parameters on ModelNet-40C. We evaluate (a) Multipliers (m0,m1,m2) and (b) Thresholds (τ1, τ2). Values in legend denote the sweep range for each parameter.",
+      "page": 12,
+      "index": 6,
+      "width": 725,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12939v1/fig-002.webp",
+      "caption": "Fig. 6. Comprehensive hyperparameter ablation studies on ModelNet-40C. We investigate (a) Beta distribution parameters (α, β), (b) Loss weights for entropy and consensus consistency (λent, λcons), and (c) Impact of the number of views (M).",
+      "page": 13,
+      "index": 2,
+      "width": 725,
+      "height": 225
+    }
+  ]
+}

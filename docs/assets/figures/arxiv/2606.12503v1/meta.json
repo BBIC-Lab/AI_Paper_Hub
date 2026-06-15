@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-002.webp",
+      "caption": "Figure 1: A) Schematic of the data collection setup, showing the dolphin area with three hydrophones and a rope with openings which allow dolphin passage to the open sea, while preventing boat access. B) A representative spectrogram of dolphin signature whistles showing distinct frequency patterns. The first example belongs to an individual named Nana, and the second one to Nikita.",
+      "page": 3,
+      "index": 2,
+      "width": 748,
+      "height": 240
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-005.webp",
+      "caption": "Figure 2: A) The Wav2Vec2.0 architecture used in Dolph2Vec. Raw audio is encoded into latent representations by a convolutional feature encoder, discretized via a quantization module with a learned codebook, and contextualized using a Transformer network. B) Downstream tasks: Top—whistle detection on spectrograms with highlighted whistles; Bottom—whistle classification of three distinct signature whistles from different individuals.",
+      "page": 4,
+      "index": 5,
+      "width": 790,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-001.webp",
+      "caption": "Table 1: Accuracy on the whistle classification dataset and mAP on the whistle detection one. Scores computed using stratified 5-fold cross validation.",
+      "page": 6,
+      "index": 1,
+      "width": 827,
+      "height": 341
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-004.webp",
+      "caption": "Figure 3: A) UMAP projection of learned embeddings from AVES-bio, BioLingual and Dolph2Vec, colored by their true label (Signature Whistle Category) B) RSA matrices of the three models.",
+      "page": 8,
+      "index": 4,
+      "width": 829,
+      "height": 500
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-008.webp",
+      "caption": "Figure 4: A) Codebook activations by signature whistle category in Dolph2Vec trained (top) and Dolph2Vec randomly initialized (bottom). B) 2D Projection of mean codevectors by SW category.",
+      "page": 9,
+      "index": 8,
+      "width": 790,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-009.webp",
+      "caption": "Figure 5: An aeral photo of our data collection setup.",
+      "page": 16,
+      "index": 9,
+      "width": 748,
+      "height": 497
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-007.webp",
+      "caption": "Figure 6: Pretraining losses over total training steps.",
+      "page": 17,
+      "index": 7,
+      "width": 790,
+      "height": 222
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-003.webp",
+      "caption": "Table 4: Accuracy of additional baselines on our dolphin classification task.",
+      "page": 18,
+      "index": 3,
+      "width": 827,
+      "height": 239
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12503v1/fig-006.webp",
+      "caption": "Figure 7: Second Codebook activations by signature whistle category in Dolph2Vec trained (top) and Dolph2Vec randomly initialized (bottom).",
+      "page": 19,
+      "index": 6,
+      "width": 790,
+      "height": 492
+    }
+  ]
+}
