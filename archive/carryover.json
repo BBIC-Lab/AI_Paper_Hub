@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-15T08:09:17.530488+00:00",
-  "updated_date": "20260615",
+  "generated_at": "2026-06-15T16:55:25.366011+00:00",
+  "updated_date": "20260616",
   "carryover_days": 7,
   "tag_states": {
     "NDAI": {
-      "updated_date": "20260615",
+      "updated_date": "20260616",
       "carryover_days": 7,
       "items": []
     }

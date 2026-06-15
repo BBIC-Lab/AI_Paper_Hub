@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-006.webp",
+      "caption": "Figure 1: Architecture overview. A rank-r linear bottleneck runs parallel to a standard sparse autoencoder. The SAE operates on the residual x− sg[x̂dense] after the bottleneck’s contribution is subtracted with stop-gradient. The combined reconstruction x̂ = x̂dense + x̂sparse is trained with a three-term loss (Eq. 5).",
+      "page": 4,
+      "index": 6,
+      "width": 706,
+      "height": 400
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-007.webp",
+      "caption": "Table 1: Effect of adding a rank-24 linear bottleneck to BatchTopK and Matryoshka SAEs. All metrics at strict L0=40, matched training conditions. ↑/↓ indicate preferred direction. SP, Absorption, and Autointerp are averaged over 3 random seeds. SCR reports direction-1 (spurious-attribute ablation; see Appendix F for metric definition). The bottleneck improves extraction quality metrics (EV, SP, TPP) on both architectures, while intervention based metrics (SCR, RAVEL) show architecture dependent effects analyzed in Appendix F. Autointerp is unchanged on Matryoshka and shows a small (−1.2 pp) regression on BatchTopK that is distributed across fire-rate bins (Appendix G).",
+      "page": 4,
+      "index": 7,
+      "width": 598,
+      "height": 296
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-008.webp",
+      "caption": "Figure 2: The bottleneck eliminates classifiable dense latents and saturates near the activation’s natural rank. Left: dense latent count and category breakdown at r=0 vs. r=24 on both architectures. Classifiable categories (position, PCA, POS) vanish by r=24; residual dense latents are unclassified. Right: BatchTopK rank sweep (r ∈ {0, 8, 16, 24, 48, 96}). ndense (left axis, red) drops sharply at r=24 and saturates; MMLU topic accuracy from the bottleneck latent (right axis, blue) increases monotonically and plateaus beyond r=24. Dashed line marks the participation ratio (PR≈12). Full numerical values in Appendix D.",
+      "page": 5,
+      "index": 8,
+      "width": 737,
+      "height": 326
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-001.webp",
+      "caption": "Figure 3: Alignment between outlier dimensions, top principal components, and the learned bottleneck. Left: Per-neuron L2 magnitude vs. top-24 PC loading for all 2304 residual-stream neurons (log–log). Blue circles mark the 47 neurons in both the L2-magnitude and PC-loading top-50; dot size is proportional to the bottleneck encoder weight ∥Wenc[:, j]∥. Red and green squares mark the 3 neurons in only one top-50 set. Right: Median cosine of principal angles between three 24-dimensional subspace definitions. The bottleneck nearly coincides with the PCA subspace (0.99) and aligns strongly with outlier axes (0.86).",
+      "page": 6,
+      "index": 1,
+      "width": 737,
+      "height": 333
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-002.webp",
+      "caption": "Figure 5: Causal intervention on the bottleneck’s learned 24-d component. Left: condition comparison. Removing the bottleneck component (zero) raises CE significantly on both architectures, removing a random 24-d component has negligible effect, and top-24 PCA removal is intermediate. Right: dose-response. Scaling the bottleneck contribution α ∈ [0.25, 1.0] produces a smooth CE gradient. Dashed lines mark baseline and zero bottleneck reference.",
+      "page": 7,
+      "index": 2,
+      "width": 821,
+      "height": 301
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-005.webp",
+      "caption": "Figure 6: Sparse encoding of the scaffold is redundant. Left: CE loss vs. top-K sparse features ablated by decoder α-alignment with the bottleneck column space. Right: topic accuracy (57-class MMLU) under progressive ablation. Bottleneck dim ablation produces a sharp cliff at K≈20, with random ordering tracking top-η2 closely (topic is distributed uniformly across the 24 dims).",
+      "page": 8,
+      "index": 5,
+      "width": 739,
+      "height": 328
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-004.webp",
+      "caption": "Figure 7: Matryoshka g0 before and after adding the bottleneck. Left: g0 topic accuracy (k=1) drops 10 pp when the bottleneck absorbs topic content (dashed line shows the bottleneck alone achieves 95%). Center: per-PC EV on top-24 PCs improves. Right: g0 dense latent count drops from 67 to 41. The explicit bottleneck subsumes the implicit scaffold absorption previously performed by g0.",
+      "page": 13,
+      "index": 4,
+      "width": 531,
+      "height": 335
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14040v1/fig-003.webp",
+      "caption": "Table 2: Full rank sweep on BatchTopK. Topic = MMLU 57-class accuracy from bottleneck latent only. The r=2304 row is the full-rank starvation control.",
+      "page": 14,
+      "index": 3,
+      "width": 686,
+      "height": 192
+    }
+  ]
+}

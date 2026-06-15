@@ -1,0 +1,198 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-023.webp",
+      "caption": "Figure 2: The spectral power law induces a global-to-local hierarchy in action diffusion. This is analogous to the “coarse-to-fine” hierarchy in image diffusion [60]. (a) t ≥ t2 (global planning): the policy commits to a high-level path through the maze. t < t2 (local refinement): it refines the plan to be collision-free at t1 and smooth at t0. (b) t3: the policy plans to move a block to the right bin. t2: it plans which block to grasp. t < t2: it refines the grasping motion.",
+      "page": 5,
+      "index": 23,
+      "width": 821,
+      "height": 378
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-001.webp",
+      "caption": "Figure 4: The spectral power law makes Gaussian noise act as a high-frequency mask. (a) Noisy trajectory visualizations. (b) PSD analysis for the noisy trajectories in the x-dimension at each diffusion time: the gray regions indicate masked frequencies, which have low SNR. As t increases, adding Gaussian noise destroys the signal in the trajectory, starting from the local (high-frequency) features first. This effect is visible in both the noisy trajectories and the PSD plots.",
+      "page": 6,
+      "index": 1,
+      "width": 826,
+      "height": 417
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-020.webp",
+      "caption": "Table 1: Maze and Neural Motion Planning results (1000 trials each). In both settings, Ambient Diffusion Policy achieves the highest success rate and is substantially smoother than co-training.",
+      "page": 9,
+      "index": 20,
+      "width": 752,
+      "height": 192
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-021.webp",
+      "caption": "Figure 6: The “smoothness vs success rate” Pareto frontier for Ambient (blue) dominates cotraining (red) in both the (a) maze and (b) neural motion planning experiments. This trade-off is controlled by σtmin for Ambient and α for co-training.",
+      "page": 9,
+      "index": 21,
+      "width": 816,
+      "height": 266
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-002.webp",
+      "caption": "Figure 7: Left: Performance metrics vs σtmax . The logic metric plateaus before σt∗max = 0.46 and deteriorates rapidly afterwards; the opposite is true for the motion metric. Thus, the policy learns local motion-level features for t ∈ [0, t∗max) and global logic-level features for t ∈ (t∗max, T ]. Right: Unlike co-training, Ambient achieves a near-optimal trade-off between logic and motion metrics.",
+      "page": 11,
+      "index": 2,
+      "width": 820,
+      "height": 243
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-016.webp",
+      "caption": "Figure 8: Left: success rate of policies finetuned from different base policies. Right: smoothness of finetuned policies in the maze experiment. We compare smoothness instead of success rate since all policies achieved 99.0%+ success rate.",
+      "page": 12,
+      "index": 16,
+      "width": 815,
+      "height": 331
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-010.webp",
+      "caption": "Figure 9: When scaled to OXE, Ambient Diffusion Policy outperforms data filtering and cotraining by up to 15% on table cleaning and 84% on tower building (20 trials per policy).",
+      "page": 13,
+      "index": 10,
+      "width": 818,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-006.webp",
+      "caption": "Figure 10: Ambient is significantly less sensitive to dataset re-weighting than co-training. The Ambient Diffusion Policy performed at most 9% worse without re-weighting. The co-trained policies were too dangerous to evaluate without re-weighting.",
+      "page": 14,
+      "index": 6,
+      "width": 810,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-005.webp",
+      "caption": "Figure 11: A visualization of the average PSD for a diverse range of robot datasets; a spectral power law exists in all of them. Table 4 characterizes the datasets shown in (a)-(f) as well as the OXE dataset shown in Figure 3a.",
+      "page": 34,
+      "index": 5,
+      "width": 820,
+      "height": 446
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-004.webp",
+      "caption": "Table 5: Experimental configurations for the four generality experiments. Parameters vary for the ablations.",
+      "page": 39,
+      "index": 4,
+      "width": 830,
+      "height": 604
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-013.webp",
+      "caption": "Table 6: Experimental configurations for the two OXE scaling experiments. Parameters vary for the ablations.",
+      "page": 40,
+      "index": 13,
+      "width": 577,
+      "height": 651
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-019.webp",
+      "caption": "Figure 14: Policy rollouts from the same start and goal pairs for different training algorithms. a) The policy trained with data filtering (i.e. GCS-only) has not seen enough data to learn the maze. Its rollouts frequently collide with obstacles. b) The policy trained with RRT-only has memorized the maze, but exhibits non-smoothness. c) The co-trained policy’s behavior is similar to the RRTonly policy. d) The Ambient Diffusion Policy is smooth and understands the structure of the maze.",
+      "page": 41,
+      "index": 19,
+      "width": 829,
+      "height": 519
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-018.webp",
+      "caption": "Figure 15: Maze success rate vs σtmin . For small σtmin , the Ambient Policies are smooth and achieve high success rate (see Figure 6a). As σtmin increases, the RRT data is used less during training, which reduces success rate.",
+      "page": 41,
+      "index": 18,
+      "width": 488,
+      "height": 286
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-003.webp",
+      "caption": "Figure 17: Neural motion planning σtmin sweep. (a) For small σtmin , the policies are smoother, which results in fewer accidental collisions and increases success rate. For large σtmin , the RRT data becomes under-utilized, which decreases the success rate. (b) Increasing σtmin improves smoothness.",
+      "page": 43,
+      "index": 3,
+      "width": 814,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-017.webp",
+      "caption": "Figure 18: Distribution of tmin labels. This histogram shows the distribution of tmin ∈ [0, 100] assigned to each action chunk by the classifier for the sim-and-real experiments.",
+      "page": 44,
+      "index": 17,
+      "width": 566,
+      "height": 344
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-009.webp",
+      "caption": "Figure 19: Sim-and-real co-training ablations. Eight ablations covering the key design decisions of Ambient Diffusion Policy. See Appendix G.3 for the per-panel analysis.",
+      "page": 45,
+      "index": 9,
+      "width": 824,
+      "height": 1153
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-007.webp",
+      "caption": "Table 10: Block sorting ablations (200 trials, ∼800 blocks). (a) Ablation 1 (Task-Conditioned): Ambient outperforms co-training. (b) Ablation 2: the Ambient Diffusion Policy performs well despite training on no logically correct samples for t ∈ [0, t∗max).",
+      "page": 46,
+      "index": 7,
+      "width": 828,
+      "height": 204
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-008.webp",
+      "caption": "Figure 20: Additional motion-level metrics for the block sorting experiment (Section 7.4). (a) Grasp attempts per block improves as σtmax increases but plateaus after σt∗max = 0.46. (b) Time per block improves as σtmax increases.",
+      "page": 46,
+      "index": 8,
+      "width": 814,
+      "height": 270
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-024.webp",
+      "caption": "Figure 21: Table Cleaning: Dataset re-weighting and tmin visualization. These plots show the sampling ratio for Dp (shown in blue) and each dataset in COXE at different diffusion times for the table cleaning task. Left: Co-training uses the same sampling ratio at all diffusion times. Right: The sampling ratio for each dataset varies at each diffusion time. Notably, at intermediate diffusion times, only data from Dp can be used (the “Donut paradox” from Daras et al. [19]). The histogram shows the distribution of tmin values assigned by the classifiers to each dataset in COXE.",
+      "page": 48,
+      "index": 24,
+      "width": 821,
+      "height": 800
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-014.webp",
+      "caption": "Figure 22: Tower Building: Dataset re-weighting and tmin visualization. See Figure 21 for the equivalent plot descriptions.",
+      "page": 49,
+      "index": 14,
+      "width": 821,
+      "height": 801
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-012.webp",
+      "caption": "Table 12: Average grasp attempts per object. The error bars on the Average row report the standard error of the mean across per-object values in each column (n = 10 objects).",
+      "page": 50,
+      "index": 12,
+      "width": 627,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-011.webp",
+      "caption": "Table 13: Average cleaning time per object. The error bars on the Average row report the standard error of the mean across per-object values in each column (n = 10 objects).",
+      "page": 50,
+      "index": 11,
+      "width": 677,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-015.webp",
+      "caption": "Figure 23: Finetuning resulted in no statistically significant change in policy performance on the table cleaning task.",
+      "page": 51,
+      "index": 15,
+      "width": 810,
+      "height": 475
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12365v1/fig-022.webp",
+      "caption": "Figure 24: Algorithms for handling distribution shift in the observation space. Neither approach produced stronger policies on the table cleaning task. (a) Adding Gaussian noise to the observations during training. (b) Classifier-free guidance [94] swept over guidance weights w.",
+      "page": 52,
+      "index": 22,
+      "width": 817,
+      "height": 314
+    }
+  ]
+}

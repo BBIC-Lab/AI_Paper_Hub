@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14604v1/fig-003.webp",
+      "caption": "Fig. 1. Percentage RMSE increase relative to h=1 on GLOBEM. Trained models (Transformer, Mamba) show a mean±min-max band across context windows. TimesFM and ARIMA show mean across windows.",
+      "page": 5,
+      "index": 3,
+      "width": 496,
+      "height": 342
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14604v1/fig-004.webp",
+      "caption": "TABLE III PERSONALISED RESULTS ON GLOBEM AT h=8. EACH MODEL IS FINE-TUNED PER PARTICIPANT. TIMESFM (ZERO-SHOT) INCLUDED AS REFERENCE.",
+      "page": 5,
+      "index": 4,
+      "width": 1076,
+      "height": 232
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14604v1/fig-005.webp",
+      "caption": "TABLE II GLOBAL AND FOUNDATION MODEL RESULTS ON GLOBEM AT h=8 (w=8 FOR TRAINED MODELS; FOUNDATION MODELS USE 64-DAY CONTEXT). VALUES ARE MEAN±STD OF PER-PARTICIPANT METRICS (N=200 FOR TRAINED AND FOUNDATION MODELS).",
+      "page": 5,
+      "index": 5,
+      "width": 1076,
+      "height": 324
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14604v1/fig-001.webp",
+      "caption": "TABLE IV CROSS-DATASET SLEEP FORECASTING. CAPTURE-24: SLEEP (MIN/DAY), w=8, h=8† , N=23. WEARABLES: SLEEP (HOURS/DAY), w=8, h=8, N=10. TRAINED MODELS USE w=8.",
+      "page": 6,
+      "index": 1,
+      "width": 529,
+      "height": 329
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14604v1/fig-002.webp",
+      "caption": "TABLE V CROSS-DATASET COMPARISON AT MAXIMUM HORIZON. VALUES ARE MEAN±STD OF PER-PARTICIPANT METRICS, AVERAGED ACROSS EACH DATASET’S FEATURES. GLOBEM: h=8, D=3, N=200. CAPTURE-24: h=6, D=4, N=23. WEARABLES: h=8, D=2, N=10. “—” INDICATES UNAVAILABILITY.†",
+      "page": 7,
+      "index": 2,
+      "width": 1076,
+      "height": 358
+    }
+  ]
+}

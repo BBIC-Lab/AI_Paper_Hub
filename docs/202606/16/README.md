@@ -1,7 +1,7 @@
 <section class="dpr-daily-report">
   <div class="dpr-daily-hero">
     <div class="dpr-daily-kicker">Daily Research Brief</div>
-    <h3>最新日报</h3>
+    <h1>日报 · 2026-06-16</h1>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
       <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-16 01:03 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
@@ -13,11 +13,10 @@
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>今日聚焦复杂环境下的智能体学习与适应：从机器人次优数据模仿策略到生命临界状态的心脑耦合效应，共精读15篇前沿成果。</p>
-<p>最值得关注的是Ambient Diffusion Policy（从含噪演示中稳健学习机器人技能）与Multifractal心脑抗相关现象（为生理计算提供新思路）。</p>
-<p>下一步可探索将基础模型思想引入机器人控制，并在高噪声、高缺失的真实场景中验证适应能力。</p>
+      <p>今日从15篇AI前沿论文中精读2篇，聚焦机器人模仿学习与人体生命临界信号分析。</p>
+<p>最值得关注：环境扩散策略让机器人能从次优数据高效模仿，而心-脑多重分形反相关则揭示了濒死时人体信号的奇异关联。</p>
+<p>普通读者可先从“环境扩散如何提升机器人鲁棒性”或“心跳与脑波在生命边缘的互动”切入，感受AI与生物医学的跨界火花。</p>
     </div>
-    <a class="dpr-daily-detail-link" href="#/202606/16/README">打开完整日报</a>
   </div>
   <section class="dpr-daily-paper-section is-deep">
     <h2>精读区</h2>
@@ -161,3 +160,6 @@
 </article></div>
   </section>
 </section>
+
+---
+<div class="dpr-daily-keyboard-tip"><span>快捷切换</span><strong>使用键盘方向键可在日报/论文之间快速切换。</strong></div>

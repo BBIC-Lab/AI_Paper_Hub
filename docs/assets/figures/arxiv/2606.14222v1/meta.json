@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-002.webp",
+      "caption": "Figure 1: Categorization of Time Series Online Adaptation Methods. Depending on the access level to the base model, existing approaches are grouped into three paradigms. In the coming era of commercialized TSFM APIs, only the Black-Box paradigm could provide a feasible solution.",
+      "page": 2,
+      "index": 2,
+      "width": 826,
+      "height": 226
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-008.webp",
+      "caption": "Figure 2: The overall architecture of ORCA. The history input Xt is fed into a frozen black-box TSFM to obtain the base output Y base",
+      "page": 4,
+      "index": 8,
+      "width": 827,
+      "height": 262
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-003.webp",
+      "caption": "Table 1: Main experimental results comparing the vanilla zero-shot performance of five base TSFMs and their ORCA-refined counterparts. The results are averaged over three forecasting horizons (H ∈ {30, 96, 336}), with each horizon provided in Appendix C.2. A negative percentage indicates a reduction in MSE, meaning positive performance improvement.",
+      "page": 7,
+      "index": 3,
+      "width": 832,
+      "height": 198
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-004.webp",
+      "caption": "Figure 3: Heatmaps illustrating the relative MSE drop (%) achieved by various online adaptation methods compared to the vanilla zero-shot TSFMs across 8 datasets and 5 base models. Green cells indicate a reduction in MSE (improvement), while red cells indicate an increase in MSE (degradation).",
+      "page": 7,
+      "index": 4,
+      "width": 832,
+      "height": 498
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-007.webp",
+      "caption": "Figure 4: Ablation study on the adapter’s input combinations. The bars represent the MSE drop ratio (%) across different datasets and base models. Positive values indicate an improvement (error reduction) over the vanilla base model. Our proposed input (Base Model Input & Prediction) achieves the highest average improvement of 6.5%.",
+      "page": 8,
+      "index": 7,
+      "width": 801,
+      "height": 245
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-001.webp",
+      "caption": "Table 3: Ablation study on the routing mechanism: Relative MSE drop (%) using a naive Hard Router instead of the proposed Boltzmann Router (H = 96).",
+      "page": 21,
+      "index": 1,
+      "width": 827,
+      "height": 240
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-005.webp",
+      "caption": "Table 4: Performance breakdown for forecasting horizon H = 30.",
+      "page": 22,
+      "index": 5,
+      "width": 844,
+      "height": 529
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-006.webp",
+      "caption": "Table 5: Performance breakdown for forecasting horizon H = 96.",
+      "page": 23,
+      "index": 6,
+      "width": 827,
+      "height": 529
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-011.webp",
+      "caption": "Table 6: Performance breakdown for forecasting horizon H = 336.",
+      "page": 24,
+      "index": 11,
+      "width": 829,
+      "height": 531
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-009.webp",
+      "caption": "Table 7: ETS results for residual-to-residual online adaptation across backbones and datasets. The results are averaged over three forecasting horizons (H ∈ {30, 96, 336}). A negative percentage indicates a reduction in MSE, meaning positive performance improvement.",
+      "page": 24,
+      "index": 9,
+      "width": 827,
+      "height": 240
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14222v1/fig-010.webp",
+      "caption": "Table 8: Ridge regression results for XY-conditioned residual correction across backbones and datasets. The results are averaged over three forecasting horizons (H ∈ {30, 96, 336}). A negative percentage indicates a reduction in MSE, meaning positive performance improvement.",
+      "page": 24,
+      "index": 10,
+      "width": 827,
+      "height": 241
+    }
+  ]
+}

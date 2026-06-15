@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.12921v1/fig-001.webp",
+      "caption": "Figure 1: Our LoRA-Muon update implicitly applies the Muon update of the product W = ABT and projects it onto the tangent space of the low rank manifold. As a result, our update is invariant under gauge transformations of the LoRA factors.",
+      "page": 2,
+      "index": 1,
+      "width": 582,
+      "height": 231
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12921v1/fig-003.webp",
+      "caption": "Figure 2: Alignment of the two tangent components ∆ABT and A∆BT across training in the TinyShakespeare LoRA-Muon study. The components rapidly become and remain strongly aligned, so the triangle-inequality relaxation behind the η/2 split stays nearly tight throughout training rather than loosening over time.",
+      "page": 4,
+      "index": 3,
+      "width": 664,
+      "height": 336
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12921v1/fig-002.webp",
+      "caption": "Figure 3: Validation loss versus learning rate across the four learning-rate-transfer sweeps: rank, width, depth, and scalar gauge scale. LoRA-Muon matches dense Muon’s best tested learning rate across all four sweeps, making it a cheap proxy for hyperparameter tuning before running larger-scale training runs.",
+      "page": 8,
+      "index": 2,
+      "width": 826,
+      "height": 659
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12921v1/fig-005.webp",
+      "caption": "Figure 4: Paired validation-loss comparisons with scalar gauge rebalancing disabled versus enabled for LoRA-Muon and Spectron after initializing the random LoRA factors at gauge scale 9 by multiplying one factor and dividing the other. LoRA-Muon’s loss distribution is essentially unchanged by rebalancing, while Spectron’s changes substantially, consistent with Section 5.1.",
+      "page": 9,
+      "index": 5,
+      "width": 822,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2606.12921v1/fig-004.webp",
+      "caption": "Table 1: Coefficient sequence for Algorithm 3, which realizes the Muon-style matrix-sign map msign(·) by a polynomial Newton–Schulz iteration after Frobenius normalization. Each row gives the coefficients for one orthogonalization step in the numerical realization used in our experiments.",
+      "page": 17,
+      "index": 4,
+      "width": 826,
+      "height": 558
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-005.webp",
+      "caption": "Figure 2: Register attention block. The shared QKV linear projects the input X=[R;P ] once. The register projections are partitioned into H disjoint per-head slices R1, . . . , RH , while the patch projections P are shared across all heads. Each head runs the three-step attention — compress, communicate, broadcast — between its own register slice and the shared patches. Per-head outputs are concatenated and projected by the output projection WO",
+      "page": 4,
+      "index": 5,
+      "width": 794,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-001.webp",
+      "caption": "Figure 4: Qualitative visualisation of individual dictionary entries. Each column shows attention overlays of a dictionary entry on two test images. Left: a single entry fires on the same part across different instances within a super-category. Right: Semantically similar dictionary entries (e.g., wheel-like entries) generalize across different super-categories.",
+      "page": 6,
+      "index": 1,
+      "width": 810,
+      "height": 260
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-002.webp",
+      "caption": "Figure 5: Qualitative comparison of part segmentation. RATS yields cleaner foreground–background separation and more part-coherent regions than the baselines. Extended comparison in Appendix B.",
+      "page": 6,
+      "index": 2,
+      "width": 810,
+      "height": 250
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-003.webp",
+      "caption": "Table 1: part segmentation. M2O mIoU (%) on five benchmarks and mean ARI. RATS outperforms self-supervised, superpixel, and slot-based baselines at matched token budgets, and surpasses AdaSlot with fewer tokens.",
+      "page": 7,
+      "index": 3,
+      "width": 664,
+      "height": 421
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-009.webp",
+      "caption": "Figure 9: Extended qualitative comparison on part region segmentation. Same column layout as Figure 5 in the main paper. RATS produces consistent foreground–background separation and part-coherent regions across diverse natural images.",
+      "page": 16,
+      "index": 9,
+      "width": 826,
+      "height": 1084
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-007.webp",
+      "caption": "Figure 10: Pairwise cosine similarity between label prototypes. Each row/column is the averaged dictionary entry of one dominant part label. Three structures emerge—within-object coherence, taxonomic proximity, and functional analogy—analysed in Sec. C.",
+      "page": 17,
+      "index": 7,
+      "width": 650,
+      "height": 590
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-004.webp",
+      "caption": "Figure 11: Within-super-category consistency of individual dictionary entries. Each column corresponds to one dictionary entry; each of the three (ground-truth part segmentation, registerattention overlay) pairs shows a different PartImageNet class from the same super-category. The attention consistently aligns with the annotated part boundary across instances, and the six entries together span both biological (Bird_Head, Fish_Head, Quad_Foot) and rigid man-made (Aero_Tail, Boat_Sail, Boat_Body) super-categories, despite no part-level supervision being used during training.",
+      "page": 18,
+      "index": 4,
+      "width": 826,
+      "height": 827
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-006.webp",
+      "caption": "Figure 12: Cross super-category transfer of dictionary entries. The left column shows a source image whose registers activate a given entry (Snake_Head, Reptile_Head, Car_Tire, or Bike_Tire); the right three columns apply the same entry to three images drawn from a different super-category (labelled above the arrow). Rows 1–2 demonstrate taxonomic transfer between snake and reptile head entries (heatmap cosine≈ 0.42–0.53); rows 3–4 demonstrate functional transfer of the wheel concept between car and bike tyre entries (heatmap cosine 0.43). The attention localises the analogous part in the target super-category.",
+      "page": 19,
+      "index": 6,
+      "width": 706,
+      "height": 491
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14701v1/fig-008.webp",
+      "caption": "Figure 13: Per-head register attention maps. Six selected registers from three heads on two denseinstance images; analysed in Sec. D.",
+      "page": 20,
+      "index": 8,
+      "width": 826,
+      "height": 233
+    }
+  ]
+}

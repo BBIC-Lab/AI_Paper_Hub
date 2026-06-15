@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-001.webp",
+      "caption": "Figure 1: Density estimation tasks for 1D and 2D toy datasets. The subplots sequentially show the kernel density curves estimated using the original implicit distribution Q base for the target distribution P , as well as the curves after applying rejection sampling. The color gradient represents the density of the generated samples, with red indicating higher concentration and blue indicating sparser regions. Table 1 shows quantitative values.",
+      "page": 6,
+      "index": 1,
+      "width": 1012,
+      "height": 720
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-003.webp",
+      "caption": "Table 2: Quantitative results for six UCI regression tasks. More accurate posterior sampling allows IVRS to outperform several other VI approximations for learning the same Bayesian neural network.",
+      "page": 7,
+      "index": 3,
+      "width": 1011,
+      "height": 458
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-004.webp",
+      "caption": "Figure 2: Examples of 16 MNIST images from the test set using the VAE learned by AVB and IVRS. Our method generates images with a closer resemblance to the ground truth compared to the baseline due to the rejection sampling.",
+      "page": 7,
+      "index": 4,
+      "width": 492,
+      "height": 469
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-006.webp",
+      "caption": "Table 5: Comparison of reported Negative Log Evidence (NLE) values across different algorithms on the MNIST dataset. An asterisk (⋆) indicates results obtained with data augmentation. The best, second-best, and third-best results are highlighted.",
+      "page": 9,
+      "index": 6,
+      "width": 385,
+      "height": 791
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-007.webp",
+      "caption": "Table 6: Comparison of reported Bits per Dimension (bpd) values among various algorithms for the CIFAR-10 dataset. An asterisk (⋆) indicates results obtained using data augmentation. The best, second-best, and third-best results are highlighted.",
+      "page": 9,
+      "index": 7,
+      "width": 481,
+      "height": 410
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-005.webp",
+      "caption": "Table 7: Comparison of reported Bits per Dimension (bpd) values among various algorithms for the Imagenet 64 ×64 dataset. An asterisk (⋆) indicates results obtained using data augmentation. The best, second-best, and third-best results are highlighted.",
+      "page": 9,
+      "index": 5,
+      "width": 481,
+      "height": 250
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14235v1/fig-002.webp",
+      "caption": "Table 8: Ablation study with fixed neural network architecture. All models use a 4-layer MLP; [k] denotes hidden width per layer. Lower NLL and RMSE indicate better performance.",
+      "page": 15,
+      "index": 2,
+      "width": 700,
+      "height": 344
+    }
+  ]
+}

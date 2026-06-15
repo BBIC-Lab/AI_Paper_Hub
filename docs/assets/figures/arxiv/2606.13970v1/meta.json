@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-001.webp",
+      "caption": "Figure 1. Overall architecture of the proposed model with 5 modalities. The model makes predictions based on the available modalities. In this example, four modalities are available: {x1,x2,x3,x5}. The 4th modality (x4) is missing and its associated encoder is represented with dotted lines. The model can adapt to several types of inputs. These inputs can have different dimensions or types (e.g. vector and image). Each unimodal encoder learns a fixed-dimension vectorial representation x̄i for each modality xi. Then, an attention-based encoder-decoder model learns multimodal representations and makes the predictions.",
+      "page": 1,
+      "index": 1,
+      "width": 471,
+      "height": 367
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-005.webp",
+      "caption": "Figure 2. Overview of our model during training (top) and inference (bottom). The input to the multimodal encoder is a set of available modality representations obtained from the unimodal encoders (not represented in the figure). The multimodal encoder learns to generate a distribution over latent codes. Then, a sampled latent code is decoded into a conditional probability distribution. To train the model to be robust to missing modalities, the sampled latent code is decoded two times, with two sets of modalities: {x1,x2,x3,x5} and {x1,x2,x5}. This example shows x3 is removed but it can be any modalities. Σ indicates the summation operator.",
+      "page": 4,
+      "index": 5,
+      "width": 932,
+      "height": 415
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-006.webp",
+      "caption": "Figure 3. Architecture of the attention-based decoder. The decoder takes the set of available modalities and a latent variable, and generates the output distribution. Σ denotes summation, and ⊕ denotes concatenation.",
+      "page": 5,
+      "index": 6,
+      "width": 492,
+      "height": 426
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-002.webp",
+      "caption": "Table 1. Quantitative comparison of our method and baselines on human trajectory prediction datasets when all the modalities are used during both training and testing. Our model achieves the best or second-best performances on all datasets. The first-best is highlighted by bold, and the second-best is highlighted by underline.",
+      "page": 6,
+      "index": 2,
+      "width": 775,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-003.webp",
+      "caption": "Table 2. Quantitative ADE/FDE results for different settings of missing modalities during testing. The first (resp. second) value is ADE (resp. FDE), and a lower value is better. t, p, s, h, e, and g represent past trajectory, body pose, semantic map and head orientation, ego-vehicle motion, and grid location. The first-best is highlighted by bold, and the second-best is highlighted by underline.",
+      "page": 7,
+      "index": 3,
+      "width": 1025,
+      "height": 261
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13970v1/fig-004.webp",
+      "caption": "Table 5. Ablation study of missing training data and effectiveness of Lmis on TISS dataset. “100%” denotes complete modality, “50%” indicates 50% of semantic map s samples was removed, and “0%” indicates no s is presented in the data. Lmis is previously defined in Equation 17.",
+      "page": 8,
+      "index": 4,
+      "width": 492,
+      "height": 280
+    }
+  ]
+}

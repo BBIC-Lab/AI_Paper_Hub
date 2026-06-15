@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-006.webp",
+      "caption": "TABLE III. Per-particle input features for the jet flavor identification and jet energy regression tasks, following Ref. [35].",
+      "page": 5,
+      "index": 6,
+      "width": 496,
+      "height": 472
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-001.webp",
+      "caption": "FIG. 5. Best validation loss for the jet energy regression task as a function of the number of training jets, comparing the three model variants (blue: Baseline; red: Latentaugmented; green: Linear-probe). Each curve shows the median across three random seeds, and the shaded bands indicate the interquartile range.",
+      "page": 7,
+      "index": 1,
+      "width": 458,
+      "height": 381
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-002.webp",
+      "caption": "FIG. 8. Missing momentum performance at the largest training-set size (blue: Baseline; red: Latent-augmented; green: Linear-probe). Left, middle: Recoil resolution parallel (σ(u∥)) and perpendicular (σ(u⊥)) to the generator-level pmiss",
+      "page": 10,
+      "index": 2,
+      "width": 1051,
+      "height": 276
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-005.webp",
+      "caption": "FIG. 9. Capacity-control comparison for jet flavor identification: ROC curves at the full training set for the Baseline (blue) and Baseline-large (orange) models. Dashed lines show the light-flavor jet mis-identification rate vs b-jet identification efficiency; solid lines show the c-jet mis-identification rate.",
+      "page": 12,
+      "index": 5,
+      "width": 473,
+      "height": 395
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-004.webp",
+      "caption": "FIG. 10. Capacity-control comparison for jet energy regression: inclusive jet-energy response distribution at the full training set for the Baseline (blue) and Baseline-large (orange) models.",
+      "page": 13,
+      "index": 4,
+      "width": 466,
+      "height": 391
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14373v1/fig-003.webp",
+      "caption": "FIG. 11. Capacity-control comparison for missing momentum regression: inclusive pmiss",
+      "page": 13,
+      "index": 3,
+      "width": 473,
+      "height": 393
+    }
+  ]
+}

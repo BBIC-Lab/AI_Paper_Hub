@@ -1,0 +1,134 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-004.webp",
+      "caption": "Figure 1: Overview of TokenDecouple. We decouple token compression for TS and prompt tokens by merging redundant TS tokens in the frequency-domain and reducing prompt tokens under the pyramidal decay effect.",
+      "page": 3,
+      "index": 4,
+      "width": 948,
+      "height": 333
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-005.webp",
+      "caption": "Figure 2: The complex TS appears entangled in the time domain but shows concentrated energy in a few frequency bands, while white noise has a nearly uniform spectrum, indicating poor compressibility.",
+      "page": 3,
+      "index": 5,
+      "width": 452,
+      "height": 272
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-009.webp",
+      "caption": "Table 2: Performance comparison between the original models (Ori) and TokenDecouple (TD) on reasoningcentric tasks, evaluated using accuracy(%). Across 24 comparative experiments, TokenDecouple achieves better performance in 17 cases, accounting for 71%.",
+      "page": 8,
+      "index": 9,
+      "width": 950,
+      "height": 224
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-010.webp",
+      "caption": "Figure 7: Statistical characteristics of datasets, including seasonality, trend, stationarity, transition, shifting, correlation, and non-Gaussianity.",
+      "page": 17,
+      "index": 10,
+      "width": 937,
+      "height": 504
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-007.webp",
+      "caption": "Table 10: MAE results on the imputation task under 3 missing ratios(12.5%, 25%, and 50%), comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 23,
+      "index": 7,
+      "width": 941,
+      "height": 460
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-006.webp",
+      "caption": "Table 11: MSE results on the imputation task under 3 missing ratios (12.5%, 25%, and 50%), comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 23,
+      "index": 6,
+      "width": 941,
+      "height": 461
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-008.webp",
+      "caption": "Table 12: Accuracy results (%) on the classification task, comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 23,
+      "index": 8,
+      "width": 941,
+      "height": 183
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-014.webp",
+      "caption": "Table 13: F1-score results on the anomaly detection task, comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 24,
+      "index": 14,
+      "width": 939,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-016.webp",
+      "caption": "Table 14: MAE results on the forecasting task under two prediction horizons (H = 192, 720), comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 24,
+      "index": 16,
+      "width": 941,
+      "height": 289
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-015.webp",
+      "caption": "Table 15: MSE results on the forecasting task under two prediction horizons (H = 192, 720), comparing the original models (Ori) and TokenDecouple (TD) on pattern-centric tasks. The results are obtained from 5 random seeds.",
+      "page": 24,
+      "index": 15,
+      "width": 941,
+      "height": 288
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-001.webp",
+      "caption": "Table 16: Algorithmic of TokenDecouple. The method decouples TS tokens and prompt tokens via frequency-aware TS token merging and pyramidal prompt token compression.",
+      "page": 25,
+      "index": 1,
+      "width": 963,
+      "height": 683
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-003.webp",
+      "caption": "Figure 10: Prompt template for the Imputation task.",
+      "page": 26,
+      "index": 3,
+      "width": 461,
+      "height": 460
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-002.webp",
+      "caption": "Figure 11: Prompt template for the Classification task.",
+      "page": 26,
+      "index": 2,
+      "width": 458,
+      "height": 658
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-011.webp",
+      "caption": "Figure 12: Prompt template for the Anomaly Detection task.",
+      "page": 27,
+      "index": 11,
+      "width": 461,
+      "height": 658
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-013.webp",
+      "caption": "Figure 13: Prompt template for the Forecasting task.",
+      "page": 27,
+      "index": 13,
+      "width": 461,
+      "height": 545
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13624v1/fig-012.webp",
+      "caption": "Figure 14: Prompt template for the Reasoning task.",
+      "page": 27,
+      "index": 12,
+      "width": 458,
+      "height": 879
+    }
+  ]
+}
