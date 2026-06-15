@@ -10,11 +10,21 @@ from typing import Any, Dict, List, Tuple
 
 try:
     from core import artifacts as core_artifacts
-    from core.diagnostics import set_selection_rank
+    from core.diagnostics import (
+        PIPELINE_STAGE_NAMES,
+        diagnostics_stage_coverage,
+        finalize_paper_diagnostics,
+        set_selection_rank,
+    )
     from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
     from src.core import artifacts as core_artifacts
-    from src.core.diagnostics import set_selection_rank
+    from src.core.diagnostics import (
+        PIPELINE_STAGE_NAMES,
+        diagnostics_stage_coverage,
+        finalize_paper_diagnostics,
+        set_selection_rank,
+    )
     from src.core import paths as core_paths
 
 from subscription_plan import count_subscription_tags, get_profile_daily_paper_limits, get_profile_recommend_mix
@@ -135,6 +145,13 @@ def load_json(path: str) -> Dict[str, Any]:
 def save_json(data: Dict[str, Any], path: str) -> None:
     core_artifacts.write_json(path, data)
     log(f"[INFO] saved: {path}")
+
+
+def selected_items(result: Dict[str, Any]) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    for section_key in ("deep_dive", "quick_skim"):
+        items.extend([item for item in (result.get(section_key) or []) if isinstance(item, dict)])
+    return items
 
 
 def parse_date_str(date_str: str) -> date:
@@ -892,8 +909,55 @@ def refresh_selection_diagnostics(result: Dict[str, Any]) -> Dict[str, Any]:
             section_rank=section_rank,
             downgrade_reason=str(paper.get("selection_downgrade_reason") or ""),
         )
+    finalize_paper_diagnostics(papers)
+    for section_key in ("deep_dive", "quick_skim"):
+        finalize_paper_diagnostics([item for item in (result.get(section_key) or []) if isinstance(item, dict)])
+    stats = dict(result.get("stats") or {})
+    stats["diagnostics_stage_coverage"] = diagnostics_stage_coverage(papers)
+    result["stats"] = stats
     result["papers"] = papers
     return result
+
+
+def validate_recommend_payload(result: Dict[str, Any], *, output_path: str = "") -> None:
+    papers = [item for item in (result.get("papers") or []) if isinstance(item, dict)]
+    selected = selected_items(result)
+    context = f" ({output_path})" if output_path else ""
+    if selected and not papers:
+        raise RuntimeError(f"recommend 诊断快照缺失 papers 列表{context}")
+
+    paper_by_key = {
+        paper_dedup_key(item): item
+        for item in papers
+        if paper_dedup_key(item)
+    }
+    for item in selected:
+        key = paper_dedup_key(item)
+        if not key or key not in paper_by_key:
+            raise RuntimeError(f"recommend 诊断快照缺少入选论文：{item_paper_id(item) or key}{context}")
+
+    missing_selection = []
+    missing_stage_keys = []
+    for paper in papers:
+        pid = item_paper_id(paper)
+        stage_ranks = ((paper.get("diagnostics") or {}).get("stage_ranks") or {})
+        if "selection" not in stage_ranks:
+            missing_selection.append(pid)
+        for stage in PIPELINE_STAGE_NAMES:
+            if stage not in stage_ranks:
+                missing_stage_keys.append(f"{pid}:{stage}")
+                break
+    if missing_selection:
+        raise RuntimeError(f"recommend 诊断快照缺少 selection 阶段：{missing_selection[:5]}{context}")
+    if missing_stage_keys:
+        raise RuntimeError(f"recommend 诊断快照缺少阶段槽位：{missing_stage_keys[:5]}{context}")
+
+    coverage = diagnostics_stage_coverage(papers)
+    selected_count = len(selected)
+    if selected_count:
+        for stage in PIPELINE_STAGE_NAMES:
+            if int((coverage.get(stage) or {}).get("present") or 0) <= 0:
+                raise RuntimeError(f"recommend 诊断快照缺少可比较的 {stage} rank/score{context}")
 
 
 def profile_limit_key(tag: Any) -> str:
@@ -1891,6 +1955,7 @@ def main() -> None:
         output_path = os.path.join(output_dir, core_artifacts.paper_artifact_filename(TODAY_STR, mode))
         stats = result.get("stats") or {}
         log(f"[STATS] {json.dumps(stats, ensure_ascii=False)}")
+        validate_recommend_payload(result, output_path=output_path)
         save_json(result, output_path)
         log(
             f"[INFO] mode={mode} deep={stats.get('deep_selected')} quick={stats.get('quick_selected')} "

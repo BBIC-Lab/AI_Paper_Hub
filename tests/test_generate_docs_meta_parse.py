@@ -1,6 +1,7 @@
 ﻿import importlib.util
 import html
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -88,6 +89,101 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
         )
 
         self.assertEqual(token, "20260524")
+
+    def test_jina_fetch_uses_dedicated_proxy_env(self):
+        class Response:
+            status_code = 200
+            text = "jina markdown"
+
+        captured = {}
+        original_get = self.mod.requests.get
+        original_sleep = self.mod.time.sleep
+        original_proxy = os.environ.get("DPR_JINA_PROXY")
+        os.environ["DPR_JINA_PROXY"] = "127.0.0.1:7890"
+        self.mod.time.sleep = lambda _seconds: None
+
+        def fake_get(url, **kwargs):
+            captured["url"] = url
+            captured["proxies"] = kwargs.get("proxies")
+            return Response()
+
+        self.mod.requests.get = fake_get
+        try:
+            text = self.mod.fetch_paper_markdown_via_jina("https://arxiv.org/pdf/2606.12364v1")
+        finally:
+            self.mod.requests.get = original_get
+            self.mod.time.sleep = original_sleep
+            if original_proxy is None:
+                os.environ.pop("DPR_JINA_PROXY", None)
+            else:
+                os.environ["DPR_JINA_PROXY"] = original_proxy
+
+        self.assertEqual(text, "jina markdown")
+        self.assertEqual(captured["proxies"]["https"], "http://127.0.0.1:7890")
+
+    def test_ensure_text_content_tries_export_arxiv_pdf_after_direct_failure(self):
+        class Response:
+            content = b"%PDF fake"
+
+            def raise_for_status(self):
+                return None
+
+        calls = []
+        original_fetch = self.mod.fetch_paper_markdown_via_jina
+        original_get = self.mod.requests.get
+        original_extract = self.mod.extract_pdf_text
+        original_sleep = self.mod.time.sleep
+        self.mod.fetch_paper_markdown_via_jina = lambda _url: None
+        self.mod.extract_pdf_text = lambda _path: "pdf extracted text"
+        self.mod.time.sleep = lambda _seconds: None
+
+        def fake_get(url, **kwargs):
+            calls.append(url)
+            if "export.arxiv.org" in url:
+                return Response()
+            raise RuntimeError("ssl eof")
+
+        self.mod.requests.get = fake_get
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                txt_path = Path(d) / "paper.txt"
+                text = self.mod.ensure_text_content(
+                    "https://arxiv.org/pdf/2606.12364v1",
+                    str(txt_path),
+                    fallback_text="fallback",
+                )
+        finally:
+            self.mod.fetch_paper_markdown_via_jina = original_fetch
+            self.mod.requests.get = original_get
+            self.mod.extract_pdf_text = original_extract
+            self.mod.time.sleep = original_sleep
+
+        self.assertEqual(text, "pdf extracted text")
+        self.assertTrue(any("export.arxiv.org/pdf/2606.12364v1" in url for url in calls))
+
+    def test_ensure_text_content_uses_metadata_fallback_when_pdf_fetch_fails(self):
+        original_fetch = self.mod.fetch_paper_markdown_via_jina
+        original_get = self.mod.requests.get
+        original_sleep = self.mod.time.sleep
+        self.mod.fetch_paper_markdown_via_jina = lambda _url: None
+        self.mod.requests.get = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("network down"))
+        self.mod.time.sleep = lambda _seconds: None
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                txt_path = Path(d) / "paper.txt"
+                text = self.mod.ensure_text_content(
+                    "https://example.test/paper.pdf",
+                    str(txt_path),
+                    fallback_text="metadata fallback",
+                )
+                saved = txt_path.read_text(encoding="utf-8")
+        finally:
+            self.mod.fetch_paper_markdown_via_jina = original_fetch
+            self.mod.requests.get = original_get
+            self.mod.time.sleep = original_sleep
+
+        self.assertEqual(text, "metadata fallback")
+        self.assertEqual(saved, "metadata fallback")
 
     def test_parse_fallback_to_legacy_meta_lines(self):
         with tempfile.TemporaryDirectory() as d:
@@ -591,6 +687,49 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.assertNotIn("<!--dpr-date:20260501-->", content)
             self.assertGreater(content.index("dpr-sidebar-daily-note"), content.index("<!--dpr-date:20260504-->"))
             self.assertLess(content.index("dpr-sidebar-daily-note"), content.index("* Other"))
+
+    def test_validate_recommend_payload_for_docs_rejects_empty_payload(self):
+        with self.assertRaisesRegex(RuntimeError, "为空"):
+            self.mod.validate_recommend_payload_for_docs({}, "recommend.json")
+
+    def test_validate_recommend_payload_for_docs_requires_candidate_snapshot(self):
+        with self.assertRaisesRegex(RuntimeError, "papers"):
+            self.mod.validate_recommend_payload_for_docs(
+                {"deep_dive": [{"id": "p-1"}], "quick_skim": []},
+                "recommend.json",
+            )
+
+    def test_validate_recommend_payload_for_docs_accepts_full_stage_diagnostics(self):
+        stages = {
+            "bm25": {"rank": 5, "score": 0.12},
+            "embedding": {"rank": 3, "score": 0.82},
+            "rrf": {"rank": 2, "score": 0.03},
+            "rerank": {"rank": 1, "score": 0.91},
+            "llm": {"rank": 1, "score": 8.8},
+            "selection": {"rank": 1, "score": 8.8, "selected": True},
+        }
+        payload = {
+            "stats": {},
+            "papers": [{"id": "p-1", "diagnostics": {"stage_ranks": stages}}],
+            "deep_dive": [{"id": "p-1"}],
+            "quick_skim": [],
+        }
+
+        self.mod.validate_recommend_payload_for_docs(payload, "recommend.json")
+
+        coverage = payload["stats"]["diagnostics_stage_coverage"]
+        self.assertEqual(coverage["bm25"]["present"], 1)
+        self.assertEqual(coverage["selection"]["present"], 1)
+
+    def test_assert_generated_entry_counts_fails_when_docs_drop_recommend_item(self):
+        with self.assertRaisesRegex(RuntimeError, "数量与 recommend 不一致"):
+            self.mod.assert_generated_entry_counts(
+                expected_deep=[{"id": "p-1"}],
+                expected_quick=[],
+                actual_deep=[],
+                actual_quick=[],
+                recommend_path="recommend.json",
+            )
 
 
 if __name__ == "__main__":

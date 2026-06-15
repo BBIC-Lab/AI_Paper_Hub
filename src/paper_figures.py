@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from typing import Any, Dict, List
 
 import fitz
@@ -130,14 +131,53 @@ def _save_figures_meta(meta_path: str, figures: List[Dict[str, Any]], *, extract
         )
 
 
+def _normalize_arxiv_pdf_id(value: str) -> str:
+    raw = str(value or "").strip()
+    if raw.startswith(("http://", "https://")):
+        raw = raw.rsplit("/", 1)[-1]
+    raw = raw.split("?", 1)[0]
+    raw = raw.replace(".pdf", "")
+    return raw.lower().strip()
+
+
+def _pdf_url_candidates(pdf_url: str) -> List[str]:
+    raw = str(pdf_url or "").strip()
+    candidates: List[str] = []
+
+    def add(url: str) -> None:
+        cleaned = str(url or "").strip()
+        if cleaned and cleaned not in candidates:
+            candidates.append(cleaned)
+
+    add(raw)
+    arxiv_id = _normalize_arxiv_pdf_id(raw)
+    if arxiv_id and re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", arxiv_id, re.IGNORECASE):
+        base_id = re.sub(r"v\d+$", "", arxiv_id, flags=re.IGNORECASE)
+        for pid in [arxiv_id, base_id]:
+            add(f"https://arxiv.org/pdf/{pid}")
+            add(f"https://export.arxiv.org/pdf/{pid}")
+    return candidates
+
+
 def _download_pdf_bytes(pdf_url: str, timeout: int = 90) -> bytes:
-    resp = requests.get(
-        str(pdf_url or "").strip(),
-        headers={"User-Agent": "Mozilla/5.0"},
-        timeout=max(int(timeout or 1), 1),
-    )
-    resp.raise_for_status()
-    return resp.content
+    errors: List[str] = []
+    for url in _pdf_url_candidates(pdf_url):
+        for attempt in range(1, 4):
+            try:
+                resp = requests.get(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0", "Accept": "application/pdf,*/*;q=0.8"},
+                    timeout=max(int(timeout or 1), 1),
+                )
+                resp.raise_for_status()
+                content = resp.content or b""
+                if not content:
+                    raise RuntimeError("empty PDF response")
+                return content
+            except Exception as exc:
+                errors.append(f"{url}: {exc}")
+                time.sleep(min(2 * attempt, 8))
+    raise RuntimeError("; ".join(errors[-3:]) or "no PDF URL candidates")
 
 
 def _resolve_pdffigures2_jar() -> str:

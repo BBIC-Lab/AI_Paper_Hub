@@ -31,6 +31,11 @@ except Exception:  # pragma: no cover
     from src.paper_figures import ensure_paper_figures
 
 try:
+    from core.diagnostics import PIPELINE_STAGE_NAMES, diagnostics_stage_coverage
+except Exception:  # pragma: no cover
+    from src.core.diagnostics import PIPELINE_STAGE_NAMES, diagnostics_stage_coverage
+
+try:
     from research_profile import format_research_directions_for_prompt, resolve_research_directions
 except Exception:  # pragma: no cover
     from src.research_profile import format_research_directions_for_prompt, resolve_research_directions
@@ -346,7 +351,7 @@ def fetch_paper_markdown_via_jina(pdf_url: str, max_retries: int = 3) -> str | N
     for attempt in range(1, max_retries + 1):
         try:
             log(f"[JINA] 第 {attempt} 次请求：{full_url}")
-            resp = requests.get(full_url, timeout=60)
+            resp = requests.get(full_url, timeout=60, proxies=resolve_jina_proxies())
             if resp.status_code != 200:
                 log(f"[JINA][WARN] 状态码 {resp.status_code}，响应前 100 字符：{(resp.text or '')[:100]}")
             else:
@@ -359,6 +364,31 @@ def fetch_paper_markdown_via_jina(pdf_url: str, max_retries: int = 3) -> str | N
         time.sleep(2 * attempt)
     log("[JINA][ERROR] 多次请求失败，将回退到 PyMuPDF 抽取。")
     return None
+
+
+PDF_DOWNLOAD_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; AI-Daily-Paper-Reader/1.0; +https://github.com/BBIC-Lab/AI_Paper_Hub)",
+    "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8",
+}
+JINA_TEXT_MODE_ENV = "DPR_STEP6_JINA_MODE"
+JINA_PROXY_ENV = "DPR_JINA_PROXY"
+
+
+def resolve_jina_text_mode() -> str:
+    raw = str(os.getenv(JINA_TEXT_MODE_ENV) or "off").strip().lower()
+    if raw in {"1", "true", "yes", "on", "fallback", "jina_fallback"}:
+        return "fallback"
+    if raw in {"first", "jina_first"}:
+        return "first"
+    return "off"
+
+
+def resolve_jina_proxies() -> Dict[str, str] | None:
+    raw = str(os.getenv(JINA_PROXY_ENV) or "").strip()
+    if not raw or raw.lower() in {"0", "false", "off", "none", "direct"}:
+        return None
+    proxy = raw if "://" in raw else f"http://{raw}"
+    return {"http": proxy, "https": proxy}
 
 
 def normalize_arxiv_id(value: str) -> str:
@@ -379,7 +409,33 @@ def normalize_arxiv_id(value: str) -> str:
         raw = raw[len("abs/") :]
     if raw.startswith("pdf/"):
         raw = raw[len("pdf/") :].replace(".pdf", "")
+    if raw.endswith(".pdf"):
+        raw = raw[:-4]
     return raw.strip().lower()
+
+
+def _arxiv_id_without_version(arxiv_id: str) -> str:
+    return re.sub(r"v\d+$", "", str(arxiv_id or "").strip(), flags=re.IGNORECASE)
+
+
+def build_pdf_url_candidates(pdf_url: str) -> List[str]:
+    """Return direct PDF URLs to try before falling back to metadata-only text."""
+    raw = str(pdf_url or "").strip()
+    candidates: List[str] = []
+
+    def add(url: str) -> None:
+        cleaned = str(url or "").strip()
+        if cleaned and cleaned not in candidates:
+            candidates.append(cleaned)
+
+    add(raw)
+    arxiv_id = normalize_arxiv_id(raw)
+    if arxiv_id and re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", arxiv_id, re.IGNORECASE):
+        base_id = _arxiv_id_without_version(arxiv_id)
+        for pid in [arxiv_id, base_id]:
+            add(f"https://arxiv.org/pdf/{pid}")
+            add(f"https://export.arxiv.org/pdf/{pid}")
+    return candidates
 
 
 def parse_arxiv_xml_feed(xml_text: str) -> Dict[str, Any]:
@@ -1909,18 +1965,71 @@ def extract_sidebar_tags(paper: Dict[str, Any], max_tags: int = 6) -> List[Tuple
     return score_tag + tags
 
 
-def ensure_text_content(pdf_url: str, txt_path: str) -> str:
+def download_pdf_bytes_with_retries(
+    pdf_url: str,
+    *,
+    timeout: int = 60,
+    max_retries: int = 3,
+) -> bytes:
+    errors: List[str] = []
+    for url in build_pdf_url_candidates(pdf_url):
+        for attempt in range(1, max(1, int(max_retries or 1)) + 1):
+            try:
+                log(f"[PDF] 第 {attempt} 次下载：{url}")
+                resp = requests.get(url, headers=PDF_DOWNLOAD_HEADERS, timeout=max(int(timeout or 1), 1))
+                resp.raise_for_status()
+                content = resp.content or b""
+                if not content:
+                    raise RuntimeError("empty PDF response")
+                return content
+            except Exception as e:
+                msg = f"{url}: {e}"
+                errors.append(msg)
+                log(f"[PDF][WARN] 下载失败（第 {attempt} 次）：{msg}")
+                time.sleep(min(2 * attempt, 8))
+    raise RuntimeError("; ".join(errors[-3:]) or "no PDF URL candidates")
+
+
+def build_text_content_fallback(paper: Dict[str, Any]) -> str:
+    title = str(paper.get("title") or "").strip()
+    title_zh = str(paper.get("title_zh") or paper.get("zh_title") or "").strip()
+    abstract = str(paper.get("abstract") or "").strip()
+    evidence = str(paper.get("canonical_evidence") or "").strip()
+    tldr = str(paper.get("llm_tldr_cn") or paper.get("llm_tldr") or paper.get("llm_tldr_en") or "").strip()
+    lines = [
+        "PDF/Markdown 抽取失败；以下内容由推荐元数据兜底生成。",
+        "",
+        f"Title: {title}" if title else "",
+        f"Chinese Title: {title_zh}" if title_zh else "",
+        f"TLDR: {tldr}" if tldr else "",
+        f"Recommendation Evidence: {evidence}" if evidence else "",
+        "Abstract:",
+        abstract,
+    ]
+    return "\n".join(line for line in lines if line is not None).strip()
+
+
+def ensure_text_content(pdf_url: str, txt_path: str, fallback_text: str = "") -> str:
     if os.path.exists(txt_path):
         with open(txt_path, "r", encoding="utf-8") as f:
             return f.read()
-    text_content = fetch_paper_markdown_via_jina(pdf_url)
+    text_content = None
+    jina_mode = resolve_jina_text_mode()
+    if jina_mode == "first":
+        text_content = fetch_paper_markdown_via_jina(pdf_url)
     if text_content is None and pdf_url:
-        resp = requests.get(pdf_url, timeout=60)
-        resp.raise_for_status()
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp_pdf:
-            tmp_pdf.write(resp.content)
-            tmp_pdf.flush()
-            text_content = extract_pdf_text(tmp_pdf.name)
+        try:
+            pdf_bytes = download_pdf_bytes_with_retries(pdf_url)
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp_pdf:
+                tmp_pdf.write(pdf_bytes)
+                tmp_pdf.flush()
+                text_content = extract_pdf_text(tmp_pdf.name)
+        except Exception as e:
+            log(f"[PDF][ERROR] 多次下载/抽取失败，将使用元数据兜底：{e}")
+    if not text_content and jina_mode == "fallback":
+        text_content = fetch_paper_markdown_via_jina(pdf_url)
+    if not text_content and fallback_text:
+        text_content = fallback_text
     os.makedirs(os.path.dirname(txt_path), exist_ok=True)
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(text_content or "")
@@ -2145,7 +2254,7 @@ def process_paper(
         # 即使是 glance-only，也要确保生成/补齐 .txt（用于前端聊天上下文等）
         if glance_only and pdf_url:
             try:
-                ensure_text_content(pdf_url, txt_path)
+                ensure_text_content(pdf_url, txt_path, fallback_text=build_text_content_fallback(paper))
             except Exception:
                 # 不阻塞文档生成流程：txt 拉取失败时继续（避免因为网络/源站问题导致整批中断）
                 pass
@@ -2307,7 +2416,7 @@ def process_paper(
 
             # 生成详细总结
             pdf_url = str(paper.get("link") or paper.get("pdf_url") or "").strip()
-            ensure_text_content(pdf_url, txt_path)
+            ensure_text_content(pdf_url, txt_path, fallback_text=build_text_content_fallback(paper))
             summary = generate_deep_summary(md_path, txt_path)
             if summary:
                 upsert_auto_block(md_path, "论文详细总结（自动生成）", summary)
@@ -2321,7 +2430,7 @@ def process_paper(
         # 速览模式也需要生成/补齐全文 txt（优先 jina，失败则 pymupdf 兜底）
         if pdf_url:
             try:
-                ensure_text_content(pdf_url, txt_path)
+                ensure_text_content(pdf_url, txt_path, fallback_text=build_text_content_fallback(paper))
             except Exception:
                 pass
         figures = maybe_generate_paper_figures(
@@ -2344,7 +2453,7 @@ def process_paper(
 
     # 新文件：生成完整内容
     pdf_url = str(paper.get("link") or paper.get("pdf_url") or "").strip()
-    ensure_text_content(pdf_url, txt_path)
+    ensure_text_content(pdf_url, txt_path, fallback_text=build_text_content_fallback(paper))
     figures = maybe_generate_paper_figures(
         paper,
         docs_dir=docs_dir,
@@ -3311,6 +3420,86 @@ def write_day_meta_index_json(
     return out_path
 
 
+def _paper_identity(item: Dict[str, Any]) -> str:
+    return str(item.get("id") or item.get("paper_id") or item.get("title") or "").strip()
+
+
+def _selected_recommend_items(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    selected: List[Dict[str, Any]] = []
+    for section_key in ("deep_dive", "quick_skim"):
+        selected.extend([item for item in (payload.get(section_key) or []) if isinstance(item, dict)])
+    return selected
+
+
+def validate_recommend_payload_for_docs(payload: Dict[str, Any], recommend_path: str) -> None:
+    if not isinstance(payload, dict) or not payload:
+        raise RuntimeError(f"recommend JSON 为空或格式非法：{recommend_path}")
+
+    selected = _selected_recommend_items(payload)
+    papers = [item for item in (payload.get("papers") or []) if isinstance(item, dict)]
+    if selected and not papers:
+        raise RuntimeError(f"recommend JSON 缺少完整候选诊断快照 papers：{recommend_path}")
+
+    paper_by_id = {
+        _paper_identity(item): item
+        for item in papers
+        if _paper_identity(item)
+    }
+    missing_snapshot = [
+        _paper_identity(item)
+        for item in selected
+        if _paper_identity(item) and _paper_identity(item) not in paper_by_id
+    ]
+    if missing_snapshot:
+        raise RuntimeError(f"recommend JSON 入选论文缺少候选快照：{missing_snapshot[:5]} @ {recommend_path}")
+
+    missing_stage_slots: List[str] = []
+    for paper in papers:
+        pid = _paper_identity(paper)
+        stage_ranks = ((paper.get("diagnostics") or {}).get("stage_ranks") or {})
+        for stage in PIPELINE_STAGE_NAMES:
+            if stage not in stage_ranks:
+                missing_stage_slots.append(f"{pid}:{stage}")
+                break
+    if missing_stage_slots:
+        raise RuntimeError(f"recommend JSON 缺少诊断阶段槽位：{missing_stage_slots[:5]} @ {recommend_path}")
+
+    coverage = diagnostics_stage_coverage(papers)
+    stats = payload.setdefault("stats", {})
+    if isinstance(stats, dict):
+        stats["diagnostics_stage_coverage"] = coverage
+    if selected:
+        for stage in PIPELINE_STAGE_NAMES:
+            if int((coverage.get(stage) or {}).get("present") or 0) <= 0:
+                raise RuntimeError(f"recommend JSON 缺少可比较的 {stage} rank/score：{recommend_path}")
+
+
+def assert_generated_entry_counts(
+    *,
+    expected_deep: List[Dict[str, Any]],
+    expected_quick: List[Dict[str, Any]],
+    actual_deep: List[DailyEntry],
+    actual_quick: List[DailyEntry],
+    recommend_path: str,
+) -> None:
+    failures: List[str] = []
+    for section, expected, actual in (
+        ("deep", expected_deep, actual_deep),
+        ("quick", expected_quick, actual_quick),
+    ):
+        if len(expected) == len(actual):
+            continue
+        actual_ids = {str(entry[0] or "").strip() for entry in actual}
+        missing = [
+            _paper_identity(item)
+            for item in expected
+            if _paper_identity(item) and _paper_identity(item) not in actual_ids
+        ]
+        failures.append(f"{section}: expected={len(expected)} actual={len(actual)} missing={missing[:5]}")
+    if failures:
+        raise RuntimeError(f"日报生成数量与 recommend 不一致：{'; '.join(failures)} @ {recommend_path}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Step 6: generate docs for deep/quick sections.")
     parser.add_argument("--date", type=str, default=TODAY_STR, help="date string YYYYMMDD.")
@@ -3438,6 +3627,8 @@ def main() -> None:
                 payload = json.load(f)
     finally:
         log_substep("6.1", "读取 recommend 结果", "END")
+    if recommend_exists:
+        validate_recommend_payload_for_docs(payload, recommend_path)
     deep_list = payload.get("deep_dive") or []
     quick_list = payload.get("quick_skim") or []
 
@@ -3589,6 +3780,15 @@ def main() -> None:
             "quick", quick_list, sidebar_evidence_by_id, sidebar_topic_tags_by_id, sidebar_date_by_id
         )
         log_substep("6.3", "生成速读区文章", "END")
+
+    if recommend_exists:
+        assert_generated_entry_counts(
+            expected_deep=deep_list,
+            expected_quick=quick_list,
+            actual_deep=deep_entries,
+            actual_quick=quick_entries,
+            recommend_path=recommend_path,
+        )
 
     log_substep("6.4", "生成当日日报并同步首页 README", "START")
     run_generated_at = format_beijing_time()

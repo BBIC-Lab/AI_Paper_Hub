@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List
 
 
+PIPELINE_STAGE_NAMES = ("bm25", "embedding", "rrf", "rerank", "llm", "selection")
+
+
 def paper_id(item: Dict[str, Any] | None) -> str:
     if not isinstance(item, dict):
         return ""
@@ -92,6 +95,8 @@ def _best_hit(hits: List[Dict[str, Any]]) -> Dict[str, Any]:
 def _stage_payload(hits: List[Dict[str, Any]]) -> Dict[str, Any]:
     best = _best_hit(hits)
     payload: Dict[str, Any] = {
+        "rank": best.get("rank"),
+        "score": best.get("score"),
         "best_rank": best.get("rank"),
         "best_score": best.get("score"),
         "best_query": best.get("query"),
@@ -199,6 +204,7 @@ def set_selection_rank(
         "selected": bool(selected),
         "section": section,
         "rank": section_rank,
+        "score": _as_float(paper.get("selection_score") or paper.get("llm_score")),
         "selection_score": _as_float(paper.get("selection_score") or paper.get("llm_score")),
         "llm_score": _as_float(paper.get("llm_score")),
         "downgrade_reason": downgrade_reason or str(paper.get("selection_downgrade_reason") or "").strip(),
@@ -228,3 +234,65 @@ def merge_paper_diagnostics(target: Dict[str, Any], source: Dict[str, Any]) -> N
             target_stages[stage] = _stage_payload(
                 [h for h in [*existing_hits, *incoming_hits] if isinstance(h, dict)]
             )
+
+
+def _stage_has_rank_or_score(payload: Dict[str, Any]) -> bool:
+    return any(payload.get(key) is not None for key in ("rank", "best_rank", "candidate_rank", "score", "best_score", "selection_score"))
+
+
+def _normalize_stage_aliases(stage: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    if stage in {"bm25", "embedding", "rrf", "rerank"}:
+        if payload.get("rank") is None and payload.get("best_rank") is not None:
+            payload["rank"] = payload.get("best_rank")
+        if payload.get("score") is None and payload.get("best_score") is not None:
+            payload["score"] = payload.get("best_score")
+    elif stage == "selection":
+        if payload.get("candidate_rank") is None and payload.get("rank") is not None:
+            payload["candidate_rank"] = payload.get("rank")
+        if payload.get("rank") is None and payload.get("candidate_rank") is not None:
+            payload["rank"] = payload.get("candidate_rank")
+        if payload.get("score") is None and payload.get("selection_score") is not None:
+            payload["score"] = payload.get("selection_score")
+    payload.setdefault("rank", None)
+    payload.setdefault("score", None)
+    return payload
+
+
+def finalize_paper_diagnostics(
+    papers: List[Dict[str, Any]] | None,
+    *,
+    stages: Iterable[str] = PIPELINE_STAGE_NAMES,
+) -> None:
+    """Ensure every candidate has comparable stage slots for rank/score auditing."""
+    for paper in papers or []:
+        if not isinstance(paper, dict):
+            continue
+        stage_ranks = _stage_container(paper)
+        for stage in stages:
+            payload = stage_ranks.get(stage)
+            if isinstance(payload, dict):
+                stage_ranks[stage] = _normalize_stage_aliases(stage, payload)
+            else:
+                stage_ranks[stage] = {"rank": None, "score": None, "missing": True}
+
+
+def diagnostics_stage_coverage(
+    papers: List[Dict[str, Any]] | None,
+    *,
+    stages: Iterable[str] = PIPELINE_STAGE_NAMES,
+) -> Dict[str, Dict[str, int]]:
+    coverage: Dict[str, Dict[str, int]] = {
+        stage: {"present": 0, "missing": 0}
+        for stage in stages
+    }
+    for paper in papers or []:
+        if not isinstance(paper, dict):
+            continue
+        stage_ranks = ((paper.get("diagnostics") or {}).get("stage_ranks") or {})
+        for stage in stages:
+            payload = stage_ranks.get(stage)
+            if isinstance(payload, dict) and not payload.get("missing") and _stage_has_rank_or_score(payload):
+                coverage[stage]["present"] += 1
+            else:
+                coverage[stage]["missing"] += 1
+    return coverage

@@ -61,6 +61,34 @@ class PipelineDiagnosticsTest(unittest.TestCase):
         hits = target["diagnostics"]["stage_ranks"]["bm25"]["hits"]
         self.assertEqual([hit["query"] for hit in hits], ["new", "old"])
 
+    def test_finalize_fills_stage_slots_and_rank_score_aliases(self):
+        papers = [
+            {
+                "id": "p-1",
+                "diagnostics": {
+                    "stage_ranks": {
+                        "rerank": {"best_rank": 3, "best_score": 0.7},
+                        "selection": {"candidate_rank": 2, "selection_score": 8.4},
+                    }
+                },
+            }
+        ]
+
+        self.diag.finalize_paper_diagnostics(papers)
+        stages = papers[0]["diagnostics"]["stage_ranks"]
+
+        self.assertEqual(stages["rerank"]["rank"], 3)
+        self.assertEqual(stages["rerank"]["score"], 0.7)
+        self.assertEqual(stages["selection"]["rank"], 2)
+        self.assertEqual(stages["selection"]["score"], 8.4)
+        self.assertTrue(stages["bm25"]["missing"])
+        self.assertIsNone(stages["bm25"]["rank"])
+        self.assertIsNone(stages["bm25"]["score"])
+
+        coverage = self.diag.diagnostics_stage_coverage(papers)
+        self.assertEqual(coverage["rerank"], {"present": 1, "missing": 0})
+        self.assertEqual(coverage["bm25"], {"present": 0, "missing": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

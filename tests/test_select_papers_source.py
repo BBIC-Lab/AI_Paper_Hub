@@ -333,6 +333,46 @@ class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
             False,
         )
 
+    def test_process_mode_outputs_comparable_pipeline_diagnostics(self):
+        stage_ranks = {
+            "bm25": {"rank": 5, "score": 0.12},
+            "embedding": {"rank": 3, "score": 0.82},
+            "rrf": {"rank": 2, "score": 0.03},
+            "rerank": {"rank": 1, "score": 0.91},
+            "llm": {"rank": 1, "score": 8.8},
+        }
+        result = self.mod.process_mode(
+            candidates=[
+                {
+                    "id": "diag-paper",
+                    "llm_score": 8.8,
+                    "selection_score": 8.8,
+                    "diagnostics": {"stage_ranks": dict(stage_ranks)},
+                }
+            ],
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 1, "quick_base": 0, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        paper = result["papers"][0]
+        stages = paper["diagnostics"]["stage_ranks"]
+        for stage in ("bm25", "embedding", "rrf", "rerank", "llm", "selection"):
+            self.assertIn(stage, stages)
+            self.assertIn("rank", stages[stage])
+            self.assertIn("score", stages[stage])
+        self.assertEqual(stages["selection"]["selected"], True)
+        self.assertEqual(result["stats"]["diagnostics_stage_coverage"]["llm"]["present"], 1)
+        self.mod.validate_recommend_payload(result, output_path="recommend.json")
+
+    def test_validate_recommend_payload_rejects_missing_candidate_snapshot(self):
+        with self.assertRaisesRegex(RuntimeError, "papers"):
+            self.mod.validate_recommend_payload(
+                {"deep_dive": [{"id": "selected", "llm_score": 9.0}], "quick_skim": []},
+                output_path="recommend.json",
+            )
+
     def test_process_mode_downgrades_narrow_inspiration_and_backfills_deep(self):
         candidates = [
             {
