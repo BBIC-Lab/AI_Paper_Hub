@@ -128,10 +128,49 @@ class LlmRefineRecoveryTest(unittest.TestCase):
         self.assertEqual(captured["schema_name"], "rerank_batch")
         self.assertTrue(captured["strict"])
         self.assertTrue(captured["allow_json_object_fallback"])
+        required = captured["schema"]["properties"]["results"]["items"]["required"]
+        self.assertIn("method_substance_score", required)
+        self.assertIn("domain_breadth_score", required)
+        self.assertIn("transfer_specificity_score", required)
         self.assertIn("Let me repeat that:", user_content)
         self.assertEqual(user_content.count("User requirements list:"), 2)
         self.assertEqual(user_content.count("Papers:"), 2)
         self.assertTrue(user_content.rstrip().endswith("Output must be strict JSON only, no markdown, no fences, no extra text."))
+
+    def test_normalize_filter_result_clamps_quality_and_prevents_weak_bridge(self):
+        item = self.mod._normalize_filter_result_item(
+            {
+                "id": "p-1",
+                "matched_requirement_index": 1,
+                "score": 9,
+                "core_relevance_score": 9,
+                "inspiration_score": 9,
+                "method_substance_score": 8,
+                "domain_breadth_score": 4,
+                "transfer_specificity_score": 12,
+                "relevance_track": "bridge",
+            }
+        )
+
+        self.assertEqual(item["domain_breadth_score"], 4.0)
+        self.assertEqual(item["transfer_specificity_score"], 10.0)
+        self.assertEqual(item["inspiration_score"], 7.0)
+        self.assertEqual(item["score"], 9.0)
+        self.assertEqual(item["relevance_track"], "core")
+
+    def test_normalize_filter_result_backfills_missing_quality_scores(self):
+        item = self.mod._normalize_filter_result_item(
+            {
+                "id": "p-1",
+                "matched_requirement_index": 1,
+                "score": 8,
+                "relevance_track": "inspiration",
+            }
+        )
+
+        self.assertEqual(item["method_substance_score"], 8.0)
+        self.assertEqual(item["domain_breadth_score"], 8.0)
+        self.assertEqual(item["transfer_specificity_score"], 8.0)
 
 
 if __name__ == "__main__":

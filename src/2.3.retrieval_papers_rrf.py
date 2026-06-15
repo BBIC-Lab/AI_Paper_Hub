@@ -12,9 +12,11 @@ from typing import Any, Dict, List, Tuple
 
 try:
   from core import artifacts as core_artifacts
+  from core.diagnostics import annotate_stage_ranks, merge_paper_diagnostics
   from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
   from src.core import artifacts as core_artifacts
+  from src.core.diagnostics import annotate_stage_ranks, merge_paper_diagnostics
   from src.core import paths as core_paths
 
 
@@ -134,6 +136,9 @@ def merge_paper_maps(
     base[pid]["tags"] = base_tags.union(incoming_tags)
     for k, v in paper.items():
       if k == "tags":
+        continue
+      if k == "diagnostics":
+        merge_paper_diagnostics(base[pid], paper)
         continue
       if not base[pid].get(k) and v:
         base[pid][k] = v
@@ -278,6 +283,7 @@ def main() -> None:
       p["tags"] = sorted(tags)
     if p.get("tags"):
       tagged_papers.append(p)
+  annotate_stage_ranks(tagged_papers, fused_queries, "rrf")
 
   payload = {
     "top_k": args.top_n,

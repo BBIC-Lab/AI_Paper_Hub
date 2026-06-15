@@ -11,9 +11,11 @@ from typing import Any, Callable, Dict, List
 
 try:
     from core import artifacts as core_artifacts
+    from core.diagnostics import annotate_llm_ranks
     from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
     from src.core import artifacts as core_artifacts
+    from src.core.diagnostics import annotate_llm_ranks
     from src.core import paths as core_paths
 
 from llm import LLMAuthenticationError, LLMClient, make_task_client
@@ -55,6 +57,11 @@ def load_json(path: str) -> Dict[str, Any]:
 def save_json(data: Dict[str, Any], path: str) -> None:
     core_artifacts.write_json(path, data)
     log(f"[INFO] saved: {path}")
+
+
+def save_llm_payload(data: Dict[str, Any], output_path: str) -> None:
+    annotate_llm_ranks(data.get("papers") or [], data.get("llm_ranked") or [])
+    save_json(data, output_path)
 
 
 def load_config() -> Dict[str, Any]:
@@ -416,6 +423,9 @@ def call_filter(
                         "score": {"type": "number"},
                         "core_relevance_score": {"type": "number"},
                         "inspiration_score": {"type": "number"},
+                        "method_substance_score": {"type": "number"},
+                        "domain_breadth_score": {"type": "number"},
+                        "transfer_specificity_score": {"type": "number"},
                         "relevance_track": {"type": "string", "enum": ["core", "inspiration", "bridge"]},
                         "track_evidence_en": {"type": "string"},
                         "track_evidence_cn": {"type": "string"},
@@ -430,6 +440,9 @@ def call_filter(
                         "score",
                         "core_relevance_score",
                         "inspiration_score",
+                        "method_substance_score",
+                        "domain_breadth_score",
+                        "transfer_specificity_score",
                         "relevance_track",
                         "track_evidence_en",
                         "track_evidence_cn",
@@ -490,12 +503,16 @@ def call_filter(
         "8) Some requirements may be profile-level composite requirements built from multiple keywords. "
         "Use them when a paper is clearly central to the overall theme but does not fit a narrower requirement cleanly.\n"
         "9) Do not cap general-method papers merely because they are outside the core domain; judge inspiration value independently by transfer specificity.\n"
-        "10) Use bridge when both core_relevance_score and inspiration_score are >= 8; such papers are especially valuable because they satisfy both lanes.\n"
-        "11) If a track is not enabled, set its corresponding score to 0 and do not choose it as relevance_track.\n\n"
+        "10) Score method_substance_score high only for papers with an explicit method/model/tool/algorithm or analysis procedure; pure observations or narrow case studies should be low.\n"
+        "11) Score domain_breadth_score high only when the method is demonstrated or argued across broad tasks, datasets, domains, or a reusable abstract problem; single-region/single-species/single-device applications should usually be <= 6.\n"
+        "12) Score transfer_specificity_score high only when the paper gives a concrete adaptation route to the user's research context.\n"
+        "13) For inspiration_score >= 8, method_substance_score, domain_breadth_score, and transfer_specificity_score should each be >= 7.\n"
+        "14) Use bridge only when core_relevance_score and inspiration_score are >= 8 and all three method/transfer quality scores are >= 7.\n"
+        "15) If a track is not enabled, set its corresponding score to 0 and do not choose it as relevance_track.\n\n"
         "Papers:\n"
         f"{json.dumps(docs, ensure_ascii=False)}\n\n"
         "Output JSON format example:\n"
-        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, \"evidence_en\": \"short English phrase\", \"evidence_cn\": \"简短中文短语\", \"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"一句话 TLDR\", \"score\": 7, \"core_relevance_score\": 6, \"inspiration_score\": 8, \"relevance_track\": \"inspiration\", \"track_evidence_en\": \"transferable method\", \"track_evidence_cn\": \"方法可迁移\"}]}\n\n"
+        "{\"results\": [{\"id\": \"paper_id\", \"matched_requirement_index\": 1, \"evidence_en\": \"short English phrase\", \"evidence_cn\": \"简短中文短语\", \"tldr_en\": \"one-sentence TLDR\", \"tldr_cn\": \"一句话 TLDR\", \"score\": 7, \"core_relevance_score\": 6, \"inspiration_score\": 8, \"method_substance_score\": 8, \"domain_breadth_score\": 7, \"transfer_specificity_score\": 8, \"relevance_track\": \"inspiration\", \"track_evidence_en\": \"transferable method\", \"track_evidence_cn\": \"方法可迁移\"}]}\n\n"
         "Requirement: You MUST return exactly one result for every input paper. "
         "The results length must match the papers length, and every input id must appear once.\n\n"
         "Output must be a single-line JSON string. "
@@ -506,8 +523,9 @@ def call_filter(
         "Set matched_requirement_index to the best-matched requirement (1-based). "
         "Use semantic interpretation, not only lexical overlap, to decide relevance and score tier. "
         "Set core_relevance_score and inspiration_score independently on a 0-10 scale. "
+        "Also set method_substance_score, domain_breadth_score, and transfer_specificity_score on a 0-10 scale. "
         "Set score to the highest valid enabled-track score. "
-        "Set relevance_track to core, inspiration, or bridge; use bridge only when both core_relevance_score and inspiration_score are at least 8. "
+        "Set relevance_track to core, inspiration, or bridge; use bridge only when both lane scores are at least 8 and the three quality scores are at least 7. "
         "Evidence must be provided in both languages: "
         "evidence_en (English) and evidence_cn (Chinese). "
         "They should be short phrases linking the paper to the matched requirement; "
@@ -517,7 +535,7 @@ def call_filter(
         "Keep TLDR concise: <= 120 characters in English and <= 60 Chinese characters. "
         "Then give all scores (0-10). "
         "If unrelated, use evidence_en=\"not relevant\", evidence_cn=\"不相关\", "
-        "tldr_en=\"not relevant\", tldr_cn=\"不相关\", score 0, core_relevance_score 0, inspiration_score 0, "
+        "tldr_en=\"not relevant\", tldr_cn=\"不相关\", score 0, core_relevance_score 0, inspiration_score 0, method_substance_score 0, domain_breadth_score 0, transfer_specificity_score 0, "
         "relevance_track=\"core\", track_evidence_en=\"not relevant\", track_evidence_cn=\"不相关\", matched_requirement_index=0."
     )
     if retry_note:
@@ -579,6 +597,29 @@ def _coerce_score(value: Any) -> float:
     return max(0.0, min(10.0, score))
 
 
+def _score_with_fallback(value: Any, fallback: float) -> float:
+    if value is None:
+        return _coerce_score(fallback)
+    return _coerce_score(value)
+
+
+def _quality_passes(method_score: float, domain_score: float, transfer_score: float) -> bool:
+    return method_score >= 7.0 and domain_score >= 7.0 and transfer_score >= 7.0
+
+
+def _adjust_scores_for_quality(
+    core_score: float,
+    inspiration_score: float,
+    method_score: float,
+    domain_score: float,
+    transfer_score: float,
+) -> tuple[float, float, float]:
+    if inspiration_score >= 8.0 and not _quality_passes(method_score, domain_score, transfer_score):
+        inspiration_score = 7.0
+    score = max(core_score, inspiration_score)
+    return core_score, inspiration_score, score
+
+
 def _coerce_int(value: Any, default: int = 0) -> int:
     try:
         return int(value)
@@ -593,19 +634,34 @@ def _normalize_filter_result_item(item: Dict[str, Any]) -> Dict[str, Any]:
     legacy_score = _coerce_score(item.get("score"))
     core_score = _coerce_score(item.get("core_relevance_score"))
     inspiration_score = _coerce_score(item.get("inspiration_score"))
-    has_dual_scores = "core_relevance_score" in item or "inspiration_score" in item
+    method_score = _score_with_fallback(item.get("method_substance_score"), legacy_score)
+    domain_score = _score_with_fallback(item.get("domain_breadth_score"), legacy_score)
+    transfer_score = _score_with_fallback(item.get("transfer_specificity_score"), legacy_score)
+    has_core_score = "core_relevance_score" in item
+    has_inspiration_score = "inspiration_score" in item
+    has_dual_scores = has_core_score or has_inspiration_score
+    track_hint = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
     if not has_dual_scores:
-        track_hint = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
         if track_hint == TRACK_INSPIRATION:
             inspiration_score = legacy_score
         else:
             core_score = legacy_score
-    score = max(legacy_score, core_score, inspiration_score)
-    if "score" in item:
-        score = max(legacy_score, core_score, inspiration_score)
+    else:
+        # 兼容旧/半结构化响应：只给总分和 track 时，用总分补齐对应 lane。
+        if not has_core_score and track_hint in {TRACK_CORE, TRACK_BRIDGE}:
+            core_score = legacy_score
+        if not has_inspiration_score and track_hint in {TRACK_INSPIRATION, TRACK_BRIDGE}:
+            inspiration_score = legacy_score
+    core_score, inspiration_score, score = _adjust_scores_for_quality(
+        core_score,
+        inspiration_score,
+        method_score,
+        domain_score,
+        transfer_score,
+    )
     track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
     if has_dual_scores:
-        if core_score >= 8.0 and inspiration_score >= 8.0:
+        if core_score >= 8.0 and inspiration_score >= 8.0 and _quality_passes(method_score, domain_score, transfer_score):
             track = TRACK_BRIDGE
         elif inspiration_score > core_score:
             track = TRACK_INSPIRATION
@@ -623,6 +679,9 @@ def _normalize_filter_result_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "score": score,
         "core_relevance_score": core_score,
         "inspiration_score": inspiration_score,
+        "method_substance_score": method_score,
+        "domain_breadth_score": domain_score,
+        "transfer_specificity_score": transfer_score,
         "relevance_track": track,
         "track_evidence_en": _norm_text(item.get("track_evidence_en") or evidence_en),
         "track_evidence_cn": _norm_text(item.get("track_evidence_cn") or evidence_cn),
@@ -770,8 +829,30 @@ def merge_filter_result(
     score = _coerce_score(item.get("score"))
     core_score = _coerce_score(item.get("core_relevance_score"))
     inspiration_score = _coerce_score(item.get("inspiration_score"))
-    if "core_relevance_score" in item or "inspiration_score" in item:
-        score = max(score, core_score, inspiration_score)
+    has_core_score = "core_relevance_score" in item
+    has_inspiration_score = "inspiration_score" in item
+    track_hint = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+    if not has_core_score and not has_inspiration_score:
+        if track_hint == TRACK_INSPIRATION:
+            inspiration_score = score
+        else:
+            core_score = score
+    else:
+        # 兼容旧/半结构化响应：只给总分和 track 时，用总分补齐对应 lane。
+        if not has_core_score and track_hint in {TRACK_CORE, TRACK_BRIDGE}:
+            core_score = score
+        if not has_inspiration_score and track_hint in {TRACK_INSPIRATION, TRACK_BRIDGE}:
+            inspiration_score = score
+    method_score = _score_with_fallback(item.get("method_substance_score"), score)
+    domain_score = _score_with_fallback(item.get("domain_breadth_score"), score)
+    transfer_score = _score_with_fallback(item.get("transfer_specificity_score"), score)
+    core_score, inspiration_score, score = _adjust_scores_for_quality(
+        core_score,
+        inspiration_score,
+        method_score,
+        domain_score,
+        transfer_score,
+    )
     evidence_en = _norm_text(item.get("evidence_en"))
     evidence_cn = _norm_text(item.get("evidence_cn"))
     track_evidence_en = _norm_text(item.get("track_evidence_en") or evidence_en)
@@ -795,7 +876,7 @@ def merge_filter_result(
     matched_query = _norm_text((matched_req or {}).get("query"))
     matched_track = normalize_relevance_track((matched_req or {}).get("query_track"), TRACK_CORE)
     relevance_track = normalize_relevance_track(item.get("relevance_track"), matched_track)
-    if core_score >= 8.0 and inspiration_score >= 8.0:
+    if core_score >= 8.0 and inspiration_score >= 8.0 and _quality_passes(method_score, domain_score, transfer_score):
         relevance_track = TRACK_BRIDGE
     elif inspiration_score > core_score and inspiration_score >= score:
         relevance_track = TRACK_INSPIRATION
@@ -809,6 +890,9 @@ def merge_filter_result(
             "score": score,
             "core_relevance_score": core_score,
             "inspiration_score": inspiration_score,
+            "method_substance_score": method_score,
+            "domain_breadth_score": domain_score,
+            "transfer_specificity_score": transfer_score,
             "relevance_track": relevance_track,
             "track_evidence_en": track_evidence_en,
             "track_evidence_cn": track_evidence_cn,
@@ -1005,7 +1089,7 @@ def process_file(
     data["llm_ranked"] = llm_ranked
 
     data["llm_ranked_at"] = datetime.now(timezone.utc).isoformat()
-    save_json(data, output_path)
+    save_llm_payload(data, output_path)
     group_end()
 
 

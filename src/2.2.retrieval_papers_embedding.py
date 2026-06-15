@@ -20,9 +20,11 @@ import numpy as np
 
 try:
   from core import artifacts as core_artifacts
+  from core.diagnostics import annotate_stage_ranks
   from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
   from src.core import artifacts as core_artifacts
+  from src.core.diagnostics import annotate_stage_ranks
   from src.core import paths as core_paths
 
 from filter import EmbeddingCoarseFilter, decorate_passage_text, decorate_query_text, encode_queries
@@ -1146,6 +1148,7 @@ def save_tagged_results(
   id_to_paper: Dict[str, Paper] = result.get("papers") or {}
 
   tagged_papers = [p.to_dict() for p in id_to_paper.values() if p.tags]
+  annotate_stage_ranks(tagged_papers, result.get("queries") or [], "embedding")
 
   # 根据第一个查询推断 top_k：优先使用 sim_scores，其次兼容旧版 top_ids
   q_list = result.get("queries") or []

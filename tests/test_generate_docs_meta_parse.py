@@ -307,6 +307,8 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
             self.assertEqual(payload["topic_tags"], ["continual learning", "domain generalization"])
             self.assertEqual(payload["reader_section"], "deep")
             self.assertEqual(payload["tags"], [{"kind": "query", "label": "ai4nd"}])
+            self.assertEqual(payload["title_zh"], "测试论文")
+            self.assertEqual(payload["evidence"], "使用偏信息分解分析多模态语言模型中的模态交互")
             self.assertEqual(payload_by_title["Quick Paper"]["date"], "2026-05-21")
             self.assertEqual(payload_by_title["Quick Paper"]["reader_section"], "quick")
 

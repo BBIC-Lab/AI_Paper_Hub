@@ -8,9 +8,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 try:
   from core import artifacts as core_artifacts
+  from core.diagnostics import annotate_stage_ranks
   from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
   from src.core import artifacts as core_artifacts
+  from src.core.diagnostics import annotate_stage_ranks
   from src.core import paths as core_paths
 
 try:
@@ -147,6 +149,11 @@ def load_json(path: str) -> Dict[str, Any]:
 def save_json(data: Dict[str, Any], path: str) -> None:
   core_artifacts.write_json(path, data)
   log(f"[INFO] 已将打分结果写入：{path}")
+
+
+def save_rank_payload(data: Dict[str, Any], output_path: str) -> None:
+  annotate_stage_ranks(data.get("papers") or [], data.get("queries") or [], "rerank")
+  save_json(data, output_path)
 
 
 def format_doc(title: str, abstract: str) -> str:
@@ -534,7 +541,7 @@ def process_file(
     meta_generated_at = data.get("generated_at") or ""
     data["reranked_at"] = datetime.now(timezone.utc).isoformat()
     data["generated_at"] = meta_generated_at
-    save_json(data, output_path)
+    save_rank_payload(data, output_path)
     return
 
   papers_by_id = {str(p.get("id")): p for p in papers_list if p.get("id")}
@@ -572,7 +579,7 @@ def process_file(
     meta_generated_at = data.get("generated_at") or ""
     data["reranked_at"] = datetime.now(timezone.utc).isoformat()
     data["generated_at"] = meta_generated_at
-    save_json(data, output_path)
+    save_rank_payload(data, output_path)
     return
 
   if reranker is None:
@@ -585,7 +592,7 @@ def process_file(
       meta_generated_at = data.get("generated_at") or ""
       data["reranked_at"] = datetime.now(timezone.utc).isoformat()
       data["generated_at"] = meta_generated_at
-      save_json(data, output_path)
+      save_rank_payload(data, output_path)
       return
     finally:
       group_end()
@@ -670,7 +677,7 @@ def process_file(
   data["reranked_at"] = datetime.now(timezone.utc).isoformat()
   data["generated_at"] = meta_generated_at
 
-  save_json(data, output_path)
+  save_rank_payload(data, output_path)
   group_end()
 
 

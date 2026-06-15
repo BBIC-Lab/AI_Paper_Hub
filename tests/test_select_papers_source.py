@@ -313,6 +313,106 @@ class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
         deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
         self.assertEqual(deep_ids, ["p-1", "p-2", "p-3"])
 
+    def test_all_quick_mode_keeps_full_candidate_diagnostics_snapshot(self):
+        result = self.mod.process_mode(
+            candidates=[
+                {"id": "picked", "llm_score": 8.5, "selection_score": 8.5},
+                {"id": "below-threshold", "llm_score": 7.5, "selection_score": 7.5},
+            ],
+            tag_count=0,
+            mode="standard",
+            cfg={"all_quick_min_score": 8.0},
+            carryover_ratio=0.5,
+        )
+
+        self.assertEqual([item.get("id") for item in result.get("quick_skim", [])], ["picked"])
+        self.assertEqual([item.get("id") for item in result.get("papers", [])], ["picked", "below-threshold"])
+        below = next(item for item in result.get("papers", []) if item.get("id") == "below-threshold")
+        self.assertEqual(
+            below.get("diagnostics", {}).get("stage_ranks", {}).get("selection", {}).get("selected"),
+            False,
+        )
+
+    def test_process_mode_downgrades_narrow_inspiration_and_backfills_deep(self):
+        candidates = [
+            {
+                "id": "narrow-app",
+                "llm_score": 9.9,
+                "relevance_track": "inspiration",
+                "inspiration_score": 9.9,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 4.0,
+                "transfer_specificity_score": 8.0,
+            },
+            {
+                "id": "broad-method",
+                "llm_score": 9.1,
+                "relevance_track": "inspiration",
+                "inspiration_score": 9.1,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 8.0,
+                "transfer_specificity_score": 8.0,
+            },
+            {
+                "id": "second-broad",
+                "llm_score": 8.8,
+                "relevance_track": "inspiration",
+                "inspiration_score": 8.8,
+                "method_substance_score": 7.5,
+                "domain_breadth_score": 7.5,
+                "transfer_specificity_score": 7.0,
+            },
+        ]
+
+        result = self.mod.process_mode(
+            candidates=candidates,
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 2, "quick_base": 2, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
+        quick_ids = [item.get("id") for item in result.get("quick_skim", [])]
+        self.assertEqual(deep_ids, ["broad-method", "second-broad"])
+        self.assertIn("narrow-app", quick_ids)
+        narrow = next(item for item in result.get("papers", []) if item.get("id") == "narrow-app")
+        self.assertEqual(narrow.get("selection_downgrade_reason"), "general_method_quality_below_threshold")
+        selection_diag = narrow.get("diagnostics", {}).get("stage_ranks", {}).get("selection", {})
+        self.assertEqual(
+            selection_diag.get("selected"),
+            True,
+        )
+        self.assertEqual(selection_diag.get("section"), "quick")
+        self.assertEqual(result.get("stats", {}).get("deep_quality_downgraded"), 1)
+
+    def test_process_mode_downgrades_weak_bridge_quality(self):
+        candidates = [
+            {
+                "id": "weak-bridge",
+                "llm_score": 9.8,
+                "relevance_track": "bridge",
+                "core_relevance_score": 9.8,
+                "inspiration_score": 9.8,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 8.0,
+                "transfer_specificity_score": 5.0,
+            },
+            {"id": "core-fill", "llm_score": 8.0, "relevance_track": "core", "core_relevance_score": 8.0},
+        ]
+
+        result = self.mod.process_mode(
+            candidates=candidates,
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 1, "quick_base": 2, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        self.assertEqual([item.get("id") for item in result.get("deep_dive", [])], ["core-fill"])
+        weak = next(item for item in result.get("papers", []) if item.get("id") == "weak-bridge")
+        self.assertEqual(weak.get("selection_downgrade_reason"), "bridge_quality_below_threshold")
+
     def test_process_mode_deep_can_include_lower_scores_when_cap_allows(self):
         candidates = [
             {"id": "p-1", "llm_score": 8.9},

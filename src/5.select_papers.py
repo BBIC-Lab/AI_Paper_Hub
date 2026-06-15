@@ -10,9 +10,11 @@ from typing import Any, Dict, List, Tuple
 
 try:
     from core import artifacts as core_artifacts
+    from core.diagnostics import set_selection_rank
     from core import paths as core_paths
 except Exception:  # pragma: no cover - package import fallback
     from src.core import artifacts as core_artifacts
+    from src.core.diagnostics import set_selection_rank
     from src.core import paths as core_paths
 
 from subscription_plan import count_subscription_tags, get_profile_daily_paper_limits, get_profile_recommend_mix
@@ -73,6 +75,9 @@ TRACK_LABELS = {
     TRACK_BRIDGE: "桥接方法",
 }
 BRIDGE_SELECTION_BONUS = 0.5
+DEEP_METHOD_SUBSTANCE_MIN = 7.0
+DEEP_DOMAIN_BREADTH_MIN = 7.0
+BRIDGE_TRANSFER_SPECIFICITY_MIN = 7.0
 try:
     RERANK_SELECTION_WEIGHT = max(float(os.getenv("DPR_RERANK_SELECTION_WEIGHT") or "0.6"), 0.0)
 except Exception:
@@ -475,6 +480,50 @@ def parse_score(value: Any) -> float:
         return 0.0
 
 
+def parse_quality_score(item: Dict[str, Any], key: str, fallback: Any = None) -> float:
+    if key not in item or item.get(key) is None:
+        return max(parse_score(fallback), 0.0)
+    return max(min(parse_score(item.get(key)), 10.0), 0.0)
+
+
+def quality_scores_for_item(item: Dict[str, Any]) -> Tuple[float, float, float]:
+    fallback = item.get("llm_score") or item.get("score") or item.get("selection_score") or 0
+    return (
+        parse_quality_score(item, "method_substance_score", fallback),
+        parse_quality_score(item, "domain_breadth_score", fallback),
+        parse_quality_score(item, "transfer_specificity_score", fallback),
+    )
+
+
+def passes_general_method_quality(item: Dict[str, Any]) -> bool:
+    method_score, domain_score, _transfer_score = quality_scores_for_item(item)
+    return method_score >= DEEP_METHOD_SUBSTANCE_MIN and domain_score >= DEEP_DOMAIN_BREADTH_MIN
+
+
+def passes_bridge_quality(item: Dict[str, Any]) -> bool:
+    method_score, domain_score, transfer_score = quality_scores_for_item(item)
+    return (
+        method_score >= DEEP_METHOD_SUBSTANCE_MIN
+        and domain_score >= DEEP_DOMAIN_BREADTH_MIN
+        and transfer_score >= BRIDGE_TRANSFER_SPECIFICITY_MIN
+    )
+
+
+def deep_quality_downgrade_reason(item: Dict[str, Any]) -> str:
+    track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+    if track not in {TRACK_INSPIRATION, TRACK_BRIDGE}:
+        return ""
+    if track == TRACK_BRIDGE and not passes_bridge_quality(item):
+        return "bridge_quality_below_threshold"
+    if not passes_general_method_quality(item):
+        return "general_method_quality_below_threshold"
+    return ""
+
+
+def is_deep_quality_eligible(item: Dict[str, Any]) -> bool:
+    return not deep_quality_downgrade_reason(item)
+
+
 def parse_rank(value: Any) -> int:
     try:
         rank = int(value)
@@ -625,12 +674,35 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         paper = dict(paper_map[pid])
         core_score = parse_score(item.get("core_relevance_score"))
         inspiration_score = parse_score(item.get("inspiration_score"))
-        has_dual_scores = "core_relevance_score" in item or "inspiration_score" in item
-        if has_dual_scores:
-            score = max(score, core_score, inspiration_score)
+        method_score = parse_quality_score(item, "method_substance_score", score)
+        domain_score = parse_quality_score(item, "domain_breadth_score", score)
+        transfer_score = parse_quality_score(item, "transfer_specificity_score", score)
         relevance_track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
+        has_core_score = "core_relevance_score" in item
+        has_inspiration_score = "inspiration_score" in item
+        has_dual_scores = has_core_score or has_inspiration_score
         if has_dual_scores:
-            if core_score >= 8.0 and inspiration_score >= 8.0:
+            # 兼容旧/半结构化 LLM 结果：只给总分和 track 时补齐对应 lane。
+            if not has_core_score and relevance_track in {TRACK_CORE, TRACK_BRIDGE}:
+                core_score = score
+            if not has_inspiration_score and relevance_track in {TRACK_INSPIRATION, TRACK_BRIDGE}:
+                inspiration_score = score
+        if inspiration_score >= 8.0 and (
+            method_score < DEEP_METHOD_SUBSTANCE_MIN
+            or domain_score < DEEP_DOMAIN_BREADTH_MIN
+            or transfer_score < BRIDGE_TRANSFER_SPECIFICITY_MIN
+        ):
+            inspiration_score = 7.0
+        if has_dual_scores:
+            score = max(core_score, inspiration_score)
+        if has_dual_scores:
+            if (
+                core_score >= 8.0
+                and inspiration_score >= 8.0
+                and method_score >= DEEP_METHOD_SUBSTANCE_MIN
+                and domain_score >= DEEP_DOMAIN_BREADTH_MIN
+                and transfer_score >= BRIDGE_TRANSFER_SPECIFICITY_MIN
+            ):
                 relevance_track = TRACK_BRIDGE
             elif inspiration_score > core_score:
                 relevance_track = TRACK_INSPIRATION
@@ -656,6 +728,9 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
         paper["llm_score"] = score
         paper["core_relevance_score"] = core_score
         paper["inspiration_score"] = inspiration_score
+        paper["method_substance_score"] = method_score
+        paper["domain_breadth_score"] = domain_score
+        paper["transfer_specificity_score"] = transfer_score
         paper["relevance_track"] = relevance_track
         paper["relevance_track_label"] = TRACK_LABELS.get(relevance_track, TRACK_LABELS[TRACK_CORE])
         paper["selection_score"] = float(selection_score)
@@ -738,6 +813,87 @@ def sort_by_score(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             str(x.get("id") or ""),
         ),
     )
+
+
+def select_deep_with_quality_backfill(
+    ranked_candidates: List[Dict[str, Any]],
+    cap: int,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], int]:
+    if cap <= 0:
+        return [], list(ranked_candidates), 0
+
+    initial_deep = list(ranked_candidates[:cap])
+    tail = list(ranked_candidates[cap:])
+    deep_selected: List[Dict[str, Any]] = []
+    downgraded: List[Dict[str, Any]] = []
+    selected_keys = set()
+    downgraded_keys = set()
+
+    for item in initial_deep:
+        reason = deep_quality_downgrade_reason(item)
+        key = paper_dedup_key(item)
+        if reason:
+            item["selection_downgrade_reason"] = reason
+            copied = dict(item)
+            downgraded.append(copied)
+            if key:
+                downgraded_keys.add(key)
+            continue
+        deep_selected.append(item)
+        if key:
+            selected_keys.add(key)
+
+    for item in tail:
+        if len(deep_selected) >= cap:
+            break
+        key = paper_dedup_key(item)
+        if not key or key in selected_keys:
+            continue
+        if is_deep_quality_eligible(item):
+            deep_selected.append(item)
+            selected_keys.add(key)
+
+    remaining_after_deep = list(downgraded)
+    for item in ranked_candidates:
+        key = paper_dedup_key(item)
+        if not key or key in selected_keys or key in downgraded_keys:
+            continue
+        remaining_after_deep.append(item)
+
+    return deep_selected, remaining_after_deep, len(downgraded)
+
+
+def refresh_selection_diagnostics(result: Dict[str, Any]) -> Dict[str, Any]:
+    papers = [item for item in (result.get("papers") or []) if isinstance(item, dict)]
+    selected: Dict[str, Tuple[str, int]] = {}
+    for section_key, label in (("deep_dive", "deep"), ("quick_skim", "quick")):
+        for idx, item in enumerate(result.get(section_key) or [], start=1):
+            if not isinstance(item, dict):
+                continue
+            key = paper_dedup_key(item)
+            if key:
+                selected[key] = (label, idx)
+            set_selection_rank(
+                item,
+                candidate_rank=idx,
+                selected=True,
+                section=label,
+                section_rank=idx,
+            )
+
+    for idx, paper in enumerate(papers, start=1):
+        key = paper_dedup_key(paper)
+        section, section_rank = selected.get(key, ("", None))
+        set_selection_rank(
+            paper,
+            candidate_rank=idx,
+            selected=bool(section),
+            section=section,
+            section_rank=section_rank,
+            downgrade_reason=str(paper.get("selection_downgrade_reason") or ""),
+        )
+    result["papers"] = papers
+    return result
 
 
 def profile_limit_key(tag: Any) -> str:
@@ -1419,20 +1575,17 @@ def process_mode(
     ranked_candidates = sort_by_score(candidates)
     deep_selected: List[Dict[str, Any]]
     remaining_after_deep: List[Dict[str, Any]]
+    downgraded_deep = 0
     if cfg.get("deep_unlimited"):
         deep_selected = list(ranked_candidates)
         remaining_after_deep = []
     else:
         deep_base = int(cfg.get("deep_base") or 0)
         cap = max(deep_base + tag_count, 0)
-        deep_selected = ranked_candidates[:cap]
-        selected_keys = {paper_dedup_key(p) for p in deep_selected if paper_dedup_key(p)}
-        # 统一排序后再切分，避免精读/速读各自按 lane、track 或 source 重新筛选。
-        remaining_after_deep = [
-            p
-            for p in ranked_candidates
-            if paper_dedup_key(p) not in selected_keys
-        ]
+        deep_selected, remaining_after_deep, downgraded_deep = select_deep_with_quality_backfill(
+            ranked_candidates,
+            cap,
+        )
 
     quick_base = int(cfg.get("quick_base") or 0)
     quick_target = max(quick_base + tag_count, 0)
@@ -1449,16 +1602,24 @@ def process_mode(
         "quick_selected": len(quick_selected),
         "recommend_mix": recommend_mix,
         "selection_strategy": "unified_rank_slice",
+        "deep_quality_downgraded": downgraded_deep if not cfg.get("deep_unlimited") else 0,
+        "deep_quality_thresholds": {
+            "method_substance_score": DEEP_METHOD_SUBSTANCE_MIN,
+            "domain_breadth_score": DEEP_DOMAIN_BREADTH_MIN,
+            "bridge_transfer_specificity_score": BRIDGE_TRANSFER_SPECIFICITY_MIN,
+        },
     }
 
     result = {
         "mode": mode,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "stats": stats,
+        "papers": sanitize_items(ranked_candidates),
         "deep_dive": sanitize_items(deep_selected),
         "quick_skim": sanitize_items(quick_selected),
     }
-    return apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
+    result = apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
+    return refresh_selection_diagnostics(result)
 
 
 def process_mode_all_quick_min_score(
@@ -1473,8 +1634,8 @@ def process_mode_all_quick_min_score(
     """
     candidates = dedupe_papers_by_key([ensure_selection_fields(item) for item in candidates if isinstance(item, dict)])
     threshold = float(min_score)
-    picked = [p for p in candidates if float(p.get("llm_score", 0)) >= threshold]
-    picked = sort_by_score(picked)
+    ranked_candidates = sort_by_score(candidates)
+    picked = [p for p in ranked_candidates if float(p.get("llm_score", 0)) >= threshold]
 
     stats = {
         "mode": mode,
@@ -1492,10 +1653,12 @@ def process_mode_all_quick_min_score(
         "mode": mode,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "stats": stats,
+        "papers": sanitize_items(ranked_candidates),
         "deep_dive": [],
         "quick_skim": sanitize_items(picked),
     }
-    return apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
+    result = apply_profile_daily_limits(result, profile_daily_limits, profile_recommend_mix)
+    return refresh_selection_diagnostics(result)
 
 def force_all_into_quick(result: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -1515,7 +1678,7 @@ def force_all_into_quick(result: Dict[str, Any]) -> Dict[str, Any]:
     stats["quick_selected"] = len(merged)
     stats["forced_all_quick"] = True
     copied["stats"] = stats
-    return copied
+    return refresh_selection_diagnostics(copied)
 
 
 def main() -> None:
@@ -1683,6 +1846,7 @@ def main() -> None:
                     "profile_daily_limits": profile_daily_limits,
                     "profile_recommend_mix": profile_recommend_mix,
                 },
+                "papers": [],
                 "deep_dive": [],
                 "quick_skim": [],
             }
