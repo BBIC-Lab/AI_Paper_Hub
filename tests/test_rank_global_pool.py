@@ -134,6 +134,11 @@ class RankGlobalPoolTest(unittest.TestCase):
             self.assertEqual(len(reranker.last_documents), 2)
             papers_by_id = {item.get("id"): item for item in saved.get("papers") or []}
             self.assertEqual(papers_by_id["p3"].get("rerank_core_rank"), 1)
+            self.assertEqual(
+                papers_by_id["p3"].get("rerank_core_query_text"),
+                "how to automate the discovery of new optimization algorithms",
+            )
+            self.assertEqual(papers_by_id["p2"].get("rerank_inspiration_query_text"), "Automated Algorithm Design")
             self.assertEqual(saved.get("global_candidate_ids"), ["p1", "p3", "p2"])
             self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("core"), ["p1", "p3"])
             self.assertEqual(saved.get("global_candidate_ids_by_track", {}).get("inspiration"), ["p2"])

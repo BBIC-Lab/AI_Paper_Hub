@@ -88,6 +88,23 @@ BRIDGE_SELECTION_BONUS = 0.5
 DEEP_METHOD_SUBSTANCE_MIN = 7.0
 DEEP_DOMAIN_BREADTH_MIN = 7.0
 BRIDGE_TRANSFER_SPECIFICITY_MIN = 7.0
+CORE_DIRECT_RELEVANCE_EXCEPTION_MIN = 9.0
+CORE_DIRECT_METHOD_EXCEPTION_MIN = 8.0
+CORE_DIRECT_DOMAIN_EXCEPTION_FLOOR = 5.0
+CORE_DIRECT_TRANSFER_EXCEPTION_MIN = 7.0
+GENERIC_RERANK_QUALITY_MIN = 8.0
+GENERIC_RERANK_QUERY_TERMS = (
+    "online adaptation",
+    "domain adaptation",
+    "time series modeling",
+    "representation learning",
+)
+METHOD_ENTITY_RE = re.compile(
+    r"\b(model|framework|algorithm|method|architecture|transformer|encoder|decoder|"
+    r"training|benchmark|dataset|protocol|analysis|pipeline|retrieval|rerank|"
+    r"classifier|regression|adaptation|alignment|embedding|pca|nvar|conformer)\b",
+    re.IGNORECASE,
+)
 try:
     RERANK_SELECTION_WEIGHT = max(float(os.getenv("DPR_RERANK_SELECTION_WEIGHT") or "0.6"), 0.0)
 except Exception:
@@ -512,9 +529,24 @@ def quality_scores_for_item(item: Dict[str, Any]) -> Tuple[float, float, float]:
     )
 
 
+def core_score_for_item(item: Dict[str, Any]) -> float:
+    fallback = item.get("llm_score") or item.get("score") or item.get("selection_score") or 0
+    return parse_quality_score(item, "core_relevance_score", fallback)
+
+
 def passes_general_method_quality(item: Dict[str, Any]) -> bool:
     method_score, domain_score, _transfer_score = quality_scores_for_item(item)
     return method_score >= DEEP_METHOD_SUBSTANCE_MIN and domain_score >= DEEP_DOMAIN_BREADTH_MIN
+
+
+def passes_direct_core_exception(item: Dict[str, Any]) -> bool:
+    method_score, domain_score, transfer_score = quality_scores_for_item(item)
+    return (
+        core_score_for_item(item) >= CORE_DIRECT_RELEVANCE_EXCEPTION_MIN
+        and method_score >= CORE_DIRECT_METHOD_EXCEPTION_MIN
+        and domain_score >= CORE_DIRECT_DOMAIN_EXCEPTION_FLOOR
+        and transfer_score >= CORE_DIRECT_TRANSFER_EXCEPTION_MIN
+    )
 
 
 def passes_bridge_quality(item: Dict[str, Any]) -> bool:
@@ -528,12 +560,27 @@ def passes_bridge_quality(item: Dict[str, Any]) -> bool:
 
 def deep_quality_downgrade_reason(item: Dict[str, Any]) -> str:
     track = normalize_relevance_track(item.get("relevance_track"), TRACK_CORE)
-    if track not in {TRACK_INSPIRATION, TRACK_BRIDGE}:
+    if track == TRACK_CORE:
+        method_score, domain_score, _transfer_score = quality_scores_for_item(item)
+        if passes_direct_core_exception(item):
+            return ""
+        if domain_score < DEEP_DOMAIN_BREADTH_MIN:
+            return "core_domain_breadth_below_threshold"
+        if method_score < DEEP_METHOD_SUBSTANCE_MIN:
+            return "core_method_substance_below_threshold"
+        if has_generic_rerank_quality_risk(item, TRACK_CORE):
+            return "generic_query_quality_below_threshold"
         return ""
     if track == TRACK_BRIDGE and not passes_bridge_quality(item):
         return "bridge_quality_below_threshold"
     if not passes_general_method_quality(item):
         return "general_method_quality_below_threshold"
+    if track == TRACK_INSPIRATION and has_generic_rerank_quality_risk(item, TRACK_INSPIRATION):
+        return "generic_query_quality_below_threshold"
+    if track == TRACK_BRIDGE:
+        lane = item.get("selection_lane") if item.get("selection_lane") in {TRACK_CORE, TRACK_INSPIRATION} else TRACK_INSPIRATION
+        if has_generic_rerank_quality_risk(item, lane):
+            return "generic_query_quality_below_threshold"
     return ""
 
 
@@ -567,6 +614,73 @@ def rerank_rank_for_track(item: Dict[str, Any], track: str) -> int:
     return rank
 
 
+def rerank_query_text_for_track(item: Dict[str, Any], track: str) -> str:
+    track = normalize_relevance_track(track, "")
+    query_key = "rerank_core_query_text" if track == TRACK_CORE else "rerank_inspiration_query_text"
+    query_text = str(item.get(query_key) or "").strip()
+    if not query_text and normalize_relevance_track(item.get("rerank_track"), "") == track:
+        query_text = str(item.get("rerank_best_query") or "").strip()
+    if not query_text:
+        query_text = str(item.get("rerank_best_query") or item.get("matched_query_text") or "").strip()
+    return query_text
+
+
+def is_generic_rerank_query_text(query_text: str) -> bool:
+    normalized = re.sub(r"\s+", " ", str(query_text or "").lower())
+    return any(term in normalized for term in GENERIC_RERANK_QUERY_TERMS)
+
+
+def has_specific_method_entity(item: Dict[str, Any]) -> bool:
+    text = " ".join(
+        str(item.get(key) or "")
+        for key in (
+            "title",
+            "abstract",
+            "summary",
+            "track_evidence_en",
+            "track_evidence_cn",
+            "llm_evidence_en",
+            "llm_evidence_cn",
+            "llm_tldr_en",
+            "llm_tldr_cn",
+        )
+    )
+    return bool(METHOD_ENTITY_RE.search(text))
+
+
+def active_rerank_selection_signal(item: Dict[str, Any], track: str) -> bool:
+    score = rerank_score_for_track(item, track)
+    rank = rerank_rank_for_track(item, track)
+    window = max(int(RERANK_SELECTION_RANK_WINDOW or 1), 1)
+    return score > 0 and 0 < rank <= window
+
+
+def generic_rerank_quality_passes(item: Dict[str, Any]) -> bool:
+    method_score, domain_score, transfer_score = quality_scores_for_item(item)
+    return (
+        method_score >= GENERIC_RERANK_QUALITY_MIN
+        and domain_score >= GENERIC_RERANK_QUALITY_MIN
+        and transfer_score >= GENERIC_RERANK_QUALITY_MIN
+        and has_specific_method_entity(item)
+    )
+
+
+def allows_generic_rerank_bonus(item: Dict[str, Any], track: str) -> bool:
+    query_text = rerank_query_text_for_track(item, track)
+    if not is_generic_rerank_query_text(query_text):
+        return True
+    return generic_rerank_quality_passes(item)
+
+
+def has_generic_rerank_quality_risk(item: Dict[str, Any], track: str) -> bool:
+    query_text = rerank_query_text_for_track(item, track)
+    return (
+        active_rerank_selection_signal(item, track)
+        and is_generic_rerank_query_text(query_text)
+        and not generic_rerank_quality_passes(item)
+    )
+
+
 def rerank_selection_bonus(item: Dict[str, Any], track: str) -> float:
     score = rerank_score_for_track(item, track)
     if score <= 0:
@@ -576,6 +690,10 @@ def rerank_selection_bonus(item: Dict[str, Any], track: str) -> float:
         return 0.0
     window = max(int(RERANK_SELECTION_RANK_WINDOW or 1), 1)
     rank_factor = max(0.0, (window - rank + 1) / window)
+    if rank_factor <= 0:
+        return 0.0
+    if not allows_generic_rerank_bonus(item, track):
+        return 0.0
     return float(RERANK_SELECTION_WEIGHT) * score * rank_factor
 
 
@@ -729,6 +847,12 @@ def build_scored_papers(papers: List[Dict[str, Any]], llm_ranked: List[Dict[str,
             inspiration_score = score
         else:
             core_score = score
+
+        paper["core_relevance_score"] = core_score
+        paper["inspiration_score"] = inspiration_score
+        paper["method_substance_score"] = method_score
+        paper["domain_breadth_score"] = domain_score
+        paper["transfer_specificity_score"] = transfer_score
 
         if relevance_track == TRACK_INSPIRATION:
             selection_score = inspiration_score + rerank_selection_bonus(paper, TRACK_INSPIRATION)
@@ -1671,6 +1795,13 @@ def process_mode(
             "method_substance_score": DEEP_METHOD_SUBSTANCE_MIN,
             "domain_breadth_score": DEEP_DOMAIN_BREADTH_MIN,
             "bridge_transfer_specificity_score": BRIDGE_TRANSFER_SPECIFICITY_MIN,
+            "core_direct_exception": {
+                "core_relevance_score": CORE_DIRECT_RELEVANCE_EXCEPTION_MIN,
+                "method_substance_score": CORE_DIRECT_METHOD_EXCEPTION_MIN,
+                "domain_breadth_score_floor": CORE_DIRECT_DOMAIN_EXCEPTION_FLOOR,
+                "transfer_specificity_score": CORE_DIRECT_TRANSFER_EXCEPTION_MIN,
+            },
+            "generic_rerank_quality_score": GENERIC_RERANK_QUALITY_MIN,
         },
     }
 

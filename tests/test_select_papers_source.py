@@ -426,6 +426,55 @@ class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
         self.assertEqual(selection_diag.get("section"), "quick")
         self.assertEqual(result.get("stats", {}).get("deep_quality_downgraded"), 1)
 
+    def test_process_mode_downgrades_narrow_core_and_allows_strong_direct_core(self):
+        candidates = [
+            {
+                "id": "narrow-core",
+                "title": "Single-site physiological signal case study",
+                "llm_score": 9.9,
+                "relevance_track": "core",
+                "core_relevance_score": 9.9,
+                "method_substance_score": 7.5,
+                "domain_breadth_score": 5.0,
+                "transfer_specificity_score": 6.5,
+            },
+            {
+                "id": "direct-core",
+                "title": "Transformer framework for neural decoding experiments",
+                "llm_score": 9.4,
+                "relevance_track": "core",
+                "core_relevance_score": 9.4,
+                "method_substance_score": 8.2,
+                "domain_breadth_score": 5.5,
+                "transfer_specificity_score": 7.2,
+            },
+            {
+                "id": "broad-core",
+                "title": "Reusable neural decoding benchmark",
+                "llm_score": 9.1,
+                "relevance_track": "core",
+                "core_relevance_score": 9.1,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 8.0,
+                "transfer_specificity_score": 8.0,
+            },
+        ]
+
+        result = self.mod.process_mode(
+            candidates=candidates,
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 2, "quick_base": 2, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
+        quick_ids = [item.get("id") for item in result.get("quick_skim", [])]
+        self.assertEqual(deep_ids, ["direct-core", "broad-core"])
+        self.assertIn("narrow-core", quick_ids)
+        narrow = next(item for item in result.get("papers", []) if item.get("id") == "narrow-core")
+        self.assertEqual(narrow.get("selection_downgrade_reason"), "core_domain_breadth_below_threshold")
+
     def test_process_mode_downgrades_weak_bridge_quality(self):
         candidates = [
             {
@@ -635,6 +684,76 @@ class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
         picked = self.mod.select_by_recommend_mix(candidates, 1, {"core_ratio": 1, "inspiration_ratio": 0})
 
         self.assertEqual([item.get("id") for item in picked], ["strong"])
+
+    def test_generic_rerank_bonus_requires_high_transfer_quality(self):
+        candidates = [
+            {
+                "id": "strong",
+                "title": "Direct neural decoding model",
+                "llm_score": 8.2,
+                "relevance_track": "core",
+                "core_relevance_score": 8.2,
+            },
+            {
+                "id": "generic-rerank",
+                "title": "PCA framework for a single sea surface temperature region",
+                "llm_score": 8.0,
+                "relevance_track": "core",
+                "core_relevance_score": 8.0,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 7.0,
+                "transfer_specificity_score": 7.0,
+                "rerank_core_score": 1.0,
+                "rerank_core_rank": 1,
+                "rerank_core_query_text": "online adaptation",
+            },
+        ]
+
+        picked = self.mod.select_by_recommend_mix(candidates, 1, {"core_ratio": 1, "inspiration_ratio": 0})
+
+        self.assertEqual([item.get("id") for item in picked], ["strong"])
+
+    def test_process_mode_downgrades_generic_query_borderline_quality_from_deep(self):
+        candidates = [
+            {
+                "id": "narrow-generic",
+                "title": "PCA framework for one sea region",
+                "llm_score": 9.9,
+                "relevance_track": "inspiration",
+                "inspiration_score": 9.9,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 7.0,
+                "transfer_specificity_score": 7.0,
+                "matched_query_text": "time series modeling",
+                "rerank_inspiration_score": 1.0,
+                "rerank_inspiration_rank": 1,
+            },
+            {
+                "id": "broad-generic",
+                "title": "Transformer benchmark for time series modeling across domains",
+                "llm_score": 9.1,
+                "relevance_track": "inspiration",
+                "inspiration_score": 9.1,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 8.0,
+                "transfer_specificity_score": 8.0,
+                "matched_query_text": "time series modeling",
+                "rerank_inspiration_score": 0.8,
+                "rerank_inspiration_rank": 2,
+            },
+        ]
+
+        result = self.mod.process_mode(
+            candidates=candidates,
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 1, "quick_base": 2, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        self.assertEqual([item.get("id") for item in result.get("deep_dive", [])], ["broad-generic"])
+        narrow = next(item for item in result.get("papers", []) if item.get("id") == "narrow-generic")
+        self.assertEqual(narrow.get("selection_downgrade_reason"), "generic_query_quality_below_threshold")
 
     def test_select_by_recommend_mix_zero_disables_lane(self):
         candidates = [

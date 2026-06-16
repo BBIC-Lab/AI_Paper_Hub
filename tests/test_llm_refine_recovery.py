@@ -135,6 +135,8 @@ class LlmRefineRecoveryTest(unittest.TestCase):
         self.assertIn("Let me repeat that:", user_content)
         self.assertEqual(user_content.count("User requirements list:"), 2)
         self.assertEqual(user_content.count("Papers:"), 2)
+        self.assertIn("domain_breadth_score >= 7 requires explicit cross-task", user_content)
+        self.assertIn("single-task EEG applications should usually be <= 6", user_content)
         self.assertTrue(user_content.rstrip().endswith("Output must be strict JSON only, no markdown, no fences, no extra text."))
 
     def test_normalize_filter_result_clamps_quality_and_prevents_weak_bridge(self):

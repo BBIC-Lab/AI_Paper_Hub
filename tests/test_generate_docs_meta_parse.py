@@ -119,6 +119,10 @@ class GenerateDocsMetaParseTest(unittest.TestCase):
                 os.environ["DPR_JINA_PROXY"] = original_proxy
 
         self.assertEqual(text, "jina markdown")
+        self.assertEqual(
+            captured["url"],
+            "https://r.jina.ai/https%3A%2F%2Farxiv.org%2Fpdf%2F2606.12364v1",
+        )
         self.assertEqual(captured["proxies"]["https"], "http://127.0.0.1:7890")
 
     def test_ensure_text_content_tries_export_arxiv_pdf_after_direct_failure(self):

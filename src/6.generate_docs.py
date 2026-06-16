@@ -12,7 +12,7 @@ import re
 import tempfile
 import time
 import xml.etree.ElementTree as ET
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
@@ -346,8 +346,7 @@ def extract_pdf_text(pdf_path: str) -> str:
 def fetch_paper_markdown_via_jina(pdf_url: str, max_retries: int = 3) -> str | None:
     if not pdf_url:
         return None
-    base = "https://r.jina.ai/"
-    full_url = base + pdf_url
+    full_url = build_jina_reader_url(pdf_url)
     for attempt in range(1, max_retries + 1):
         try:
             log(f"[JINA] 第 {attempt} 次请求：{full_url}")
@@ -364,6 +363,11 @@ def fetch_paper_markdown_via_jina(pdf_url: str, max_retries: int = 3) -> str | N
         time.sleep(2 * attempt)
     log("[JINA][ERROR] 多次请求失败，将回退到 PyMuPDF 抽取。")
     return None
+
+
+def build_jina_reader_url(target_url: str) -> str:
+    # Encode the upstream URL so proxies do not misparse the embedded scheme/path.
+    return "https://r.jina.ai/" + quote(str(target_url or "").strip(), safe="")
 
 
 PDF_DOWNLOAD_HEADERS = {

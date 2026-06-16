@@ -491,6 +491,7 @@ def update_paper_rerank_metadata(
     return
   track_key = "rerank_core_score" if track == TRACK_CORE else "rerank_inspiration_score"
   rank_key = "rerank_core_rank" if track == TRACK_CORE else "rerank_inspiration_rank"
+  query_key = "rerank_core_query_text" if track == TRACK_CORE else "rerank_inspiration_query_text"
   old_track_score = paper.get(track_key)
   try:
     old_track_value = float(old_track_score)
@@ -499,6 +500,7 @@ def update_paper_rerank_metadata(
   if score > old_track_value:
     paper[track_key] = float(score)
     paper[rank_key] = int(rank)
+    paper[query_key] = query_text
 
   try:
     old_best = float(paper.get("rerank_score"))
