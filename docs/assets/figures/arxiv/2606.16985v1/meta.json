@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.16985v1/fig-001.webp",
+      "caption": "Table 1: Mapping combinations of ML estimators (e.g., KF, EKF, etc.) and Bayesian inference methods (variational Bayes, HMC/NUTS, etc.) to existing literature. The prefix “CD” indicates a paper explicitly considers continuous-discrete SSMs (i.e., SSMs specified by (2) and (3)). Entries with “+” denote combinations available in dynestyx that do not appear in the literature, to the best of our knowledge.",
+      "page": 4,
+      "index": 1,
+      "width": 860,
+      "height": 277
+    }
+  ]
+}

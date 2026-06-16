@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-004.webp",
+      "caption": "Figure 1. Overview of the proposed graph matching–based neural network for AD diagnosis with test-time domain adaptation. (a) Patient-specific brain graph generation using structural MRI (sMRI): Each brain graph is constructed from sMRI data, where colored rectangles represent radiomic features extracted from the corresponding regions of interest (ROIs), and yellow edges indicate brain connectivity; (b) Graph matching for AD diagnosis in the source domain: Two example patients are shown. The blue node denotes an unseen (test) patient, while the yellow node represents a patient with a known AD status. By performing graph matching between the two, the proposed GMN4AD quantifies graph similarity and infers the AD status of the test patient based on the matched reference. (c) Test-time domain adaptation on the target dataset: Instead of directly applying the source-trained model to the target domain, an unsupervised test-time domain adaptation strategy is employed. The model is further fine-tuned using a combination of contrastive learning loss and graph reconstruction loss. Without requiring target-domain labels, the weights of GMN4AD are adaptively updated to improve generalization and robustness under domain shifts.",
+      "page": 3,
+      "index": 4,
+      "width": 976,
+      "height": 641
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-002.webp",
+      "caption": "Table 2. Demographic information for the enrolled datasets.",
+      "page": 11,
+      "index": 2,
+      "width": 979,
+      "height": 198
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-001.webp",
+      "caption": "Table 3. Performance of the AD detection task using the proposed GMN4AD.",
+      "page": 11,
+      "index": 1,
+      "width": 979,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-006.webp",
+      "caption": "Table 4. Comparative experiment results on ADNI dataset",
+      "page": 12,
+      "index": 6,
+      "width": 958,
+      "height": 479
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-005.webp",
+      "caption": "Table 5. Comparative experiment results on ADNI dataset as source dataset and prediction on target dataset using unsupervised domain adaptation.",
+      "page": 13,
+      "index": 5,
+      "width": 989,
+      "height": 650
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-003.webp",
+      "caption": "Figure 2. Radiomics Feature Importance Across Disease Comparisons. The bar plots display the top features contributing to disease classification in ADNI (AD vs CN, CN vs MCI, and AD vs MCI). Each bar represents a radiomics feature extracted from MRI, including first-order intensity, texture (GLSZM, GLDM, NGTDM), shape, and coordinate-based features (coord_x, coord_y, coord_z), with the horizontal axis showing the relative importance as a percentage of times the feature was selected in the ZORRO-Paired explanation",
+      "page": 15,
+      "index": 3,
+      "width": 732,
+      "height": 1091
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13919v1/fig-007.webp",
+      "caption": "Figure 3. Top 10 most important brain ROIs identified by GMM4AD. The figure visualizes the ROIs that contribute most strongly to the model’s graph similarity predictions across different datasets and tasks.",
+      "page": 16,
+      "index": 7,
+      "width": 976,
+      "height": 712
+    }
+  ]
+}

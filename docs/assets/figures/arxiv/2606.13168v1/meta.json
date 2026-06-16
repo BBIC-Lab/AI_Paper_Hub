@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13168v1/fig-001.webp",
+      "caption": "Figure 1. Source-family routing ablations: baseline (recency-biaswrapped vanilla Qwen3) vs. Block AttnRes trained from scratch, on the same probe and the same data. Three families produce strong AttnRes-side effects with negligible baseline counterparts; a fourth carries routing mass but no causal weight.",
+      "page": 2,
+      "index": 1,
+      "width": 458,
+      "height": 280
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13168v1/fig-003.webp",
+      "caption": "Figure 2. Sublayer-restricted routing ablations on the AttnRes checkpoint. embedding matters only through MLP; nonlocal only through attention; current through both, with attention larger; prev completed through neither.",
+      "page": 4,
+      "index": 3,
+      "width": 457,
+      "height": 280
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13168v1/fig-004.webp",
+      "caption": "Figure 3. Layer-binned sublayer ablations on the AttnRes checkpoint as a heatmap. A small number of localised cells carry the primary causal signal.",
+      "page": 5,
+      "index": 4,
+      "width": 457,
+      "height": 264
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13168v1/fig-002.webp",
+      "caption": "Figure 4. Routing-mass composition by sublayer. The baseline allocates ≈ 0.84 to current in both sublayers; the AttnRes attention sublayer is broadly distributed with the largest slice on nonlocal, while the AttnRes MLP sublayer is current-heavy with non-trivial embedding and prev completed slices.",
+      "page": 8,
+      "index": 2,
+      "width": 943,
+      "height": 428
+    }
+  ]
+}

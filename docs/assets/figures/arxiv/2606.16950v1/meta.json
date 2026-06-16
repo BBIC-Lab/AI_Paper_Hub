@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-005.webp",
+      "caption": "Figure 1: Nanopore sensing of DNA barcodes and the Latent Space Mapping (LSM) framework. (A)Schematic of solid-state nanopore sensing. A voltage bias drives barcoded (labeled) DNA through the pore. Structural labels, dumbbell hairpins or single-stranded polyT overhangs (red inset), locally increase volume and charge as they pass, producing transient dips in the ioniccurrent trace (bottom) that encode the spatial arrangement of labels along the molecule. (B) The stochastic temporal warping problem. Left: Overlaid translocations of the same molecule highlight severe temporal fluctuations caused by nanopore kinetics, producing non-linearly time-distorted signal copies. Right: Superimposing 15 individual events (grey) demonstrates that naive temporal interpolation and averaging (red) destroys the underlying structural barcode, necessitating a velocity-invariant approach. (C) Overview of our LSM framework. An encoder maps warped traces into a velocity-invariant latent space of molecular coordinates, clustering molecules by structural identity regardless of acquisition conditions. This new representation enables clustering and identification, quantification of mixtures, and barcode reconstruction.",
+      "page": 4,
+      "index": 5,
+      "width": 979,
+      "height": 621
+    },
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-001.webp",
+      "caption": "Figure 2: Contrastive encoder architecture and latent space organization. (A) The Siamese encoder maps pairs of translocation traces through a 1D ResNet into a 256-dimensional embedding space. A contrastive cosine similarity loss minimizes the cosine distance between embeddings of traces from the same molecule while maximizing it between traces from different molecules, enforcing a minimum separation margin of 0.2. (B) Encoder responsiveness to barcode design factors versus acquisition and conformation factors. Each bar reports the maximum pairwise cosine distance between any two per-level mean embeddings when sweeping a single factor across its full range while the remaining factors are sampled from their default distributions. (C) Disentanglement of the five structural axes. For each structural factor, the trajectory of mean embeddings across the OFAT sweep defines a direction in latent space (its first principal component). The matrix shows the pairwise cosine similarities between these five directions. The skewness–inter-label distance pair has a cosine similarity of 0.72; all other pairs are ≤ 0.21. An independent TwoNN estimate of the intrinsic dimensionality is 4.5±0.1, 95% CI. (D) OFAT sweeps projected onto two-dimensional slices of a four-dimensional functional basis. Each axis is the dominant direction of one structural factor’s sweep through embedding space, computed as the first principal component of its per-level mean embeddings; the four axes are orthogonalized with the Gram–Schmidt orthogonalization. Each colored trajectory shows the mean embedding (±1s.e.m. n = 50 traces per level) as one barcode parameter is swept across its range. Gray points show the corresponding acquisition and conformation factor sweeps. 6",
+      "page": 6,
+      "index": 1,
+      "width": 727,
+      "height": 860
+    },
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-006.webp",
+      "caption": "Figure 3: Experimental validation of the synthetic coordinate system. (A) Library of dsDNA barcode molecules used in this study. The symmetric rulers db5/db9/db11 carry six dumbbell labels of increasing size, db11db6 is an asymmetric pair, and polyT carries four poly-thymine overhangs (pT10–pT30) between two db11 labels. (B) Experimental traces projected into the encoder’s latent space. UMAP projection where density contours show the embeddings of synthetic molecules whose barcode patterns match the corresponding real molecules, and overlaid points are experimental translocation traces. No retraining or fine-tuning was applied. (C) Experimental molecule centroids projected into the functional coordinate system derived from synthetic data (Fig. 2D). Each centroid is plotted with a 1 std-dev covariance ellipse across all six pairwise projections of the four functional coordinate axes (Supplementary Fig. ??). (D) Benchmarking against dynamic time warping (DTW) baselines. Left: silhouette score. Center: adjusted Rand index (ARI). Right: runtime per trace for a bag of 128 events. LSM encoder, DTW, and p-values + DTW are compared in each panel.",
+      "page": 9,
+      "index": 6,
+      "width": 972,
+      "height": 748
+    },
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-002.webp",
+      "caption": "Figure 4: Encoder invariance across acquisition conditions and quantitative mixture analysis. (A) Cross-device projection. Chip 2 events are projected into Chip 1’s UMAP space without retraining. Cluster centroid shifts between the two chips are d=0.003 (DB5) and d=0.001 (DB11) confirm near-perfect cross-device alignment. (B) Mixture quantification for two binary mixtures (DB5:DB11 and polyT:DB9) at five volumetric ratios on two distinct pores. (C) UMAP projections of the DB5:DB11 mixture at each ratio. (D) Embedding stability across voltage, chip, and manufacturer. Each point shows the cosine distance between a per-condition centroid and a same-molecule reference. The analysis spans 19 independent chips from two manufacturers and two fabrication methods, five molecule types, and three voltages (over 100 unique experimental conditions). The dashed line marks the contrastive margin of m = 0.2. (E) Embedding stability as a function of pore diameter. Each point shows the cosine distance between a molecule’s embedding on a given chip and a same-molecule reference measured on a different chip. The dashed line marks the contrastive margin of m = 0.2. 11",
+      "page": 11,
+      "index": 2,
+      "width": 932,
+      "height": 1041
+    },
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-004.webp",
+      "caption": "Figure 5: Multi-Instance Learner consensus reconstruction. (A) Schematic of the MIL pipeline. Traces from an encoder-identified cluster are converted to a noise-normalized p-value representation and processed by a Transformer-based Multi-Instance Learner, which alternates between trace-level refinement (Time Attention) and bag-level aggregation (CLS Attention) to output a single consensus binary barcode. (B) Reconstruction results for six experimental molecule classes. Each panel shows the ground-truth barcode (red) alongside the MIL consensus prediction (blue) for DB5, DB11, DB11DB6, and polyT (the latter two in both forward and reverse translocation orientations). (C) Reconstruction fidelity as a function of bag size. Dynamic time warping (DTW) distance between the MIL reconstruction and the ground truth, evaluated across all six experimental clusters (four molecules, two giving separate forward and reverse orientation clusters). (D) Robustness to cluster contamination. DTW distance of MIL and DTW barycenter averaging (DBA) reconstructions as a function of the contamination ratio between DB11DB6 and polyT traces in the input bag. (E) Runtime comparison using N=256 traces. MIL runtime on CPU and GPU compared against DBA on CPU. 13",
+      "page": 13,
+      "index": 4,
+      "width": 902,
+      "height": 979
+    },
+    {
+      "url": "assets/figures/arxiv/2606.16950v1/fig-003.webp",
+      "caption": "Figure 6: Detection and identification of a rare molecular variant at 0.2% abundance. (A) Reference UMAP projection fitted on pooled calibration experiments of DB5, DB11, DB11DB6, polyT, and 10,kbp unlabeled dsDNA, with DB9 excluded from the fit; density contours are shown for DB5, DB11, and 10,kbp. Translocation events from the rare-variant mixture (∼0.2% rare variant, four independent pores) are projected into this UMAP. Majority-population events are shown in green; 16 rare-variant events are highlighted in red. (B) Individual translocation traces of the 16 detected rare-variant events, comprising 8 folded and 8 linear translocations; arrows mark the foldinduced current. The MIL consensus barcode reconstructed from the 8 linear events is shown at the bottom.",
+      "page": 15,
+      "index": 3,
+      "width": 979,
+      "height": 602
+    }
+  ]
+}

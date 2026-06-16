@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14321v1/fig-001.webp",
+      "caption": "Figure 2: MaskedFOP inference: two-stage cascaded label propagation. Two frozen seeds (s1, s2) encode each test clip, audio embeddings are ℓ2-averaged into ã (Eq. 4) and the fused embedding z̃ is taken from s1. Stage 1 (P3, P5) refines labels by graph LP over the test set (𝐾=7, 𝛼=0.65, 50 iters), seeded from training-prototype neighbors. Cascade seeding replaces the 70 training prototypes with the ∼1,500 high-confidence Stage-1 labels (>20× denser, in-domain), the single largest gain (+8pp). Stage 2 (P4, P6) assigns labels by cosine nearest-centroid to these centroids, no further LP.",
+      "page": 5,
+      "index": 1,
+      "width": 1002,
+      "height": 373
+    }
+  ]
+}
