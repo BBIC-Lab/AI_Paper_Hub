@@ -475,6 +475,64 @@ class SelectPapersUnifiedSplitModeTest(unittest.TestCase):
         narrow = next(item for item in result.get("papers", []) if item.get("id") == "narrow-core")
         self.assertEqual(narrow.get("selection_downgrade_reason"), "core_domain_breadth_below_threshold")
 
+    def test_process_mode_backfills_direct_core_when_deep_shortfall(self):
+        candidates = [
+            {
+                "id": "direct-core-backfill",
+                "title": "Consumer BCI cognitive alignment case study",
+                "llm_score": 9.5,
+                "relevance_track": "core",
+                "core_relevance_score": 8.0,
+                "method_substance_score": 7.0,
+                "domain_breadth_score": 5.0,
+                "transfer_specificity_score": 5.0,
+            },
+            {
+                "id": "eligible-1",
+                "llm_score": 9.0,
+                "relevance_track": "inspiration",
+                "inspiration_score": 9.0,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 8.0,
+                "transfer_specificity_score": 8.0,
+            },
+            {
+                "id": "eligible-2",
+                "llm_score": 8.5,
+                "relevance_track": "inspiration",
+                "inspiration_score": 8.5,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 7.0,
+                "transfer_specificity_score": 7.0,
+            },
+            {
+                "id": "weak-inspiration",
+                "llm_score": 8.4,
+                "relevance_track": "inspiration",
+                "inspiration_score": 8.4,
+                "method_substance_score": 8.0,
+                "domain_breadth_score": 5.0,
+                "transfer_specificity_score": 5.0,
+            },
+        ]
+
+        result = self.mod.process_mode(
+            candidates=candidates,
+            tag_count=0,
+            mode="standard",
+            cfg={"deep_base": 3, "quick_base": 3, "deep_unlimited": False, "deep_strategy": "score"},
+            carryover_ratio=0.5,
+        )
+
+        deep_ids = [item.get("id") for item in result.get("deep_dive", [])]
+        quick_ids = [item.get("id") for item in result.get("quick_skim", [])]
+        self.assertEqual(deep_ids, ["eligible-1", "eligible-2", "direct-core-backfill"])
+        self.assertNotIn("direct-core-backfill", quick_ids)
+        backfilled = next(item for item in result.get("deep_dive", []) if item.get("id") == "direct-core-backfill")
+        self.assertEqual(backfilled.get("selection_downgrade_reason"), "core_domain_breadth_below_threshold")
+        self.assertEqual(backfilled.get("selection_backfill_reason"), "direct_core_shortfall")
+        self.assertEqual(result.get("stats", {}).get("deep_quality_backfilled"), 1)
+
     def test_process_mode_downgrades_weak_bridge_quality(self):
         candidates = [
             {

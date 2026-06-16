@@ -92,6 +92,10 @@ CORE_DIRECT_RELEVANCE_EXCEPTION_MIN = 9.0
 CORE_DIRECT_METHOD_EXCEPTION_MIN = 8.0
 CORE_DIRECT_DOMAIN_EXCEPTION_FLOOR = 5.0
 CORE_DIRECT_TRANSFER_EXCEPTION_MIN = 7.0
+CORE_SHORTFALL_BACKFILL_RELEVANCE_MIN = 8.0
+CORE_SHORTFALL_BACKFILL_METHOD_MIN = 7.0
+CORE_SHORTFALL_BACKFILL_DOMAIN_FLOOR = 5.0
+CORE_SHORTFALL_BACKFILL_TRANSFER_FLOOR = 5.0
 GENERIC_RERANK_QUALITY_MIN = 8.0
 GENERIC_RERANK_QUERY_TERMS = (
     "online adaptation",
@@ -549,6 +553,18 @@ def passes_direct_core_exception(item: Dict[str, Any]) -> bool:
     )
 
 
+def passes_direct_core_shortfall_backfill(item: Dict[str, Any]) -> bool:
+    method_score, domain_score, transfer_score = quality_scores_for_item(item)
+    return (
+        normalize_relevance_track(item.get("relevance_track"), TRACK_CORE) == TRACK_CORE
+        and core_score_for_item(item) >= CORE_SHORTFALL_BACKFILL_RELEVANCE_MIN
+        and method_score >= CORE_SHORTFALL_BACKFILL_METHOD_MIN
+        and domain_score >= CORE_SHORTFALL_BACKFILL_DOMAIN_FLOOR
+        and transfer_score >= CORE_SHORTFALL_BACKFILL_TRANSFER_FLOOR
+        and not has_generic_rerank_quality_risk(item, TRACK_CORE)
+    )
+
+
 def passes_bridge_quality(item: Dict[str, Any]) -> bool:
     method_score, domain_score, transfer_score = quality_scores_for_item(item)
     return (
@@ -959,9 +975,11 @@ def sort_by_score(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def select_deep_with_quality_backfill(
     ranked_candidates: List[Dict[str, Any]],
     cap: int,
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], int]:
+    backfill_target: int | None = None,
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], int, int]:
     if cap <= 0:
-        return [], list(ranked_candidates), 0
+        return [], list(ranked_candidates), 0, 0
+    target = min(cap, max(int(backfill_target if backfill_target is not None else cap), 0))
 
     initial_deep = list(ranked_candidates[:cap])
     tail = list(ranked_candidates[cap:])
@@ -994,14 +1012,36 @@ def select_deep_with_quality_backfill(
             deep_selected.append(item)
             selected_keys.add(key)
 
-    remaining_after_deep = list(downgraded)
+    backfilled_deep = 0
+    for item in ranked_candidates:
+        if len(deep_selected) >= target:
+            break
+        key = paper_dedup_key(item)
+        if not key or key in selected_keys:
+            continue
+        if passes_direct_core_shortfall_backfill(item):
+            reason = deep_quality_downgrade_reason(item)
+            if reason:
+                item["selection_downgrade_reason"] = reason
+            # 精读不足时，允许强相关 core 论文回填，但保留降级原因供审计。
+            item["selection_backfill_reason"] = "direct_core_shortfall"
+            deep_selected.append(item)
+            selected_keys.add(key)
+            backfilled_deep += 1
+
+    remaining_after_deep: List[Dict[str, Any]] = []
+    for item in downgraded:
+        key = paper_dedup_key(item)
+        if key and key in selected_keys:
+            continue
+        remaining_after_deep.append(item)
     for item in ranked_candidates:
         key = paper_dedup_key(item)
         if not key or key in selected_keys or key in downgraded_keys:
             continue
         remaining_after_deep.append(item)
 
-    return deep_selected, remaining_after_deep, len(downgraded)
+    return sort_by_score(deep_selected), remaining_after_deep, len(downgraded), backfilled_deep
 
 
 def refresh_selection_diagnostics(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -1208,6 +1248,23 @@ def aggregate_recommend_mix(profile_mixes: Dict[str, Dict[str, int]] | None) -> 
         core += int(mix.get("core_ratio") or 0)
         inspiration += int(mix.get("inspiration_ratio") or 0)
     return normalize_recommend_mix({"core_ratio": core, "inspiration_ratio": inspiration})
+
+
+def resolve_deep_shortfall_backfill_target(
+    cap: int,
+    profile_daily_limits: Dict[str, Dict[str, int]] | None,
+) -> int:
+    limits: List[int] = []
+    for raw in (profile_daily_limits or {}).values():
+        if not isinstance(raw, dict):
+            continue
+        try:
+            value = int(raw.get("deep") or 0)
+        except Exception:
+            value = 0
+        if value > 0:
+            limits.append(value)
+    return min(max(int(cap or 0), 0), max(limits)) if limits else max(int(cap or 0), 0)
 
 
 def lookup_profile_mix(
@@ -1764,15 +1821,17 @@ def process_mode(
     deep_selected: List[Dict[str, Any]]
     remaining_after_deep: List[Dict[str, Any]]
     downgraded_deep = 0
+    backfilled_deep = 0
     if cfg.get("deep_unlimited"):
         deep_selected = list(ranked_candidates)
         remaining_after_deep = []
     else:
         deep_base = int(cfg.get("deep_base") or 0)
         cap = max(deep_base + tag_count, 0)
-        deep_selected, remaining_after_deep, downgraded_deep = select_deep_with_quality_backfill(
+        deep_selected, remaining_after_deep, downgraded_deep, backfilled_deep = select_deep_with_quality_backfill(
             ranked_candidates,
             cap,
+            resolve_deep_shortfall_backfill_target(cap, profile_daily_limits),
         )
 
     quick_base = int(cfg.get("quick_base") or 0)
@@ -1802,7 +1861,14 @@ def process_mode(
                 "transfer_specificity_score": CORE_DIRECT_TRANSFER_EXCEPTION_MIN,
             },
             "generic_rerank_quality_score": GENERIC_RERANK_QUALITY_MIN,
+            "core_shortfall_backfill": {
+                "core_relevance_score": CORE_SHORTFALL_BACKFILL_RELEVANCE_MIN,
+                "method_substance_score": CORE_SHORTFALL_BACKFILL_METHOD_MIN,
+                "domain_breadth_score_floor": CORE_SHORTFALL_BACKFILL_DOMAIN_FLOOR,
+                "transfer_specificity_score_floor": CORE_SHORTFALL_BACKFILL_TRANSFER_FLOOR,
+            },
         },
+        "deep_quality_backfilled": backfilled_deep if not cfg.get("deep_unlimited") else 0,
     }
 
     result = {
