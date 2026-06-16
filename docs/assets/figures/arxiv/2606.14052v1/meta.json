@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-002.webp",
+      "caption": "FIG. 1. a) Demonstration of the distortions present in a 50Gbaud PAM4 link. b) Diagram of the photonic NGRC PIC which compensates for channel distortions in the analog optical domain.",
+      "page": 7,
+      "index": 2,
+      "width": 826,
+      "height": 700
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-003.webp",
+      "caption": "FIG. 2. a) Comparison of performance for digital and photonic equalization methods for a 10 km link with no oversampling and a memory spanning from M = 1 to 15. b) Comparison of digital and photonic equalization of a 10 km link with a fixed memory M = 5 and an oversampling rate ranging from Ros = 1 to 5.",
+      "page": 10,
+      "index": 3,
+      "width": 909,
+      "height": 360
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-007.webp",
+      "caption": "FIG. 3. Bit error rate vs. link length for digital methods (FIR filter, polynomial NGRC) compared to a simulated photonic NGRC with memory length varying from 3 to 11 data points. The KP4 error correction threshold is shown for comparison.",
+      "page": 12,
+      "index": 7,
+      "width": 468,
+      "height": 357
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-004.webp",
+      "caption": "FIG. 4. BER (left axis) and NRMSE (right axis) versus output feature vector dimension Nout for a memory M = 5 and oversampling rate Ros = 5.",
+      "page": 14,
+      "index": 4,
+      "width": 487,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-001.webp",
+      "caption": "FIG. 5. BER on a logarithmic scale as a function of oversampling rate Ros and input feature vector size Nin for a fixed output dimension Nout = 32. White lines indicate the parameters with integer values of memory M .",
+      "page": 15,
+      "index": 1,
+      "width": 477,
+      "height": 355
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-008.webp",
+      "caption": "FIG. 6. BER versus gain for a simulated PIC NGRC with ASE and shot noise. Equalization is applied to a 10 km link and the NGRC parameters are fixed to have output dimension Nout = 32 with M = 4.2 and Ros = 5.",
+      "page": 16,
+      "index": 8,
+      "width": 446,
+      "height": 349
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-005.webp",
+      "caption": "FIG. 7. a) DAC impulse response used for simulations, found by rescaling the time axis of the oscilloscope trace measuring the output of an arbitrary waveform generator with 15 GHz RF bandwidth. b) A plot showing the effects of the DAC impulse response. Horizontal lines indicate thresholds for assigning the sampled output voltage to a Gray-coded two-bit sequence.",
+      "page": 19,
+      "index": 5,
+      "width": 937,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14052v1/fig-006.webp",
+      "caption": "FIG. 8. a) The x component of the electric field for the first 10 modes of the 32-waveguide mixing region. b) Propagation of the 16th input mode through the waveguide mixing region.",
+      "page": 32,
+      "index": 6,
+      "width": 889,
+      "height": 349
+    }
+  ]
+}

@@ -3,19 +3,19 @@
     <div class="dpr-daily-kicker">Daily Research Brief</div>
     <h3>最新日报</h3>
     <div class="dpr-daily-stats" aria-label="日报运行概览">
-      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-16 13:21 北京时间</strong></div>
+      <div class="dpr-daily-stat"><span>生成时间</span><strong>26-06-16 17:33 北京时间</strong></div>
       <div class="dpr-daily-stat"><span>运行状态</span><strong>成功</strong></div>
-      <div class="dpr-daily-stat"><span>总数</span><strong>15</strong></div>
-      <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>5 / 10</strong></div>
-      <div class="dpr-daily-stat dpr-daily-topic-stat"><span>今日主题</span><div class="dpr-daily-topic-cloud"><span class="dpr-daily-topic-pill dpr-daily-topic-query">ndai<em>15</em></span>
-<span class="dpr-daily-topic-pill dpr-daily-topic-paper">通用启发<em>13</em></span>
+      <div class="dpr-daily-stat"><span>总数</span><strong>11</strong></div>
+      <div class="dpr-daily-stat"><span>精读 / 速读</span><strong>1 / 10</strong></div>
+      <div class="dpr-daily-stat dpr-daily-topic-stat"><span>今日主题</span><div class="dpr-daily-topic-cloud"><span class="dpr-daily-topic-pill dpr-daily-topic-query">ndai<em>11</em></span>
+<span class="dpr-daily-topic-pill dpr-daily-topic-paper">通用启发<em>9</em></span>
 <span class="dpr-daily-topic-pill dpr-daily-topic-paper">强相关<em>2</em></span></div></div>
     </div>
     <div class="dpr-daily-brief-card">
       <span>今日简报（AI）</span>
-      <p>大脑与AI的认知对齐：非侵入脑机接口让多模态多智能体学会“协作”</p>
-<p>最值得细读：9分论文用消费级脑电实现机器人认知对齐，8分论文首次用因果定位解剖TabPFN的注意力头功能</p>
-<p>读者可跟进：非侵入式脑机接口与注意力机制的可解释性正同时爆发，是跨界创新的黄金窗口</p>
+      <p>今日解读11篇论文，聚焦时间序列在线适应、多模态鲁棒预测与生物声学等前沿方向。</p>
+<p>最值得关注的是“学习误差上下文”让时序基础模型无需白盒访问即可自适应用户场景，以及注意力机制在处理缺失模态时展现出的高鲁棒性。</p>
+<p>建议从业者尝试将这类黑盒适应与缺失数据策略结合，快速提升业务模型的时变环境适应力。</p>
     </div>
     <a class="dpr-daily-detail-link" href="#/202606/16/README">打开完整日报</a>
   </div>
@@ -24,46 +24,10 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-deep">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13190v1-multi-modal-multi-agent-robotic-cognitive-alignment-enabled-by-non-invasive-consumer-brain-computer-interfaces-a-proof-of-concept-exploration">Multi-Modal Multi-Agent Robotic Cognitive Alignment enabled by Non-Invasive Consumer Brain Computer Interfaces: A Proof of Concept Exploration</a>
-    <div class="dpr-daily-paper-title-zh">多模态多智能体机器人认知对齐：基于非侵入式消费级脑机接口的概念验证探索</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">9.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>脑机接口赋能认知对齐</div>
-  </div>
-</article>
-<article class="dpr-daily-paper-card is-deep">
-  <div class="dpr-daily-paper-index">02</div>
-  <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.12917v1-where-computation-lives-inside-tabpfn-causal-localisation-of-attention-head-function">Where Computation Lives Inside TabPFN: Causal Localisation of Attention Head Function</a>
-    <div class="dpr-daily-paper-title-zh">TabPFN 内部的计算所在：注意力头功能的因果定位</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>TabPFN注意力头功能的因果分析</div>
-  </div>
-</article>
-<article class="dpr-daily-paper-card is-deep">
-  <div class="dpr-daily-paper-index">03</div>
-  <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.16985v1-dynestyx-a-probabilistic-programming-library-for-dynamical-systems">Dynestyx: A Probabilistic Programming Library for Dynamical Systems</a>
-    <div class="dpr-daily-paper-title-zh">Dynestyx：面向动态系统的概率编程库</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>适用于神经时间序列的状态空间模型库</div>
-  </div>
-</article>
-<article class="dpr-daily-paper-card is-deep">
-  <div class="dpr-daily-paper-index">04</div>
-  <div class="dpr-daily-paper-main">
     <a class="dpr-daily-paper-title" href="#/202606/16/2606.14222v1-learning-the-context-of-errors-black-box-online-adaptation-of-time-series-foundation-models">Learning the Context of Errors: Black-Box Online Adaptation of Time Series Foundation Models</a>
     <div class="dpr-daily-paper-title-zh">学习误差的上下文：时间序列基础模型的黑盒在线自适应</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过残差误差学习对时间序列基础模型进行在线自适应，可迁移至神经解码</div>
-  </div>
-</article>
-<article class="dpr-daily-paper-card is-deep">
-  <div class="dpr-daily-paper-index">05</div>
-  <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.16950v1-latent-space-mapping-of-interpretable-structural-coordinates-from-stochastic-single-molecule-signals">Latent space mapping of interpretable structural coordinates from stochastic single-molecule signals</a>
-    <div class="dpr-daily-paper-title-zh">从随机单分子信号中对可解释结构坐标的潜在空间映射</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>对随机时间序列信号的对比编码器，可迁移至神经解码</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>时间序列模型的黑盒在线适应</div>
   </div>
 </article></div>
   </section>
@@ -72,91 +36,91 @@
     <div class="dpr-daily-paper-grid"><article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">01</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13168v1-when-does-routing-become-interpretable-causal-probes-on-block-attention-residuals">When Does Routing Become Interpretable? Causal Probes on Block Attention Residuals</a>
-    <div class="dpr-daily-paper-title-zh">路由何时变得可解释？对块注意力残差的因果探测</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>块注意力残差用于可解释性</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13970v1-an-attention-based-model-for-robust-forecasting-with-missing-modality">An Attention-based Model for Robust Forecasting with Missing Modality</a>
+    <div class="dpr-daily-paper-title-zh">一种基于注意力的模型，用于在模态缺失情况下的鲁棒预测</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于注意力的鲁棒预测模型，处理缺失模态</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">02</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14321v1-maskedfop-polyglot-speaker-identification-under-missing-visual-modality-via-cascaded-graph-label-propagation">MaskedFOP: Polyglot Speaker Identification under Missing Visual Modality via Cascaded Graph Label Propagation</a>
-    <div class="dpr-daily-paper-title-zh">MaskedFOP：通过级联图标签传播在缺失视觉模态下进行多语言说话人识别</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>说话人识别中缺失模态的领域适应</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14662v1-beyond-task-performance-decoding-bioacoustic-embeddings-with-speech-features">Beyond task performance: Decoding bioacoustic embeddings with speech features</a>
+    <div class="dpr-daily-paper-title-zh">超越任务表现：用语音特征解码生物声学嵌入</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">8.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过探针分析生物声学嵌入中的语音特征可迁移至神经表征分析</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">03</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13970v1-an-attention-based-model-for-robust-forecasting-with-missing-modality">An Attention-based Model for Robust Forecasting with Missing Modality</a>
-    <div class="dpr-daily-paper-title-zh">一种基于注意力的模型，用于在模态缺失情况下的鲁棒预测</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于注意力的鲁棒预测模型处理缺失模态</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13190v1-multi-modal-multi-agent-robotic-cognitive-alignment-enabled-by-non-invasive-consumer-brain-computer-interfaces-a-proof-of-concept-exploration">Multi-Modal Multi-Agent Robotic Cognitive Alignment enabled by Non-Invasive Consumer Brain Computer Interfaces: A Proof of Concept Exploration</a>
+    <div class="dpr-daily-paper-title-zh">多模态多智能体机器人认知对齐：基于非侵入式消费级脑机接口的概念验证探索</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用非侵入式消费级脑机接口解码认知状态用于机器人对齐</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">04</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14146v1-a-programmers-guide-to-cascaded-adaptive-combiners-online-learning-by-biologically-accurate-models-of-multilayer-neuron-networks">A Programmer&#x27;s Guide to Cascaded Adaptive Combiners: Online Learning by Biologically Accurate Models of Multilayer Neuron Networks</a>
-    <div class="dpr-daily-paper-title-zh">级联自适应组合器的程序员指南：基于生物精确多层神经元网络模型的在线学习</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13340v1-emg-based-adaptation-of-anisotropic-virtual-fixtures-for-robot-assisted-surgical-resection-and-dissection">EMG-Based Adaptation of Anisotropic Virtual Fixtures for Robot-Assisted Surgical Resection and Dissection</a>
+    <div class="dpr-daily-paper-title-zh">基于肌电信号的自适应各向异性虚拟夹具在机器人辅助手术切除与解剖中的应用</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">强相关</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用生物精确神经网络模型的在线学习</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>基于EMG的虚拟夹具在线适应</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">05</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13901v1-spikf-go-spiking-fourier-graph-operators-for-multivariate-time-series-forecasting">SpikF-GO: Spiking Fourier Graph Operators for Multivariate Time Series Forecasting</a>
-    <div class="dpr-daily-paper-title-zh">SpikF-GO：用于多变量时间序列预测的脉冲傅里叶图算子</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13675v2-improving-robotic-generalist-policies-via-flow-reversal-steering">Improving Robotic Generalist Policies via Flow Reversal Steering</a>
+    <div class="dpr-daily-paper-title-zh">通过流向逆转引导提高机器人通才策略</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>脉冲傅里叶图算子用于多元时间序列预测</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>流反向引导优化隐表示，启发神经解码</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">06</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13624v1-beyond-uniform-tokens-adaptive-compression-for-time-series-language-models">Beyond Uniform Tokens: Adaptive Compression for Time Series Language Models</a>
-    <div class="dpr-daily-paper-title-zh">超越统一令牌：时间序列语言模型的自适应压缩</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14701v1-rats-patches-talk-through-registers-emergent-parts-in-register-attention-transformers">RATS! Patches Talk Through Registers: Emergent Parts in Register Attention Transformers</a>
+    <div class="dpr-daily-paper-title-zh">RATS! 图块通过寄存器交流：寄存器注意力Transformer中的涌现部件</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>时间序列令牌自适应压缩</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>用于结构化表征的注册注意力变换器</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">07</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13842v1-efficient-domain-adaptive-policy-learning-via-kernel-representation-with-application-to-quadrotor-control-under-non-stationary-disturbances">Efficient Domain-Adaptive Policy Learning via Kernel Representation with Application to Quadrotor Control under Non-Stationary Disturbances</a>
-    <div class="dpr-daily-paper-title-zh">通过核表示实现高效的领域自适应策略学习及其在非平稳扰动下四旋翼控制中的应用</div>
-    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">7.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过核表示进行领域自适应策略学习以实现在线适应</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13178v1-loss-shift-transfer-via-bayes-quotients">Loss-Shift Transfer via Bayes Quotients</a>
+    <div class="dpr-daily-paper-title-zh">基于贝叶斯商的损失转移迁移</div>
+    <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用贝叶斯商的理论损失偏移转移</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">08</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13381v1-hlder-improving-the-quality-coherence-trade-off-in-multimodal-vaes">Hölder++: Improving the Quality-Coherence Trade-off in Multimodal VAEs</a>
-    <div class="dpr-daily-paper-title-zh">Hölder++：提升多模态VAE中生成质量与一致性之间的权衡</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13624v1-beyond-uniform-tokens-adaptive-compression-for-time-series-language-models">Beyond Uniform Tokens: Adaptive Compression for Time Series Language Models</a>
+    <div class="dpr-daily-paper-title-zh">超越统一令牌：时间序列语言模型的自适应压缩</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>多模态变分自编码器改进一致性与质量平衡</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>时间序列语言模型的自适应压缩</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">09</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13919v1-gmn4ad-graph-matching-network-for-alzheimers-disease-diagnosis-with-test-time-domain-adaptation-using-multi-centered-structure-magnetic-resonance-imaging">GMN4AD: Graph Matching Network for Alzheimer&#x27;s Disease Diagnosis with Test-Time Domain Adaptation using Multi-centered Structure Magnetic Resonance Imaging</a>
-    <div class="dpr-daily-paper-title-zh">GMN4AD：基于图匹配网络的阿尔茨海默病诊断方法，结合多中心结构磁共振成像的测试时域适应</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.13842v1-efficient-domain-adaptive-policy-learning-via-kernel-representation-with-application-to-quadrotor-control-under-non-stationary-disturbances">Efficient Domain-Adaptive Policy Learning via Kernel Representation with Application to Quadrotor Control under Non-Stationary Disturbances</a>
+    <div class="dpr-daily-paper-title-zh">通过核表示实现高效的领域自适应策略学习及其在非平稳扰动下四旋翼控制中的应用</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>脑影像域适应</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过核表示进行域自适应策略学习；可迁移至BCI在线适应</div>
   </div>
 </article>
 <article class="dpr-daily-paper-card is-quick">
   <div class="dpr-daily-paper-index">10</div>
   <div class="dpr-daily-paper-main">
-    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14568v1-trimodal-glioma-representation-alignment-via-volumetric-contrastive-learning">Trimodal Glioma Representation Alignment via Volumetric Contrastive Learning</a>
-    <div class="dpr-daily-paper-title-zh">基于体积对比学习的三模态胶质瘤表征对齐</div>
+    <a class="dpr-daily-paper-title" href="#/202606/16/2606.14052v1-nonlinear-pluggable-optics-digital-signal-processing-free-intensity-modulated-direct-detection-links-using-analog-photonic-next-generation-reservoir-computing">Nonlinear pluggable optics: Digital signal processing-free Intensity Modulated Direct Detection links using analog photonic Next Generation Reservoir Computing</a>
+    <div class="dpr-daily-paper-title-zh">非线性可插拔光学器件：利用模拟光子下一代储备池计算的无数字信号处理强度调制直接检测链路</div>
     <div class="dpr-daily-paper-meta"><span class="dpr-daily-score-pill">6.0/10</span><span class="dpr-daily-topic-chip dpr-daily-topic-query">ndai</span><span class="dpr-daily-topic-chip dpr-daily-topic-paper">通用启发</span></div>
-    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>通过对比对齐的三模态表示学习</div>
+    <div class="dpr-daily-paper-evidence"><span>推荐依据</span>使用库计算进行时间序列建模</div>
   </div>
 </article></div>
   </section>

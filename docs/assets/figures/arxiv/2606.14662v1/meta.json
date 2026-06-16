@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-001.webp",
+      "caption": "Figure 1. Starting from a variety of domains (left), we ask which acoustic features (extracted with openSMILE, top) are represented by which bioacoustic models (bottom).",
+      "page": 1,
+      "index": 1,
+      "width": 912,
+      "height": 193
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-006.webp",
+      "caption": "Table 1. Dataset summary",
+      "page": 4,
+      "index": 6,
+      "width": 912,
+      "height": 314
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-007.webp",
+      "caption": "Table 2. eGeMAPSv02 feature groups used in this study (88 features total).",
+      "page": 4,
+      "index": 7,
+      "width": 912,
+      "height": 269
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-005.webp",
+      "caption": "Table 3. Summary of Audio encoder models.",
+      "page": 4,
+      "index": 5,
+      "width": 912,
+      "height": 242
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-008.webp",
+      "caption": "Figure 2. Mean R² scores for linear decoding of eGeMAPS feature categories (dots). Vertical stems show non-linear gain and the stem cap marks the MLP R² value. Each line corresponds to one of six pretrained audio embedding models and all embeddings concatenated. X-axis shows feature categories. Higher R² values indicate greater decodability of feature category from the embedding space.",
+      "page": 5,
+      "index": 8,
+      "width": 912,
+      "height": 517
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-002.webp",
+      "caption": "Figure 3. Union of the top5 linearly decodable eGeMAPS features for each model, shown across datasets (rows) and models (columns). Colour represents mean R² for each feature-dataset-model combination, illustrating which acoustic characteristics are most recoverable from each embedding.",
+      "page": 6,
+      "index": 2,
+      "width": 912,
+      "height": 1137
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-003.webp",
+      "caption": "Figure 4. Pairwise embedding predictability across all models. Cells show mean R² for predicting one embedding (target, columns) from another (source, rows), using a linear probe trained on combined bioacoustic and speech datasets. Higher values indicate greater overlap in encoded information between model pairs.",
+      "page": 7,
+      "index": 3,
+      "width": 687,
+      "height": 504
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14662v1/fig-004.webp",
+      "caption": "Figure 5. Task relevance versus embedding decodability of the top10 eGeMAPS features per dataset. The x-axis shows NMI; the y-axis shows mean R2 from linear probing. Grey bars indicate features that are both task-relevant and linearly decodable; red bars indicate task-relevant features with low linearly decodability, highlighting gaps in embedding representations.",
+      "page": 8,
+      "index": 4,
+      "width": 912,
+      "height": 727
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-006.webp",
+      "caption": "Fig. 3: Illustrative examples of FRS with π0.5 in LIBERO. (a) Solid arrows are directional reference actions, dots are corresponding steered actions, and black represents samples from the base policy without steering. The outputs of FRS are biased towards “reasonable” behaviors given the scene, e.g., reaching for the bowls. (b) and (c) show rolling out the forward (red) and right (green) steered actions, followed by executing the base policy.",
+      "page": 4,
+      "index": 6,
+      "width": 826,
+      "height": 219
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-005.webp",
+      "caption": "Fig. 7: Left: DSRL + FRS improves upon standard generalist RL methods [15, 49]. Right: Even if FRS struggles, warmstarting with even one FRS success improves RL on tasks where the base policy gets near-zero.",
+      "page": 8,
+      "index": 5,
+      "width": 814,
+      "height": 196
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-010.webp",
+      "caption": "Fig. 8: DSBC boosts performance on real-world tasks when trained with just 10 FRS rollouts, while standard BC completely fails in this data regime. DSBC rollouts can also bootstrap RL, as in the towel hanging task.",
+      "page": 9,
+      "index": 10,
+      "width": 826,
+      "height": 339
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-001.webp",
+      "caption": "Fig. 10: In a simplified setting, FRS brings actions from the original out-of-distribution mode into more indistribution actions as measured by log-likelihood. Fewer steps in the Euler approximation results in actions that are more in-distribution but farther from the original mode.",
+      "page": 18,
+      "index": 1,
+      "width": 733,
+      "height": 477
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-007.webp",
+      "caption": "Fig. 11: Fewer steps during FRS result in higher log-density ratio (indicating actions that are more indistribution on average) but also higher displacement relative to the number of noising steps. Note that on average in this simplified setting, any point from our steering “coarse action” should be expected to have distance around 4 from any mode. We choose 10 noising steps in our robotics experiments as a good balance between action fidelity and improved log-density ratio.",
+      "page": 19,
+      "index": 7,
+      "width": 817,
+      "height": 257
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-002.webp",
+      "caption": "Fig. 15: Analysis of noise statistics from our zero-shot VLM FRS experiments on LIBERO-90.",
+      "page": 23,
+      "index": 2,
+      "width": 804,
+      "height": 263
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-003.webp",
+      "caption": "Fig. 16: LIBERO-90 success rates from running FRS using an oracle VLA to steer, as well as ablations. The 62-task subset is the one used for zero-shot VLM FRS experiments.",
+      "page": 23,
+      "index": 3,
+      "width": 779,
+      "height": 189
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-009.webp",
+      "caption": "Fig. 19: Example outputs of VLM steering in LIBERO. Red indicates the direction suggested by the VLM.",
+      "page": 27,
+      "index": 9,
+      "width": 826,
+      "height": 716
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-004.webp",
+      "caption": "Table 1: Hyperparameters for DSBC and DSRL + FRS on LIBERO-90 with the frozen π0.5 policy.",
+      "page": 28,
+      "index": 4,
+      "width": 824,
+      "height": 683
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13675v2/fig-008.webp",
+      "caption": "Table 2: Hyperparameters for real world learning. DSBC and standard BC with a Gaussian policy share hyperparameters. All share the same dual-camera DSRL-style encoder and MLP trunk; they differ in what they predict (the VLA’s flow reversal noise vs. the robot actions directly) and in the output head (Gaussian regression vs. flow matching). The DSBC head is trained with MSE by default; an NLL (Gaussian, mean + log-std clamped to [−5, 2]) variant is used only to initialize RL finetuning.",
+      "page": 32,
+      "index": 8,
+      "width": 822,
+      "height": 493
+    }
+  ]
+}
