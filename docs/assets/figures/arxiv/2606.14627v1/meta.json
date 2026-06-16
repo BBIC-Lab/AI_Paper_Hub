@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-005.webp",
+      "caption": "Fig. 3. TT construction through successive N − 1 strangulations: TTSVD.",
+      "page": 4,
+      "index": 5,
+      "width": 423,
+      "height": 312
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-004.webp",
+      "caption": "Fig. 4. Matrices X1, X2, Xn, and tensors z2, z3, and zn, n = 2, . . . , N in TTSVD applied to a tensor in the TT format.",
+      "page": 4,
+      "index": 4,
+      "width": 427,
+      "height": 612
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-010.webp",
+      "caption": "Fig. 5. Matrices Xn, XnXT n , Mn, Sn, Yn, and Vn in Algorithm 1.",
+      "page": 5,
+      "index": 10,
+      "width": 423,
+      "height": 662
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-001.webp",
+      "caption": "Fig. 6. Matrix H in a TT format and product Hx in the TT format, one wagon of the product tensor, and tensors zn, Yn and Vn needed in the TTSVDHX algorithm.",
+      "page": 6,
+      "index": 1,
+      "width": 423,
+      "height": 604
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-002.webp",
+      "caption": "Fig. 8. Relative error of rounding of an Hadamard product of two TT tensors of the size 50× · · · × 50 (5010) and bond dimension 20, and computational time.",
+      "page": 8,
+      "index": 2,
+      "width": 475,
+      "height": 721
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-003.webp",
+      "caption": "Fig. 9. Relative error of rounding of an Hadamard product of two TT tensors of the size 4×· · ·×4 (418) and varying bond dimension, and computational time.",
+      "page": 8,
+      "index": 3,
+      "width": 475,
+      "height": 639
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-009.webp",
+      "caption": "Fig. 10. Relative error of rounding of product y = Hx, and computational time versus the bond dimension of H and x. In the upper diagram, the curves for the relative errors of TTrounding, TTSVDTT and TTSVDHX overlap.",
+      "page": 9,
+      "index": 9,
+      "width": 475,
+      "height": 652
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-008.webp",
+      "caption": "Fig. 11. Performance of TTSVDHX and SRC in the second experiment.",
+      "page": 9,
+      "index": 8,
+      "width": 423,
+      "height": 581
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-006.webp",
+      "caption": "Fig. 12. Molecules under the consideration: Benzene, [10]annulene, [18]annulene, and “azulene within azulene”.",
+      "page": 9,
+      "index": 6,
+      "width": 410,
+      "height": 394
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14627v1/fig-007.webp",
+      "caption": "Fig. 13. Vectorized Hamiltonian, and the minimum energy wave function of benzene, respectively.",
+      "page": 9,
+      "index": 7,
+      "width": 475,
+      "height": 475
+    }
+  ]
+}

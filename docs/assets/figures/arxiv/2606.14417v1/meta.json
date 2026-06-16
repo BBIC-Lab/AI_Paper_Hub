@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-004.webp",
+      "caption": "Figure 1: Representative time series of the geomagnetic indices Kp, Dst, SYM-H, SME, and SMR together with the near-Earth solar-wind and interplanetary magnetic field (IMF) variables B, Bz, Vs, Pt, Fp, and Ef over a selected interval in 2024.",
+      "page": 3,
+      "index": 4,
+      "width": 964,
+      "height": 483
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-009.webp",
+      "caption": "Figure 2: Schematic illustration of the proposed OLFTSA framework. The embedded plots use Kp as an illustrative example to explain the overlapping rolling-window construction and the associated FPCA quantities. 𝒫 is the set of target geometric indices and 𝒬 is the set of input solar-wind and IMF features; specifically 𝒫 = {Kp, Dst, SYM-H, SME, SMR} and 𝒬 = {B, Bz, Vs, Pt, Fp, Ef}. FPCA denotes functional principal components analysis, and MTSF denotes multivariate time series forecasting.",
+      "page": 9,
+      "index": 9,
+      "width": 920,
+      "height": 651
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-001.webp",
+      "caption": "Figure 3: Simulation results for ?̃? = 300 comparing the proposed OLFTSA method under varying overlap ratios 𝛾 with FSSA-Bootstrap for three curve lengths, 𝑛 = 100, 300, and 500. Rows display point forecast accuracy (RMSE and MAE), uncertainty quantification performance at nominal coverage level 0.95 (ECP and MIW), and computational time in minutes. Blue solid lines with points represent OLFTSA, while red dashed horizontal lines represent FSSA-Bootstrap. Results are averaged over 10 replications.",
+      "page": 15,
+      "index": 1,
+      "width": 964,
+      "height": 602
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-011.webp",
+      "caption": "Table 1: Six-hour ahead forecast performance comparison.",
+      "page": 16,
+      "index": 11,
+      "width": 964,
+      "height": 309
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-006.webp",
+      "caption": "Figure 4: Six-hour ahead forecasting performance for Dst and SMR indices during an intense geomagnetic storm event (May 2024). The top panel compares the observed (red) and predicted (blue) values from OLFTSA (top), LSTM (middle), and CHRONOS (bottom). The bottom panel shows the prediction intervals of Dst given by the conformal method.",
+      "page": 18,
+      "index": 6,
+      "width": 964,
+      "height": 786
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-008.webp",
+      "caption": "Figure 5: Twenty-four-hour ahead forecasting for SME during a highly active time (Mar 2021) with OLFTSA, LSTM and CHRONOS.",
+      "page": 19,
+      "index": 8,
+      "width": 964,
+      "height": 485
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-010.webp",
+      "caption": "Figure 6: Computational costs for 24-hour ahead forecasting of Kp (low-resolution), Dst (medium-resolution), and SYM-H (high-resolution).",
+      "page": 20,
+      "index": 10,
+      "width": 964,
+      "height": 325
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-005.webp",
+      "caption": "Figure B.1: Time-lagged cross-correlations over lags from 0 to 72 hours among the geo-",
+      "page": 35,
+      "index": 5,
+      "width": 964,
+      "height": 725
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-007.webp",
+      "caption": "Figure B.2: Time-lagged cross-correlations over lags from 0 to 72 hours between the geomag-",
+      "page": 36,
+      "index": 7,
+      "width": 964,
+      "height": 1204
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-002.webp",
+      "caption": "Figure B.3: Example trajectory of the underlying process 𝑧(𝑠) over the global time domain.",
+      "page": 39,
+      "index": 2,
+      "width": 964,
+      "height": 184
+    },
+    {
+      "url": "assets/figures/arxiv/2606.14417v1/fig-003.webp",
+      "caption": "Table B.4: Performance comparison of 24-hour lead time prediction.",
+      "page": 39,
+      "index": 3,
+      "width": 964,
+      "height": 391
+    }
+  ]
+}

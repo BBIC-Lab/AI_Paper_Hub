@@ -1,0 +1,102 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-005.webp",
+      "caption": "Table 1: Summary of varying data-generating parameters across scenarios: self-transition probabilities πii, i = 1, . . . ,K, of the latent Markov process and centroids µp, p = 1, . . . , P , for different values of K.",
+      "page": 7,
+      "index": 5,
+      "width": 683,
+      "height": 266
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-012.webp",
+      "caption": "Table 2: Performance comparison across four scenarios with K = 2,K = 3 and K = 4 latent states and no contamination. Methods include the feature-weighted jump model (FWJM), its non-robust version (nr-FWJM), the sparse jump model (SJM), the jump model (JM), k-means, Clustering Objects on Subsets of Attributes (COSA), and a Student-t hidden Markov model (Stud-t HMM). Results are reported in terms of median adjusted Rand index (ARI) and balanced accuracy (BAC), with standard deviations in parentheses, and root mean squared errors (RMSE) between true centroids and estimated medoids. Bold values indicate the best performance, corresponding to the highest ARI and BAC and the lowest RMSE.",
+      "page": 9,
+      "index": 12,
+      "width": 1013,
+      "height": 781
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-001.webp",
+      "caption": "Table 3: Performance comparison across four scenarios with K = 2,K = 3 and K = 4 latent states and 5% contamination. Methods include the feature-weighted jump model (FWJM), its non-robust version (nrFWJM), the sparse jump model (SJM), the jump model (JM), k-means, Clustering Objects on Subsets of Attributes (COSA), and a Student-t hidden Markov model (Stud-t HMM). Results are reported in terms of median adjusted Rand index (ARI) and balanced accuracy (BAC), with standard deviations in parentheses, and root mean squared errors (RMSE) between true centroids and estimated medoids. Bold values indicate the best performance, corresponding to the highest ARI and BAC and the lowest RMSE.",
+      "page": 11,
+      "index": 1,
+      "width": 1013,
+      "height": 781
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-010.webp",
+      "caption": "Fig. 1: Normalized median weight matrices for FWJM under scenario A with 5% contamination, for K = 2 (top-left) K = 3 and (top-right) K = 4 (bottom) latent states.",
+      "page": 12,
+      "index": 10,
+      "width": 736,
+      "height": 605
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-009.webp",
+      "caption": "Fig. 2: Normalized median weight matrices for FWJM under scenario B, with 0% and 5% contamination, for K = 2,K = 3, and K = 4 latent states.",
+      "page": 13,
+      "index": 9,
+      "width": 736,
+      "height": 1061
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-006.webp",
+      "caption": "Fig. 3: Sensitivity analysis for the feature-weighted jump model (FWJM) under scenario A, with 0% and 5% contamination, for K = 2,K = 3 and K = 4 latent states. Each panel reports the median adjusted Rand index (ARI) as a function of the tuning parameters λ and ζ. Grey shaded areas denote 95% confidence intervals.",
+      "page": 14,
+      "index": 6,
+      "width": 769,
+      "height": 746
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-004.webp",
+      "caption": "Fig. 4: Sensitivity analysis for the feature-weighted jump model (FWJM) under scenario B, with 0% and 5% contamination, for K = 2,K = 3 and K = 4 latent states. Each panel reports the median adjusted Rand index (ARI) as a function of the tuning parameters λ and ζ. Grey shaded areas denote 95% confidence intervals.",
+      "page": 15,
+      "index": 4,
+      "width": 774,
+      "height": 842
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-007.webp",
+      "caption": "Fig. 5: Time series of observed deaths in Kosovo in 1998-2000 by category. Points are colored differently according to the assigned cluster.",
+      "page": 18,
+      "index": 7,
+      "width": 718,
+      "height": 557
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-008.webp",
+      "caption": "Fig. 6: Normalized median weight matrices for FWJM under Scenario C, with 0% and 5% contamination, for K = 2,K = 3, and K = 4 latent states.",
+      "page": 23,
+      "index": 8,
+      "width": 736,
+      "height": 1061
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-011.webp",
+      "caption": "Fig. 7: Normalized median weight matrices for FWJM under Scenario D, with 0% and 5% contamination, for K = 2,K = 3, and K = 4 latent states.",
+      "page": 24,
+      "index": 11,
+      "width": 736,
+      "height": 1061
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-002.webp",
+      "caption": "Fig. 8: Sensitivity analysis for the feature-weighted jump model (FWJM) under Scenario C, with 0% and 5% contamination, for K = 2,K = 3 and K = 4 latent states. Each panel reports the median adjusted Rand index (ARI) as a function of the tuning parameters λ and ζ. Grey shaded areas denote confidence intervals.",
+      "page": 25,
+      "index": 2,
+      "width": 745,
+      "height": 746
+    },
+    {
+      "url": "assets/figures/arxiv/2606.13146v1/fig-003.webp",
+      "caption": "Fig. 9: Sensitivity analysis for the feature-weighted jump model (FWJM) under Scenario D, with 0% and 5% contamination, for K = 2,K = 3 and K = 4 latent states. Each panel reports the median adjusted Rand index (ARI) as a function of the tuning parameters λ and ζ. Grey shaded areas denote confidence intervals.",
+      "page": 26,
+      "index": 3,
+      "width": 744,
+      "height": 746
+    }
+  ]
+}
