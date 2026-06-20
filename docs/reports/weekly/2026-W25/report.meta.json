@@ -1,0 +1,3136 @@
+{
+  "period": "weekly",
+  "key": "2026-W25",
+  "label": "周报 · 2026-06-15 ~ 2026-06-21",
+  "start_date": "2026-06-15",
+  "end_date": "2026-06-21",
+  "input_mode": "artifacts",
+  "input_hash": "9120baf12f7f7ca2e907330ca749ef4d384041a6195a38fbc4405a7494cf048d",
+  "generated_at": "2026-06-20T09:42:45+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-06-15",
+      "end_date": "2026-06-21",
+      "artifact_files": 2,
+      "raw_records": 29,
+      "unique_papers": 29,
+      "duplicates_removed": 0,
+      "source_buckets": 1
+    },
+    "avg_score": 7.38,
+    "topics": [
+      {
+        "label": "通用启发",
+        "count": 24
+      },
+      {
+        "label": "强相关",
+        "count": 3
+      },
+      {
+        "label": "桥接方法",
+        "count": 2
+      }
+    ],
+    "sources": [
+      {
+        "label": "arxiv",
+        "count": 29
+      }
+    ],
+    "sections": [
+      {
+        "label": "quick",
+        "count": 20
+      },
+      {
+        "label": "deep",
+        "count": 9
+      }
+    ],
+    "score_distribution": [
+      {
+        "label": "7.0-7.9",
+        "count": 14
+      },
+      {
+        "label": "8.0-8.9",
+        "count": 7
+      },
+      {
+        "label": "6.0-6.9",
+        "count": 4
+      },
+      {
+        "label": "9.0+",
+        "count": 4
+      }
+    ],
+    "timeline": [
+      {
+        "date": "2026-06-15",
+        "count": 15
+      },
+      {
+        "date": "2026-06-16",
+        "count": 14
+      },
+      {
+        "date": "2026-06-17",
+        "count": 0
+      },
+      {
+        "date": "2026-06-18",
+        "count": 0
+      },
+      {
+        "date": "2026-06-19",
+        "count": 0
+      },
+      {
+        "date": "2026-06-20",
+        "count": 0
+      },
+      {
+        "date": "2026-06-21",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [
+      {
+        "topic": "通用启发",
+        "points": [
+          {
+            "date": "2026-06-15",
+            "count": 12
+          },
+          {
+            "date": "2026-06-16",
+            "count": 12
+          },
+          {
+            "date": "2026-06-17",
+            "count": 0
+          },
+          {
+            "date": "2026-06-18",
+            "count": 0
+          },
+          {
+            "date": "2026-06-19",
+            "count": 0
+          },
+          {
+            "date": "2026-06-20",
+            "count": 0
+          },
+          {
+            "date": "2026-06-21",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "topic": "强相关",
+        "points": [
+          {
+            "date": "2026-06-15",
+            "count": 2
+          },
+          {
+            "date": "2026-06-16",
+            "count": 1
+          },
+          {
+            "date": "2026-06-17",
+            "count": 0
+          },
+          {
+            "date": "2026-06-18",
+            "count": 0
+          },
+          {
+            "date": "2026-06-19",
+            "count": 0
+          },
+          {
+            "date": "2026-06-20",
+            "count": 0
+          },
+          {
+            "date": "2026-06-21",
+            "count": 0
+          }
+        ]
+      },
+      {
+        "topic": "桥接方法",
+        "points": [
+          {
+            "date": "2026-06-15",
+            "count": 1
+          },
+          {
+            "date": "2026-06-16",
+            "count": 1
+          },
+          {
+            "date": "2026-06-17",
+            "count": 0
+          },
+          {
+            "date": "2026-06-18",
+            "count": 0
+          },
+          {
+            "date": "2026-06-19",
+            "count": 0
+          },
+          {
+            "date": "2026-06-20",
+            "count": 0
+          },
+          {
+            "date": "2026-06-21",
+            "count": 0
+          }
+        ]
+      }
+    ],
+    "weekly_v2": {
+      "related_topics": [
+        {
+          "label": "通用启发",
+          "count": 24,
+          "rank": 1
+        },
+        {
+          "label": "Systems / Efficiency",
+          "count": 10,
+          "rank": 2
+        },
+        {
+          "label": "RAG / Retrieval",
+          "count": 5,
+          "rank": 3
+        },
+        {
+          "label": "Robotics",
+          "count": 5,
+          "rank": 4
+        },
+        {
+          "label": "Efficient Models",
+          "count": 4,
+          "rank": 5
+        },
+        {
+          "label": "Safety / Alignment",
+          "count": 4,
+          "rank": 6
+        },
+        {
+          "label": "Vision / Multimodal",
+          "count": 4,
+          "rank": 7
+        },
+        {
+          "label": "Evaluation / Benchmark",
+          "count": 3,
+          "rank": 8
+        },
+        {
+          "label": "LLM Agents",
+          "count": 3,
+          "rank": 9
+        },
+        {
+          "label": "NLP / Language",
+          "count": 3,
+          "rank": 10
+        }
+      ],
+      "focus_topics": [
+        {
+          "label": "通用启发",
+          "count": 24,
+          "rank": 1
+        },
+        {
+          "label": "Systems / Efficiency",
+          "count": 10,
+          "rank": 2
+        },
+        {
+          "label": "RAG / Retrieval",
+          "count": 5,
+          "rank": 3
+        }
+      ],
+      "context_topics": [
+        {
+          "label": "Robotics",
+          "count": 5,
+          "rank": 1
+        },
+        {
+          "label": "Efficient Models",
+          "count": 4,
+          "rank": 2
+        },
+        {
+          "label": "Safety / Alignment",
+          "count": 4,
+          "rank": 3
+        },
+        {
+          "label": "Vision / Multimodal",
+          "count": 4,
+          "rank": 4
+        },
+        {
+          "label": "Evaluation / Benchmark",
+          "count": 3,
+          "rank": 5
+        },
+        {
+          "label": "LLM Agents",
+          "count": 3,
+          "rank": 6
+        },
+        {
+          "label": "NLP / Language",
+          "count": 3,
+          "rank": 7
+        },
+        {
+          "label": "Reasoning",
+          "count": 3,
+          "rank": 8
+        },
+        {
+          "label": "强相关",
+          "count": 3,
+          "rank": 9
+        },
+        {
+          "label": "HCI / Human-AI",
+          "count": 2,
+          "rank": 10
+        }
+      ],
+      "weekday_topic_timeline": [
+        {
+          "topic": "通用启发",
+          "kind": "focus",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 12
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 12
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Systems / Efficiency",
+          "kind": "focus",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 7
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 3
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "RAG / Retrieval",
+          "kind": "focus",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 2
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 3
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Robotics",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 1
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 4
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Efficient Models",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 0
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 4
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Safety / Alignment",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 1
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 3
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Vision / Multimodal",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 3
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 1
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "Evaluation / Benchmark",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 3
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 0
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "LLM Agents",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 0
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 3
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "topic": "NLP / Language",
+          "kind": "context",
+          "points": [
+            {
+              "date": "2026-06-15",
+              "weekday": "周一",
+              "count": 1
+            },
+            {
+              "date": "2026-06-16",
+              "weekday": "周二",
+              "count": 2
+            },
+            {
+              "date": "2026-06-17",
+              "weekday": "周三",
+              "count": 0
+            },
+            {
+              "date": "2026-06-18",
+              "weekday": "周四",
+              "count": 0
+            },
+            {
+              "date": "2026-06-19",
+              "weekday": "周五",
+              "count": 0
+            }
+          ]
+        }
+      ],
+      "word_cloud": [
+        {
+          "label": "通用启发",
+          "count": 48,
+          "weight": 2.0
+        },
+        {
+          "label": "Systems / Efficiency",
+          "count": 20,
+          "weight": 1.25
+        },
+        {
+          "label": "data",
+          "count": 12,
+          "weight": 1.04
+        },
+        {
+          "label": "time",
+          "count": 11,
+          "weight": 1.01
+        },
+        {
+          "label": "RAG / Retrieval",
+          "count": 10,
+          "weight": 0.99
+        },
+        {
+          "label": "Robotics",
+          "count": 10,
+          "weight": 0.99
+        },
+        {
+          "label": "such",
+          "count": 9,
+          "weight": 0.96
+        },
+        {
+          "label": "Efficient Models",
+          "count": 8,
+          "weight": 0.93
+        },
+        {
+          "label": "Safety / Alignment",
+          "count": 8,
+          "weight": 0.93
+        },
+        {
+          "label": "series",
+          "count": 8,
+          "weight": 0.93
+        },
+        {
+          "label": "Vision / Multimodal",
+          "count": 8,
+          "weight": 0.93
+        },
+        {
+          "label": "adaptation",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "can",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "distribution",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "Evaluation / Benchmark",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "language",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "LLM Agents",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "NLP / Language",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "Reasoning",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "systems",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "强相关",
+          "count": 6,
+          "weight": 0.88
+        },
+        {
+          "label": "across",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "analysis",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "efficient",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "forecasting",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "has",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "information",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "modeling",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "performance",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "temporal",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "variation",
+          "count": 5,
+          "weight": 0.85
+        },
+        {
+          "label": "adaptive",
+          "count": 4,
+          "weight": 0.83
+        }
+      ],
+      "radar": [
+        {
+          "label": "智能体/推理",
+          "key": "agent_reasoning",
+          "count": 8,
+          "score": 0.615
+        },
+        {
+          "label": "数据/评测",
+          "key": "data_eval",
+          "count": 12,
+          "score": 0.923
+        },
+        {
+          "label": "系统/效率",
+          "key": "systems_efficiency",
+          "count": 13,
+          "score": 1.0
+        },
+        {
+          "label": "科学/机器人",
+          "key": "science_robotics",
+          "count": 7,
+          "score": 0.538
+        },
+        {
+          "label": "安全/HCI",
+          "key": "safety_hci",
+          "count": 5,
+          "score": 0.385
+        }
+      ],
+      "cooccurrence": [
+        {
+          "source": "Systems / Efficiency",
+          "target": "通用启发",
+          "count": 7
+        },
+        {
+          "source": "Efficient Models",
+          "target": "通用启发",
+          "count": 4
+        },
+        {
+          "source": "RAG / Retrieval",
+          "target": "通用启发",
+          "count": 4
+        },
+        {
+          "source": "Robotics",
+          "target": "通用启发",
+          "count": 4
+        },
+        {
+          "source": "Evaluation / Benchmark",
+          "target": "通用启发",
+          "count": 3
+        },
+        {
+          "source": "RAG / Retrieval",
+          "target": "Systems / Efficiency",
+          "count": 3
+        },
+        {
+          "source": "Reasoning",
+          "target": "通用启发",
+          "count": 3
+        },
+        {
+          "source": "Safety / Alignment",
+          "target": "Systems / Efficiency",
+          "count": 3
+        },
+        {
+          "source": "Safety / Alignment",
+          "target": "通用启发",
+          "count": 3
+        },
+        {
+          "source": "Vision / Multimodal",
+          "target": "通用启发",
+          "count": 3
+        },
+        {
+          "source": "Efficient Models",
+          "target": "LLM Agents",
+          "count": 2
+        },
+        {
+          "source": "LLM Agents",
+          "target": "Systems / Efficiency",
+          "count": 2
+        },
+        {
+          "source": "LLM Agents",
+          "target": "通用启发",
+          "count": 2
+        },
+        {
+          "source": "NLP / Language",
+          "target": "通用启发",
+          "count": 2
+        },
+        {
+          "source": "Systems / Efficiency",
+          "target": "强相关",
+          "count": 2
+        },
+        {
+          "source": "Causality / World Models",
+          "target": "通用启发",
+          "count": 1
+        },
+        {
+          "source": "Efficient Models",
+          "target": "HCI / Human-AI",
+          "count": 1
+        },
+        {
+          "source": "Efficient Models",
+          "target": "NLP / Language",
+          "count": 1
+        },
+        {
+          "source": "Efficient Models",
+          "target": "Robotics",
+          "count": 1
+        },
+        {
+          "source": "Efficient Models",
+          "target": "Systems / Efficiency",
+          "count": 1
+        }
+      ],
+      "topic_breadth": 16,
+      "topic_limits": {
+        "related_topics": 10,
+        "topic_timeline": 10,
+        "cooccurrence_topics": 10,
+        "cooccurrence_pairs": 10
+      }
+    },
+    "monthly_v1": {}
+  },
+  "interpretation": {
+    "summary_evidence_ids": [],
+    "highlights": [],
+    "rising_topics": [],
+    "reading_route": [],
+    "caveats": [],
+    "weekly_summary": "本周（2026-06-15 至 2026-06-21）共收录 29 篇论文，平均得分 7.38 分，其中 4 篇达 9.0+。主题分布中，“通用启发”以 24 篇居首，系统/效率（10 篇）、RAG/检索（5 篇）和机器人（5 篇）紧随其后。词频与共现分析显示，“自适应”（adaptation，6 次）、“分布偏移”（distribution，6 次）和“时序”（temporal，5 次）成为高频词，“系统/效率”与“通用启发”共现达 7 次，凸显通用方法在系统优化中的核心地位。代表性工作包括：黑盒在线适应时间序列基础模型（2606.14222v1）、次二次架构的原则性评估（2606.12364v1）、自适应压缩时序语言模型（2606.13624v1）以及频域卷积Transformer用于听觉注意力解码（2606.14120v1），均体现了对效率与适应性的追求。整体研究聚焦于自适应学习、分布鲁棒性和",
+    "weekly_summary_source": "llm",
+    "weekly_summary_model": "deepseek-v4-pro",
+    "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+    "monthly_summary": "",
+    "monthly_summary_source": "",
+    "monthly_summary_model": "",
+    "monthly_summary_note": "",
+    "watchlist": []
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 10,
+  "evidence_index": [
+    {
+      "paper_id": "2606.14614v1",
+      "title": "Decoding Semantic Categories from Picture-Naming EEG",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14614v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 9.0,
+      "source": "arxiv",
+      "topics": [
+        "Vision / Multimodal"
+      ]
+    },
+    {
+      "paper_id": "2606.14120v1",
+      "title": "FAConformer: Frequency-Aware Convolutional Transformer for Auditory Attention Decoding",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14120v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 9.0,
+      "source": "arxiv",
+      "topics": [
+        "Systems / Efficiency",
+        "RAG / Retrieval"
+      ]
+    },
+    {
+      "paper_id": "2606.14222v1",
+      "title": "Learning the Context of Errors: Black-Box Online Adaptation of Time Series Foundation Models",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14222v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 9.0,
+      "source": "arxiv",
+      "topics": [
+        "NLP / Language"
+      ]
+    },
+    {
+      "paper_id": "2606.12364v1",
+      "title": "On Subquadratic Architectures: From Applications to Principles",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12364v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 9.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Evaluation / Benchmark"
+      ]
+    },
+    {
+      "paper_id": "2606.13624v1",
+      "title": "Beyond Uniform Tokens: Adaptive Compression for Time Series Language Models",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13624v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Efficient Models",
+        "NLP / Language"
+      ]
+    },
+    {
+      "paper_id": "2606.14079v1",
+      "title": "Deep Spectral Learning of Embedded Latent Transfer Operators for Stochastic Dynamical Systems",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14079v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "Systems / Efficiency"
+      ]
+    },
+    {
+      "paper_id": "2606.12503v1",
+      "title": "Dolph2Vec: Self-Supervised Representations of Dolphin Vocalizations",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12503v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发"
+      ]
+    },
+    {
+      "paper_id": "2606.13842v1",
+      "title": "Efficient Domain-Adaptive Policy Learning via Kernel Representation with Application to Quadrotor Control under Non-Stationary Disturbances",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13842v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Robotics",
+        "Efficient Models"
+      ]
+    },
+    {
+      "paper_id": "2606.13190v1",
+      "title": "Multi-Modal Multi-Agent Robotic Cognitive Alignment enabled by Non-Invasive Consumer Brain Computer Interfaces: A Proof of Concept Exploration",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13190v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "Systems / Efficiency",
+        "Robotics",
+        "Safety / Alignment",
+        "LLM Agents"
+      ]
+    },
+    {
+      "paper_id": "2606.12141v1",
+      "title": "PCA-Enhanced Adaptive NVAR Framework for High-Resolution Sea Surface Temperature Forecasting in the East Sea",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12141v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "Safety / Alignment"
+      ]
+    },
+    {
+      "paper_id": "2606.12643v1",
+      "title": "TEDD: Robust Detection of Unstable Temporal Features",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12643v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 8.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发"
+      ]
+    },
+    {
+      "paper_id": "2606.14694v1",
+      "title": "AdaSR: Adaptive Streaming Reasoning with Hierarchical Relative Policy Optimization",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14694v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Robotics",
+        "Vision / Multimodal"
+      ]
+    },
+    {
+      "paper_id": "2606.13516v1",
+      "title": "Adaptive-Frequency Resonate-and-Fire Neurons for Spectral Estimation of Streaming Radar Signals",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13516v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "Efficient Models",
+        "LLM Agents"
+      ]
+    },
+    {
+      "paper_id": "2606.14627v1",
+      "title": "Algebraic Operations on Tensor Trains",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14627v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Efficient Models",
+        "LLM Agents"
+      ]
+    },
+    {
+      "paper_id": "2606.14506v1",
+      "title": "Beyond the Training Distribution: Evaluating Predictions Under Distribution Shift and Selection Bias",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14506v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Evaluation / Benchmark"
+      ]
+    },
+    {
+      "paper_id": "2606.13236v1",
+      "title": "Decoding Insect Song: A Multitask Semisupervised Orthoptera Bioacoustic Classifier",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13236v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency"
+      ]
+    },
+    {
+      "paper_id": "2606.13340v1",
+      "title": "EMG-Based Adaptation of Anisotropic Virtual Fixtures for Robot-Assisted Surgical Resection and Dissection",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13340v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Robotics"
+      ]
+    },
+    {
+      "paper_id": "2606.12559v1",
+      "title": "Feature-preserving Latent-EnKF for Data Assimilation of Flows with Shocks",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12559v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "Vision / Multimodal"
+      ]
+    },
+    {
+      "paper_id": "2606.12836v1",
+      "title": "Interpretable model-free inference of parametric variation across time-series data through large-scale feature extraction",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12836v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "Evaluation / Benchmark"
+      ]
+    },
+    {
+      "paper_id": "2606.12939v1",
+      "title": "MAMVI: 3D Test-Time Adaptation via Masked Multi-View Point Clouds",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12939v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "RAG / Retrieval"
+      ]
+    },
+    {
+      "paper_id": "2606.13258v1",
+      "title": "MOSAIC: Modality-Specific Adaptation for Incremental Continual Learning in Parkinson's Disease Gait Assessment",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13258v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Systems / Efficiency",
+        "RAG / Retrieval",
+        "Safety / Alignment"
+      ]
+    },
+    {
+      "paper_id": "2606.14373v1",
+      "title": "Machine-learned particle flow as a foundation model for collider physics",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14373v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发"
+      ]
+    },
+    {
+      "paper_id": "2606.12649v1",
+      "title": "MentalMARBERT: Domain-Adaptive Pre-training and Two-Stage Fine-Tuning for Arabic Mental Health Disorders Detection",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.12649v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "NLP / Language"
+      ]
+    },
+    {
+      "paper_id": "2606.14313v1",
+      "title": "Nonlocal Bayesian Modeling of Continuous Spatio-Temporal Dynamics",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14313v1",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发"
+      ]
+    },
+    {
+      "paper_id": "2606.14417v1",
+      "title": "Stable Multivariate Functional Time Series Prediction for Major Geomagnetic Indices",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.14417v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 7.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "RAG / Retrieval"
+      ]
+    },
+    {
+      "paper_id": "2606.13381v1",
+      "title": "Hölder++: Improving the Quality-Coherence Trade-off in Multimodal VAEs",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13381v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 6.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Vision / Multimodal"
+      ]
+    },
+    {
+      "paper_id": "2606.13146v1",
+      "title": "Robust State-Conditional Feature-Weighted Jump Models for Temporal Clustering",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13146v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 6.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "RAG / Retrieval",
+        "Robotics"
+      ]
+    },
+    {
+      "paper_id": "2606.13253v1",
+      "title": "Towards Personalized Federated Learning for Dysarthric Speech Recognition",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13253v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 6.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发",
+        "Safety / Alignment"
+      ]
+    },
+    {
+      "paper_id": "2606.13451v1",
+      "title": "Uncertainty Estimation for Molecular Diffusion Models",
+      "title_zh": "",
+      "href": "https://arxiv.org/pdf/2606.13451v1",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "score": 6.0,
+      "source": "arxiv",
+      "topics": [
+        "通用启发"
+      ]
+    }
+  ],
+  "monthly_v1": {},
+  "related_topics": [
+    {
+      "label": "通用启发",
+      "count": 24,
+      "rank": 1
+    },
+    {
+      "label": "Systems / Efficiency",
+      "count": 10,
+      "rank": 2
+    },
+    {
+      "label": "RAG / Retrieval",
+      "count": 5,
+      "rank": 3
+    },
+    {
+      "label": "Robotics",
+      "count": 5,
+      "rank": 4
+    },
+    {
+      "label": "Efficient Models",
+      "count": 4,
+      "rank": 5
+    },
+    {
+      "label": "Safety / Alignment",
+      "count": 4,
+      "rank": 6
+    },
+    {
+      "label": "Vision / Multimodal",
+      "count": 4,
+      "rank": 7
+    },
+    {
+      "label": "Evaluation / Benchmark",
+      "count": 3,
+      "rank": 8
+    },
+    {
+      "label": "LLM Agents",
+      "count": 3,
+      "rank": 9
+    },
+    {
+      "label": "NLP / Language",
+      "count": 3,
+      "rank": 10
+    }
+  ],
+  "focus_topics": [
+    {
+      "label": "通用启发",
+      "count": 24,
+      "rank": 1
+    },
+    {
+      "label": "Systems / Efficiency",
+      "count": 10,
+      "rank": 2
+    },
+    {
+      "label": "RAG / Retrieval",
+      "count": 5,
+      "rank": 3
+    }
+  ],
+  "context_topics": [
+    {
+      "label": "Robotics",
+      "count": 5,
+      "rank": 1
+    },
+    {
+      "label": "Efficient Models",
+      "count": 4,
+      "rank": 2
+    },
+    {
+      "label": "Safety / Alignment",
+      "count": 4,
+      "rank": 3
+    },
+    {
+      "label": "Vision / Multimodal",
+      "count": 4,
+      "rank": 4
+    },
+    {
+      "label": "Evaluation / Benchmark",
+      "count": 3,
+      "rank": 5
+    },
+    {
+      "label": "LLM Agents",
+      "count": 3,
+      "rank": 6
+    },
+    {
+      "label": "NLP / Language",
+      "count": 3,
+      "rank": 7
+    },
+    {
+      "label": "Reasoning",
+      "count": 3,
+      "rank": 8
+    },
+    {
+      "label": "强相关",
+      "count": 3,
+      "rank": 9
+    },
+    {
+      "label": "HCI / Human-AI",
+      "count": 2,
+      "rank": 10
+    }
+  ],
+  "weekday_topic_timeline": [
+    {
+      "topic": "通用启发",
+      "kind": "focus",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 12
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 12
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Systems / Efficiency",
+      "kind": "focus",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 7
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 3
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "RAG / Retrieval",
+      "kind": "focus",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 2
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 3
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Robotics",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 1
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 4
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Efficient Models",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 0
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 4
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Safety / Alignment",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 1
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 3
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Vision / Multimodal",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 3
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 1
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "Evaluation / Benchmark",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 3
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 0
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "LLM Agents",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 0
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 3
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "topic": "NLP / Language",
+      "kind": "context",
+      "points": [
+        {
+          "date": "2026-06-15",
+          "weekday": "周一",
+          "count": 1
+        },
+        {
+          "date": "2026-06-16",
+          "weekday": "周二",
+          "count": 2
+        },
+        {
+          "date": "2026-06-17",
+          "weekday": "周三",
+          "count": 0
+        },
+        {
+          "date": "2026-06-18",
+          "weekday": "周四",
+          "count": 0
+        },
+        {
+          "date": "2026-06-19",
+          "weekday": "周五",
+          "count": 0
+        }
+      ]
+    }
+  ],
+  "word_cloud": [
+    {
+      "label": "通用启发",
+      "count": 48,
+      "weight": 2.0
+    },
+    {
+      "label": "Systems / Efficiency",
+      "count": 20,
+      "weight": 1.25
+    },
+    {
+      "label": "data",
+      "count": 12,
+      "weight": 1.04
+    },
+    {
+      "label": "time",
+      "count": 11,
+      "weight": 1.01
+    },
+    {
+      "label": "RAG / Retrieval",
+      "count": 10,
+      "weight": 0.99
+    },
+    {
+      "label": "Robotics",
+      "count": 10,
+      "weight": 0.99
+    },
+    {
+      "label": "such",
+      "count": 9,
+      "weight": 0.96
+    },
+    {
+      "label": "Efficient Models",
+      "count": 8,
+      "weight": 0.93
+    },
+    {
+      "label": "Safety / Alignment",
+      "count": 8,
+      "weight": 0.93
+    },
+    {
+      "label": "series",
+      "count": 8,
+      "weight": 0.93
+    },
+    {
+      "label": "Vision / Multimodal",
+      "count": 8,
+      "weight": 0.93
+    },
+    {
+      "label": "adaptation",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "can",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "distribution",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "Evaluation / Benchmark",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "language",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "LLM Agents",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "NLP / Language",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "Reasoning",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "systems",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "强相关",
+      "count": 6,
+      "weight": 0.88
+    },
+    {
+      "label": "across",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "analysis",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "efficient",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "forecasting",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "has",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "information",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "modeling",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "performance",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "temporal",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "variation",
+      "count": 5,
+      "weight": 0.85
+    },
+    {
+      "label": "adaptive",
+      "count": 4,
+      "weight": 0.83
+    }
+  ],
+  "radar": [
+    {
+      "label": "智能体/推理",
+      "key": "agent_reasoning",
+      "count": 8,
+      "score": 0.615
+    },
+    {
+      "label": "数据/评测",
+      "key": "data_eval",
+      "count": 12,
+      "score": 0.923
+    },
+    {
+      "label": "系统/效率",
+      "key": "systems_efficiency",
+      "count": 13,
+      "score": 1.0
+    },
+    {
+      "label": "科学/机器人",
+      "key": "science_robotics",
+      "count": 7,
+      "score": 0.538
+    },
+    {
+      "label": "安全/HCI",
+      "key": "safety_hci",
+      "count": 5,
+      "score": 0.385
+    }
+  ],
+  "cooccurrence": [
+    {
+      "source": "Systems / Efficiency",
+      "target": "通用启发",
+      "count": 7
+    },
+    {
+      "source": "Efficient Models",
+      "target": "通用启发",
+      "count": 4
+    },
+    {
+      "source": "RAG / Retrieval",
+      "target": "通用启发",
+      "count": 4
+    },
+    {
+      "source": "Robotics",
+      "target": "通用启发",
+      "count": 4
+    },
+    {
+      "source": "Evaluation / Benchmark",
+      "target": "通用启发",
+      "count": 3
+    },
+    {
+      "source": "RAG / Retrieval",
+      "target": "Systems / Efficiency",
+      "count": 3
+    },
+    {
+      "source": "Reasoning",
+      "target": "通用启发",
+      "count": 3
+    },
+    {
+      "source": "Safety / Alignment",
+      "target": "Systems / Efficiency",
+      "count": 3
+    },
+    {
+      "source": "Safety / Alignment",
+      "target": "通用启发",
+      "count": 3
+    },
+    {
+      "source": "Vision / Multimodal",
+      "target": "通用启发",
+      "count": 3
+    },
+    {
+      "source": "Efficient Models",
+      "target": "LLM Agents",
+      "count": 2
+    },
+    {
+      "source": "LLM Agents",
+      "target": "Systems / Efficiency",
+      "count": 2
+    },
+    {
+      "source": "LLM Agents",
+      "target": "通用启发",
+      "count": 2
+    },
+    {
+      "source": "NLP / Language",
+      "target": "通用启发",
+      "count": 2
+    },
+    {
+      "source": "Systems / Efficiency",
+      "target": "强相关",
+      "count": 2
+    },
+    {
+      "source": "Causality / World Models",
+      "target": "通用启发",
+      "count": 1
+    },
+    {
+      "source": "Efficient Models",
+      "target": "HCI / Human-AI",
+      "count": 1
+    },
+    {
+      "source": "Efficient Models",
+      "target": "NLP / Language",
+      "count": 1
+    },
+    {
+      "source": "Efficient Models",
+      "target": "Robotics",
+      "count": 1
+    },
+    {
+      "source": "Efficient Models",
+      "target": "Systems / Efficiency",
+      "count": 1
+    }
+  ],
+  "topic_limits": {
+    "related_topics": 10,
+    "topic_timeline": 10,
+    "cooccurrence_topics": 10,
+    "cooccurrence_pairs": 10
+  },
+  "weekly_summary": "本周（2026-06-15 至 2026-06-21）共收录 29 篇论文，平均得分 7.38 分，其中 4 篇达 9.0+。主题分布中，“通用启发”以 24 篇居首，系统/效率（10 篇）、RAG/检索（5 篇）和机器人（5 篇）紧随其后。词频与共现分析显示，“自适应”（adaptation，6 次）、“分布偏移”（distribution，6 次）和“时序”（temporal，5 次）成为高频词，“系统/效率”与“通用启发”共现达 7 次，凸显通用方法在系统优化中的核心地位。代表性工作包括：黑盒在线适应时间序列基础模型（2606.14222v1）、次二次架构的原则性评估（2606.12364v1）、自适应压缩时序语言模型（2606.13624v1）以及频域卷积Transformer用于听觉注意力解码（2606.14120v1），均体现了对效率与适应性的追求。整体研究聚焦于自适应学习、分布鲁棒性和",
+  "weekly_summary_source": "llm",
+  "weekly_summary_model": "deepseek-v4-pro",
+  "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+  "monthly_summary": "",
+  "monthly_summary_source": "",
+  "monthly_summary_model": "",
+  "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+  "artifacts": [
+    "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+    "archive/20260616/recommend/arxiv_papers_20260616.standard.json"
+  ],
+  "papers": [
+    {
+      "paper_id": "2606.14614v1",
+      "title": "Decoding Semantic Categories from Picture-Naming EEG",
+      "title_zh": "",
+      "section": "deep",
+      "score": 9.0,
+      "source": "arxiv",
+      "source_id": "2606.14614v1",
+      "doi": "",
+      "published": "2026-06-12T16:40:01+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14614v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "强相关"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Picture naming requires the transformation of visual object information into a spoken lexical response through perceptual, semantic, lexical, and articulatory processes. This study asked whether semantic-category information is recoverable from high-density EEG during overt picture naming. Sixteen native French-speaking participants performed a picture-nami...",
+      "dedupe_key": "arxiv:2606.14614",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14120v1",
+      "title": "FAConformer: Frequency-Aware Convolutional Transformer for Auditory Attention Decoding",
+      "title_zh": "",
+      "section": "deep",
+      "score": 9.0,
+      "source": "arxiv",
+      "source_id": "2606.14120v1",
+      "doi": "",
+      "published": "2026-06-12T04:59:09+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14120v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "强相关"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Auditory attention decoding (AAD) aims to infer the attended speaker from neural responses in multi-speaker acoustic environments and is a key problem for neuro-steered hearing systems. Although recent studies have achieved encouraging progress, existing AAD models still do not fully exploit frequency domain electroencephalography (EEG) information. In part...",
+      "dedupe_key": "arxiv:2606.14120",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14222v1",
+      "title": "Learning the Context of Errors: Black-Box Online Adaptation of Time Series Foundation Models",
+      "title_zh": "",
+      "section": "deep",
+      "score": 9.0,
+      "source": "arxiv",
+      "source_id": "2606.14222v1",
+      "doi": "",
+      "published": "2026-06-12T08:02:03+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14222v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "桥接方法"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "The rapid evolution of Time Series Foundation Models (TSFMs) has advanced zero-shot forecasting across diverse domains. Inspired by the current form of Large Language Models, future TSFMs may be offered as commercialized, closed-source API services. However, many existing online adaptation methods still rely on white-box access for parameter fine-tuning or...",
+      "dedupe_key": "arxiv:2606.14222",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12364v1",
+      "title": "On Subquadratic Architectures: From Applications to Principles",
+      "title_zh": "",
+      "section": "deep",
+      "score": 9.0,
+      "source": "arxiv",
+      "source_id": "2606.12364v1",
+      "doi": "",
+      "published": "2026-06-10T17:33:55+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12364v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Transformers dominate modern sequence modeling, but their quadratic attention incurs substantial computational cost. Subquadratic architectures offer a scalable alternative. However, it remains unclear which designs yield the most effective sequence models. We compare three leading approaches: xLSTM, Mamba-2, and Gated DeltaNet. We evaluate these models on...",
+      "dedupe_key": "arxiv:2606.12364",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13624v1",
+      "title": "Beyond Uniform Tokens: Adaptive Compression for Time Series Language Models",
+      "title_zh": "",
+      "section": "deep",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.13624v1",
+      "doi": "",
+      "published": "2026-06-11T17:39:26+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13624v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Large language models (LLMs) have enabled time series (TS) analysis by jointly modeling numerical observations and textual context through a shared token interface. However, TS tokens and prompt tokens exhibit fundamentally different information structures, making uniform token processing inefficient. In this paper, we study token efficiency in TS language...",
+      "dedupe_key": "arxiv:2606.13624",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14079v1",
+      "title": "Deep Spectral Learning of Embedded Latent Transfer Operators for Stochastic Dynamical Systems",
+      "title_zh": "",
+      "section": "deep",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.14079v1",
+      "doi": "",
+      "published": "2026-06-12T03:55:11+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14079v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "桥接方法"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "We propose a spectral learning method for stochastic nonlinear dynamical systems represented with embedded latent transfer operators in deep feature spaces. We instantiate the method as Deep Spectral Encoder (DSE), an operator-based latent state-space model in which a time-invariant neural encoder implements learnable nonlinear feature maps from observation...",
+      "dedupe_key": "arxiv:2606.14079",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12503v1",
+      "title": "Dolph2Vec: Self-Supervised Representations of Dolphin Vocalizations",
+      "title_zh": "",
+      "section": "quick",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.12503v1",
+      "doi": "",
+      "published": "2026-06-10T16:46:57+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12503v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Self-supervised learning (SSL) has opened new opportunities in bioacoustics by enabling scalable modeling of animal vocalizations without the need for expensive manual annotation. However, current SSL models in this domain prioritize broad generalization across species and are not optimized for uncovering the fine-grained structure of individual communicati...",
+      "dedupe_key": "arxiv:2606.12503",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13842v1",
+      "title": "Efficient Domain-Adaptive Policy Learning via Kernel Representation with Application to Quadrotor Control under Non-Stationary Disturbances",
+      "title_zh": "",
+      "section": "deep",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.13842v1",
+      "doi": "",
+      "published": "2026-06-11T19:16:02+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13842v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "We present an algorithm for efficient domain-adaptive policy learning via kernel representations. Learning domain-adaptive policies is challenging since it requires an environment representation that is both sufficiently expressive to model complex sim-to-real gaps during offline training, and computationally efficient enough to support rapid online adaptat...",
+      "dedupe_key": "arxiv:2606.13842",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13190v1",
+      "title": "Multi-Modal Multi-Agent Robotic Cognitive Alignment enabled by Non-Invasive Consumer Brain Computer Interfaces: A Proof of Concept Exploration",
+      "title_zh": "",
+      "section": "quick",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.13190v1",
+      "doi": "",
+      "published": "2026-06-11T10:58:31+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13190v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "强相关"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "While non-verbal behaviors and expressive movements are essential for natural human-robot interaction, existing methods often overlook a crucial element: the human's internal cognitive state. Frequently, proactive multi-agent systems can interrupt humans at inopportune moments, leading to cognitive overload and decreased task performance. This paper introdu...",
+      "dedupe_key": "arxiv:2606.13190",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12141v1",
+      "title": "PCA-Enhanced Adaptive NVAR Framework for High-Resolution Sea Surface Temperature Forecasting in the East Sea",
+      "title_zh": "",
+      "section": "deep",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.12141v1",
+      "doi": "",
+      "published": "2026-06-10T14:34:13+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12141v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Accurate forecasting of sea surface temperature (SST) in regional seas such as the East Sea is crucial for monitoring marine ecosystems, assessing climate risks, managing fisheries, and conducting naval operations. Traditional numerical ocean models provide reliable predictions but are computationally expensive and often unsuitable for real-time forecasting...",
+      "dedupe_key": "arxiv:2606.12141",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12643v1",
+      "title": "TEDD: Robust Detection of Unstable Temporal Features",
+      "title_zh": "",
+      "section": "quick",
+      "score": 8.0,
+      "source": "arxiv",
+      "source_id": "2606.12643v1",
+      "doi": "",
+      "published": "2026-06-10T20:10:56+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12643v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "When working with real-world temporal data, it is common to encounter features whose distribution is changing over time. The naive employment of Machine Learning models on this unstable data might lead to rapidly degrading performance, especially if the new distribution is much different from what was previously seen during training. In order to cope with t...",
+      "dedupe_key": "arxiv:2606.12643",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14694v1",
+      "title": "AdaSR: Adaptive Streaming Reasoning with Hierarchical Relative Policy Optimization",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14694v1",
+      "doi": "",
+      "published": "2026-06-12T17:56:25+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14694v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Large reasoning models typically follow a read-then-think paradigm: they observe the complete input, reason over a static context, and then produce the answer. Yet many real-world scenarios are inherently dynamic, such as audio and video stream, where information arrives as a continuous stream and models must reason, update, and respond under partial observ...",
+      "dedupe_key": "arxiv:2606.14694",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13516v1",
+      "title": "Adaptive-Frequency Resonate-and-Fire Neurons for Spectral Estimation of Streaming Radar Signals",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.13516v1",
+      "doi": "",
+      "published": "2026-06-11T16:06:48+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13516v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Frequency Modulated Continuous Wave (FMCW) radar systems traditionally rely on Fourier-based methods, such as the Fast Fourier Transform (FFT), to estimate target range and velocity. While computationally efficient, these approaches require storing and processing large blocks of data, which can become a bottleneck in memory-constrained or low-latency applic...",
+      "dedupe_key": "arxiv:2606.13516",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14627v1",
+      "title": "Algebraic Operations on Tensor Trains",
+      "title_zh": "",
+      "section": "deep",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14627v1",
+      "doi": "",
+      "published": "2026-06-12T16:53:14+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14627v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "The tensor train (TT) model is widely used to approximate high-dimensional tensors, enabling efficient handling of data that may exceed available memory. TT helps address the curse of dimensionality in applications such as system identification and dynamic programming. In some applications, TT is known as a ``matrix product state\" (MPS). This paper introduc...",
+      "dedupe_key": "arxiv:2606.14627",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14506v1",
+      "title": "Beyond the Training Distribution: Evaluating Predictions Under Distribution Shift and Selection Bias",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14506v1",
+      "doi": "",
+      "published": "2026-06-12T14:39:03+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14506v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "ndai"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Understanding how a prediction model will perform in a new environment before deployment is essential to preventing harm when algorithms inform decision-making. Two common sources of model performance degradation are (i) covariate shift, where the target covariate distribution differs from the source, and (ii) selective labels, where the observability of ou...",
+      "dedupe_key": "arxiv:2606.14506",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13236v1",
+      "title": "Decoding Insect Song: A Multitask Semisupervised Orthoptera Bioacoustic Classifier",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.13236v1",
+      "doi": "",
+      "published": "2026-06-11T11:51:49+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13236v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Passive acoustic monitoring holds great promise for ecological inference, yet existing automated tools are typically narrowly trained and non-transferable. We address these limitations with PULSE, a semi-supervised, multi-task framework for Orthoptera bioacoustics, combining weakly-supervised species classification, self-supervised learning on unlabelled fi...",
+      "dedupe_key": "arxiv:2606.13236",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13340v1",
+      "title": "EMG-Based Adaptation of Anisotropic Virtual Fixtures for Robot-Assisted Surgical Resection and Dissection",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.13340v1",
+      "doi": "",
+      "published": "2026-06-11T13:29:55+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13340v1",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "In this paper, we address the development of an adaptive assistance system for robot-assisted laparoscopic surgery, specifically for delicate tasks such as Resection and Dissection. Even if Virtual Fixtures offer significant advantages for guiding a surgeon's movements, conventional Virtual Fixtures are often defined by fixed geometries, lacking the flexibi...",
+      "dedupe_key": "arxiv:2606.13340",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12559v1",
+      "title": "Feature-preserving Latent-EnKF for Data Assimilation of Flows with Shocks",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.12559v1",
+      "doi": "",
+      "published": "2026-06-10T18:09:16+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12559v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "ndai"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "The ensemble Kalman filter (EnKF) is widely adopted for sequential data assimilation, but fails for solutions with discontinuities, such as shocks in compressible flows. Uncertainty in shock location induces multimodal ensemble statistics that violate the Gaussian assumptions underlying the EnKF, producing large-scale spurious oscillations in the analysis s...",
+      "dedupe_key": "arxiv:2606.12559",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12836v1",
+      "title": "Interpretable model-free inference of parametric variation across time-series data through large-scale feature extraction",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.12836v1",
+      "doi": "",
+      "published": "2026-06-11T03:03:20+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12836v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Here we address the problem of estimating the dimensionality and nature of parametric variation in an unknown generative process directly from time-series data, without specifying or fitting a model. In particular we suppose that inter-instance variation in collections of time series is caused by parametric variation in the generating model. We hypothesize...",
+      "dedupe_key": "arxiv:2606.12836",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12939v1",
+      "title": "MAMVI: 3D Test-Time Adaptation via Masked Multi-View Point Clouds",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.12939v1",
+      "doi": "",
+      "published": "2026-06-11T06:03:59+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12939v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "3D point cloud models suffer significant performance degradation under distribution shifts caused by sensor noise, occlusions, and environmental changes. Test-time adaptation (TTA) has emerged as a practical paradigm for mitigating this issue during inference. Recently, leveraging multi-view augmentation has shown promise in improving 3D TTA performance. Ho...",
+      "dedupe_key": "arxiv:2606.12939",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13258v1",
+      "title": "MOSAIC: Modality-Specific Adaptation for Incremental Continual Learning in Parkinson's Disease Gait Assessment",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.13258v1",
+      "doi": "",
+      "published": "2026-06-11T12:15:29+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13258v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Gait-based Parkinson's disease assessment increasingly relies on heterogeneous sensors, but clinical systems rarely collect all modalities simultaneously. New sensors may arrive through device upgrades, protocol changes, or multi-center deployment, while historical patient data are often unavailable because of privacy and storage constraints. This modality-...",
+      "dedupe_key": "arxiv:2606.13258",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14373v1",
+      "title": "Machine-learned particle flow as a foundation model for collider physics",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14373v1",
+      "doi": "",
+      "published": "2026-06-12T12:03:04+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14373v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "The workflow from particle collision to physics analysis passes through a series of reconstruction steps that are traditionally modular and disconnected, with no shared representation linking low-level detector data to high-level analysis tasks. We show that casting event reconstruction as a machine learning problem naturally produces such a shared represen...",
+      "dedupe_key": "arxiv:2606.14373",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.12649v1",
+      "title": "MentalMARBERT: Domain-Adaptive Pre-training and Two-Stage Fine-Tuning for Arabic Mental Health Disorders Detection",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.12649v1",
+      "doi": "",
+      "published": "2026-06-10T20:20:41+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.12649v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Detecting mental health disorders from Arabic social media text remains challenging due to dialectal variation, informal language, limited high-quality annotated resources, and severe class imbalance. While English mental health natural language processing (NLP) has progressed substantially, Arabic multi-class disorder classification remains insufficiently...",
+      "dedupe_key": "arxiv:2606.12649",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14313v1",
+      "title": "Nonlocal Bayesian Modeling of Continuous Spatio-Temporal Dynamics",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14313v1",
+      "doi": "",
+      "published": "2026-06-12T09:51:07+00:00",
+      "date": "2026-06-15",
+      "artifact_token": "20260615",
+      "artifact_path": "archive/20260615/recommend/arxiv_papers_20260615.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14313v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Real-world spatio-temporal forecasting must handle irregular time points, spatially sparse observations, and the need for uncertainty quantification. This setting is often further compounded by nonlocal interactions (long-range spatial coupling). Modeling continuous-space, continuous-time nonlocal dynamics naturally leads to infinite-dimensional integro-dif...",
+      "dedupe_key": "arxiv:2606.14313",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.14417v1",
+      "title": "Stable Multivariate Functional Time Series Prediction for Major Geomagnetic Indices",
+      "title_zh": "",
+      "section": "quick",
+      "score": 7.0,
+      "source": "arxiv",
+      "source_id": "2606.14417v1",
+      "doi": "",
+      "published": "2026-06-12T12:51:22+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.14417v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "High\\text{--}resolution scientific data, such as geomagnetic index streams, often exhibit complex temporal dependencies that can be modeled through functional data analysis. Conventional functional time series (FTS) methods typically partition continuous processes into non-overlapping segments, which artificially fragments temporal continuity and can limit...",
+      "dedupe_key": "arxiv:2606.14417",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13381v1",
+      "title": "Hölder++: Improving the Quality-Coherence Trade-off in Multimodal VAEs",
+      "title_zh": "",
+      "section": "quick",
+      "score": 6.0,
+      "source": "arxiv",
+      "source_id": "2606.13381v1",
+      "doi": "",
+      "published": "2026-06-11T14:08:32+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13381v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Existing approaches for multimodal variational autoencoders (VAEs) face a trade-off between generative quality and coherence-i.e., they struggle to generate realistic and diverse samples that, at the same time, are semantically consistent across modalities. A recent work shows that using a simple approximation to Hölder pooling as an aggregation method impr...",
+      "dedupe_key": "arxiv:2606.13381",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13146v1",
+      "title": "Robust State-Conditional Feature-Weighted Jump Models for Temporal Clustering",
+      "title_zh": "",
+      "section": "quick",
+      "score": 6.0,
+      "source": "arxiv",
+      "source_id": "2606.13146v1",
+      "doi": "",
+      "published": "2026-06-11T10:16:17+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13146v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "We propose a robust feature-weighted jump model for time-dependent clustering. A penalty is used to encourage smoothness of transitions over time, while robustness is achieved through the use of a Tukey's biweight loss function. An additional parameter controls the variability of feature weights across states, allowing the model to assign state-specific rel...",
+      "dedupe_key": "arxiv:2606.13146",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13253v1",
+      "title": "Towards Personalized Federated Learning for Dysarthric Speech Recognition",
+      "title_zh": "",
+      "section": "quick",
+      "score": 6.0,
+      "source": "arxiv",
+      "source_id": "2606.13253v1",
+      "doi": "",
+      "published": "2026-06-11T12:10:57+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13253v1",
+      "tags": [
+        {
+          "kind": "keyword",
+          "label": "NDAI"
+        },
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Speech recognition is challenging for dysarthric speakers. While federated learning (FL)-based ASR can be an effective tool for protecting privacy, it suffers from heterogeneity issues caused by speaker variability. Forcing all speakers to share the same model components can be suboptimal under such heterogeneity, making personalization a promising directio...",
+      "dedupe_key": "arxiv:2606.13253",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    },
+    {
+      "paper_id": "2606.13451v1",
+      "title": "Uncertainty Estimation for Molecular Diffusion Models",
+      "title_zh": "",
+      "section": "quick",
+      "score": 6.0,
+      "source": "arxiv",
+      "source_id": "2606.13451v1",
+      "doi": "",
+      "published": "2026-06-11T15:11:12+00:00",
+      "date": "2026-06-16",
+      "artifact_token": "20260616",
+      "artifact_path": "archive/20260616/recommend/arxiv_papers_20260616.standard.json",
+      "href": "",
+      "external_url": "https://arxiv.org/pdf/2606.13451v1",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "NDAI"
+        },
+        {
+          "kind": "paper",
+          "label": "通用启发"
+        }
+      ],
+      "evidence": "",
+      "tldr": "",
+      "abstract": "Diffusion models have seen wide adoption for 3D molecular generation, yet they offer no principled signal of when a generated molecule is likely to be of low quality. We propose a post-hoc method for estimating per-sample uncertainty in pretrained molecular diffusion models. Building on a Laplace approximation of the denoising network, we measure the variab...",
+      "dedupe_key": "arxiv:2606.13451",
+      "selection_source": "fresh_fetch",
+      "carryover": false
+    }
+  ]
+}
