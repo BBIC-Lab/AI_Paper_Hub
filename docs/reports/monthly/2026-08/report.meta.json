@@ -1,0 +1,199 @@
+{
+  "period": "monthly",
+  "key": "2026-08",
+  "label": "月报 · 2026-08",
+  "start_date": "2026-08-01",
+  "end_date": "2026-08-31",
+  "input_mode": "artifacts",
+  "input_hash": "b19fe8d306e2a17365ff486c97ba8422b934959f5686b7ded8f6b2e1642f1997",
+  "generated_at": "2026-08-01T09:39:20+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-31",
+      "artifact_files": 0,
+      "raw_records": 0,
+      "unique_papers": 0,
+      "duplicates_removed": 0,
+      "source_buckets": 0
+    },
+    "avg_score": 0,
+    "topics": [],
+    "sources": [],
+    "sections": [],
+    "score_distribution": [],
+    "timeline": [
+      {
+        "date": "W31",
+        "count": 0
+      },
+      {
+        "date": "W32",
+        "count": 0
+      },
+      {
+        "date": "W33",
+        "count": 0
+      },
+      {
+        "date": "W34",
+        "count": 0
+      },
+      {
+        "date": "W35",
+        "count": 0
+      },
+      {
+        "date": "W36",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [],
+    "weekly_v2": {},
+    "monthly_v1": {
+      "related_topics": [],
+      "topic_timeline": [],
+      "word_cloud": [],
+      "cooccurrence": [],
+      "comparison": {
+        "previous_key": "2026-07",
+        "has_previous": false,
+        "items": [],
+        "groups": {
+          "new": [],
+          "rising": [],
+          "stable": [],
+          "declining": [],
+          "faded": [],
+          "baseline": []
+        },
+        "new_count": 0,
+        "rising_count": 0,
+        "declining_count": 0,
+        "faded_count": 0
+      },
+      "watchlist": [
+        "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+        "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+        "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+        "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+        "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。"
+      ],
+      "topic_breadth": 0,
+      "topic_limits": {
+        "topics": 10,
+        "related_topics": 12,
+        "topic_timeline": 12,
+        "word_cloud_terms": 64,
+        "cooccurrence_topics": 12,
+        "cooccurrence_pairs": 10,
+        "comparison_topics": 10
+      }
+    }
+  },
+  "interpretation": {
+    "summary_evidence_ids": [],
+    "highlights": [
+      "本月回收论文 0 篇，无有效记录。",
+      "平均分、主题、来源等均为空，期待下月数据。"
+    ],
+    "rising_topics": [],
+    "reading_route": [
+      "暂无推荐阅读，建议关注下月数据更新。"
+    ],
+    "caveats": [
+      "报告期内（2026-08-01 至 2026-08-31）无文献入库，分析完全基于空数据，结论无效。",
+      "所有指标均为零，主题、词云、共现等分析缺失。"
+    ],
+    "weekly_summary": "本月回收论文 0 篇，无有效记录。 平均分、主题、来源等均为空，期待下月数据。",
+    "weekly_summary_source": "",
+    "weekly_summary_model": "",
+    "weekly_summary_note": "",
+    "monthly_summary": "本月（2026年8月）未收录任何论文，所有指标为零，无法生成主题洞察。待下月数据积累后，再评估热点趋势和新兴方向。",
+    "monthly_summary_source": "llm",
+    "monthly_summary_model": "deepseek-v4-pro",
+    "monthly_summary_note": "本月小结由 deepseek-v4-pro 生成。",
+    "watchlist": [
+      "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+      "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+      "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+      "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+      "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。"
+    ]
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 40,
+  "evidence_index": [],
+  "monthly_v1": {
+    "related_topics": [],
+    "topic_timeline": [],
+    "word_cloud": [],
+    "cooccurrence": [],
+    "comparison": {
+      "previous_key": "2026-07",
+      "has_previous": false,
+      "items": [],
+      "groups": {
+        "new": [],
+        "rising": [],
+        "stable": [],
+        "declining": [],
+        "faded": [],
+        "baseline": []
+      },
+      "new_count": 0,
+      "rising_count": 0,
+      "declining_count": 0,
+      "faded_count": 0
+    },
+    "watchlist": [
+      "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+      "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+      "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+      "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+      "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。"
+    ],
+    "topic_breadth": 0,
+    "topic_limits": {
+      "topics": 10,
+      "related_topics": 12,
+      "topic_timeline": 12,
+      "word_cloud_terms": 64,
+      "cooccurrence_topics": 12,
+      "cooccurrence_pairs": 10,
+      "comparison_topics": 10
+    }
+  },
+  "related_topics": [],
+  "focus_topics": [],
+  "context_topics": [],
+  "weekday_topic_timeline": [],
+  "word_cloud": [],
+  "radar": [],
+  "cooccurrence": [],
+  "topic_limits": {
+    "topics": 10,
+    "related_topics": 12,
+    "topic_timeline": 12,
+    "word_cloud_terms": 64,
+    "cooccurrence_topics": 12,
+    "cooccurrence_pairs": 10,
+    "comparison_topics": 10
+  },
+  "weekly_summary": "本月回收论文 0 篇，无有效记录。 平均分、主题、来源等均为空，期待下月数据。",
+  "weekly_summary_source": "",
+  "weekly_summary_model": "",
+  "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
+  "monthly_summary": "本月（2026年8月）未收录任何论文，所有指标为零，无法生成主题洞察。待下月数据积累后，再评估热点趋势和新兴方向。",
+  "monthly_summary_source": "llm",
+  "monthly_summary_model": "deepseek-v4-pro",
+  "monthly_summary_note": "本月小结由 deepseek-v4-pro 生成。",
+  "artifacts": [],
+  "papers": []
+}
