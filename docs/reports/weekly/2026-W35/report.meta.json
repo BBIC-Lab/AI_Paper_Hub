@@ -1,0 +1,190 @@
+{
+  "period": "weekly",
+  "key": "2026-W35",
+  "label": "周报 · 2026-08-24 ~ 2026-08-30",
+  "start_date": "2026-08-24",
+  "end_date": "2026-08-30",
+  "input_mode": "artifacts",
+  "input_hash": "85aca4c0c65e981a1ffb0f6668edac7420bc70c6f6c938ece4d07227ea011efe",
+  "generated_at": "2026-08-29T12:26:35+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-08-24",
+      "end_date": "2026-08-30",
+      "artifact_files": 0,
+      "raw_records": 0,
+      "unique_papers": 0,
+      "duplicates_removed": 0,
+      "source_buckets": 0
+    },
+    "avg_score": 0,
+    "topics": [],
+    "sources": [],
+    "sections": [],
+    "score_distribution": [],
+    "timeline": [
+      {
+        "date": "2026-08-24",
+        "count": 0
+      },
+      {
+        "date": "2026-08-25",
+        "count": 0
+      },
+      {
+        "date": "2026-08-26",
+        "count": 0
+      },
+      {
+        "date": "2026-08-27",
+        "count": 0
+      },
+      {
+        "date": "2026-08-28",
+        "count": 0
+      },
+      {
+        "date": "2026-08-29",
+        "count": 0
+      },
+      {
+        "date": "2026-08-30",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [],
+    "weekly_v2": {
+      "related_topics": [],
+      "focus_topics": [],
+      "context_topics": [],
+      "weekday_topic_timeline": [],
+      "word_cloud": [],
+      "radar": [
+        {
+          "label": "智能体/推理",
+          "key": "agent_reasoning",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "数据/评测",
+          "key": "data_eval",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "系统/效率",
+          "key": "systems_efficiency",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "科学/机器人",
+          "key": "science_robotics",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "安全/HCI",
+          "key": "safety_hci",
+          "count": 0,
+          "score": 0.0
+        }
+      ],
+      "cooccurrence": [],
+      "topic_breadth": 0,
+      "topic_limits": {
+        "related_topics": 10,
+        "topic_timeline": 10,
+        "cooccurrence_topics": 10,
+        "cooccurrence_pairs": 10
+      }
+    },
+    "monthly_v1": {}
+  },
+  "interpretation": {
+    "summary_evidence_ids": [],
+    "highlights": [
+      "本周收录论文 0 篇，无高亮论文"
+    ],
+    "rising_topics": [],
+    "reading_route": [],
+    "caveats": [
+      "本周数据为空，覆盖率为 0%，所有分析均无证据基础；请勿据此推断任何趋势。",
+      "数据采集可能存在问题，需排查数据管道或源数据可用性。"
+    ],
+    "weekly_summary": "本周（2026-08-24 至 2026-08-30）的报告周期内，系统未抓取到任何论文记录，覆盖率为 0%，无 artefact 文件、无原始记录、无去重后唯一论文。因此，主题分布、词频云、主题共现网络均无从计算，也无法提取代表论文。基于当前证据，无法给出任何有意义的科研趋势判断或主题演化分析。建议用户核实数据管道是否正常运行，检查源数据是否存在断流或延迟；在后续周期中补充数据后，再尝试生成主题雷达、共现关系和阅读路线。本报告仅陈述数据缺失事实，不代表该领域无任何研究活动。",
+    "weekly_summary_source": "llm",
+    "weekly_summary_model": "deepseek-v4-pro",
+    "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+    "monthly_summary": "本周收录论文 0 篇，无高亮论文",
+    "monthly_summary_source": "",
+    "monthly_summary_model": "",
+    "monthly_summary_note": "",
+    "watchlist": []
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 10,
+  "evidence_index": [],
+  "monthly_v1": {},
+  "related_topics": [],
+  "focus_topics": [],
+  "context_topics": [],
+  "weekday_topic_timeline": [],
+  "word_cloud": [],
+  "radar": [
+    {
+      "label": "智能体/推理",
+      "key": "agent_reasoning",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "数据/评测",
+      "key": "data_eval",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "系统/效率",
+      "key": "systems_efficiency",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "科学/机器人",
+      "key": "science_robotics",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "安全/HCI",
+      "key": "safety_hci",
+      "count": 0,
+      "score": 0.0
+    }
+  ],
+  "cooccurrence": [],
+  "topic_limits": {
+    "related_topics": 10,
+    "topic_timeline": 10,
+    "cooccurrence_topics": 10,
+    "cooccurrence_pairs": 10
+  },
+  "weekly_summary": "本周（2026-08-24 至 2026-08-30）的报告周期内，系统未抓取到任何论文记录，覆盖率为 0%，无 artefact 文件、无原始记录、无去重后唯一论文。因此，主题分布、词频云、主题共现网络均无从计算，也无法提取代表论文。基于当前证据，无法给出任何有意义的科研趋势判断或主题演化分析。建议用户核实数据管道是否正常运行，检查源数据是否存在断流或延迟；在后续周期中补充数据后，再尝试生成主题雷达、共现关系和阅读路线。本报告仅陈述数据缺失事实，不代表该领域无任何研究活动。",
+  "weekly_summary_source": "llm",
+  "weekly_summary_model": "deepseek-v4-pro",
+  "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+  "monthly_summary": "本周收录论文 0 篇，无高亮论文",
+  "monthly_summary_source": "",
+  "monthly_summary_model": "",
+  "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+  "artifacts": [],
+  "papers": []
+}
