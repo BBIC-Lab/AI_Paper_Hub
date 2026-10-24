@@ -1,0 +1,199 @@
+{
+  "period": "weekly",
+  "key": "2026-W43",
+  "label": "周报 · 2026-10-19 ~ 2026-10-25",
+  "start_date": "2026-10-19",
+  "end_date": "2026-10-25",
+  "input_mode": "artifacts",
+  "input_hash": "e57dc8c4f3685154635b939c3f8022a938e3f9faf9717e3be953d24f75145086",
+  "generated_at": "2026-10-24T09:59:19+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-10-19",
+      "end_date": "2026-10-25",
+      "artifact_files": 0,
+      "raw_records": 0,
+      "unique_papers": 0,
+      "duplicates_removed": 0,
+      "source_buckets": 0
+    },
+    "avg_score": 0,
+    "topics": [],
+    "sources": [],
+    "sections": [],
+    "score_distribution": [],
+    "timeline": [
+      {
+        "date": "2026-10-19",
+        "count": 0
+      },
+      {
+        "date": "2026-10-20",
+        "count": 0
+      },
+      {
+        "date": "2026-10-21",
+        "count": 0
+      },
+      {
+        "date": "2026-10-22",
+        "count": 0
+      },
+      {
+        "date": "2026-10-23",
+        "count": 0
+      },
+      {
+        "date": "2026-10-24",
+        "count": 0
+      },
+      {
+        "date": "2026-10-25",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [],
+    "weekly_v2": {
+      "related_topics": [],
+      "focus_topics": [],
+      "context_topics": [],
+      "weekday_topic_timeline": [],
+      "word_cloud": [],
+      "radar": [
+        {
+          "label": "智能体/推理",
+          "key": "agent_reasoning",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "数据/评测",
+          "key": "data_eval",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "系统/效率",
+          "key": "systems_efficiency",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "科学/机器人",
+          "key": "science_robotics",
+          "count": 0,
+          "score": 0.0
+        },
+        {
+          "label": "安全/HCI",
+          "key": "safety_hci",
+          "count": 0,
+          "score": 0.0
+        }
+      ],
+      "cooccurrence": [],
+      "topic_breadth": 0,
+      "topic_limits": {
+        "related_topics": 10,
+        "topic_timeline": 10,
+        "cooccurrence_topics": 10,
+        "cooccurrence_pairs": 10
+      }
+    },
+    "monthly_v1": {}
+  },
+  "interpretation": {
+    "summary_evidence_ids": [],
+    "highlights": [
+      "本周无有效论文记录（unique_papers=0）",
+      "未提取到主题、代表论文或共现关系",
+      "avg_score 和 topic_breadth 均为 0"
+    ],
+    "rising_topics": [],
+    "reading_route": [],
+    "caveats": [
+      "本周所有统计指标均为 0，可能由采集管道未运行、数据源未更新或时间窗口未生成快照造成",
+      "本期内容未基于任何论文或主题证据，仅反映数据覆盖状态",
+      "若后续数据恢复，需重新生成本周报告或并入下期补充分析"
+    ],
+    "weekly_summary": "本期周报覆盖 2026-10-19 至 2026-10-25。根据统计数据，本周 artifact_files、raw_records、unique_papers 均为 0，duplicates_removed 和 source_buckets 也为 0；topics、sources、sections、score_distribution 均为空；timeline 各日期论文计数均为 0；weekly_v2 中的 related_topics、word_cloud、cooccurrence、radar 等均无有效条目，topic_breadth 为 0，avg_score 为 0。evidence_papers 为空，说明本周没有可引用的代表论文。因此，本期无法形成任何研究主题、趋势或共现关系判断，也没有可推荐阅读的文献。这一结果很可能是数据采集管道未运行、数据源未更新或时间窗口尚未生成快照所致，不代表实际科研活动为零。建议优先排查数据采集任务和源桶配置，待数据恢复后再编写周报。",
+    "weekly_summary_source": "llm",
+    "weekly_summary_model": "deepseek-v4-pro",
+    "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+    "monthly_summary": "本月暂无月度聚合数据（monthly_v1 为空），无法进行主题环比、周际演化、词频云或主题共现分析。待月度数据生成后，再补充本月小结。",
+    "monthly_summary_source": "",
+    "monthly_summary_model": "",
+    "monthly_summary_note": "",
+    "watchlist": [
+      "确认下一周数据采集管道是否正常启动，检查 artifact_files 是否大于 0",
+      "核对源桶配置与时间窗口，确保 raw_records 正常入库",
+      "关注 unique_papers 与 duplicates_removed 变化，评估去重逻辑",
+      "待数据恢复后，优先观察 weekly_v2.related_topics 与 radar 各维度得分",
+      "若连续多周为空，应检查数据延迟或异常告警"
+    ]
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 10,
+  "evidence_index": [],
+  "monthly_v1": {},
+  "related_topics": [],
+  "focus_topics": [],
+  "context_topics": [],
+  "weekday_topic_timeline": [],
+  "word_cloud": [],
+  "radar": [
+    {
+      "label": "智能体/推理",
+      "key": "agent_reasoning",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "数据/评测",
+      "key": "data_eval",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "系统/效率",
+      "key": "systems_efficiency",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "科学/机器人",
+      "key": "science_robotics",
+      "count": 0,
+      "score": 0.0
+    },
+    {
+      "label": "安全/HCI",
+      "key": "safety_hci",
+      "count": 0,
+      "score": 0.0
+    }
+  ],
+  "cooccurrence": [],
+  "topic_limits": {
+    "related_topics": 10,
+    "topic_timeline": 10,
+    "cooccurrence_topics": 10,
+    "cooccurrence_pairs": 10
+  },
+  "weekly_summary": "本期周报覆盖 2026-10-19 至 2026-10-25。根据统计数据，本周 artifact_files、raw_records、unique_papers 均为 0，duplicates_removed 和 source_buckets 也为 0；topics、sources、sections、score_distribution 均为空；timeline 各日期论文计数均为 0；weekly_v2 中的 related_topics、word_cloud、cooccurrence、radar 等均无有效条目，topic_breadth 为 0，avg_score 为 0。evidence_papers 为空，说明本周没有可引用的代表论文。因此，本期无法形成任何研究主题、趋势或共现关系判断，也没有可推荐阅读的文献。这一结果很可能是数据采集管道未运行、数据源未更新或时间窗口尚未生成快照所致，不代表实际科研活动为零。建议优先排查数据采集任务和源桶配置，待数据恢复后再编写周报。",
+  "weekly_summary_source": "llm",
+  "weekly_summary_model": "deepseek-v4-pro",
+  "weekly_summary_note": "本周小结由 deepseek-v4-pro 生成。",
+  "monthly_summary": "本月暂无月度聚合数据（monthly_v1 为空），无法进行主题环比、周际演化、词频云或主题共现分析。待月度数据生成后，再补充本月小结。",
+  "monthly_summary_source": "",
+  "monthly_summary_model": "",
+  "monthly_summary_note": "模板小结，非 LLM 生成；仅基于月报统计与代表论文证据。",
+  "artifacts": [],
+  "papers": []
+}
