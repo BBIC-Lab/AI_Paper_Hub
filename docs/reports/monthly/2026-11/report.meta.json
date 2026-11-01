@@ -1,0 +1,194 @@
+{
+  "period": "monthly",
+  "key": "2026-11",
+  "label": "月报 · 2026-11",
+  "start_date": "2026-11-01",
+  "end_date": "2026-11-30",
+  "input_mode": "artifacts",
+  "input_hash": "38b0bc130488109d6dc43798f31cafa2d96d373eb7fc061c2fa5dff23bb4ad99",
+  "generated_at": "2026-11-01T10:41:11+08:00",
+  "metrics": {
+    "coverage": {
+      "start_date": "2026-11-01",
+      "end_date": "2026-11-30",
+      "artifact_files": 0,
+      "raw_records": 0,
+      "unique_papers": 0,
+      "duplicates_removed": 0,
+      "source_buckets": 0
+    },
+    "avg_score": 0,
+    "topics": [],
+    "sources": [],
+    "sections": [],
+    "score_distribution": [],
+    "timeline": [
+      {
+        "date": "W44",
+        "count": 0
+      },
+      {
+        "date": "W45",
+        "count": 0
+      },
+      {
+        "date": "W46",
+        "count": 0
+      },
+      {
+        "date": "W47",
+        "count": 0
+      },
+      {
+        "date": "W48",
+        "count": 0
+      },
+      {
+        "date": "W49",
+        "count": 0
+      }
+    ],
+    "topic_timeline": [],
+    "weekly_v2": {},
+    "monthly_v1": {
+      "related_topics": [],
+      "topic_timeline": [],
+      "word_cloud": [],
+      "cooccurrence": [],
+      "comparison": {
+        "previous_key": "2026-10",
+        "has_previous": false,
+        "items": [],
+        "groups": {
+          "new": [],
+          "rising": [],
+          "stable": [],
+          "declining": [],
+          "faded": [],
+          "baseline": []
+        },
+        "new_count": 0,
+        "rising_count": 0,
+        "declining_count": 0,
+        "faded_count": 0
+      },
+      "watchlist": [
+        "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+        "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+        "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+        "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+        "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。"
+      ],
+      "topic_breadth": 0,
+      "topic_limits": {
+        "topics": 10,
+        "related_topics": 12,
+        "topic_timeline": 12,
+        "word_cloud_terms": 64,
+        "cooccurrence_topics": 12,
+        "cooccurrence_pairs": 10,
+        "comparison_topics": 10
+      }
+    }
+  },
+  "interpretation": {
+    "summary_evidence_ids": [],
+    "highlights": [],
+    "rising_topics": [],
+    "reading_route": [],
+    "caveats": [],
+    "weekly_summary": "",
+    "weekly_summary_source": "",
+    "weekly_summary_model": "",
+    "weekly_summary_note": "",
+    "monthly_summary": "2026年11月月报期内，系统未采集到任何有效论文记录：覆盖统计中原始记录、去重后唯一论文、来源桶和artifact文件均为0，证据论文列表为空。因此无法形成主题分布、主题环比、周际演化、词频云或主题共现证据。与上月比较亦无基线数据，新增、上升、稳定、下降主题均无从计算。平均得分和得分分布为空，时间线各周计数为0。综合来看，本月科研信号缺失，不宜给出任何趋势判断或阅读路线。建议将本周期视为样本积累空窗，继续保持采集流程，待下月有足够论文后，优先确认高频主题是否连续出现，并复核方法、评测和数据集线索。",
+    "monthly_summary_source": "llm",
+    "monthly_summary_model": "deepseek-v4-pro",
+    "monthly_summary_note": "本月小结由 deepseek-v4-pro 生成。",
+    "watchlist": [
+      "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+      "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+      "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+      "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+      "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。",
+      "关注采集覆盖是否恢复，若持续为零需排查数据管道或来源可用性。",
+      "后续出现论文后，优先补全时间线周度分布，识别周际演化拐点。",
+      "若下月样本仍不足，考虑降低月报分析粒度或标注数据不足状态。"
+    ]
+  },
+  "charts": {
+    "topics": true,
+    "sources": true,
+    "score_distribution": true,
+    "timeline": true,
+    "topic_timeline": true
+  },
+  "representative_papers": 40,
+  "evidence_index": [],
+  "monthly_v1": {
+    "related_topics": [],
+    "topic_timeline": [],
+    "word_cloud": [],
+    "cooccurrence": [],
+    "comparison": {
+      "previous_key": "2026-10",
+      "has_previous": false,
+      "items": [],
+      "groups": {
+        "new": [],
+        "rising": [],
+        "stable": [],
+        "declining": [],
+        "faded": [],
+        "baseline": []
+      },
+      "new_count": 0,
+      "rising_count": 0,
+      "declining_count": 0,
+      "faded_count": 0
+    },
+    "watchlist": [
+      "继续累积下月样本，优先确认本月高频主题是否连续出现。",
+      "复核代表论文中的方法、评测和数据集线索，筛出可持续跟踪的方向。",
+      "观察主题共现关系是否从偶发组合发展为稳定交叉主题。",
+      "对样本较少但得分较高的主题保留人工复核，避免过早下结论。",
+      "下月生成月报时重点比较新增、上升、稳定和下降主题的变化。"
+    ],
+    "topic_breadth": 0,
+    "topic_limits": {
+      "topics": 10,
+      "related_topics": 12,
+      "topic_timeline": 12,
+      "word_cloud_terms": 64,
+      "cooccurrence_topics": 12,
+      "cooccurrence_pairs": 10,
+      "comparison_topics": 10
+    }
+  },
+  "related_topics": [],
+  "focus_topics": [],
+  "context_topics": [],
+  "weekday_topic_timeline": [],
+  "word_cloud": [],
+  "radar": [],
+  "cooccurrence": [],
+  "topic_limits": {
+    "topics": 10,
+    "related_topics": 12,
+    "topic_timeline": 12,
+    "word_cloud_terms": 64,
+    "cooccurrence_topics": 12,
+    "cooccurrence_pairs": 10,
+    "comparison_topics": 10
+  },
+  "weekly_summary": "",
+  "weekly_summary_source": "",
+  "weekly_summary_model": "",
+  "weekly_summary_note": "模板小结，非 LLM 生成，需要检查 LLM 可用性。",
+  "monthly_summary": "2026年11月月报期内，系统未采集到任何有效论文记录：覆盖统计中原始记录、去重后唯一论文、来源桶和artifact文件均为0，证据论文列表为空。因此无法形成主题分布、主题环比、周际演化、词频云或主题共现证据。与上月比较亦无基线数据，新增、上升、稳定、下降主题均无从计算。平均得分和得分分布为空，时间线各周计数为0。综合来看，本月科研信号缺失，不宜给出任何趋势判断或阅读路线。建议将本周期视为样本积累空窗，继续保持采集流程，待下月有足够论文后，优先确认高频主题是否连续出现，并复核方法、评测和数据集线索。",
+  "monthly_summary_source": "llm",
+  "monthly_summary_model": "deepseek-v4-pro",
+  "monthly_summary_note": "本月小结由 deepseek-v4-pro 生成。",
+  "artifacts": [],
+  "papers": []
+}
